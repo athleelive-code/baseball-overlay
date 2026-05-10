@@ -78,6 +78,16 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 const params=new URLSearchParams(location.search);
 const mode=params.get('show')||'all';
 
+// hide パラメータ: カンマ区切りで非表示にする要素を指定
+// 例: ?hide=inning,teams,bso,diamond,score,clock,players
+const hideList=(params.get('hide')||'').split(',').map(s=>s.trim()).filter(Boolean);
+const hidden=new Set(hideList);
+// show パラメータで単一要素指定の場合も hide で制御
+// ?show=inning → イニングのみ → 他を全部hide相当
+const showOnly=params.get('show');
+// 位置パラメータ: ?pos=bottom-left(デフォルト), bottom-right, top-left, top-right, bottom, top
+const pos=params.get('pos')||'bottom-left';
+
 const SCORE_HTML=`
   <div class="ov-top">
     <div class="ov-inn">
@@ -120,25 +130,58 @@ const PLAYERS_HTML=`
 
 const TABLE_HTML=`<div class="ov-table-wrap" id="ov-table-wrap"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div>`;
 
+function posStyle(){
+  const map={
+    'bottom-left':'bottom:20px;left:20px;right:20px;',
+    'bottom-right':'bottom:20px;right:20px;left:auto;width:calc(50% - 40px);',
+    'top-left':'top:20px;left:20px;right:20px;bottom:auto;',
+    'top-right':'top:20px;right:20px;left:auto;width:calc(50% - 40px);bottom:auto;',
+    'bottom':'bottom:20px;left:20px;right:20px;',
+    'top':'top:20px;left:20px;right:20px;bottom:auto;',
+  };
+  return map[pos]||map['bottom-left'];
+}
+
+function h(key){return hidden.has(key);}
+
 function buildDOM(){
   const b=document.body;
+
+  // ?show= 単一モード（従来互換）
   if(mode==='clock'){b.innerHTML=`<div class="clock-only" id="ov-clock">00:00:00</div>`;return;}
   if(mode==='bso'){b.innerHTML=`<div class="bso-only">${BSO_HTML}</div>`;return;}
   if(mode==='diamond'){b.innerHTML=`<div class="diamond-only">${DIAMOND_SVG}</div>`;return;}
   if(mode==='players'){b.innerHTML=`<div class="players-only">${PLAYERS_HTML}</div>`;return;}
-  if(mode==='score'){b.innerHTML=`<div class="ov">${SCORE_HTML}</div>`;return;}
+  if(mode==='score'){b.innerHTML=`<div class="ov" style="${posStyle()}">${SCORE_HTML}<div style="display:flex;border-top:1px solid rgba(255,255,255,.08)"><div style="flex:1"></div><div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div></div></div>`;return;}
   if(mode==='innscore'){b.innerHTML=`<div class="innscore-only"><div class="ov-table-wrap visible"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div></div>`;return;}
-  // all
-  b.innerHTML=`<div class="ov">
-    <div class="ov-clock" id="ov-clock">00:00:00</div>
-    ${SCORE_HTML}
-    <div class="ov-top" style="border-top:1px solid rgba(255,255,255,.08)">
-      <div style="flex:1"></div>
-      <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
-    </div>
-    <div class="ov-bottom">${PLAYERS_HTML}</div>
-    ${TABLE_HTML}
+
+  // all モード + hide パラメータで個別制御
+  const clockPart  = h('clock')   ? '' : `<div class="ov-clock" id="ov-clock">00:00:00</div>`;
+  const innPart    = h('inning')  ? '' : `
+    <div class="ov-inn">
+      <div class="ov-inn-arr-top" id="ov-arr-top">▲</div>
+      <div class="ov-inn-num" id="ov-inn">1</div>
+      <div class="ov-inn-arr-bot" id="ov-arr-bot">▼</div>
+    </div>`;
+  const teamsPart  = h('teams')   ? '' : `
+    <div class="ov-teams">
+      <div class="ov-team"><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
+      <div class="ov-team"><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
+    </div>`;
+  const bsoPart    = h('bso')     ? '' : `<div class="bso-rows">
+    <div class="bso-row"><span class="bso-lbl">B</span><div class="dot" id="ov-bd1"></div><div class="dot" id="ov-bd2"></div><div class="dot" id="ov-bd3"></div></div>
+    <div class="bso-row"><span class="bso-lbl">S</span><div class="dot" id="ov-sd1"></div><div class="dot" id="ov-sd2"></div></div>
+    <div class="bso-row"><span class="bso-lbl">O</span><div class="dot out" id="ov-od1"></div><div class="dot out" id="ov-od2"></div></div>
   </div>`;
+  const diamondPart= h('diamond') ? '' : DIAMOND_SVG;
+  const bsoDiamondPart = (h('bso')&&h('diamond')) ? '' : `
+    <div class="ov-diamond">${diamondPart}${bsoPart}</div>`;
+  const topRow = (!innPart&&!teamsPart&&!bsoDiamondPart) ? '' : `
+    <div class="ov-top">${innPart}${teamsPart}${bsoDiamondPart}</div>`;
+  const playersPart= h('players') ? '' : `<div class="ov-bottom">${PLAYERS_HTML}</div>`;
+  const tablePart  = `<div class="ov-table-wrap" id="ov-table-wrap"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div>`;
+
+  b.innerHTML=`<div class="ov" style="${posStyle()}">${clockPart}${topRow}${playersPart}${tablePart}</div>`;
 }
 
 function g(id){return document.getElementById(id);}
