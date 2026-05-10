@@ -19,7 +19,18 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   display:flex;flex-direction:column;
 }
 
-/* ── INNING ── */
+/* ── CLOCK ── */
+.ov-clock{
+  background:rgba(0,0,0,.4);
+  text-align:center;
+  font-size:13px;font-weight:600;
+  color:rgba(255,255,255,.7);
+  letter-spacing:2px;
+  padding:3px 0;
+  font-variant-numeric:tabular-nums;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  font-family:menlo,monospace;
+}
 .ov-top{display:flex;align-items:stretch}
 .ov-inn{
   background:rgba(200,16,46,.70);
@@ -93,6 +104,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 <body>
 
 <div class="ov" id="ov">
+  <div class="ov-clock" id="ov-clock">00:00:00</div>
   <div class="ov-top">
     <!-- イニング: ▲/回数/▼、▲▼は倍サイズ、現在の表/裏で片方を強調 -->
     <div class="ov-inn">
@@ -229,6 +241,18 @@ function applyState(s){
   const tw = document.getElementById('ov-table-wrap');
   if(tw) tw.className = 'ov-table-wrap' + (showScore ? ' visible' : '');
 }
+
+// ── 時計: 毎秒更新 ────────────────────────────────────────────────────────────
+function updateClock(){
+  const now=new Date();
+  const hh=String(now.getHours()).padStart(2,'0');
+  const mm=String(now.getMinutes()).padStart(2,'0');
+  const ss=String(now.getSeconds()).padStart(2,'0');
+  const el=document.getElementById('ov-clock');
+  if(el)el.textContent=`${hh}:${mm}:${ss}`;
+}
+updateClock();
+setInterval(updateClock,1000);
 
 let ws=null;
 function connectWS(){
