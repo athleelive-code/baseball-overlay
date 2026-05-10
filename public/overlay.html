@@ -241,11 +241,17 @@ function connectWS(){
   ws=new WebSocket(wsUrl);
   ws.onopen=()=>console.log('overlay WS connected');
   ws.onmessage=e=>{
-    console.log('overlay received message');
-    try{applyState(JSON.parse(e.data));}catch(err){console.error('parse error',err);}
+    const handle=(text)=>{
+      try{applyState(JSON.parse(text));}catch(err){console.error('parse error',err);}
+    };
+    if(e.data instanceof Blob){
+      e.data.text().then(handle);
+    } else {
+      handle(e.data);
+    }
   };
-  ws.onclose=()=>{console.log('overlay WS closed, reconnecting...');setTimeout(connectWS,2000);};
-  ws.onerror=(e)=>{console.error('overlay WS error',e);ws.close();};
+  ws.onclose=()=>{setTimeout(connectWS,2000);};
+  ws.onerror=()=>ws.close();
 }
 connectWS();
 </script>
