@@ -236,8 +236,15 @@ function applyState(s){
 }
 
 try{
-  const ch=new BroadcastChannel('baseball_score');
-  ch.onmessage=e=>applyState(e.data);
+  const wsUrl='wss://'+location.host;
+  let ws=null;
+  function connectWS(){
+    ws=new WebSocket(wsUrl);
+    ws.onmessage=e=>{try{applyState(JSON.parse(e.data));}catch(err){}};
+    ws.onclose=()=>setTimeout(connectWS,2000);
+    ws.onerror=()=>ws.close();
+  }
+  connectWS();
 }catch(e){}
 </script>
 </body>
