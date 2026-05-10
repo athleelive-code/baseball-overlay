@@ -614,6 +614,8 @@ function connectWS(){
   ws.onopen=()=>{
     const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');
     if(d)d.className='ws-dot on';if(l)l.textContent='接続中';
+    // 接続時に現在の状態を即送信してoverlayを同期
+    setTimeout(broadcast,300);
   };
   ws.onclose=()=>{
     const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');
