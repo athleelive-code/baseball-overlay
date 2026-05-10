@@ -572,13 +572,52 @@ const visState={score:true,bso:true,diamond:true,batter:true,pitcher:true,previe
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 const wsUrl='wss://'+location.host;
 let ws=null;
+let _isSending=false; // 自分が送信中は受信を無視
 function connectWS(){
   ws=new WebSocket(wsUrl);
-  ws.onopen=()=>{const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');if(d)d.className='ws-dot on';if(l)l.textContent='接続中';};
-  ws.onclose=()=>{const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');if(d)d.className='ws-dot';if(l)l.textContent='切断';setTimeout(connectWS,2000);};
+  ws.onopen=()=>{
+    const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');
+    if(d)d.className='ws-dot on';if(l)l.textContent='接続中';
+  };
+  ws.onclose=()=>{
+    const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');
+    if(d)d.className='ws-dot';if(l)l.textContent='切断';
+    setTimeout(connectWS,2000);
+  };
   ws.onerror=()=>ws.close();
+  // 他のコントローラーからの受信で状態を同期
+  ws.onmessage=e=>{
+    if(_isSending)return;
+    const handle=t=>{
+      try{
+        const s=JSON.parse(t);
+        applyRemoteState(s);
+      }catch(err){}
+    };
+    if(e.data instanceof Blob)e.data.text().then(handle);else handle(e.data);
+  };
 }
 connectWS();
+
+// 他のコントローラーから受信した状態をUIに反映
+function applyRemoteState(s){
+  if(!s)return;
+  // 基本状態を上書き
+  st.inn=s.inn||st.inn;
+  st.top=s.top!==undefined?s.top:st.top;
+  st.b=s.b||0;st.s=s.s||0;st.o=s.o||0;
+  st.r=s.r||{1:false,2:false,3:false};
+  st.maxInn=s.maxInn||st.maxInn;
+  // スコア
+  if(s.asc)s.asc.forEach((v,i)=>{if(i<16)scores.away[i]=v;});
+  if(s.hsc)s.hsc.forEach((v,i)=>{if(i<16)scores.home[i]=v;});
+  if(s.xOn)Object.assign(xOn,s.xOn);
+  // チーム名
+  if(s.aab){['tn-away','l-tn-away'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=s.aab;});}
+  if(s.hnm){['tn-home','l-tn-home'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=s.hnm;});}
+  // UI更新
+  renderTable();renderBSO();updateTopInd();renderSelects();
+}
 
 // ── ORIENTATION HELPERS ───────────────────────────────────────────────────────
 function isLandscape(){return window.matchMedia('(orientation:landscape)').matches;}
@@ -608,7 +647,11 @@ function broadcast(){
   const pSel=el('pit-sel');const pitTxt=pSel&&pSel.selectedIndex>0?pSel.options[pSel.selectedIndex].text:null;
   const cSel=el('cat-sel');const catTxt=cSel&&cSel.selectedIndex>0?cSel.options[cSel.selectedIndex].text:null;
   const payload=JSON.stringify({...st,aab,hnm,asc,hsc,xOn:axOn,batter:fmt(ord[cur%9]),batterNext:fmt(ord[(cur+1)%9]),batterNext2:fmt(ord[(cur+2)%9]),pitcher:pitTxt,catcher:catTxt,maxInn:st.maxInn,vis:visState});
-  if(ws&&ws.readyState===1)ws.send(payload);
+  if(ws&&ws.readyState===1){
+    _isSending=true;
+    ws.send(payload);
+    setTimeout(()=>_isSending=false,100);
+  }
   renderPreview(aab,hnm,asc,hsc,axOn,fmt(ord[cur%9]),pitTxt,catTxt);
 }
 
