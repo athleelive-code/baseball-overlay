@@ -235,17 +235,19 @@ function applyState(s){
   if(dm) dm.className = 'ov-diamond' + (showScore ? ' hidden' : '');
 }
 
-try{
+let ws=null;
+function connectWS(){
   const wsUrl='wss://'+location.host;
-  let ws=null;
-  function connectWS(){
-    ws=new WebSocket(wsUrl);
-    ws.onmessage=e=>{try{applyState(JSON.parse(e.data));}catch(err){}};
-    ws.onclose=()=>setTimeout(connectWS,2000);
-    ws.onerror=()=>ws.close();
-  }
-  connectWS();
-}catch(e){}
+  ws=new WebSocket(wsUrl);
+  ws.onopen=()=>console.log('overlay WS connected');
+  ws.onmessage=e=>{
+    console.log('overlay received message');
+    try{applyState(JSON.parse(e.data));}catch(err){console.error('parse error',err);}
+  };
+  ws.onclose=()=>{console.log('overlay WS closed, reconnecting...');setTimeout(connectWS,2000);};
+  ws.onerror=(e)=>{console.error('overlay WS error',e);ws.close();};
+}
+connectWS();
 </script>
 </body>
 </html>
