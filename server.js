@@ -10,14 +10,19 @@ const wss = new WebSocketServer({ server });
 // 静的ファイルを public フォルダから配信
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 接続中の全クライアントにブロードキャスト
+// 送信者以外の全クライアントにブロードキャスト
 wss.on('connection', (ws) => {
+  console.log('Client connected. Total:', wss.clients.size);
   ws.on('message', (data) => {
+    console.log('Message received, broadcasting to', wss.clients.size - 1, 'clients');
     wss.clients.forEach((client) => {
-      if (client.readyState === 1) {
+      if (client !== ws && client.readyState === 1) {
         client.send(data);
       }
     });
+  });
+  ws.on('close', () => {
+    console.log('Client disconnected. Total:', wss.clients.size);
   });
 });
 
