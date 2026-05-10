@@ -11,8 +11,28 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 .ov{position:fixed;bottom:20px;left:20px;width:70%;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;overflow:hidden;display:flex;flex-direction:column;}
 
-/* CLOCK */
-.ov-clock{background:rgba(0,0,0,.4);text-align:center;font-size:39px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:2px;padding:6px 0;font-variant-numeric:tabular-nums;border-bottom:1px solid rgba(255,255,255,.06);font-family:menlo,monospace;}
+/* 全体背景画像（透過） */
+.ov-bg-img{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  opacity:.25;pointer-events:none;z-index:0;
+}
+/* 全コンテンツをz-index:1で前面に */
+.ov-clock,.ov-top,.ov-bottom,.ov-table-wrap{position:relative;z-index:1}
+
+/* 時計エリアの画像（右端） */
+.ov-clock{
+  background:rgba(0,0,0,.4);text-align:center;font-size:39px;font-weight:600;
+  color:rgba(255,255,255,.7);letter-spacing:2px;padding:6px 60px 6px 6px;
+  font-variant-numeric:tabular-nums;border-bottom:1px solid rgba(255,255,255,.06);
+  font-family:menlo,monospace;position:relative;overflow:hidden;
+}
+.ov-clock-logo{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:48px;height:48px;
+  background-size:contain;background-repeat:no-repeat;background-position:center;
+  opacity:.8;
+}
 .clock-only{position:fixed;top:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:10px 24px;font-size:56px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:3px;font-variant-numeric:tabular-nums;font-family:menlo,monospace;}
 
 /* SCORE */
@@ -35,9 +55,11 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* チーム名: はみ出る場合は縮小 */
 .ov-tname{
   font-weight:700;color:#fff;
-  white-space:nowrap;padding-right:1em;flex-shrink:1;
+  white-space:nowrap;padding-right:0.5em;
+  flex-shrink:1;min-width:0;
+  /* JSで動的にフォントサイズを調整 */
+  font-size:90px;
   overflow:hidden;
-  font-size:clamp(20px,6vw,90px);
 }
 .ov-tspacer{flex:1}
 .ov-tscore{font-size:112px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
@@ -166,6 +188,8 @@ function buildDOM(){
   if(mode==='players'){b.innerHTML=`<div class="players-only">${PLAYERS_HTML}</div>`;return;}
   if(mode==='score'){
     b.innerHTML=`<div class="ov" style="${posStyle()}">
+      <div class="ov-bg-img" id="ov-bg-img"></div>
+      <div class="ov-clock" id="ov-clock">00:00:00<div class="ov-clock-logo" id="ov-clock-logo"></div></div>
       <div class="ov-top">
         <div class="ov-inn">
           <div class="ov-inn-arr-top" id="ov-arr-top">▲</div>
@@ -173,9 +197,14 @@ function buildDOM(){
           <div class="ov-inn-arr-bot" id="ov-arr-bot">▼</div>
         </div>
         <div class="ov-teams">
-          <div class="ov-team"><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
-          <div class="ov-team"><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
+          <div class="ov-team"><div class="ov-team-logo" id="ov-logo-away"></div><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
+          <div class="ov-team"><div class="ov-team-logo" id="ov-logo-home"></div><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
         </div>
+        <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
+      </div>
+    </div>`;
+    return;
+  }
         <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
       </div>
     </div>`;
@@ -184,7 +213,7 @@ function buildDOM(){
   if(mode==='innscore'){b.innerHTML=`<div class="innscore-only"><div class="ov-table-wrap visible"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div></div>`;return;}
 
   // all モード + hide パラメータで個別制御
-  const clockPart  = h('clock')   ? '' : `<div class="ov-clock" id="ov-clock">00:00:00</div>`;
+  const clockPart  = h('clock')   ? '' : `<div class="ov-clock" id="ov-clock">00:00:00<div class="ov-clock-logo" id="ov-clock-logo"></div></div>`;
   const innPart    = h('inning')  ? '' : `
     <div class="ov-inn">
       <div class="ov-inn-arr-top" id="ov-arr-top">▲</div>
@@ -209,7 +238,7 @@ function buildDOM(){
   const playersPart= h('players') ? '' : `<div class="ov-bottom">${PLAYERS_HTML}</div>`;
   const tablePart  = `<div class="ov-table-wrap" id="ov-table-wrap"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div>`;
 
-  b.innerHTML=`<div class="ov" style="${posStyle()}">${clockPart}${topRow}${playersPart}${tablePart}</div>`;
+  b.innerHTML=`<div class="ov" style="${posStyle()}"><div class="ov-bg-img" id="ov-bg-img"></div>${clockPart}${topRow}${playersPart}${tablePart}</div>`;
 }
 
 function g(id){return document.getElementById(id);}
@@ -229,6 +258,8 @@ function applyState(s){
   if(ab)ab.className='ov-inn-arr-bot'+(isTop?' inactive':'');
   set('ov-aname',s.aab||'先攻');set('ov-hname',s.hnm||'後攻');
   set('ov-ascore',at);set('ov-hscore',ht);
+  // チーム名を枠に合わせて縮小
+  requestAnimationFrame(fitTeamNames);
 
   for(let i=0;i<3;i++){const d=g('ov-bd'+(i+1));if(d)d.className='dot'+(i<(s.b||0)?' on-b':'');}
   for(let i=0;i<2;i++){
@@ -274,15 +305,46 @@ function connectWS(){
 }
 
 buildDOM();
+window.addEventListener('resize',()=>requestAnimationFrame(fitTeamNames));
 
-// ── チームロゴ ────────────────────────────────────────────────────────────────
+// チーム名フォントを枠に合わせて自動縮小
+function fitTeamNames(){
+  ['ov-aname','ov-hname'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const parent=el.parentElement;
+    if(!parent)return;
+    // スコア幅を除いた利用可能幅を計算
+    const score=parent.querySelector('.ov-tscore');
+    const scoreW=score?score.offsetWidth:0;
+    const available=parent.offsetWidth-scoreW-20; // 20px余白
+    if(available<=0)return;
+    // フォントサイズをリセット
+    el.style.fontSize='90px';
+    // はみ出ていたら縮小
+    let fs=90;
+    while(el.scrollWidth>available&&fs>14){
+      fs-=2;
+      el.style.fontSize=fs+'px';
+    }
+  });
+}
 // LocalStorageからロゴを読み込んで表示
 function loadLogos(){
+  // チームロゴ
   ['away','home'].forEach(t=>{
     const data=localStorage.getItem('bb_logo_'+t);
     const el=document.getElementById('ov-logo-'+t);
     if(el&&data)el.style.backgroundImage=`url(${data})`;
   });
+  // 全体背景画像
+  const bgData=localStorage.getItem('bb_logo_bg');
+  const bgEl=document.getElementById('ov-bg-img');
+  if(bgEl&&bgData)bgEl.style.backgroundImage=`url(${bgData})`;
+  // 時計ロゴ
+  const clkData=localStorage.getItem('bb_logo_clock');
+  const clkEl=document.getElementById('ov-clock-logo');
+  if(clkEl&&clkData)clkEl.style.backgroundImage=`url(${clkData})`;
 }
 loadLogos();
 
