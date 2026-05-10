@@ -14,10 +14,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 wss.on('connection', (ws) => {
   console.log('Client connected. Total:', wss.clients.size);
   ws.on('message', (data) => {
+    const text = data.toString();
     console.log('Message received, broadcasting to', wss.clients.size - 1, 'clients');
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) {
-        client.send(data);
+        client.send(text);
       }
     });
   });
