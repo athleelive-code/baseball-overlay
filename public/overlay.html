@@ -22,7 +22,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 /* 時計エリアの画像（右端） */
 .ov-clock{
-  background:rgba(0,0,0,.4);text-align:center;font-size:15px;font-weight:600;
+  background:rgba(0,0,0,.4);text-align:center;font-size:30px;font-weight:600;
   color:rgba(255,255,255,.7);letter-spacing:2px;padding:4px 50px 4px 6px;
   font-variant-numeric:tabular-nums;border-bottom:1px solid rgba(255,255,255,.06);
   font-family:menlo,monospace;position:relative;overflow:hidden;
@@ -33,7 +33,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   background-size:contain;background-repeat:no-repeat;background-position:center;
   opacity:.8;
 }
-.clock-only{position:fixed;top:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:10px 24px;font-size:15px;font-weight:600;color:rgba(255,255,255,.9);letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:menlo,monospace;}
+.clock-only{position:fixed;top:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:6px 20px;font-size:30px;font-weight:600;color:rgba(255,255,255,.9);letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:menlo,monospace;}
 
 /* SCORE */
 .ov-top{display:flex;align-items:stretch}
@@ -200,11 +200,6 @@ function buildDOM(){
           <div class="ov-team"><div class="ov-team-logo" id="ov-logo-away"></div><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
           <div class="ov-team"><div class="ov-team-logo" id="ov-logo-home"></div><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
         </div>
-        <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
-      </div>
-    </div>`;
-    return;
-  }
         <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
       </div>
     </div>`;
