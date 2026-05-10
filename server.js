@@ -7,14 +7,27 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-// 静的ファイルを public フォルダから配信
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 送信者以外の全クライアントにブロードキャスト
+// 最後に受信した状態をキャッシュ
+let lastState = null;
+
 wss.on('connection', (ws) => {
   console.log('Client connected. Total:', wss.clients.size);
+
+  // 新規接続時に最新状態を送信（overlay読み込み時に即同期）
+  if(lastState) {
+    ws.send(lastState);
+  }
+
   ws.on('message', (data) => {
     const text = data.toString();
+    // コントローラーからの状態更新をキャッシュ
+    try {
+      JSON.parse(text); // 有効なJSONのみキャッシュ
+      lastState = text;
+    } catch(e) {}
+
     console.log('Message received, broadcasting to', wss.clients.size - 1, 'clients');
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) {
@@ -22,6 +35,7 @@ wss.on('connection', (ws) => {
       }
     });
   });
+
   ws.on('close', () => {
     console.log('Client disconnected. Total:', wss.clients.size);
   });
