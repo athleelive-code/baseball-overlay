@@ -9,9 +9,10 @@
 :root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047}
 html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
+/* 16:9固定・透過70% */
 .ov{
   position:fixed;bottom:20px;left:20px;right:20px;
-  background:rgba(8,12,24,.93);
+  background:rgba(8,12,24,.70);
   border:1px solid rgba(255,255,255,.1);
   border-radius:7px;
   overflow:hidden;
@@ -21,7 +22,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* ── INNING ── */
 .ov-top{display:flex;align-items:stretch}
 .ov-inn{
-  background:var(--red);
+  background:rgba(200,16,46,.70);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:16px 20px;min-width:90px;gap:2px;flex-shrink:0
 }
@@ -39,18 +40,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-tspacer{flex:1}
 .ov-tscore{font-size:56px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
 
-/* ── DIAMOND + BSO ── */
+/* ── DIAMOND + BSO: 常に表示 ── */
 .ov-diamond{
   border-left:1px solid rgba(255,255,255,.1);
   display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
   padding:8px 16px;min-width:200px;gap:8px;
-  transition:max-width .5s ease,opacity .4s ease,padding .5s ease;
-  overflow:hidden;
-  max-width:300px;
 }
-.ov-diamond.hidden{max-width:0;opacity:0;padding:0;border:none}
 
-/* BSO 行間を広げる */
+/* BSO 行間 */
 .bso-rows{display:flex;flex-direction:column;gap:10px}
 .bso-row{display:flex;gap:8px;align-items:center}
 .bso-lbl{font-size:14px;font-weight:700;color:rgba(255,255,255,.5);width:16px}
@@ -227,12 +224,10 @@ function applyState(s){
   });
   document.getElementById('ov-tbody').innerHTML=html;
 
-  // ── スコア表示/非表示: 表示時はBSO/diamondを消しアニメで伸びる
-  const showScore = !(s.vis && s.vis.score === false);
+  // ── スコア表示/非表示: BSOとダイヤモンドは常に表示
+  const showScore = s.vis && s.vis.ovScore === true;
   const tw = document.getElementById('ov-table-wrap');
-  const dm = document.getElementById('ov-diamond');
   if(tw) tw.className = 'ov-table-wrap' + (showScore ? ' visible' : '');
-  if(dm) dm.className = 'ov-diamond' + (showScore ? ' hidden' : '');
 }
 
 let ws=null;
