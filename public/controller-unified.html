@@ -568,7 +568,17 @@ const orders={away:Array(9).fill(null),home:Array(9).fill(null)};
 const cursors={away:0,home:0};
 let dtab='game';
 const visState={score:true,bso:true,diamond:true,batter:true,pitcher:true,preview:false,ovScore:true};
-const ch=new BroadcastChannel('baseball_score');
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+const wsUrl='wss://'+location.host;
+let ws=null;
+function connectWS(){
+  ws=new WebSocket(wsUrl);
+  ws.onopen=()=>{const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');if(d)d.className='ws-dot on';if(l)l.textContent='接続中';};
+  ws.onclose=()=>{const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');if(d)d.className='ws-dot';if(l)l.textContent='切断';setTimeout(connectWS,2000);};
+  ws.onerror=()=>ws.close();
+}
+connectWS();
 
 // ── ORIENTATION HELPERS ───────────────────────────────────────────────────────
 function isLandscape(){return window.matchMedia('(orientation:landscape)').matches;}
@@ -597,7 +607,8 @@ function broadcast(){
   const fmt=p=>p?`#${p.num} ${p.name}`:null;
   const pSel=el('pit-sel');const pitTxt=pSel&&pSel.selectedIndex>0?pSel.options[pSel.selectedIndex].text:null;
   const cSel=el('cat-sel');const catTxt=cSel&&cSel.selectedIndex>0?cSel.options[cSel.selectedIndex].text:null;
-  ch.postMessage({...st,aab,hnm,asc,hsc,xOn:axOn,batter:fmt(ord[cur%9]),batterNext:fmt(ord[(cur+1)%9]),batterNext2:fmt(ord[(cur+2)%9]),pitcher:pitTxt,catcher:catTxt,maxInn:st.maxInn,vis:visState});
+  const payload=JSON.stringify({...st,aab,hnm,asc,hsc,xOn:axOn,batter:fmt(ord[cur%9]),batterNext:fmt(ord[(cur+1)%9]),batterNext2:fmt(ord[(cur+2)%9]),pitcher:pitTxt,catcher:catTxt,maxInn:st.maxInn,vis:visState});
+  if(ws&&ws.readyState===1)ws.send(payload);
   renderPreview(aab,hnm,asc,hsc,axOn,fmt(ord[cur%9]),pitTxt,catTxt);
 }
 
