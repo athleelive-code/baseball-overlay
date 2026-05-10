@@ -9,7 +9,7 @@
 :root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047}
 html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
-.ov{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;overflow:hidden;display:flex;flex-direction:column;}
+.ov{position:fixed;bottom:20px;left:20px;width:70%;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;overflow:hidden;display:flex;flex-direction:column;}
 
 /* CLOCK */
 .ov-clock{background:rgba(0,0,0,.4);text-align:center;font-size:39px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:2px;padding:6px 0;font-variant-numeric:tabular-nums;border-bottom:1px solid rgba(255,255,255,.06);font-family:menlo,monospace;}
@@ -18,27 +18,40 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* SCORE */
 .ov-top{display:flex;align-items:stretch}
 .ov-inn{background:rgba(200,16,46,.70);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;min-width:90px;gap:2px;flex-shrink:0}
-.ov-inn-arr-top{font-size:44px;font-weight:900;color:rgba(255,255,255,.95);line-height:1;transition:opacity .15s}
+.ov-inn-arr-top{font-size:88px;font-weight:900;color:rgba(255,255,255,.95);line-height:1;transition:opacity .15s}
 .ov-inn-arr-top.inactive{opacity:.2}
-.ov-inn-num{font-size:64px;font-weight:700;color:#fff;line-height:1;margin:4px 0}
-.ov-inn-arr-bot{font-size:44px;font-weight:900;color:rgba(255,255,255,.95);line-height:1;transition:opacity .15s}
+.ov-inn-num{font-size:128px;font-weight:700;color:#fff;line-height:1;margin:4px 0}
+.ov-inn-arr-bot{font-size:88px;font-weight:900;color:rgba(255,255,255,.95);line-height:1;transition:opacity .15s}
 .ov-inn-arr-bot.inactive{opacity:.2}
-.ov-teams{flex:1;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.1)}
-.ov-team{display:flex;align-items:center;padding:6px 14px;gap:0;flex:1}
+.ov-teams{flex:1;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.1);min-width:0}
+.ov-team{display:flex;align-items:center;padding:6px 14px;gap:0;flex:1;overflow:hidden;position:relative}
 .ov-team:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-tname{font-size:30px;font-weight:700;color:#fff;white-space:nowrap;padding-right:1em;flex-shrink:0}
+/* チームロゴ: 背景として透過50%表示 */
+.ov-team-logo{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background-size:contain;background-repeat:no-repeat;background-position:left center;
+  opacity:.5;pointer-events:none;
+}
+/* チーム名: はみ出る場合は縮小 */
+.ov-tname{
+  font-size:60px;font-weight:700;color:#fff;
+  white-space:nowrap;padding-right:1em;flex-shrink:1;
+  overflow:hidden;
+  /* フォントを自動縮小 */
+  font-size:clamp(20px,4vw,60px);
+}
 .ov-tspacer{flex:1}
-.ov-tscore{font-size:56px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
+.ov-tscore{font-size:112px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
 
 /* BSO + DIAMOND */
 .ov-diamond{border-left:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:12px 24px;min-width:280px;gap:14px;}
 .bso-rows{display:flex;flex-direction:column;gap:18px}
 .bso-row{display:flex;gap:12px;align-items:center}
 .bso-lbl{font-size:26px;font-weight:700;color:rgba(255,255,255,.5);width:28px}
-.dot{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.22)}
+.dot{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1);border:4px solid rgba(255,255,255,.22)}
 .dot.on-b{background:var(--bgreen);border-color:#1b5e20}
 .dot.on-s{background:var(--gold);border-color:#b8860b}
-.dot.out{background:rgba(255,255,255,.07);border:3px solid rgba(255,255,255,.15)}
+.dot.out{background:rgba(255,255,255,.07);border:4px solid rgba(255,255,255,.15)}
 .dot.out.on{background:var(--red);border-color:#7a0000}
 .bso-only{position:fixed;bottom:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:16px 20px;display:flex;flex-direction:column;gap:16px;}
 .diamond-only{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:16px;}
@@ -96,8 +109,8 @@ const SCORE_HTML=`
       <div class="ov-inn-arr-bot" id="ov-arr-bot">▼</div>
     </div>
     <div class="ov-teams">
-      <div class="ov-team"><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
-      <div class="ov-team"><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
+      <div class="ov-team"><div class="ov-team-logo" id="ov-logo-away"></div><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
+      <div class="ov-team"><div class="ov-team-logo" id="ov-logo-home"></div><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
     </div>
   </div>`;
 
@@ -262,6 +275,46 @@ function connectWS(){
 }
 
 buildDOM();
+
+// ── チームロゴ ────────────────────────────────────────────────────────────────
+// LocalStorageからロゴを読み込んで表示
+function loadLogos(){
+  ['away','home'].forEach(t=>{
+    const data=localStorage.getItem('bb_logo_'+t);
+    const el=document.getElementById('ov-logo-'+t);
+    if(el&&data)el.style.backgroundImage=`url(${data})`;
+  });
+}
+loadLogos();
+
+// ロゴアップロードUI（?show=logosetup のときだけ表示）
+if(mode==='logosetup'){
+  document.body.innerHTML=`
+  <div style="position:fixed;inset:0;background:#111;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-family:sans-serif;padding:20px">
+    <h2 style="font-size:20px;color:#f5c518">チームロゴ設定</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px">
+      <label style="font-size:13px;color:#aaa">先攻チーム画像</label>
+      <input type="file" accept="image/*" onchange="uploadLogo('away',this)" style="color:#fff">
+      <div id="preview-away" style="height:80px;background:rgba(255,255,255,.05);border-radius:8px;background-size:contain;background-repeat:no-repeat;background-position:center"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px">
+      <label style="font-size:13px;color:#aaa">後攻チーム画像</label>
+      <input type="file" accept="image/*" onchange="uploadLogo('home',this)" style="color:#fff">
+      <div id="preview-home" style="height:80px;background:rgba(255,255,255,.05);border-radius:8px;background-size:contain;background-repeat:no-repeat;background-position:center"></div>
+    </div>
+    <p style="font-size:11px;color:#555;text-align:center">画像はこのデバイスに保存されます。<br>overlay.html?show=score で表示されます。</p>
+  </div>`;
+}
+function uploadLogo(team,input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{localStorage.setItem('bb_logo_'+team,e.target.result);}catch(err){alert('画像が大きすぎます。小さい画像を使ってください。');}
+    const prev=document.getElementById('preview-'+team);
+    if(prev)prev.style.backgroundImage=`url(${e.target.result})`;
+  };
+  reader.readAsDataURL(file);
+}
 updateClock();
 setInterval(updateClock,1000);
 connectWS();
