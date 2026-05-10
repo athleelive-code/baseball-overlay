@@ -22,22 +22,22 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 /* 時計エリアの画像（右端） */
 .ov-clock{
-  background:rgba(0,0,0,.4);text-align:center;font-size:39px;font-weight:600;
-  color:rgba(255,255,255,.7);letter-spacing:2px;padding:6px 60px 6px 6px;
+  background:rgba(0,0,0,.4);text-align:center;font-size:15px;font-weight:600;
+  color:rgba(255,255,255,.7);letter-spacing:2px;padding:4px 50px 4px 6px;
   font-variant-numeric:tabular-nums;border-bottom:1px solid rgba(255,255,255,.06);
   font-family:menlo,monospace;position:relative;overflow:hidden;
 }
 .ov-clock-logo{
   position:absolute;right:6px;top:50%;transform:translateY(-50%);
-  width:48px;height:48px;
+  width:28px;height:28px;
   background-size:contain;background-repeat:no-repeat;background-position:center;
   opacity:.8;
 }
-.clock-only{position:fixed;top:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:10px 24px;font-size:56px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:3px;font-variant-numeric:tabular-nums;font-family:menlo,monospace;}
+.clock-only{position:fixed;top:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:10px 24px;font-size:15px;font-weight:600;color:rgba(255,255,255,.9);letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:menlo,monospace;}
 
 /* SCORE */
 .ov-top{display:flex;align-items:stretch}
-.ov-inn{background:rgba(200,16,46,.70);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;min-width:90px;gap:2px;flex-shrink:0}
+.ov-inn{background:rgba(200,16,46,.70);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 40px;min-width:90px;gap:2px;flex-shrink:0}
 .ov-inn-arr-top{font-size:88px;font-weight:900;color:rgba(255,255,255,.95);line-height:1;transition:opacity .15s}
 .ov-inn-arr-top.inactive{opacity:.2}
 .ov-inn-num{font-size:128px;font-weight:700;color:#fff;line-height:1;margin:4px 0}
@@ -65,7 +65,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-tscore{font-size:112px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
 
 /* BSO + DIAMOND */
-.ov-diamond{border-left:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:12px 24px;min-width:280px;gap:14px;}
+.ov-diamond{border-left:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:12px 16px;gap:14px;flex-shrink:0;width:auto;}
 .bso-rows{display:flex;flex-direction:column;gap:18px}
 .bso-row{display:flex;gap:12px;align-items:center}
 .bso-lbl{font-size:26px;font-weight:700;color:rgba(255,255,255,.5);width:28px}
