@@ -2,383 +2,1096 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baseball Overlay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Baseball Controller</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
-:root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047}
-html,body{background:transparent;width:100%;height:100%;overflow:hidden}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+:root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047;--dg:#1b5e20}
+html,body{width:100%;height:100%;background:#111;color:#fff;overflow:hidden}
 
-.ov{position:fixed;bottom:20px;left:20px;width:70%;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;overflow:hidden;display:flex;flex-direction:column;}
+/* ═══ ORIENTATION SWITCH ═══════════════════════════════════════════════════ */
+#layout-portrait  { display:flex;flex-direction:column;height:100%;overflow:hidden }
+#layout-landscape { display:none }
 
-/* 全体背景画像（透過） */
-.ov-bg-img{
-  position:absolute;inset:0;
-  background-size:cover;background-position:center;background-repeat:no-repeat;
-  opacity:.25;pointer-events:none;z-index:0;
+@media (orientation:landscape){
+  #layout-portrait  { display:none }
+  #layout-landscape { display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr 1fr 1fr;height:100%;overflow:hidden }
 }
-/* 全コンテンツをz-index:1で前面に */
-.ov-clock,.ov-top,.ov-bottom,.ov-table-wrap{position:relative;z-index:1}
 
-/* 時計エリアの画像（右端） */
-.ov-clock{
-  background:rgba(0,0,0,.4);text-align:center;font-size:39px;font-weight:600;
-  color:rgba(255,255,255,.7);letter-spacing:2px;padding:6px 60px 6px 6px;
-  font-variant-numeric:tabular-nums;border-bottom:1px solid rgba(255,255,255,.06);
-  font-family:menlo,monospace;position:relative;overflow:hidden;
+/* ═══ SHARED ════════════════════════════════════════════════════════════════ */
+/* Indicator bar */
+.ts-ind-wrap{padding:14px 0 8px;cursor:pointer;display:flex;width:100%;-webkit-tap-highlight-color:transparent}
+.ts-ind-wrap:active .ts-ind{opacity:.5}
+.ts-ind{height:15px;border-radius:4px;width:70%;background:#333;transition:background .15s;pointer-events:none;flex-shrink:0}
+.ts-ind.active{background:var(--red)}
+
+/* BSO dots */
+.bdot{border-radius:50%;background:#333;border:2px solid #555;flex-shrink:0;pointer-events:none}
+.bdot.on-b{background:var(--bgreen);border-color:var(--dg)}
+.bdot.on-s{background:var(--gold);border-color:#b8860b}
+.bdot.out{background:#282828;border:2px solid #444}
+.bdot.out.on{background:var(--red);border-color:#7a0000}
+
+/* C button */
+.c-btn{background:#2a2a2a;border:1px solid #555;border-radius:8px;color:#aaa;font-size:clamp(12px,3.5vw,18px);font-weight:700;padding:6px 12px;cursor:pointer;flex-shrink:0;margin-left:auto}
+.c-btn:active{background:#555}
+
+/* Score cell */
+.inn-cell{cursor:pointer;user-select:none;position:relative}
+.inn-cell:active{background:rgba(255,255,255,.06)}
+.inn-cell.cur{background:rgba(245,197,24,.07)}
+.inn-cell.cur.top-turn{background:rgba(200,16,46,.06)}
+.inn-cell.cur.bot-turn{background:rgba(30,136,229,.06)}
+.sc-val{display:flex;align-items:center;justify-content:center;gap:2px;font-weight:700;font-variant-numeric:tabular-nums;padding:2px}
+.sc-val.is-blank{color:#1e1e1e}
+.sc-val.is-x{color:#555}
+.sc-val-num,.sc-val-x{color:#fff}
+.inn-cell.cur .sc-val-num,.inn-cell.cur .sc-val-x{color:var(--gold)}
+.r-col{font-weight:700;font-variant-numeric:tabular-nums;padding:3px 4px}
+
+/* VIS bar */
+.vis-bar{display:flex;gap:3px;padding:4px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.vis-btn{border:1px solid #2a2a2a;border-radius:6px;font-size:10px;font-weight:600;padding:4px 8px;cursor:pointer;white-space:nowrap;background:#111;color:#444;flex-shrink:0}
+.vis-btn.on{background:#222;color:#ccc;border-color:#555}
+
+/* Mini preview shared */
+.mini-prev-wrap{flex-shrink:0;background:#0a0a0a;border-bottom:1px solid #1a1a1a;padding:6px 8px}
+.mini-prev-label{font-size:8px;color:#333;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;text-align:center}
+.mini-ov{background:rgba(8,12,24,.93);border:1px solid rgba(255,255,255,.12);border-radius:4px;overflow:hidden;display:flex;flex-direction:column}
+.mini-ov-top{display:flex;align-items:stretch}
+.mi-inn{background:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 9px;min-width:46px;gap:1px;flex-shrink:0}
+.mi-inn-tb{font-size:8px;color:rgba(255,255,255,.75);letter-spacing:1.5px}
+.mi-inn-num{font-size:18px;font-weight:700;color:#fff;line-height:1}
+.mi-inn-arr{font-size:9px;color:rgba(255,255,255,.9)}
+.mi-teams{flex:1;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.08)}
+.mi-team{display:flex;align-items:center;padding:4px 9px;gap:7px;flex:1}
+.mi-team:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
+.mi-tname{font-size:12px;font-weight:700;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mi-tscore{font-size:20px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
+.mi-diamond-block{border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:5px 8px;min-width:68px;gap:4px}
+.mi-bso-row{display:flex;gap:3px;align-items:center}
+.mi-lbl{font-size:8px;color:rgba(255,255,255,.4);width:8px}
+.mi-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)}
+.mi-dot.on-b{background:var(--bgreen);border-color:var(--dg)}
+.mi-dot.on-s{background:var(--gold);border-color:#b8860b}
+.mi-dot.out{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+.mi-dot.out.on{background:var(--red);border-color:#7a0000}
+.mi-bottom{border-top:1px solid rgba(255,255,255,.08);display:flex;padding:4px 9px;gap:8px}
+.mi-bp{display:flex;align-items:center;gap:5px;flex:1;overflow:hidden}
+.mi-bp:first-child{border-right:1px solid rgba(255,255,255,.08);padding-right:9px}
+.mi-tag{font-size:8px;color:rgba(255,255,255,.3);letter-spacing:1.5px;white-space:nowrap}
+.mi-val{font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mi-table-wrap{border-top:1px solid rgba(255,255,255,.07)}
+.mi-table{border-collapse:collapse;font-size:9px;width:100%;table-layout:fixed}
+.mi-table th{background:rgba(255,255,255,.05);color:rgba(255,255,255,.35);text-align:center;padding:2px;border-bottom:1px solid rgba(255,255,255,.07)}
+.mi-table th.tc{text-align:left;padding-left:8px;width:14%}
+.mi-table td{text-align:center;padding:2px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+.mi-table td.tc{text-align:left;padding-left:8px;font-weight:700;color:#fff}
+.mi-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.07)}
+.mi-table td.cur{color:var(--gold);font-weight:700}
+.mi-table td.tot{font-weight:700;color:var(--gold);border-left:1px solid rgba(255,255,255,.08)}
+
+/* Scoreboard shared */
+.sb-table{border-collapse:collapse;min-width:100%}
+.sb-head{background:var(--green)}
+.sb-head th{color:#fff;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,.15);white-space:nowrap;cursor:pointer;user-select:none}
+.sb-head th.cur-inn{background:rgba(245,197,24,.3);color:var(--gold)}
+.sb-row td{border:1px solid #222;text-align:center;padding:0;vertical-align:middle}
+.sb-row td:first-child{border-left:none;border-right:2px solid #333}
+
+/* BSO shared */
+.bso-line{display:flex;align-items:center;cursor:pointer;border-radius:8px;-webkit-tap-highlight-color:transparent;user-select:none}
+.bso-line:active{background:rgba(255,255,255,.04)}
+.bso-lbl{font-weight:700;color:#ccc;text-align:center;flex-shrink:0;pointer-events:none}
+.bso-dots{display:flex;align-items:center;pointer-events:none}
+.bso-rst-row{display:flex;justify-content:flex-end}
+.bso-rst{background:#1a1a1a;border:1px solid #333;border-radius:7px;color:#555;font-size:10px;padding:3px 8px;cursor:pointer}
+.bso-rst:active{background:#333}
+
+/* Diamond shared */
+.diamond-area{display:flex;align-items:stretch;background:#0a0a0a;position:relative}
+.diamond-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:1 1 0;padding:8px 4px}
+.diamond-rst{background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#555;font-size:10px;padding:3px 8px;cursor:pointer}
+.diamond-rst:active{background:#333}
+
+/* BP shared */
+.bp-row{display:flex;align-items:center;background:#080808;border-bottom:1px solid #1a1a1a;flex-shrink:0}
+.bp-tag{font-size:9px;color:#555;letter-spacing:1.5px;flex-shrink:0}
+.bp-col{display:flex;flex-direction:column;gap:1px;flex:1;overflow:hidden;min-width:0}
+.bp-sel{background:transparent;border:none;outline:none;color:#fff;font-weight:500;width:100%;-webkit-appearance:none;cursor:pointer}
+.bp-sel option{color:#111;background:#fff}
+.bp-nexts{display:flex;gap:4px;align-items:center}
+.bp-ntag{font-size:8px;color:rgba(255,255,255,.22)}
+.bp-nnm{font-size:10px;color:rgba(255,255,255,.4);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Ext btns shared */
+.ext-btn{background:#1a1a1a;border:1px solid #444;border-radius:8px;color:#fff;font-weight:700;text-align:center;cursor:pointer}
+.ext-btn:active{background:#333}
+
+/* Home plate score button (between diamond and inning panel) */
+.score-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 6px;flex-shrink:0}
+.home-btn{
+  background:#555;border:2px solid #888;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .1s;
+  /* ホームベース形状: 上下反転 (尖りが下) */
+  clip-path:polygon(0% 0%, 100% 0%, 100% 65%, 50% 100%, 0% 65%);
+  width:clamp(44px,14vw,70px);height:clamp(40px,13vw,64px);
+  flex-shrink:0;
 }
-.ov-clock-logo{
-  position:absolute;right:6px;top:50%;transform:translateY(-50%);
-  width:48px;height:48px;
-  background-size:contain;background-repeat:no-repeat;background-position:center;
-  opacity:.8;
-}
-.clock-only{position:fixed;top:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:10px 24px;font-size:56px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:3px;font-variant-numeric:tabular-nums;font-family:menlo,monospace;}
+.home-btn:active{background:#fff}
+.home-btn-label{font-size:clamp(13px,4.5vw,22px);font-weight:900;color:#fff;pointer-events:none;margin-bottom:8px}
+.score-minus-btn{background:#1a1a1a;border:1px solid #444;border-radius:6px;color:#666;font-size:clamp(11px,3.5vw,16px);font-weight:700;padding:3px 10px;cursor:pointer;white-space:nowrap}
+.score-minus-btn:active{background:#333;color:#aaa}
 
-/* SCORE */
-.ov-top{display:flex;align-items:stretch}
-.ov-inn{background:rgba(200,16,46,.70);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;min-width:90px;gap:2px;flex-shrink:0}
-.ov-inn-arr-top{font-size:88px;font-weight:900;color:rgba(255,255,255,.95);line-height:1;transition:opacity .15s}
-.ov-inn-arr-top.inactive{opacity:.2}
-.ov-inn-num{font-size:128px;font-weight:700;color:#fff;line-height:1;margin:4px 0}
-.ov-inn-arr-bot{font-size:88px;font-weight:900;color:rgba(255,255,255,.95);line-height:1;transition:opacity .15s}
-.ov-inn-arr-bot.inactive{opacity:.2}
-.ov-teams{flex:1;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.1);min-width:0}
-.ov-team{display:flex;align-items:center;padding:6px 14px;gap:0;flex:1;overflow:hidden;position:relative}
-.ov-team:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-/* チームロゴ: 背景として透過50%表示 */
-.ov-team-logo{
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  background-size:contain;background-repeat:no-repeat;background-position:left center;
-  opacity:.5;pointer-events:none;
-}
-/* チーム名: はみ出る場合は縮小 */
-.ov-tname{
-  font-weight:700;color:#fff;
-  white-space:nowrap;padding-right:0.5em;
-  flex-shrink:1;min-width:0;
-  /* JSで動的にフォントサイズを調整 */
-  font-size:90px;
-  overflow:hidden;
-}
-.ov-tspacer{flex:1}
-.ov-tscore{font-size:112px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
+/* Inn ctrl panel inside diamond area */
+.inn-ctrl-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 10px;flex-shrink:0}
+.inn-ctrl-panel .lbl{font-size:9px;color:#555;letter-spacing:1px;text-transform:uppercase}
+.inn-ctrl-panel .val{font-size:clamp(22px,7vw,40px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1;min-width:32px;text-align:center}
+.inn-ctrl-panel .pm-row{display:flex;gap:6px}
+.inn-ctrl-panel .pm-btn{background:#2a2a2a;border:1px solid #555;border-radius:8px;color:#fff;font-size:clamp(18px,6vw,28px);font-weight:700;width:clamp(36px,11vw,52px);height:clamp(36px,11vw,52px);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.inn-ctrl-panel .pm-btn:active{background:#555}
+.inn-ctrl-panel .topbot-row{display:flex;gap:4px;width:100%}
+.inn-ctrl-panel .tb-btn{flex:1;border-radius:7px;font-size:clamp(10px,3vw,13px);font-weight:700;padding:5px 4px;cursor:pointer;background:#222;color:#888;border:1px solid #333;white-space:nowrap}
+.inn-ctrl-panel .tb-btn.active{background:var(--red);color:#fff;border-color:var(--red)}
 
-/* BSO + DIAMOND */
-.ov-diamond{border-left:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:12px 24px;min-width:280px;gap:14px;}
-.bso-rows{display:flex;flex-direction:column;gap:18px}
-.bso-row{display:flex;gap:12px;align-items:center}
-.bso-lbl{font-size:26px;font-weight:700;color:rgba(255,255,255,.5);width:28px}
-.dot{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.1);border:4px solid rgba(255,255,255,.22)}
-.dot.on-b{background:var(--bgreen);border-color:#1b5e20}
-.dot.on-s{background:var(--gold);border-color:#b8860b}
-.dot.out{background:rgba(255,255,255,.07);border:4px solid rgba(255,255,255,.15)}
-.dot.out.on{background:var(--red);border-color:#7a0000}
-.bso-only{position:fixed;bottom:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:16px 20px;display:flex;flex-direction:column;gap:16px;}
-.diamond-only{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:16px;}
+/* Score panel */
+.sc-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center}
+.sc-bg.open{display:flex}
+.sc-sheet{background:rgba(28,28,30,.96);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px 16px 20px;display:flex;flex-direction:column;gap:10px;min-width:260px;max-width:360px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.sc-hdr{display:flex;align-items:center;justify-content:space-between}
+.sc-title{font-size:12px;font-weight:600;color:#888;letter-spacing:1px}
+.sc-close-btn{background:rgba(255,255,255,.12);border:none;color:#ccc;font-size:16px;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sc-cur-display{display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;font-size:clamp(40px,10vw,60px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.sc-cur-num,.sc-cur-x{color:#fff}
+.sc-cur-blank{color:#2a2a2a;font-size:clamp(24px,6vw,36px)}
+.sc-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sc-act{border:none;border-radius:12px;padding:14px 4px;font-size:clamp(22px,6vw,34px);font-weight:700;cursor:pointer;transition:transform .07s;line-height:1}
+.sc-act:active{transform:scale(.92)}
+.sc-act-minus,.sc-act-plus{background:rgba(60,60,65,.9);color:#fff}
+.sc-act-x{background:rgba(60,60,65,.9);color:#fff}
+.sc-act-x.x-active{background:rgba(200,16,46,.35);border:2px solid rgba(200,16,46,.6)}
+.sc-close-big{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#ccc;font-size:15px;font-weight:500;padding:12px;cursor:pointer;width:100%;text-align:center}
+.sc-close-big:active{background:rgba(255,255,255,.2)}
 
-/* PLAYERS */
-.ov-bottom{border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:stretch}
-.ov-batter{display:flex;align-items:center;gap:8px;padding:8px 14px;flex:2;border-right:1px solid rgba(255,255,255,.08)}
-.ov-pitcher{display:flex;align-items:center;gap:8px;padding:8px 14px;flex:2}
-.ov-ptag{font-size:14px;color:rgba(255,255,255,.3);letter-spacing:1.5px;white-space:nowrap;flex-shrink:0}
-.ov-pcol{display:flex;flex-direction:column;gap:3px;overflow:hidden;flex:1}
-.ov-pname{font-size:28px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ov-pnexts{display:flex;gap:10px;align-items:center}
-.ov-pntag{font-size:16px;color:rgba(255,255,255,.25)}
-.ov-pnnm{font-size:20px;color:rgba(255,255,255,.45);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.players-only{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;overflow:hidden;display:flex;}
+/* Drawer */
+.drawer{position:fixed;bottom:0;left:0;right:0;background:#1c1c1e;border-top:1px solid #333;border-radius:16px 16px 0 0;padding:14px 16px 28px;transform:translateY(100%);transition:transform .3s;z-index:200;max-height:82vh;overflow-y:auto}
+.drawer.open{transform:translateY(0)}
+.drawer-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.drawer-title{font-size:12px;font-weight:600;color:#888;letter-spacing:1px;text-transform:uppercase}
+.drawer-x{background:none;border:none;color:#888;font-size:20px;cursor:pointer}
+.dr-tabs{display:flex;background:#2c2c2e;border-radius:8px;padding:3px;gap:2px;margin-bottom:10px}
+.dr-tab{flex:1;padding:6px 0;border:none;border-radius:6px;font-size:12px;font-weight:600;background:transparent;color:#888;cursor:pointer}
+.dr-tab.act{background:#3a3a3c;color:#fff}
+.dr-sec{margin-bottom:14px}
+.dr-sec-t{font-size:10px;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.dr-row{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.dr-row label{font-size:11px;color:#888;min-width:54px}
+.dr-in{background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:13px;padding:6px 9px;flex:1;outline:none}
+.dr-btn{background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:12px;padding:6px 12px;cursor:pointer}
+.dr-btn.primary{background:#007aff;border-color:#007aff}
+.inn-ctrl-row{display:flex;align-items:center;gap:7px}
+.inn-ctrl-val{font-size:17px;font-weight:600;color:#fff;min-width:22px;text-align:center}
+.inn-ctrl-btn{background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:17px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.inn-ctrl-btn:active{background:#444}
+.dr-roster{display:flex;flex-direction:column;gap:4px;max-height:130px;overflow-y:auto;margin-bottom:6px}
+.dr-player{display:flex;align-items:center;gap:5px;background:#2c2c2e;border-radius:7px;padding:5px 7px}
+.drp-num{width:26px;font-size:10px;font-weight:700;color:#777;text-align:center;flex-shrink:0}
+.drp-name{flex:1;font-size:12px;color:#fff}
+.drp-pos{width:24px;font-size:10px;color:#555;text-align:center}
+.drp-del{background:none;border:none;color:#ff453a;font-size:13px;cursor:pointer;padding:0 3px;flex-shrink:0}
+.af-row{display:flex;gap:4px}
+.af-row input{background:#2c2c2e;border:1px solid #444;border-radius:7px;color:#fff;font-size:11px;padding:5px 7px;outline:none}
+.af-row input.f-num{width:40px}
+.af-row input.f-name{flex:1}
+.af-row input.f-pos{width:34px}
+.af-row button{background:#007aff;border:none;border-radius:7px;color:#fff;font-size:11px;padding:6px 9px;cursor:pointer}
+.ord-slot{margin-bottom:7px}
+.ord-lbl{font-size:10px;color:#555;margin-bottom:2px}
+.ord-sel{width:100%;font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid #444;background:#2c2c2e;color:#fff;outline:none;-webkit-appearance:none}
+.save-row{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
 
-/* INNSCORE TABLE */
-.ov-table-wrap{overflow:hidden;max-height:0;opacity:0;transition:max-height .55s cubic-bezier(.4,0,.2,1),opacity .4s ease;border-top:0px solid rgba(255,255,255,.08);}
-.ov-table-wrap.visible{max-height:80px;opacity:1;border-top:1px solid rgba(255,255,255,.08);}
-.ov-table{border-collapse:collapse;font-size:10px;width:100%;table-layout:auto}
-.ov-table th{background:rgba(255,255,255,.05);color:rgba(255,255,255,.35);font-size:9px;font-weight:500;text-align:center;padding:3px 4px;border-bottom:1px solid rgba(255,255,255,.07);white-space:nowrap}
-.ov-table th.tc{text-align:left;padding-left:10px}
-.ov-table td{text-align:center;padding:3px 4px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums;font-size:10px}
-.ov-table td.tc{text-align:left;padding-left:10px;font-weight:700;color:#fff;white-space:nowrap}
-.ov-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.07)}
-.ov-table td.cur{color:#fff;font-weight:700}
-.ov-table td.tot{font-weight:700;color:var(--gold);border-left:1px solid rgba(255,255,255,.1)}
-.td-x{color:rgba(255,90,90,.8);margin-left:2px}
-.innscore-only{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(8,12,24,.70);border:1px solid rgba(255,255,255,.1);border-radius:7px;overflow:hidden;}
-.innscore-only .ov-table{font-size:14px}
-.innscore-only .ov-table th{font-size:12px;padding:5px 6px}
-.innscore-only .ov-table td{padding:5px 6px;font-size:14px}
+/* ═══ PORTRAIT-SPECIFIC ════════════════════════════════════════════════════ */
+#layout-portrait .top-bar{flex-shrink:0;display:flex;align-items:center;background:#0a0a0a;border-bottom:1px solid #1a1a1a;padding:0}
+#layout-portrait .tb-brand{font-size:10px;color:#444;letter-spacing:.5px;padding:0 10px;white-space:nowrap}
+#layout-portrait .tb-gear{background:none;border:none;color:#666;font-size:18px;padding:0 10px;cursor:pointer;flex-shrink:0}
+#layout-portrait .mini-ov{transform:scale(.55);transform-origin:top left;width:calc(100% / .55)}
+#layout-portrait .sb-wrap{flex-shrink:0;background:#000;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid #222}
+#layout-portrait .sb-head th{font-size:clamp(13px,3.5vw,18px);padding:5px 2px;min-width:36px}
+#layout-portrait .sc-val{min-height:64px;font-size:clamp(16px,4.5vw,26px)}
+#layout-portrait .r-col{font-size:clamp(13px,3.8vw,20px);min-width:28px}
+#layout-portrait .top-score{flex-shrink:0;background:#000;padding:6px 10px 4px}
+#layout-portrait .team-score-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px}
+#layout-portrait .ts-team{display:flex;flex-direction:column;gap:2px;flex:1}
+#layout-portrait .ts-score-row{display:flex;align-items:center;gap:6px}
+#layout-portrait .ts-score{font-size:clamp(36px,12vw,72px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+#layout-portrait .ts-sep{font-size:clamp(18px,6vw,36px);font-weight:700;color:#444;line-height:1;padding:0 2px}
+#layout-portrait .ts-name-in{background:transparent;border:none;outline:none;color:#fff;font-size:clamp(18px,5vw,28px);font-weight:700;width:100%}
+#layout-portrait .bso-block{flex-shrink:0;background:#111;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+#layout-portrait .bso-line{gap:10px;padding:5px 0}
+#layout-portrait .bso-lbl{font-size:clamp(22px,7vw,38px);width:34px}
+#layout-portrait .bso-dots{gap:10px}
+#layout-portrait .bdot{width:clamp(44px,12vw,62px);height:clamp(44px,12vw,62px)}
+#layout-portrait .bso-rst-row{padding:4px 0}
+#layout-portrait .diamond-area{flex-shrink:0;display:flex;align-items:stretch}
+#layout-portrait .diamond-area svg{width:clamp(100px,30vw,180px)}
+#layout-portrait .bp-row{padding:6px 8px;gap:8px}
+#layout-portrait .bp-tag{margin-right:2px}
+#layout-portrait .bp-sel{font-size:clamp(12px,3.5vw,16px)}
+#layout-portrait .vis-bar-wrap{flex-shrink:0;background:#0a0a0a;border-bottom:1px solid #1a1a1a}
+
+/* ═══ LANDSCAPE-SPECIFIC ═══════════════════════════════════════════════════ */
+#layout-landscape .top-bar{grid-column:1/-1;display:flex;align-items:center;background:#0a0a0a;border-bottom:1px solid #1a1a1a;padding:0}
+#layout-landscape .tb-brand{font-size:10px;color:#444;letter-spacing:.5px;padding:0 10px;white-space:nowrap}
+#layout-landscape .tb-gear{background:none;border:none;color:#666;font-size:18px;padding:0 10px;cursor:pointer;flex-shrink:0}
+#layout-landscape .col-left{display:flex;flex-direction:column;border-right:1px solid #1a1a1a;overflow:hidden;min-height:0}
+#layout-landscape .col-mid{display:flex;flex-direction:column;border-right:1px solid #1a1a1a;overflow:hidden;min-height:0}
+#layout-landscape .col-right{display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#layout-landscape .mini-ov{transform:scale(.48);transform-origin:top left;width:calc(100% / .48)}
+#layout-landscape .sb-wrap{flex:1;background:#000;overflow:auto;-webkit-overflow-scrolling:touch;min-height:0}
+#layout-landscape .sb-head th{font-size:clamp(11px,1.8vw,15px);padding:4px 2px;min-width:28px}
+#layout-landscape .sc-val{min-height:52px;font-size:clamp(13px,2.5vw,20px)}
+#layout-landscape .r-col{font-size:clamp(11px,2vw,16px);min-width:22px}
+#layout-landscape .teams-header{flex-shrink:0;background:#000;display:flex;align-items:center;padding:5px 8px;gap:6px;border-bottom:1px solid #1a1a1a}
+#layout-landscape .th-team{display:flex;flex-direction:column;gap:2px;flex:1}
+#layout-landscape .th-score-row{display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0}
+#layout-landscape .th-score{font-size:clamp(24px,6vw,52px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+#layout-landscape .th-sep{font-size:clamp(12px,3vw,26px);font-weight:700;color:#444;line-height:1;padding:0 2px}
+#layout-landscape .th-name-in{background:transparent;border:none;outline:none;color:#fff;font-size:clamp(14px,3vw,22px);font-weight:700;width:100%}
+#layout-landscape .bso-block{flex-shrink:0;background:#111;padding:12px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+#layout-landscape .bso-line{gap:12px;padding:6px 0}
+#layout-landscape .bso-lbl{font-size:clamp(28px,7vw,52px);width:44px}
+#layout-landscape .bso-dots{gap:10px}
+#layout-landscape .bdot{width:clamp(52px,12vw,88px);height:clamp(52px,12vw,88px)}
+#layout-landscape .bso-rst-row{padding:2px 0}
+#layout-landscape .diamond-area{flex:1;border-bottom:none;display:flex;flex-direction:column;align-items:stretch}
+#layout-landscape .diamond-area svg{width:clamp(80px,18vw,150px)}
+#layout-landscape .ext-row{flex-shrink:0;display:flex;gap:5px;padding:5px 7px;background:#0a0a0a;border-bottom:1px solid #1a1a1a}
+#layout-landscape .ext-btn{flex:1;font-size:clamp(10px,2.2vw,13px);padding:7px 3px}
+#layout-landscape .bp-area{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#layout-landscape .bp-row{padding:5px 7px;gap:6px}
+#layout-landscape .bp-sel{font-size:clamp(11px,2.5vw,14px)}
 </style>
 </head>
 <body>
-<script>
-const params=new URLSearchParams(location.search);
-const mode=params.get('show')||'all';
 
-// hide パラメータ: カンマ区切りで非表示にする要素を指定
-// 例: ?hide=inning,teams,bso,diamond,score,clock,players
-const hideList=(params.get('hide')||'').split(',').map(s=>s.trim()).filter(Boolean);
-const hidden=new Set(hideList);
-// show パラメータで単一要素指定の場合も hide で制御
-// ?show=inning → イニングのみ → 他を全部hide相当
-const showOnly=params.get('show');
-// 位置パラメータ: ?pos=bottom-left(デフォルト), bottom-right, top-left, top-right, bottom, top
-const pos=params.get('pos')||'bottom-left';
+<!-- ═══════════════════════════════════════════ PORTRAIT LAYOUT -->
+<div id="layout-portrait">
 
-const SCORE_HTML=`
-  <div class="ov-top">
-    <div class="ov-inn">
-      <div class="ov-inn-arr-top" id="ov-arr-top">▲</div>
-      <div class="ov-inn-num" id="ov-inn">1</div>
-      <div class="ov-inn-arr-bot" id="ov-arr-bot">▼</div>
+  <div class="top-bar">
+    <span class="tb-brand">BASEBALL</span>
+    <div class="vis-bar" style="flex:1">
+      <button class="vis-btn on" id="p-vb-preview"  onclick="toggleVis('preview')">プレビュー</button>
+      <button class="vis-btn on" id="p-vb-score"    onclick="toggleVis('score')">スコア</button>
+      <button class="vis-btn on" id="p-vb-bso"      onclick="toggleVis('bso')">BSO</button>
+      <button class="vis-btn on" id="p-vb-diamond"  onclick="toggleVis('diamond')">ダイヤ</button>
+      <button class="vis-btn on" id="p-vb-batter"   onclick="toggleVis('batter')">打者</button>
+      <button class="vis-btn on" id="p-vb-pitcher"  onclick="toggleVis('pitcher')">投手</button>
+      <button class="vis-btn on" id="p-vb-ovScore"  onclick="toggleVis('ovScore')" style="border-color:#f5c518;color:#f5c518">イニング表</button>
     </div>
-    <div class="ov-teams">
-      <div class="ov-team"><div class="ov-team-logo" id="ov-logo-away"></div><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
-      <div class="ov-team"><div class="ov-team-logo" id="ov-logo-home"></div><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
-    </div>
-  </div>`;
+    <button class="tb-gear" onclick="openDrawer()">⚙</button>
+  </div>
 
-const BSO_HTML=`
-  <div class="bso-rows">
-    <div class="bso-row"><span class="bso-lbl">B</span><div class="dot" id="ov-bd1"></div><div class="dot" id="ov-bd2"></div><div class="dot" id="ov-bd3"></div></div>
-    <div class="bso-row"><span class="bso-lbl">S</span><div class="dot" id="ov-sd1"></div><div class="dot" id="ov-sd2"></div></div>
-    <div class="bso-row"><span class="bso-lbl">O</span><div class="dot out" id="ov-od1"></div><div class="dot out" id="ov-od2"></div></div>
-  </div>`;
-
-const DIAMOND_SVG=`
-  <svg width="220" height="200" viewBox="-4 -4 54 46">
-    <rect x="17" y="1" width="10" height="10" transform="rotate(45 22 6)" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.25)" stroke-width="1.2" id="ov-b2"/>
-    <rect x="1" y="14" width="10" height="10" transform="rotate(45 6 19)" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.25)" stroke-width="1.2" id="ov-b3"/>
-    <rect x="33" y="14" width="10" height="10" transform="rotate(45 38 19)" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.25)" stroke-width="1.2" id="ov-b1"/>
-  </svg>`;
-
-const PLAYERS_HTML=`
-  <div class="ov-batter">
-    <span class="ov-ptag">打</span>
-    <div class="ov-pcol">
-      <div class="ov-pname" id="ov-batter">-</div>
-      <div class="ov-pnexts"><span class="ov-pntag">次</span><span class="ov-pnnm" id="ov-bnext">-</span><span class="ov-pntag">次々</span><span class="ov-pnnm" id="ov-bnext2">-</span></div>
+  <!-- mini preview -->
+  <div class="mini-prev-wrap" id="p-sec-preview">
+    <div class="mini-prev-label">OUTPUT PREVIEW</div>
+    <div style="overflow:hidden;height:clamp(90px,22vw,150px);position:relative">
+      <div class="mini-ov" id="p-mini-ov">
+        <div class="mini-ov-top">
+          <div class="mi-inn"><div class="mi-inn-tb" id="p-mi-tb">表</div><div class="mi-inn-num" id="p-mi-inn">1</div><div class="mi-inn-arr" id="p-mi-arr">▲</div></div>
+          <div class="mi-teams">
+            <div class="mi-team"><div class="mi-tname" id="p-mi-aname">先攻</div><div class="mi-tscore" id="p-mi-ascore">0</div></div>
+            <div class="mi-team"><div class="mi-tname" id="p-mi-hname">後攻</div><div class="mi-tscore" id="p-mi-hscore">0</div></div>
+          </div>
+          <div class="mi-diamond-block">
+            <svg width="40" height="32" viewBox="0 0 46 36"><rect x="17" y="1" width="9" height="9" transform="rotate(45 21.5 5.5)" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.28)" stroke-width="1.2" id="p-mi-b2"/><rect x="1" y="13" width="9" height="9" transform="rotate(45 5.5 17.5)" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.28)" stroke-width="1.2" id="p-mi-b3"/><rect x="33" y="13" width="9" height="9" transform="rotate(45 37.5 17.5)" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.28)" stroke-width="1.2" id="p-mi-b1"/></svg>
+            <div>
+              <div class="mi-bso-row"><span class="mi-lbl">B</span><div class="mi-dot" id="p-mi-bd1"></div><div class="mi-dot" id="p-mi-bd2"></div><div class="mi-dot" id="p-mi-bd3"></div></div>
+              <div class="mi-bso-row"><span class="mi-lbl">S</span><div class="mi-dot" id="p-mi-sd1"></div><div class="mi-dot" id="p-mi-sd2"></div></div>
+              <div class="mi-bso-row"><span class="mi-lbl">O</span><div class="mi-dot out" id="p-mi-od1"></div><div class="mi-dot out" id="p-mi-od2"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mi-bottom"><div class="mi-bp"><span class="mi-tag">打</span><span class="mi-val" id="p-mi-batter">-</span></div><div class="mi-bp"><span class="mi-tag">投</span><span class="mi-val" id="p-mi-pitcher">-</span></div></div>
+        <div class="mi-table-wrap" id="p-mi-table-wrap"><table class="mi-table"><thead><tr><th class="tc">チーム</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>計</th></tr></thead><tbody id="p-mi-tbody"></tbody></table></div>
+      </div>
     </div>
   </div>
-  <div style="display:flex;flex-direction:column;flex:2;border-left:1px solid rgba(255,255,255,.08)">
-    <div class="ov-pitcher" style="border-bottom:1px solid rgba(255,255,255,.06)"><span class="ov-ptag">投</span><div class="ov-pname" id="ov-pitcher">-</div></div>
-    <div class="ov-pitcher"><span class="ov-ptag">捕</span><div class="ov-pname" id="ov-catcher">-</div></div>
-  </div>`;
 
-const TABLE_HTML=`<div class="ov-table-wrap" id="ov-table-wrap"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div>`;
+  <!-- team names + big score (プレビューの直下) -->
+  <div class="top-score">
+    <div class="team-score-row">
+      <div class="ts-team">
+        <div class="ts-ind-wrap" onclick="tapIndicator('away')"><div class="ts-ind active" id="p-away-ind"></div></div>
+        <input class="ts-name-in" id="tn-away" value="先攻" oninput="broadcast();renderTable()">
+      </div>
+      <div class="ts-score-row">
+        <div class="ts-score" id="p-r-away-big">0</div>
+        <div class="ts-sep">ー</div>
+        <div class="ts-score" id="p-r-home-big">0</div>
+      </div>
+      <div class="ts-team" style="align-items:flex-end">
+        <div class="ts-ind-wrap" onclick="tapIndicator('home')" style="justify-content:flex-end"><div class="ts-ind" id="p-home-ind"></div></div>
+        <input class="ts-name-in" id="tn-home" value="後攻" oninput="broadcast();renderTable()" style="text-align:right">
+      </div>
+    </div>
+  </div>
 
-function posStyle(){
-  const map={
-    'bottom-left':'bottom:20px;left:20px;right:20px;',
-    'bottom-right':'bottom:20px;right:20px;left:auto;width:calc(50% - 40px);',
-    'top-left':'top:20px;left:20px;right:20px;bottom:auto;',
-    'top-right':'top:20px;right:20px;left:auto;width:calc(50% - 40px);bottom:auto;',
-    'bottom':'bottom:20px;left:20px;right:20px;',
-    'top':'top:20px;left:20px;right:20px;bottom:auto;',
+  <!-- scoreboard (チーム名の下) -->
+  <div class="sb-wrap" id="p-sec-score">
+    <table class="sb-table"><thead><tr class="sb-head" id="p-head-row"><th style="width:14px"></th></tr></thead><tbody><tr class="sb-row" id="p-away-row"><td style="width:14px"></td></tr><tr class="sb-row" id="p-home-row"><td style="width:14px"></td></tr></tbody></table>
+  </div>
+
+  <!-- Diamond 上 + BSO 下 (縦並び) -->
+  <div style="flex-shrink:0;display:flex;flex-direction:column;background:#111;border-bottom:1px solid #1a1a1a">
+    <div class="diamond-area" id="p-sec-diamond" style="border-bottom:1px solid #1a1a1a">
+      <!-- 左列: ダイヤモンド + RST -->
+      <div class="diamond-col">
+        <svg viewBox="-10 -10 120 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="32" y="0" width="36" height="36" transform="rotate(45 50 18)" fill="#2a2a2a" stroke="#555" stroke-width="2" id="p-sv-b2"/>
+          <rect x="-2" y="32" width="36" height="36" transform="rotate(45 16 50)" fill="#2a2a2a" stroke="#555" stroke-width="2" id="p-sv-b3"/>
+          <rect x="66" y="32" width="36" height="36" transform="rotate(45 84 50)" fill="#2a2a2a" stroke="#555" stroke-width="2" id="p-sv-b1"/>
+          <rect x="14" y="-10" width="72" height="48" fill="transparent" onclick="toggleR(2)" style="cursor:pointer"/>
+          <rect x="-10" y="14" width="48" height="72" fill="transparent" onclick="toggleR(3)" style="cursor:pointer"/>
+          <rect x="62" y="14" width="48" height="72" fill="transparent" onclick="toggleR(1)" style="cursor:pointer"/>
+        </svg>
+        <button class="diamond-rst" onclick="resetDiamond()">RST</button>
+      </div>
+      <!-- 中央列: 加点・減点 -->
+      <div class="diamond-col" style="border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a">
+        <button class="home-btn" onclick="addRunToCurrentTeam()"><span class="home-btn-label">＋</span></button>
+        <button class="score-minus-btn" onclick="removeRunFromCurrentTeam()">－点</button>
+      </div>
+      <!-- 右列: イニング調整 -->
+      <div class="diamond-col">
+        <span class="lbl" style="font-size:9px;color:#555;letter-spacing:1px;text-transform:uppercase">イニング</span>
+        <div style="font-size:clamp(22px,7vw,40px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1" id="p-inn-disp">1</div>
+        <div style="display:flex;gap:6px">
+          <button class="inn-ctrl-panel pm-btn" onclick="adjInn(-1)" style="width:clamp(32px,10vw,48px);height:clamp(32px,10vw,48px);background:#2a2a2a;border:1px solid #555;border-radius:8px;color:#fff;font-size:clamp(16px,5vw,24px);font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer">－</button>
+          <button class="inn-ctrl-panel pm-btn" onclick="adjInn(1)" style="width:clamp(32px,10vw,48px);height:clamp(32px,10vw,48px);background:#2a2a2a;border:1px solid #555;border-radius:8px;color:#fff;font-size:clamp(16px,5vw,24px);font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer">＋</button>
+        </div>
+        <div style="display:flex;gap:4px;width:100%">
+          <button id="p-tb-top" onclick="setTop(true)" style="flex:1;border-radius:7px;font-size:clamp(10px,3vw,13px);font-weight:700;padding:5px 2px;cursor:pointer;background:var(--red);color:#fff;border:1px solid var(--red);white-space:nowrap">表▲</button>
+          <button id="p-tb-bot" onclick="setTop(false)" style="flex:1;border-radius:7px;font-size:clamp(10px,3vw,13px);font-weight:700;padding:5px 2px;cursor:pointer;background:#222;color:#888;border:1px solid #333;white-space:nowrap">ウラ▼</button>
+        </div>
+      </div>
+    </div>
+    <div class="bso-block" id="p-sec-bso">
+      <div class="bso-line" onclick="bsoClick('b')" ontouchstart="bsoLongPressStart('b',this)" ontouchend="bsoLongPressEnd()" ontouchcancel="bsoLongPressEnd()" onmousedown="bsoLongPressStart('b',this)" onmouseup="bsoLongPressEnd()" onmouseleave="bsoLongPressEnd()"><span class="bso-lbl">B</span><div class="bso-dots"><div class="bdot" id="p-bd1"></div><div class="bdot" id="p-bd2"></div><div class="bdot" id="p-bd3"></div></div><button class="c-btn" onclick="event.stopPropagation();adjBSO('b',-1)">C</button></div>
+      <div class="bso-line" onclick="bsoClick('s')" ontouchstart="bsoLongPressStart('s',this)" ontouchend="bsoLongPressEnd()" ontouchcancel="bsoLongPressEnd()" onmousedown="bsoLongPressStart('s',this)" onmouseup="bsoLongPressEnd()" onmouseleave="bsoLongPressEnd()"><span class="bso-lbl">S</span><div class="bso-dots"><div class="bdot" id="p-sd1"></div><div class="bdot" id="p-sd2"></div></div><button class="c-btn" onclick="event.stopPropagation();adjBSO('s',-1)">C</button></div>
+      <div class="bso-line" onclick="bsoClick('o')" ontouchstart="bsoLongPressStart('o',this)" ontouchend="bsoLongPressEnd()" ontouchcancel="bsoLongPressEnd()" onmousedown="bsoLongPressStart('o',this)" onmouseup="bsoLongPressEnd()" onmouseleave="bsoLongPressEnd()"><span class="bso-lbl">O</span><div class="bso-dots"><div class="bdot out" id="p-od1"></div><div class="bdot out" id="p-od2"></div></div><button class="c-btn" onclick="event.stopPropagation();adjBSO('o',-1)">C</button></div>
+      <div class="bso-rst-row"><button class="bso-rst" onclick="resetBSO()">全RST</button></div>
+    </div>
+  </div>
+
+  <div class="bp-row" id="p-sec-batter"><span class="bp-tag">打</span><div class="bp-col"><select class="bp-sel" id="p-bat-sel" onchange="setCursorFromSel()"><option value="">-- 打者 --</option></select><div class="bp-nexts"><span class="bp-ntag">次</span><span class="bp-nnm" id="p-bp-next">-</span><span class="bp-ntag">次々</span><span class="bp-nnm" id="p-bp-next2">-</span></div></div></div>
+  <div class="bp-row" id="p-sec-pitcher"><span class="bp-tag">投</span><select class="bp-sel" id="p-pit-sel" onchange="broadcast()"><option value="">-- 投手 --</option></select></div>
+  <div class="bp-row" id="p-sec-catcher"><span class="bp-tag">捕</span><select class="bp-sel" id="p-cat-sel" onchange="broadcast()"><option value="">-- 捕手 --</option></select></div>
+
+</div><!-- /portrait -->
+
+<!-- ═══════════════════════════════════════════ LANDSCAPE LAYOUT -->
+<div id="layout-landscape">
+
+  <div class="top-bar">
+    <span class="tb-brand">BASEBALL</span>
+    <div class="vis-bar" style="flex:1">
+      <button class="vis-btn on" id="l-vb-preview"  onclick="toggleVis('preview')">プレビュー</button>
+      <button class="vis-btn on" id="l-vb-score"    onclick="toggleVis('score')">スコア</button>
+      <button class="vis-btn on" id="l-vb-bso"      onclick="toggleVis('bso')">BSO</button>
+      <button class="vis-btn on" id="l-vb-diamond"  onclick="toggleVis('diamond')">ダイヤ</button>
+      <button class="vis-btn on" id="l-vb-batter"   onclick="toggleVis('batter')">打者</button>
+      <button class="vis-btn on" id="l-vb-pitcher"  onclick="toggleVis('pitcher')">投手</button>
+      <button class="vis-btn on" id="l-vb-ovScore"  onclick="toggleVis('ovScore')" style="border-color:#f5c518;color:#f5c518">イニング表</button>
+    </div>
+    <button class="tb-gear" onclick="openDrawer()">⚙</button>
+  </div>
+
+  <!-- COL LEFT -->
+  <div class="col-left">
+    <div class="mini-prev-wrap" id="l-sec-preview">
+      <div class="mini-prev-label">OUTPUT PREVIEW</div>
+      <div style="overflow:hidden;height:clamp(70px,16vh,120px);position:relative">
+        <div class="mini-ov" id="l-mini-ov">
+          <div class="mini-ov-top">
+            <div class="mi-inn"><div class="mi-inn-tb" id="l-mi-tb">表</div><div class="mi-inn-num" id="l-mi-inn">1</div><div class="mi-inn-arr" id="l-mi-arr">▲</div></div>
+            <div class="mi-teams"><div class="mi-team"><div class="mi-tname" id="l-mi-aname">先攻</div><div class="mi-tscore" id="l-mi-ascore">0</div></div><div class="mi-team"><div class="mi-tname" id="l-mi-hname">後攻</div><div class="mi-tscore" id="l-mi-hscore">0</div></div></div>
+            <div class="mi-diamond-block">
+              <svg width="40" height="32" viewBox="0 0 46 36"><rect x="17" y="1" width="9" height="9" transform="rotate(45 21.5 5.5)" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.28)" stroke-width="1.2" id="l-mi-b2"/><rect x="1" y="13" width="9" height="9" transform="rotate(45 5.5 17.5)" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.28)" stroke-width="1.2" id="l-mi-b3"/><rect x="33" y="13" width="9" height="9" transform="rotate(45 37.5 17.5)" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.28)" stroke-width="1.2" id="l-mi-b1"/></svg>
+              <div><div class="mi-bso-row"><span class="mi-lbl">B</span><div class="mi-dot" id="l-mi-bd1"></div><div class="mi-dot" id="l-mi-bd2"></div><div class="mi-dot" id="l-mi-bd3"></div></div><div class="mi-bso-row"><span class="mi-lbl">S</span><div class="mi-dot" id="l-mi-sd1"></div><div class="mi-dot" id="l-mi-sd2"></div></div><div class="mi-bso-row"><span class="mi-lbl">O</span><div class="mi-dot out" id="l-mi-od1"></div><div class="mi-dot out" id="l-mi-od2"></div></div></div>
+            </div>
+          </div>
+          <div class="mi-bottom"><div class="mi-bp"><span class="mi-tag">打</span><span class="mi-val" id="l-mi-batter">-</span></div><div class="mi-bp"><span class="mi-tag">投</span><span class="mi-val" id="l-mi-pitcher">-</span></div></div>
+          <div class="mi-table-wrap" id="l-mi-table-wrap"><table class="mi-table"><thead><tr><th class="tc">チーム</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>計</th></tr></thead><tbody id="l-mi-tbody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <div class="sb-wrap" id="l-sec-score">
+      <table class="sb-table"><thead><tr class="sb-head" id="l-head-row"><th style="width:10px"></th></tr></thead><tbody><tr class="sb-row" id="l-away-row"><td style="width:10px"></td></tr><tr class="sb-row" id="l-home-row"><td style="width:10px"></td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- COL MID -->
+  <div class="col-mid">
+    <div class="teams-header">
+      <div class="th-team">
+        <div class="ts-ind-wrap" onclick="tapIndicator('away')" style="padding:10px 0 6px"><div class="ts-ind active" id="l-away-ind"></div></div>
+        <input class="th-name-in" id="l-tn-away" value="先攻" oninput="syncTeamName('away')">
+      </div>
+      <div class="th-score-row">
+        <div class="th-score" id="l-r-away-big">0</div>
+        <div class="th-sep">ー</div>
+        <div class="th-score" id="l-r-home-big">0</div>
+      </div>
+      <div class="th-team" style="align-items:flex-end">
+        <div class="ts-ind-wrap" onclick="tapIndicator('home')" style="justify-content:flex-end;padding:10px 0 6px"><div class="ts-ind" id="l-home-ind"></div></div>
+        <input class="th-name-in" id="l-tn-home" value="後攻" oninput="syncTeamName('home')" style="text-align:right">
+      </div>
+    </div>
+    <div class="bso-block" id="l-sec-bso" style="border-bottom:1px solid #1a1a1a">
+      <div class="bso-line" onclick="bsoClick('b')" ontouchstart="bsoLongPressStart('b',this)" ontouchend="bsoLongPressEnd()" ontouchcancel="bsoLongPressEnd()" onmousedown="bsoLongPressStart('b',this)" onmouseup="bsoLongPressEnd()" onmouseleave="bsoLongPressEnd()"><span class="bso-lbl">B</span><div class="bso-dots"><div class="bdot" id="l-bd1"></div><div class="bdot" id="l-bd2"></div><div class="bdot" id="l-bd3"></div></div><button class="c-btn" onclick="event.stopPropagation();adjBSO('b',-1)">C</button></div>
+      <div class="bso-line" onclick="bsoClick('s')" ontouchstart="bsoLongPressStart('s',this)" ontouchend="bsoLongPressEnd()" ontouchcancel="bsoLongPressEnd()" onmousedown="bsoLongPressStart('s',this)" onmouseup="bsoLongPressEnd()" onmouseleave="bsoLongPressEnd()"><span class="bso-lbl">S</span><div class="bso-dots"><div class="bdot" id="l-sd1"></div><div class="bdot" id="l-sd2"></div></div><button class="c-btn" onclick="event.stopPropagation();adjBSO('s',-1)">C</button></div>
+      <div class="bso-line" onclick="bsoClick('o')" ontouchstart="bsoLongPressStart('o',this)" ontouchend="bsoLongPressEnd()" ontouchcancel="bsoLongPressEnd()" onmousedown="bsoLongPressStart('o',this)" onmouseup="bsoLongPressEnd()" onmouseleave="bsoLongPressEnd()"><span class="bso-lbl">O</span><div class="bso-dots"><div class="bdot out" id="l-od1"></div><div class="bdot out" id="l-od2"></div></div><button class="c-btn" onclick="event.stopPropagation();adjBSO('o',-1)">C</button></div>
+      <div class="bso-rst-row"><button class="bso-rst" onclick="resetBSO()">全RST</button></div>
+    </div>
+  </div>
+
+  <!-- COL RIGHT: Diamond縦3等分 + 打者/投手横2等分 -->
+  <div class="col-right">
+    <div class="diamond-area" id="l-sec-diamond" style="flex-direction:column">
+      <!-- 上段: ダイヤモンド + RST -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;gap:4px;border-bottom:1px solid #1a1a1a">
+        <svg viewBox="-10 -10 120 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="32" y="0" width="36" height="36" transform="rotate(45 50 18)" fill="#2a2a2a" stroke="#555" stroke-width="2" id="l-sv-b2"/>
+          <rect x="-2" y="32" width="36" height="36" transform="rotate(45 16 50)" fill="#2a2a2a" stroke="#555" stroke-width="2" id="l-sv-b3"/>
+          <rect x="66" y="32" width="36" height="36" transform="rotate(45 84 50)" fill="#2a2a2a" stroke="#555" stroke-width="2" id="l-sv-b1"/>
+          <rect x="14" y="-10" width="72" height="48" fill="transparent" onclick="toggleR(2)" style="cursor:pointer"/>
+          <rect x="-10" y="14" width="48" height="72" fill="transparent" onclick="toggleR(3)" style="cursor:pointer"/>
+          <rect x="62" y="14" width="48" height="72" fill="transparent" onclick="toggleR(1)" style="cursor:pointer"/>
+        </svg>
+        <button class="diamond-rst" onclick="resetDiamond()">RST</button>
+      </div>
+      <!-- 中段: 加点・減点 -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 8px;border-bottom:1px solid #1a1a1a">
+        <button class="home-btn" onclick="addRunToCurrentTeam()"><span class="home-btn-label">＋</span></button>
+        <button class="score-minus-btn" onclick="removeRunFromCurrentTeam()">－点</button>
+      </div>
+      <!-- 下段: イニング調整 -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 8px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:8px;color:#555;letter-spacing:1px;text-transform:uppercase">イニング</span>
+          <div style="font-size:clamp(18px,4vw,30px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1" id="l-inn-disp">1</div>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button onclick="adjInn(-1)" style="width:clamp(28px,6vw,42px);height:clamp(28px,6vw,42px);background:#2a2a2a;border:1px solid #555;border-radius:8px;color:#fff;font-size:clamp(14px,3.5vw,20px);font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer">－</button>
+          <button onclick="adjInn(1)"  style="width:clamp(28px,6vw,42px);height:clamp(28px,6vw,42px);background:#2a2a2a;border:1px solid #555;border-radius:8px;color:#fff;font-size:clamp(14px,3.5vw,20px);font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer">＋</button>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button id="l-tb-top" onclick="setTop(true)" style="border-radius:7px;font-size:clamp(9px,2vw,12px);font-weight:700;padding:5px 6px;cursor:pointer;background:var(--red);color:#fff;border:1px solid var(--red);white-space:nowrap">表▲</button>
+          <button id="l-tb-bot" onclick="setTop(false)" style="border-radius:7px;font-size:clamp(9px,2vw,12px);font-weight:700;padding:5px 6px;cursor:pointer;background:#222;color:#888;border:1px solid #333;white-space:nowrap">ウラ▼</button>
+        </div>
+      </div>
+    </div>
+    <!-- 打者・投手: 横2等分 -->
+    <div style="display:flex;flex-shrink:0;border-top:1px solid #1a1a1a">
+      <div class="bp-row" id="l-sec-batter" style="flex:1;border-right:1px solid #1a1a1a">
+        <span class="bp-tag">打</span>
+        <div class="bp-col">
+          <select class="bp-sel" id="l-bat-sel" onchange="setCursorFromSel()"><option value="">-- 打者 --</option></select>
+          <div class="bp-nexts"><span class="bp-ntag">次</span><span class="bp-nnm" id="l-bp-next">-</span><span class="bp-ntag">次々</span><span class="bp-nnm" id="l-bp-next2">-</span></div>
+        </div>
+      </div>
+      <div class="bp-row" id="l-sec-pitcher" style="flex:1">
+        <span class="bp-tag">投</span>
+        <select class="bp-sel" id="l-pit-sel" onchange="broadcast()"><option value="">-- 投手 --</option></select>
+      </div>
+      <div class="bp-row" id="l-sec-catcher" style="flex:1;border-left:1px solid #1a1a1a">
+        <span class="bp-tag">捕</span>
+        <select class="bp-sel" id="l-cat-sel" onchange="broadcast()"><option value="">-- 捕手 --</option></select>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /landscape -->
+
+<!-- SCORE INPUT PANEL -->
+<div class="sc-bg" id="sc-bg" onclick="closeSCPanel(event)">
+  <div class="sc-sheet" onclick="event.stopPropagation()">
+    <div class="sc-hdr"><span class="sc-title" id="sc-title">スコア入力</span><button class="sc-close-btn" onclick="closeSCPanel()">✕</button></div>
+    <div class="sc-cur-display" id="sc-cur-display">－</div>
+    <div class="sc-actions">
+      <button class="sc-act sc-act-minus" onclick="scAdjust(-1)">－</button>
+      <button class="sc-act sc-act-plus"  onclick="scAdjust(+1)">＋</button>
+      <button class="sc-act sc-act-x" id="sc-x-btn" onclick="scToggleX()">×</button>
+    </div>
+    <button class="sc-close-big" onclick="closeSCPanel()">閉じる</button>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="drawer-hdr"><span class="drawer-title">設定</span><button class="drawer-x" onclick="closeDrawer()">✕</button></div>
+  <div class="dr-tabs"><button class="dr-tab act" onclick="switchDTab('game')">試合</button><button class="dr-tab" onclick="switchDTab('roster')">選手登録</button><button class="dr-tab" onclick="switchDTab('order')">打順</button></div>
+  <div id="dtab-game">
+    <div class="dr-sec"><div class="dr-sec-t">チーム名（保存）</div><div class="dr-row"><label>先攻</label><input class="dr-in" id="dr-away" placeholder="先攻チーム名"></div><div class="dr-row"><label>後攻</label><input class="dr-in" id="dr-home" placeholder="後攻チーム名"></div><div class="save-row"><button class="dr-btn" onclick="loadTeamNames()">元に戻す</button><button class="dr-btn primary" onclick="saveTeamNames()">保存して適用</button></div></div>
+    <div class="dr-sec"><div class="dr-sec-t">イニング数</div><div class="inn-ctrl-row"><button class="inn-ctrl-btn" onclick="adjMaxInn(-1)">－</button><div class="inn-ctrl-val" id="max-inn-disp">7</div><button class="inn-ctrl-btn" onclick="adjMaxInn(1)">＋</button><span style="font-size:11px;color:#666;margin-left:6px">回</span><button class="dr-btn" onclick="addExtraInning();closeDrawer();" style="margin-left:auto;background:var(--red);border-color:var(--red);color:#fff">延長＋1</button></div></div>
+    <div class="dr-sec"><div class="dr-sec-t">チームロゴ</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:5px">先攻ロゴ</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="logo-preview-away" style="width:48px;height:48px;border-radius:6px;background:#222;border:1px solid #444;background-size:contain;background-repeat:no-repeat;background-position:center;flex-shrink:0"></div>
+            <label style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#ccc;font-size:12px;padding:8px 12px;cursor:pointer;text-align:center;display:block">画像を選択<input type="file" accept="image/*" style="display:none" onchange="uploadLogo('away',this)"></label>
+            <button onclick="clearLogo('away')" style="background:#1a1a1a;border:1px solid #444;border-radius:7px;color:#666;font-size:11px;padding:7px 10px;cursor:pointer;flex-shrink:0">削除</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:5px">後攻ロゴ</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="logo-preview-home" style="width:48px;height:48px;border-radius:6px;background:#222;border:1px solid #444;background-size:contain;background-repeat:no-repeat;background-position:center;flex-shrink:0"></div>
+            <label style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#ccc;font-size:12px;padding:8px 12px;cursor:pointer;text-align:center;display:block">画像を選択<input type="file" accept="image/*" style="display:none" onchange="uploadLogo('home',this)"></label>
+            <button onclick="clearLogo('home')" style="background:#1a1a1a;border:1px solid #444;border-radius:7px;color:#666;font-size:11px;padding:7px 10px;cursor:pointer;flex-shrink:0">削除</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:5px">全体背景画像（透過25%）</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="logo-preview-bg" style="width:48px;height:48px;border-radius:6px;background:#222;border:1px solid #444;background-size:cover;background-repeat:no-repeat;background-position:center;flex-shrink:0"></div>
+            <label style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#ccc;font-size:12px;padding:8px 12px;cursor:pointer;text-align:center;display:block">画像を選択<input type="file" accept="image/*" style="display:none" onchange="uploadLogo('bg',this)"></label>
+            <button onclick="clearLogo('bg')" style="background:#1a1a1a;border:1px solid #444;border-radius:7px;color:#666;font-size:11px;padding:7px 10px;cursor:pointer;flex-shrink:0">削除</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:5px">時計エリアロゴ</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="logo-preview-clock" style="width:48px;height:48px;border-radius:6px;background:#222;border:1px solid #444;background-size:contain;background-repeat:no-repeat;background-position:center;flex-shrink:0"></div>
+            <label style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#ccc;font-size:12px;padding:8px 12px;cursor:pointer;text-align:center;display:block">画像を選択<input type="file" accept="image/*" style="display:none" onchange="uploadLogo('clock',this)"></label>
+            <button onclick="clearLogo('clock')" style="background:#1a1a1a;border:1px solid #444;border-radius:7px;color:#666;font-size:11px;padding:7px 10px;cursor:pointer;flex-shrink:0">削除</button>
+          </div>
+        </div>
+        <p style="font-size:10px;color:#444;line-height:1.5">画像はこのデバイスに保存されます。overlay.html で表示されます。</p>
+      </div>
+    </div>
+      <div id="rst-step1"><button class="dr-btn" onclick="document.getElementById('rst-step1').style.display='none';document.getElementById('rst-step2').style.display='block'" style="width:100%;background:#7a0000;border-color:#c8102e;color:#fff;font-size:13px;padding:10px">全得点リセット（スコアを全消去）</button></div>
+      <div id="rst-step2" style="display:none"><p style="font-size:12px;color:#ff453a;margin-bottom:8px">本当にリセットしますか？この操作は戻せません。</p><div style="display:flex;gap:6px"><button class="dr-btn" onclick="document.getElementById('rst-step1').style.display='block';document.getElementById('rst-step2').style.display='none'" style="flex:1">キャンセル</button><button class="dr-btn" onclick="resetAllScores()" style="flex:1;background:#c8102e;border-color:#c8102e;color:#fff">リセット実行</button></div></div>
+    </div>
+    <div class="dr-sec"><div class="dr-sec-t">現在イニング</div><div class="inn-ctrl-row"><button class="inn-ctrl-btn" onclick="adjInn(-1)">－</button><div class="inn-ctrl-val" id="cur-inn-disp">1</div><button class="inn-ctrl-btn" onclick="adjInn(1)">＋</button></div></div>
+  </div>
+  <div id="dtab-roster" style="display:none">
+    <div class="dr-sec"><div class="dr-sec-t">先攻</div><div class="dr-roster" id="dr-roster-away"></div><div class="af-row"><input class="f-num" type="number" id="af-a-num" placeholder="#"><input class="f-name" type="text" id="af-a-name" placeholder="選手名"><input class="f-pos" type="text" id="af-a-pos" placeholder="守備"><button onclick="addPlayer('away')">追加</button></div></div>
+    <div class="dr-sec"><div class="dr-sec-t">後攻</div><div class="dr-roster" id="dr-roster-home"></div><div class="af-row"><input class="f-num" type="number" id="af-h-num" placeholder="#"><input class="f-name" type="text" id="af-h-name" placeholder="選手名"><input class="f-pos" type="text" id="af-h-pos" placeholder="守備"><button onclick="addPlayer('home')">追加</button></div></div>
+  </div>
+  <div id="dtab-order" style="display:none">
+    <div class="dr-sec"><div class="dr-sec-t">先攻 打順</div><div id="dr-order-away"></div></div>
+    <div class="dr-sec"><div class="dr-sec-t">後攻 打順</div><div id="dr-order-home"></div></div>
+    <div class="dr-sec"><div class="dr-sec-t">現在打席</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div class="inn-ctrl-row"><span style="font-size:11px;color:#888;width:46px">先攻</span><button class="inn-ctrl-btn" onclick="adjCursor('away',-1)">‹</button><div class="inn-ctrl-val" id="cur-a-disp">1</div><button class="inn-ctrl-btn" onclick="adjCursor('away',1)">›</button><span style="font-size:11px;color:#666;flex:1;margin-left:6px" id="cur-a-name">-</span></div>
+        <div class="inn-ctrl-row"><span style="font-size:11px;color:#888;width:46px">後攻</span><button class="inn-ctrl-btn" onclick="adjCursor('home',-1)">‹</button><div class="inn-ctrl-val" id="cur-h-disp">1</div><button class="inn-ctrl-btn" onclick="adjCursor('home',1)">›</button><span style="font-size:11px;color:#666;flex:1;margin-left:6px" id="cur-h-name">-</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="backdrop" onclick="closeDrawer()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const st={inn:1,top:true,b:0,s:0,o:0,r:{1:false,2:false,3:false},maxInn:7};
+const scores={away:Array(16).fill(null),home:Array(16).fill(null)};
+const xOn={};
+const rosters={away:[],home:[]};
+const orders={away:Array(9).fill(null),home:Array(9).fill(null)};
+const cursors={away:0,home:0};
+let dtab='game';
+const visState={score:true,bso:true,diamond:true,batter:true,pitcher:true,preview:false,ovScore:true};
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+const wsUrl='wss://'+location.host;
+let ws=null;
+let _isSending=false; // 自分が送信中は受信を無視
+function connectWS(){
+  ws=new WebSocket(wsUrl);
+  ws.onopen=()=>{
+    const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');
+    if(d)d.className='ws-dot on';if(l)l.textContent='接続中';
   };
-  return map[pos]||map['bottom-left'];
+  ws.onclose=()=>{
+    const d=document.getElementById('ws-dot');const l=document.getElementById('ws-lbl');
+    if(d)d.className='ws-dot';if(l)l.textContent='切断';
+    setTimeout(connectWS,2000);
+  };
+  ws.onerror=()=>ws.close();
+  // 他のコントローラーからの受信で状態を同期
+  ws.onmessage=e=>{
+    if(_isSending)return;
+    const handle=t=>{
+      try{
+        const s=JSON.parse(t);
+        applyRemoteState(s);
+      }catch(err){}
+    };
+    if(e.data instanceof Blob)e.data.text().then(handle);else handle(e.data);
+  };
 }
+connectWS();
 
-function h(key){return hidden.has(key);}
-
-function buildDOM(){
-  const b=document.body;
-
-  // ?show= 単一モード（従来互換）
-  if(mode==='clock'){b.innerHTML=`<div class="clock-only" id="ov-clock">00:00:00</div>`;return;}
-  if(mode==='bso'){b.innerHTML=`<div class="bso-only">${BSO_HTML}</div>`;return;}
-  if(mode==='diamond'){b.innerHTML=`<div class="diamond-only">${DIAMOND_SVG}</div>`;return;}
-  if(mode==='players'){b.innerHTML=`<div class="players-only">${PLAYERS_HTML}</div>`;return;}
-  if(mode==='score'){
-    b.innerHTML=`<div class="ov" style="${posStyle()}">
-      <div class="ov-bg-img" id="ov-bg-img"></div>
-      <div class="ov-clock" id="ov-clock">00:00:00<div class="ov-clock-logo" id="ov-clock-logo"></div></div>
-      <div class="ov-top">
-        <div class="ov-inn">
-          <div class="ov-inn-arr-top" id="ov-arr-top">▲</div>
-          <div class="ov-inn-num" id="ov-inn">1</div>
-          <div class="ov-inn-arr-bot" id="ov-arr-bot">▼</div>
-        </div>
-        <div class="ov-teams">
-          <div class="ov-team"><div class="ov-team-logo" id="ov-logo-away"></div><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
-          <div class="ov-team"><div class="ov-team-logo" id="ov-logo-home"></div><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
-        </div>
-        <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
-      </div>
-    </div>`;
-    return;
-  }
-        <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
-      </div>
-    </div>`;
-    return;
-  }
-  if(mode==='innscore'){b.innerHTML=`<div class="innscore-only"><div class="ov-table-wrap visible"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div></div>`;return;}
-
-  // all モード + hide パラメータで個別制御
-  const clockPart  = h('clock')   ? '' : `<div class="ov-clock" id="ov-clock">00:00:00<div class="ov-clock-logo" id="ov-clock-logo"></div></div>`;
-  const innPart    = h('inning')  ? '' : `
-    <div class="ov-inn">
-      <div class="ov-inn-arr-top" id="ov-arr-top">▲</div>
-      <div class="ov-inn-num" id="ov-inn">1</div>
-      <div class="ov-inn-arr-bot" id="ov-arr-bot">▼</div>
-    </div>`;
-  const teamsPart  = h('teams')   ? '' : `
-    <div class="ov-teams">
-      <div class="ov-team"><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
-      <div class="ov-team"><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
-    </div>`;
-  const bsoPart    = h('bso')     ? '' : `<div class="bso-rows">
-    <div class="bso-row"><span class="bso-lbl">B</span><div class="dot" id="ov-bd1"></div><div class="dot" id="ov-bd2"></div><div class="dot" id="ov-bd3"></div></div>
-    <div class="bso-row"><span class="bso-lbl">S</span><div class="dot" id="ov-sd1"></div><div class="dot" id="ov-sd2"></div></div>
-    <div class="bso-row"><span class="bso-lbl">O</span><div class="dot out" id="ov-od1"></div><div class="dot out" id="ov-od2"></div></div>
-  </div>`;
-  const diamondPart= h('diamond') ? '' : DIAMOND_SVG;
-  const bsoDiamondPart = (h('bso')&&h('diamond')) ? '' : `
-    <div class="ov-diamond">${diamondPart}${bsoPart}</div>`;
-  const topRow = (!innPart&&!teamsPart&&!bsoDiamondPart) ? '' : `
-    <div class="ov-top">${innPart}${teamsPart}${bsoDiamondPart}</div>`;
-  const playersPart= h('players') ? '' : `<div class="ov-bottom">${PLAYERS_HTML}</div>`;
-  const tablePart  = `<div class="ov-table-wrap" id="ov-table-wrap"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div>`;
-
-  b.innerHTML=`<div class="ov" style="${posStyle()}"><div class="ov-bg-img" id="ov-bg-img"></div>${clockPart}${topRow}${playersPart}${tablePart}</div>`;
-}
-
-function g(id){return document.getElementById(id);}
-function set(id,v){const e=g(id);if(e)e.textContent=v;}
-
-function applyState(s){
+// 他のコントローラーから受信した状態をUIに反映
+function applyRemoteState(s){
   if(!s)return;
-  const inn=s.inn||1;const isTop=s.top!==false;
-  const n=Math.max(s.maxInn||7,inn);
-  const asc=s.asc||[];const hsc=s.hsc||[];const xOn=s.xOn||{};
-  function tsum(sc){let v=0;for(let i=0;i<n;i++){const x=sc[i];if(typeof x==='number')v+=x;}return v;}
-  const at=tsum(asc),ht=tsum(hsc);
+  // 基本状態を上書き
+  st.inn=s.inn||st.inn;
+  st.top=s.top!==undefined?s.top:st.top;
+  st.b=s.b||0;st.s=s.s||0;st.o=s.o||0;
+  st.r=s.r||{1:false,2:false,3:false};
+  st.maxInn=s.maxInn||st.maxInn;
+  // スコア
+  if(s.asc)s.asc.forEach((v,i)=>{if(i<16)scores.away[i]=v;});
+  if(s.hsc)s.hsc.forEach((v,i)=>{if(i<16)scores.home[i]=v;});
+  if(s.xOn)Object.assign(xOn,s.xOn);
+  // チーム名
+  if(s.aab){['tn-away','l-tn-away'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=s.aab;});}
+  if(s.hnm){['tn-home','l-tn-home'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=s.hnm;});}
+  // UI更新
+  renderTable();renderBSO();updateTopInd();renderSelects();
+}
 
-  set('ov-inn',inn);
-  const at2=g('ov-arr-top');const ab=g('ov-arr-bot');
-  if(at2)at2.className='ov-inn-arr-top'+(isTop?'':' inactive');
-  if(ab)ab.className='ov-inn-arr-bot'+(isTop?' inactive':'');
-  set('ov-aname',s.aab||'先攻');set('ov-hname',s.hnm||'後攻');
-  set('ov-ascore',at);set('ov-hscore',ht);
-  // チーム名を枠に合わせて縮小
-  requestAnimationFrame(fitTeamNames);
+// ── ORIENTATION HELPERS ───────────────────────────────────────────────────────
+function isLandscape(){return window.matchMedia('(orientation:landscape)').matches;}
 
-  for(let i=0;i<3;i++){const d=g('ov-bd'+(i+1));if(d)d.className='dot'+(i<(s.b||0)?' on-b':'');}
-  for(let i=0;i<2;i++){
-    const sd=g('ov-sd'+(i+1));if(sd)sd.className='dot'+(i<(s.s||0)?' on-s':'');
-    const od=g('ov-od'+(i+1));if(od)od.className='dot out'+(i<(s.o||0)?' on':'');
+// Get element preferring current orientation's prefix
+function el(id){return document.getElementById(isLandscape()?'l-'+id:'p-'+id)||document.getElementById(id);}
+function v(id){return el(id)?.value||'';}
+
+// Sync team name between portrait and landscape inputs
+function syncTeamName(team){
+  const pid=team==='away'?'p-tn-away':'p-tn-home';
+  const lid=team==='away'?'l-tn-away':'l-tn-home';
+  const pEl=document.getElementById(pid),lEl=document.getElementById(lid);
+  if(document.activeElement===pEl&&lEl)lEl.value=pEl.value;
+  if(document.activeElement===lEl&&pEl)pEl.value=lEl.value;
+  broadcast();
+}
+
+// ── BROADCAST ─────────────────────────────────────────────────────────────────
+function broadcast(){
+  const aab=document.getElementById('tn-away')?.value||document.getElementById('l-tn-away')?.value||'先攻';
+  const hnm=document.getElementById('tn-home')?.value||document.getElementById('l-tn-home')?.value||'後攻';
+  const asc=[...scores.away],hsc=[...scores.home],axOn={...xOn};
+  const battingTeam=st.top?'away':'home';
+  const cur=cursors[battingTeam];const ord=orders[battingTeam];
+  const fmt=p=>p?`#${p.num} ${p.name}`:null;
+  const pSel=el('pit-sel');const pitTxt=pSel&&pSel.selectedIndex>0?pSel.options[pSel.selectedIndex].text:null;
+  const cSel=el('cat-sel');const catTxt=cSel&&cSel.selectedIndex>0?cSel.options[cSel.selectedIndex].text:null;
+  const payload=JSON.stringify({...st,aab,hnm,asc,hsc,xOn:axOn,batter:fmt(ord[cur%9]),batterNext:fmt(ord[(cur+1)%9]),batterNext2:fmt(ord[(cur+2)%9]),pitcher:pitTxt,catcher:catTxt,maxInn:st.maxInn,vis:visState});
+  if(ws&&ws.readyState===1){
+    _isSending=true;
+    ws.send(payload);
+    setTimeout(()=>_isSending=false,100);
   }
-  [1,2,3].forEach(n2=>{
-    const el=g('ov-b'+n2);const r=s.r&&s.r[n2];
-    if(el){el.style.fill=r?'#f5c518':'rgba(255,255,255,.08)';el.style.stroke=r?'#b8860b':'rgba(255,255,255,.25)';}
-  });
+  renderPreview(aab,hnm,asc,hsc,axOn,fmt(ord[cur%9]),pitTxt,catTxt);
+}
 
-  set('ov-batter',s.batter||'-');set('ov-bnext',s.batterNext||'-');
-  set('ov-bnext2',s.batterNext2||'-');set('ov-pitcher',s.pitcher||'-');
-  set('ov-catcher',s.catcher||'-');
-
-  const thead=g('ov-thead');
-  if(thead){let th=`<tr><th class="tc">チーム</th>`;for(let i=1;i<=n;i++)th+=`<th>${i}</th>`;th+='<th>計</th></tr>';thead.innerHTML=th;}
-  const tbody=g('ov-tbody');
-  if(tbody){
+function renderPreview(aab,hnm,asc,hsc,xO,batter,pitcher,catcher){
+  const prefixes=['p-','l-'];
+  prefixes.forEach(pfx=>{
+    const g=id=>document.getElementById(pfx+id);
+    if(!g('mi-inn'))return;
+    g('mi-inn').textContent=st.inn;g('mi-tb').textContent=st.top?'表':'裏';g('mi-arr').textContent=st.top?'▲':'▼';
+    g('mi-aname').textContent=aab||'先攻';g('mi-hname').textContent=hnm||'後攻';
+    const at=(asc||[]).filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
+    const ht=(hsc||[]).filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
+    g('mi-ascore').textContent=at;g('mi-hscore').textContent=ht;
+    for(let i=0;i<3;i++){const d=g('mi-bd'+(i+1));if(d)d.className='mi-dot'+(i<st.b?' on-b':'');}
+    for(let i=0;i<2;i++){const s=g('mi-sd'+(i+1));if(s)s.className='mi-dot'+(i<st.s?' on-s':'');const o=g('mi-od'+(i+1));if(o)o.className='mi-dot out'+(i<st.o?' on':'');}
+    [1,2,3].forEach(n=>{const e=g('mi-b'+n);if(e){e.style.fill=st.r[n]?'#f5c518':'rgba(255,255,255,.1)';e.style.stroke=st.r[n]?'#b8860b':'rgba(255,255,255,.28)';}});
+    if(g('mi-batter'))g('mi-batter').textContent=batter||'-';
+    if(g('mi-pitcher'))g('mi-pitcher').textContent=pitcher||'-';
     let html='';
-    [[s.aab||'先攻',asc,at,'away'],[s.hnm||'後攻',hsc,ht,'home']].forEach(([nm,sc,tot,team])=>{
+    [[aab||'先攻',asc||[],at,'away'],[hnm||'後攻',hsc||[],ht,'home']].forEach(([nm,sc,tot,team])=>{
       html+=`<tr><td class="tc">${nm}</td>`;
-      for(let i=0;i<n;i++){const val=sc[i];const isCur=(i+1)===inn;const xFlag=xOn[`${team}-${i}`];const cell=val===null||val===undefined?'<span style="color:#1a1a1a">－</span>':val==='x'?'<span style="color:#555">×</span>':`${val}${xFlag?'<span class="td-x">×</span>':''}`;html+=`<td class="${isCur?'cur':''}">${cell}</td>`;}
+      for(let i=0;i<9;i++){const val=sc[i];const xf=(xO||{})[`${team}-${i}`];const cell=val===null||val===undefined?'':val==='x'?'×':`${val}${xf?'×':''}`;html+=`<td class="${(i+1)===st.inn?'cur':''}">${cell}</td>`;}
       html+=`<td class="tot">${tot}</td></tr>`;
     });
-    tbody.innerHTML=html;
+    if(g('mi-tbody'))g('mi-tbody').innerHTML=html;
+  });
+}
+
+// ── TEAM NAMES ────────────────────────────────────────────────────────────────
+function loadTeamNames(){
+  try{
+    const a=localStorage.getItem('bb_away');const h=localStorage.getItem('bb_home');
+    if(a){['tn-away','l-tn-away'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=a;});document.getElementById('dr-away').value=a;}
+    if(h){['tn-home','l-tn-home'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=h;});document.getElementById('dr-home').value=h;}
+  }catch(e){}
+}
+function saveTeamNames(){
+  const a=document.getElementById('dr-away').value.trim()||'先攻';
+  const h=document.getElementById('dr-home').value.trim()||'後攻';
+  ['tn-away','l-tn-away'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=a;});
+  ['tn-home','l-tn-home'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=h;});
+  try{localStorage.setItem('bb_away',a);localStorage.setItem('bb_home',h);}catch(e){}
+  broadcast();renderTable();
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+function renderTable(){
+  const n=Math.max(st.maxInn,st.inn);
+  ['p-','l-'].forEach(pfx=>{
+    const hr=document.getElementById(pfx+'head-row');if(!hr)return;
+    hr.innerHTML=`<th style="width:12px"></th>`;
+    for(let i=1;i<=n;i++)hr.innerHTML+=`<th class="${i===st.inn?'cur-inn':''}" onclick="setCurrentInn(${i})" style="min-width:28px">${i}</th>`;
+    hr.innerHTML+=`<th style="min-width:22px">R</th>`;
+    buildSBRow(pfx+'away-row',pfx,'away',n);
+    buildSBRow(pfx+'home-row',pfx,'home',n);
+  });
+  renderR();updateTopInd();
+}
+function buildSBRow(rowId,pfx,team,n){
+  const row=document.getElementById(rowId);if(!row)return;
+  while(row.cells.length>1)row.deleteCell(1);
+  // 先頭セルに頭文字
+  const nameEl=document.getElementById(team==='away'?'tn-away':'l-tn-away') ||
+               document.getElementById(team==='away'?'tn-away':'tn-home');
+  const teamName=(team==='away'
+    ?(document.getElementById('tn-away')?.value||document.getElementById('l-tn-away')?.value||'先')
+    :(document.getElementById('tn-home')?.value||document.getElementById('l-tn-home')?.value||'後'));
+  const initial=teamName.charAt(0)||'ー';
+  row.cells[0].innerHTML=`<span style="font-size:clamp(9px,2.5vw,13px);color:#888;font-weight:700;padding:0 2px">${initial}</span>`;
+  row.cells[0].style.textAlign='center';
+  for(let i=0;i<n;i++){const td=row.insertCell();td.id=pfx+`sc-${team}-${i}`;td.onclick=()=>openSCPanel(team,i);refreshCell(td,team,i);}
+  const rtd=row.insertCell();rtd.className='r-col';rtd.id=pfx+`r-${team}`;
+}
+function refreshCell(td,team,idx){
+  const val=scores[team][idx];const isCur=idx+1===st.inn;
+  let cls='inn-cell';if(isCur){cls+=' cur';cls+=st.top?' top-turn':' bot-turn';}
+  td.className=cls;
+  const xFlag=xOn[`${team}-${idx}`]||false;
+  let h='';
+  if(val===null)h=`<div class="sc-val is-blank">－</div>`;
+  else if(val==='x')h=`<div class="sc-val is-x">×</div>`;
+  else{const xp=xFlag?`<span class="sc-val-x">×</span>`:'';h=`<div class="sc-val"><span class="sc-val-num">${val}</span>${xp}</div>`;}
+  td.innerHTML=h;
+}
+function refreshAllCells(team,idx){
+  ['p-','l-'].forEach(pfx=>{const td=document.getElementById(pfx+`sc-${team}-${idx}`);if(td)refreshCell(td,team,idx);});
+}
+function renderR(){
+  const n=Math.max(st.maxInn,st.inn);
+  function ts(t){let v=0,any=false;for(let i=0;i<n;i++){const s=scores[t][i];if(typeof s==='number'){v+=s;any=true;}else if(s==='x')any=true;}return{v,any};}
+  const a=ts('away'),h=ts('home');
+  ['p-','l-'].forEach(pfx=>{
+    const ra=document.getElementById(pfx+'r-away'),rh=document.getElementById(pfx+'r-home');
+    if(ra){ra.textContent=a.any?a.v:'';ra.className='r-col';}
+    if(rh){rh.textContent=h.any?h.v:'';rh.className='r-col';}
+    const rab=document.getElementById(pfx+'r-away-big'),rhb=document.getElementById(pfx+'r-home-big');
+    if(rab)rab.textContent=a.any?a.v:0;if(rhb)rhb.textContent=h.any?h.v:0;
+  });
+}
+function setCurrentInn(n){st.inn=n;renderTable();broadcast();}
+function updateTopInd(){
+  ['p-','l-'].forEach(pfx=>{
+    const ai=document.getElementById(pfx+'away-ind');const hi=document.getElementById(pfx+'home-ind');
+    if(ai)ai.className='ts-ind'+(st.top?' active':'');
+    if(hi)hi.className='ts-ind'+((!st.top)?' active':'');
+    // インラインスタイルで色を直接更新
+    const tt=document.getElementById(pfx+'tb-top');const tb=document.getElementById(pfx+'tb-bot');
+    if(tt){tt.style.background=st.top?'var(--red)':'#222';tt.style.color=st.top?'#fff':'#888';tt.style.borderColor=st.top?'var(--red)':'#333';}
+    if(tb){tb.style.background=!st.top?'var(--red)':'#222';tb.style.color=!st.top?'#fff':'#888';tb.style.borderColor=!st.top?'var(--red)':'#333';}
+    const id=document.getElementById(pfx+'inn-disp');if(id)id.textContent=st.inn;
+  });
+  ['away','home'].forEach(t=>{refreshAllCells(t,st.inn-1);});
+}
+
+// ── INN ───────────────────────────────────────────────────────────────────────
+function adjInn(d){
+  const n=Math.max(st.maxInn,st.inn);st.inn=Math.max(1,Math.min(n+1,st.inn+d));
+  if(st.inn>st.maxInn)st.maxInn=st.inn;
+  const e=document.getElementById('cur-inn-disp');if(e)e.textContent=st.inn;
+  renderTable();updateTopInd();broadcast();
+}
+function setTop(v){st.top=v;updateTopInd();renderSelects();broadcast();}
+function adjMaxInn(d){st.maxInn=Math.max(3,Math.min(15,st.maxInn+d));const e=document.getElementById('max-inn-disp');if(e)e.textContent=st.maxInn;renderTable();broadcast();}
+function addExtraInning(){adjMaxInn(1);}
+function tapIndicator(team){const newTop=team==='away';if(st.top!==newTop)setTop(newTop);}
+
+// ── BSO ───────────────────────────────────────────────────────────────────────
+const BSO_MAX={b:4,s:3,o:3};
+function adjBSO(k,d){
+  const prev=st[k];st[k]=Math.max(0,Math.min(BSO_MAX[k],st[k]+d));if(st[k]===prev)return;
+  if(d>0){
+    if(k==='b'&&st.b>=4){advanceRunnersWithScore(true);st.b=0;st.s=0;}
+    if(k==='s'&&st.s>=3){st.o=Math.min(3,st.o+1);st.b=0;st.s=0;if(st.o>=3){doNextInn();return;}}
+    if(k==='o'&&st.o>=3){doNextInn();return;}
   }
-  if(mode==='all'){const tw=g('ov-table-wrap');if(tw)tw.className='ov-table-wrap'+(s.vis&&s.vis.ovScore?' visible':'');}
+  renderBSO();broadcast();
 }
 
-function updateClock(){
-  const now=new Date();
-  const t=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  const e=g('ov-clock');if(e)e.textContent=t;
+// 長押しリセット
+let _lpTimer=null;
+let _lpFired=false;
+function bsoLongPressStart(k,el){
+  _lpFired=false;
+  _lpTimer=setTimeout(()=>{
+    _lpTimer=null;
+    _lpFired=true;
+    st[k]=0;
+    el.style.background='rgba(255,255,255,.08)';
+    setTimeout(()=>el.style.background='',300);
+    renderBSO();broadcast();
+  },600);
+}
+function bsoLongPressEnd(){
+  if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}
+}
+// clickイベントで長押し後の誤発火を防ぐ
+function bsoClick(k){
+  if(_lpFired){_lpFired=false;return;}
+  adjBSO(k,1);
+}
+function resetBSO(){st.b=0;st.s=0;st.o=0;renderBSO();broadcast();}
+function resetDiamond(){st.r={1:false,2:false,3:false};renderDiamond();broadcast();}
+function resetAllScores(){
+  scores.away=Array(16).fill(null);
+  scores.home=Array(16).fill(null);
+  for(const k in xOn)delete xOn[k];
+  // UIリセット
+  const s1=document.getElementById('rst-step1');const s2=document.getElementById('rst-step2');
+  if(s1)s1.style.display='block';if(s2)s2.style.display='none';
+  renderTable();renderR();broadcast();
+}
+function doNextInn(){
+  const idx=st.inn-1;const bt=st.top?'away':'home';
+  if(scores[bt][idx]===null){scores[bt][idx]=0;refreshAllCells(bt,idx);}
+  renderR();st.b=0;st.s=0;st.o=0;st.r={1:false,2:false,3:false};
+  if(st.top)st.top=false;else{st.inn=Math.min(15,st.inn+1);if(st.inn>st.maxInn)st.maxInn=st.inn;st.top=true;}
+  renderTable();renderBSO();renderSelects();broadcast();
+  const e=document.getElementById('cur-inn-disp');if(e)e.textContent=st.inn;
+}
+function advanceRunnersWithScore(addScore=true){
+  let score=false;
+  if(!st.r[1])st.r[1]=true;
+  else if(!st.r[2]){st.r[2]=true;st.r[1]=true;}
+  else if(!st.r[3]){st.r[3]=true;st.r[2]=true;st.r[1]=true;}
+  else{st.r[3]=true;st.r[2]=true;st.r[1]=true;score=true;}
+  if(addScore&&score)addRunToCurrentTeam();
+}
+function tapHomePlate(){
+  ['p-sv-home','l-sv-home'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.fill='#fff';setTimeout(()=>e.style.fill='#888',200);}});
+  addRunToCurrentTeam();renderDiamond();
+}
+function addRunToCurrentTeam(){
+  const team=st.top?'away':'home';const idx=st.inn-1;
+  if(scores[team][idx]===null||scores[team][idx]==='x')scores[team][idx]=1;
+  else if(typeof scores[team][idx]==='number')scores[team][idx]+=1;
+  refreshAllCells(team,idx);renderR();broadcast();
+}
+function removeRunFromCurrentTeam(){
+  const team=st.top?'away':'home';const idx=st.inn-1;
+  if(typeof scores[team][idx]==='number'&&scores[team][idx]>0){
+    scores[team][idx]-=1;
+    if(scores[team][idx]===0)scores[team][idx]=0;
+  } else if(scores[team][idx]===1){
+    scores[team][idx]=0;
+  }
+  refreshAllCells(team,idx);renderR();broadcast();
+}
+function toggleR(n){st.r[n]=!st.r[n];renderDiamond();broadcast();}
+function renderBSO(){
+  ['p-','l-'].forEach(pfx=>{
+    for(let i=0;i<3;i++){const d=document.getElementById(pfx+'bd'+(i+1));if(d)d.className='bdot'+(i<st.b?' on-b':'');}
+    for(let i=0;i<2;i++){const s=document.getElementById(pfx+'sd'+(i+1));if(s)s.className='bdot'+(i<st.s?' on-s':'');const o=document.getElementById(pfx+'od'+(i+1));if(o)o.className='bdot out'+(i<st.o?' on':'');}
+  });
+  renderDiamond();
+}
+function renderDiamond(){
+  ['p-','l-'].forEach(pfx=>{[1,2,3].forEach(n=>{const e=document.getElementById(pfx+'sv-b'+n);if(e){e.style.fill=st.r[n]?'var(--gold)':'#2a2a2a';e.style.stroke=st.r[n]?'#b8860b':'#555';}});});
 }
 
-let ws=null;
-function connectWS(){
-  ws=new WebSocket('wss://'+location.host);
-  ws.onmessage=e=>{const h=t=>{try{applyState(JSON.parse(t));}catch(err){}};if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);};
-  ws.onclose=()=>setTimeout(connectWS,2000);
-  ws.onerror=()=>ws.close();
+// ── SCORE PANEL ───────────────────────────────────────────────────────────────
+let sc_team=null,sc_idx=null;
+function openSCPanel(team,idx){
+  sc_team=team;sc_idx=idx;
+  const tName=team==='away'?(document.getElementById('tn-away')?.value||document.getElementById('l-tn-away')?.value):(document.getElementById('tn-home')?.value||document.getElementById('l-tn-home')?.value);
+  document.getElementById('sc-title').textContent=`${tName||team} ${idx+1}回`;
+  refreshSCDisplay();document.getElementById('sc-bg').className='sc-bg open';
+}
+function closeSCPanel(e){
+  if(e&&e.target&&e.target!==document.getElementById('sc-bg'))return;
+  document.getElementById('sc-bg').className='sc-bg';sc_team=null;sc_idx=null;
+}
+function refreshSCDisplay(){
+  const team=sc_team,idx=sc_idx;if(!team)return;
+  const val=scores[team][idx];const key=`${team}-${idx}`;const xFlag=xOn[key]||false;
+  const disp=document.getElementById('sc-cur-display');const xBtn=document.getElementById('sc-x-btn');
+  if(val===null){disp.innerHTML='<span class="sc-cur-blank">－</span>';xBtn.className='sc-act sc-act-x';}
+  else if(val==='x'){disp.innerHTML='<span class="sc-cur-x">×</span>';xBtn.className='sc-act sc-act-x x-active';}
+  else{const xp=xFlag?`<span class="sc-cur-x">×</span>`:'';disp.innerHTML=`<span class="sc-cur-num">${val}</span>${xp}`;xBtn.className='sc-act sc-act-x'+(xFlag?' x-active':'');}
+}
+function scAdjust(d){
+  const team=sc_team,idx=sc_idx;if(!team)return;
+  const cur=scores[team][idx];
+  if(cur===null||cur==='x'){if(d>0)scores[team][idx]=0;}
+  else if(cur===0&&d<0){scores[team][idx]=null;xOn[`${team}-${idx}`]=false;}
+  else scores[team][idx]=Math.max(0,Math.min(99,cur+d));
+  refreshAllCells(team,idx);renderR();refreshSCDisplay();broadcast();
+}
+function scToggleX(){
+  const team=sc_team,idx=sc_idx;if(!team)return;
+  const cur=scores[team][idx];const key=`${team}-${idx}`;
+  if(typeof cur==='number')xOn[key]=!xOn[key];
+  else if(cur==='x'){scores[team][idx]=null;xOn[key]=false;}
+  else{scores[team][idx]='x';xOn[key]=false;}
+  refreshAllCells(team,idx);renderR();refreshSCDisplay();broadcast();
 }
 
-buildDOM();
-window.addEventListener('resize',()=>requestAnimationFrame(fitTeamNames));
-
-// チーム名フォントを枠に合わせて自動縮小
-function fitTeamNames(){
-  ['ov-aname','ov-hname'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el)return;
-    const parent=el.parentElement;
-    if(!parent)return;
-    // スコア幅を除いた利用可能幅を計算
-    const score=parent.querySelector('.ov-tscore');
-    const scoreW=score?score.offsetWidth:0;
-    const available=parent.offsetWidth-scoreW-20; // 20px余白
-    if(available<=0)return;
-    // フォントサイズをリセット
-    el.style.fontSize='90px';
-    // はみ出ていたら縮小
-    let fs=90;
-    while(el.scrollWidth>available&&fs>14){
-      fs-=2;
-      el.style.fontSize=fs+'px';
+// ── VISIBILITY ────────────────────────────────────────────────────────────────
+const visSecMap={
+  score:['p-sec-score','l-sec-score'],bso:['p-sec-bso','l-sec-bso'],
+  diamond:['p-sec-diamond','l-sec-diamond'],
+  batter:['p-sec-batter','l-sec-batter'],
+  pitcher:['p-sec-pitcher','l-sec-pitcher'],
+  preview:['p-sec-preview','l-sec-preview']
+  // ovScore: overlay専用フラグ — DOMセクションなし、broadcast+previewで反映
+};
+function toggleVis(key){
+  visState[key]=!visState[key];
+  // ovScore はコントローラーのDOMセクションを持たない（overlay側のみ）
+  if(key!=='ovScore'){
+    (visSecMap[key]||[]).forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=visState[key]?'':'none';});
+  }
+  // ボタン状態更新
+  ['p-vb-','l-vb-'].forEach(pfx=>{
+    const btn=document.getElementById(pfx+key);
+    if(!btn)return;
+    if(key==='ovScore'){
+      // gold border/text when ON, dim when OFF
+      btn.className='vis-btn'+(visState[key]?' on':'');
+      btn.style.borderColor=visState[key]?'#f5c518':'';
+      btn.style.color=visState[key]?'#f5c518':'';
+    } else {
+      btn.className='vis-btn'+(visState[key]?' on':'');
     }
   });
-}
-// LocalStorageからロゴを読み込んで表示
-function loadLogos(){
-  // チームロゴ
-  ['away','home'].forEach(t=>{
-    const data=localStorage.getItem('bb_logo_'+t);
-    const el=document.getElementById('ov-logo-'+t);
-    if(el&&data)el.style.backgroundImage=`url(${data})`;
+  // ミニプレビューのスコアテーブルを ovScore に連動
+  ['p-','l-'].forEach(pfx=>{
+    const wrap=document.getElementById(pfx+'mi-table-wrap');
+    if(wrap)wrap.style.display=visState.ovScore?'':'none';
   });
-  // 全体背景画像
-  const bgData=localStorage.getItem('bb_logo_bg');
-  const bgEl=document.getElementById('ov-bg-img');
-  if(bgEl&&bgData)bgEl.style.backgroundImage=`url(${bgData})`;
-  // 時計ロゴ
-  const clkData=localStorage.getItem('bb_logo_clock');
-  const clkEl=document.getElementById('ov-clock-logo');
-  if(clkEl&&clkData)clkEl.style.backgroundImage=`url(${clkData})`;
+  broadcast();
 }
-loadLogos();
 
-// ロゴアップロードUI（?show=logosetup のときだけ表示）
-if(mode==='logosetup'){
-  document.body.innerHTML=`
-  <div style="position:fixed;inset:0;background:#111;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-family:sans-serif;padding:20px">
-    <h2 style="font-size:20px;color:#f5c518">チームロゴ設定</h2>
-    <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px">
-      <label style="font-size:13px;color:#aaa">先攻チーム画像</label>
-      <input type="file" accept="image/*" onchange="uploadLogo('away',this)" style="color:#fff">
-      <div id="preview-away" style="height:80px;background:rgba(255,255,255,.05);border-radius:8px;background-size:contain;background-repeat:no-repeat;background-position:center"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px">
-      <label style="font-size:13px;color:#aaa">後攻チーム画像</label>
-      <input type="file" accept="image/*" onchange="uploadLogo('home',this)" style="color:#fff">
-      <div id="preview-home" style="height:80px;background:rgba(255,255,255,.05);border-radius:8px;background-size:contain;background-repeat:no-repeat;background-position:center"></div>
-    </div>
-    <p style="font-size:11px;color:#555;text-align:center">画像はこのデバイスに保存されます。<br>overlay.html?show=score で表示されます。</p>
-  </div>`;
-}
+// ── LOGO ─────────────────────────────────────────────────────────────────────
 function uploadLogo(team,input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    try{localStorage.setItem('bb_logo_'+team,e.target.result);}catch(err){alert('画像が大きすぎます。小さい画像を使ってください。');}
-    const prev=document.getElementById('preview-'+team);
-    if(prev)prev.style.backgroundImage=`url(${e.target.result})`;
+    try{
+      localStorage.setItem('bb_logo_'+team,e.target.result);
+      const prev=document.getElementById('logo-preview-'+team);
+      if(prev)prev.style.backgroundImage=`url(${e.target.result})`;
+    }catch(err){alert('画像が大きすぎます。小さい画像を使ってください。');}
   };
   reader.readAsDataURL(file);
 }
-updateClock();
-setInterval(updateClock,1000);
-connectWS();
+function clearLogo(team){
+  localStorage.removeItem('bb_logo_'+team);
+  const prev=document.getElementById('logo-preview-'+team);
+  if(prev)prev.style.backgroundImage='';
+}
+function loadLogoPreview(){
+  ['away','home','bg','clock'].forEach(t=>{
+    const data=localStorage.getItem('bb_logo_'+t);
+    const prev=document.getElementById('logo-preview-'+t);
+    if(prev)prev.style.backgroundImage=data?`url(${data})`:'';
+  });
+}
+function addPlayer(t){
+  const k=t==='away'?'a':'h';
+  const num=document.getElementById('af-'+k+'-num').value.trim();
+  const name=document.getElementById('af-'+k+'-name').value.trim();
+  const pos=document.getElementById('af-'+k+'-pos').value.trim();
+  if(!name)return;
+  rosters[t].push({num,name,pos,id:Date.now()});
+  ['num','name','pos'].forEach(f=>document.getElementById('af-'+k+'-'+f).value='');
+  renderRoster();renderDrOrders();renderSelects();
+}
+function deletePlayer(t,id){
+  rosters[t]=rosters[t].filter(p=>p.id!==id);orders[t]=orders[t].map(p=>p&&p.id===id?null:p);
+  renderRoster();renderDrOrders();renderSelects();broadcast();
+}
+function renderRoster(){
+  ['away','home'].forEach(t=>{
+    const e=document.getElementById('dr-roster-'+t);if(!e)return;
+    e.innerHTML=rosters[t].length?rosters[t].map(p=>`<div class="dr-player"><div class="drp-num">${p.num?'#'+p.num:'-'}</div><div class="drp-name">${p.name}</div><div class="drp-pos">${p.pos||''}</div><button class="drp-del" onclick="deletePlayer('${t}',${p.id})">×</button></div>`).join(''):'<div style="font-size:11px;color:#444;padding:4px">選手なし</div>';
+  });
+}
+function renderDrOrders(){
+  ['away','home'].forEach(t=>{
+    const c=document.getElementById('dr-order-'+t);if(!c)return;
+    c.innerHTML=Array.from({length:9},(_,i)=>{
+      const s=orders[t][i];const o='<option value="">-- 未設定 --</option>'+rosters[t].map(p=>`<option value="${p.id}"${s&&s.id===p.id?' selected':''}>#${p.num} ${p.name}</option>`).join('');
+      return `<div class="ord-slot"><div class="ord-lbl">${i+1}番</div><select class="ord-sel" onchange="setOrder('${t}',${i},this.value)">${o}</select></div>`;
+    }).join('');
+  });renderCursors();
+}
+function setOrder(t,idx,id){orders[t][idx]=rosters[t].find(p=>p.id==id)||null;renderSelects();broadcast();}
+function adjCursor(t,d){cursors[t]=((cursors[t]+d)%9+9)%9;renderCursors();renderSelects();broadcast();}
+function renderCursors(){
+  const m={away:'a',home:'h'};
+  ['away','home'].forEach(t=>{const idx=cursors[t];const p=orders[t][idx%9];const k=m[t];
+    const dv=document.getElementById('cur-'+k+'-disp');const nm=document.getElementById('cur-'+k+'-name');
+    if(dv)dv.textContent=idx+1;if(nm)nm.textContent=p?`#${p.num} ${p.name}`:'未設定';
+  });
+}
+function setCursorFromSel(){
+  // portrait or landscape bat-sel
+  const pSel=document.getElementById('p-bat-sel');const lSel=document.getElementById('l-bat-sel');
+  const sel=document.activeElement===pSel?pSel:lSel;
+  if(!sel||sel.value==='')return;
+  const team=st.top?'away':'home';cursors[team]=parseInt(sel.value);renderSelects();broadcast();
+}
+function renderSelects(){
+  ['p-','l-'].forEach(pfx=>{
+    const ps=document.getElementById(pfx+'pit-sel');if(!ps)return;
+    const pc=ps.value;const all=[...rosters.away,...rosters.home];
+    ps.innerHTML='<option value="">-- 投手 --</option>'+all.map(p=>`<option value="${p.id}"${p.id==pc?' selected':''}>#${p.num} ${p.name}</option>`).join('');
+    const cs=document.getElementById(pfx+'cat-sel');if(cs){const cc=cs.value;cs.innerHTML='<option value="">-- 捕手 --</option>'+all.map(p=>`<option value="${p.id}"${p.id==cc?' selected':''}>#${p.num} ${p.name}</option>`).join('');}
+    const team=st.top?'away':'home';const bc=cursors[team];
+    const bs=document.getElementById(pfx+'bat-sel');if(!bs)return;
+    bs.innerHTML='<option value="">-- 打者 --</option>'+orders[team].map((p,i)=>`<option value="${i}"${i===bc?' selected':''}>${i+1}番${p?' #'+p.num+' '+p.name:''}</option>`).join('');
+    const ord=orders[team];const fmt=p=>p?`#${p.num} ${p.name}`:'-';
+    const nx=document.getElementById(pfx+'bp-next');const nx2=document.getElementById(pfx+'bp-next2');
+    if(nx)nx.textContent=fmt(ord[(bc+1)%9]);if(nx2)nx2.textContent=fmt(ord[(bc+2)%9]);
+  });
+}
+
+// ── DRAWER ────────────────────────────────────────────────────────────────────
+function openDrawer(){
+  document.getElementById('drawer').className='drawer open';document.getElementById('backdrop').style.display='block';
+  const a=document.getElementById('tn-away')?.value||document.getElementById('l-tn-away')?.value||'先攻';
+  const h=document.getElementById('tn-home')?.value||document.getElementById('l-tn-home')?.value||'後攻';
+  document.getElementById('dr-away').value=a;document.getElementById('dr-home').value=h;
+  document.getElementById('max-inn-disp').textContent=st.maxInn;document.getElementById('cur-inn-disp').textContent=st.inn;
+  loadLogoPreview();
+}
+function closeDrawer(){document.getElementById('drawer').className='drawer';document.getElementById('backdrop').style.display='none';}
+function switchDTab(tab){
+  dtab=tab;const tabs=['game','roster','order'];
+  tabs.forEach(t=>{const e=document.getElementById('dtab-'+t);if(e)e.style.display=t===tab?'':'none';});
+  document.querySelectorAll('.dr-tab').forEach((b,i)=>b.className='dr-tab'+(i===tabs.indexOf(tab)?' act':''));
+  if(tab==='roster')renderRoster();if(tab==='order'){renderDrOrders();renderCursors();}
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadTeamNames();renderTable();renderBSO();
+['p-','l-'].forEach(pfx=>{
+  // プレビューは初期OFF
+  const ps=document.getElementById(pfx+'sec-preview');if(ps)ps.style.display='none';
+  const pb=document.getElementById(pfx+'vb-preview');if(pb)pb.className='vis-btn';
+  // ovScoreのテーブル表示同期
+  const w=document.getElementById(pfx+'mi-table-wrap');if(w)w.style.display=visState.ovScore?'':'none';
+});
+broadcast();
 </script>
 </body>
 </html>
