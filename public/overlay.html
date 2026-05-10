@@ -152,7 +152,23 @@ function buildDOM(){
   if(mode==='bso'){b.innerHTML=`<div class="bso-only">${BSO_HTML}</div>`;return;}
   if(mode==='diamond'){b.innerHTML=`<div class="diamond-only">${DIAMOND_SVG}</div>`;return;}
   if(mode==='players'){b.innerHTML=`<div class="players-only">${PLAYERS_HTML}</div>`;return;}
-  if(mode==='score'){b.innerHTML=`<div class="ov" style="${posStyle()}">${SCORE_HTML}<div style="display:flex;border-top:1px solid rgba(255,255,255,.08)"><div style="flex:1"></div><div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div></div></div>`;return;}
+  if(mode==='score'){
+    b.innerHTML=`<div class="ov" style="${posStyle()}">
+      <div class="ov-top">
+        <div class="ov-inn">
+          <div class="ov-inn-arr-top" id="ov-arr-top">▲</div>
+          <div class="ov-inn-num" id="ov-inn">1</div>
+          <div class="ov-inn-arr-bot" id="ov-arr-bot">▼</div>
+        </div>
+        <div class="ov-teams">
+          <div class="ov-team"><div class="ov-tname" id="ov-aname">先攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-ascore">0</div></div>
+          <div class="ov-team"><div class="ov-tname" id="ov-hname">後攻</div><div class="ov-tspacer"></div><div class="ov-tscore" id="ov-hscore">0</div></div>
+        </div>
+        <div class="ov-diamond">${DIAMOND_SVG}${BSO_HTML}</div>
+      </div>
+    </div>`;
+    return;
+  }
   if(mode==='innscore'){b.innerHTML=`<div class="innscore-only"><div class="ov-table-wrap visible"><table class="ov-table"><thead id="ov-thead"></thead><tbody id="ov-tbody"></tbody></table></div></div>`;return;}
 
   // all モード + hide パラメータで個別制御
