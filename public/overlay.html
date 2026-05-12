@@ -13,7 +13,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov{
   position:fixed;
   left:20px;right:20px;bottom:20px;
-  aspect-ratio:25/9;
+  aspect-ratio:20/9;
   background:rgba(8,12,24,.70);
   border:1px solid rgba(255,255,255,.1);
   border-radius:8px;overflow:hidden;
@@ -21,7 +21,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 }
 
 /* ── TOP ROW: イニング + チーム名 + スコア表 + 得点 ── */
-.ov-top{display:flex;align-items:stretch;flex:1;overflow:hidden}
+.ov-top{display:flex;align-items:stretch;overflow:hidden}
 
 /* イニング */
 .ov-inn{
@@ -40,39 +40,40 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 /* チーム名 */
 .ov-teams{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-team-row{display:flex;align-items:center;flex:1;padding:4px 12px;gap:8px}
+.ov-team-row{display:flex;align-items:center;flex:1;padding:2px 12px;gap:8px;min-height:0}
 .ov-team-row:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-team-ind{width:12px;border-radius:2px;align-self:stretch;background:rgba(255,255,255,.1);flex-shrink:0}
 .ov-team-ind.active{background:var(--red)}
-.ov-team-name{font-size:clamp(28px,6vw,52px);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-team-name{font-size:clamp(28px,6vw,52px);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1}
 
 /* イニングスコア表（チーム名と得点の間・縦2行） */
 .ov-ist-inline{
   flex:1;overflow:hidden;border-left:1px solid rgba(255,255,255,.1);
-  display:flex;align-items:stretch;
+  display:flex;flex-direction:column;align-self:stretch;
 }
+.ov-ist-inline table{border-collapse:collapse;width:100%;flex:1;table-layout:fixed}
 .ov-ist-table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
+.ov-ist-table tbody{display:table;width:100%;height:100%}
+.ov-ist-table tr{height:50%}
 .ov-ist-table td{
-  text-align:center;padding:2px 1px;
-  font-size:clamp(10px,2.2vw,16px);font-weight:600;
+  text-align:center;padding:0 4px;
+  font-size:clamp(12px,2.5vw,22px);font-weight:700;
   color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;
-  vertical-align:middle;
+  vertical-align:middle;white-space:nowrap;
 }
 .ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.06)}
 .ov-ist-table td.cur{color:#fff}
-
-/* 旧 .ov-ist は不要になったが念のため残す */
 .ov-ist{display:none}
 
 /* 合計得点 */
 .ov-scores{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-score-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:0 16px}
+.ov-score-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:0 16px;min-height:0}
 .ov-score-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-score-num{font-size:clamp(28px,6vw,52px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 .ov-bot{display:flex;align-items:stretch;border-top:1px solid rgba(255,255,255,.08)}
 
 /* BSO */
-.ov-bso{display:flex;flex-direction:column;justify-content:space-evenly;padding:6px 8px;flex-shrink:0;gap:3px;border-right:1px solid rgba(255,255,255,.08)}
+.ov-bso{display:flex;flex-direction:column;justify-content:space-evenly;padding:4px 8px 0;flex-shrink:0;gap:2px;border-right:1px solid rgba(255,255,255,.08)}
 .ov-bso-line{display:flex;align-items:center;gap:2px}
 
 /* ダイヤモンド */
