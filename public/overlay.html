@@ -195,9 +195,17 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 function g(id){return document.getElementById(id)}
 function set(id,v){const e=g(id);if(e&&e.textContent!==String(v))e.textContent=v;}
 function setAttr(id,attr,v){const e=g(id);if(e&&e.getAttribute(attr)!==v)e.setAttribute(attr,v);}
+function setCls(id,v){const e=g(id);if(e&&e.className!==v)e.className=v;}
+
+let _lastStateJson='';
 
 function applyState(s){
   if(!s)return;
+  // 変化がなければスキップ
+  const sJson=JSON.stringify(s);
+  if(sJson===_lastStateJson)return;
+  _lastStateJson=sJson;
+
   const inn=s.inn||1, isTop=s.top!==false;
   const n=Math.max(s.maxInn||7,inn);
   const asc=s.asc||[], hsc=s.hsc||[];
@@ -205,14 +213,14 @@ function applyState(s){
 
   // イニング・表裏
   set('ov-inn',inn);
-  g('ov-tb-top').className=isTop?'active':'';
-  g('ov-tb-bot').className=!isTop?'active':'';
+  setCls('ov-tb-top',isTop?'active':'');
+  setCls('ov-tb-bot',!isTop?'active':'');
 
   // チーム名・インジケーター
   set('ov-aname',s.aab||'先攻');
   set('ov-hname',s.hnm||'後攻');
-  g('ov-ind-away').className='ov-team-ind'+(isTop?' active':'');
-  g('ov-ind-home').className='ov-team-ind'+(!isTop?' active':'');
+  setCls('ov-ind-away','ov-team-ind'+(isTop?' active':''));
+  setCls('ov-ind-home','ov-team-ind'+(!isTop?' active':''));
 
   // 合計得点
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
