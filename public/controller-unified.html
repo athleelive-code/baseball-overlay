@@ -191,9 +191,10 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
 }
 .battery-sel option{color:#111;background:#fff}
 .sb-wrap{
-  flex:1;overflow-x:hidden;
+  background:#000;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border-bottom:1px solid #222;
 }
-.sb-table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
+.sb-table{border-collapse:collapse;width:100%;table-layout:fixed}
 .sb-head th{
   background:#1a3a1a;color:#fff;font-weight:700;font-size:clamp(9px,2.2vw,13px);
   text-align:center;padding:3px 1px;
@@ -268,23 +269,23 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
     </div>
   </div>
 
-  <!-- スコア表 -->
-  <div class="sb-wrap">
-    <table class="sb-table">
-      <thead><tr class="sb-head" id="sb-head"></tr></thead>
-      <tbody>
-        <tr class="sb-body" id="sb-away"></tr>
-        <tr class="sb-body" id="sb-home"></tr>
-      </tbody>
-    </table>
-  </div>
-
   <!-- 右: スコア -->
   <div class="scores-block">
     <div class="score-cell"><div class="score-num" id="score-away">0</div></div>
     <div class="score-cell"><div class="score-num" id="score-home">0</div></div>
   </div>
 
+</div>
+
+<!-- スコアボード -->
+<div class="sb-wrap">
+  <table class="sb-table">
+    <thead><tr class="sb-head" id="sb-head"></tr></thead>
+    <tbody>
+      <tr class="sb-body" id="sb-away"></tr>
+      <tr class="sb-body" id="sb-home"></tr>
+    </tbody>
+  </table>
 </div>
 
 <!-- BATTERY ROW -->
