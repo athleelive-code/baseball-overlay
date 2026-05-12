@@ -484,7 +484,7 @@ function adjBSO(k, d){
     if(k==='s' && bso.s>=3){ bso.o=Math.min(3,bso.o+1); bso.b=0; bso.s=0; if(bso.o>=3){nextInn();return;} }
     if(k==='o' && bso.o>=3){ nextInn(); return; }
   }
-  renderBSO();
+  renderBSO(); broadcast();
 }
 
 // フォーボール押し出しロジック
@@ -512,7 +512,7 @@ function bsoLongStart(k, el){
     bso[k]=0;
     el.style.background='rgba(255,255,255,.08)';
     setTimeout(()=>el.style.background='',300);
-    renderBSO();
+    renderBSO(); broadcast();
   },600);
 }
 function bsoLongEnd(k){
@@ -535,7 +535,7 @@ function renderBSO(){
 // ── DIAMOND ──────────────────────────────────────────────────────────────────
 const bases = {1:false, 2:false, 3:false};
 
-function tapBase(n){ bases[n]=!bases[n]; renderDiamond(); }
+function tapBase(n){ bases[n]=!bases[n]; renderDiamond(); broadcast(); }
 function baseLongStart(n){}
 function baseLongEnd(n){ tapBase(n); }
 function baseLongCancel(){}
@@ -666,14 +666,14 @@ function addRun(){
   const team=st.top?'away':'home'; const idx=st.inn-1;
   if(scores[team][idx]===null) scores[team][idx]=1;
   else if(typeof scores[team][idx]==='number') scores[team][idx]++;
-  renderSB();
+  renderSB(); broadcast();
 }
 function removeRun(){
   const team=st.top?'away':'home'; const idx=st.inn-1;
   const cur=scores[team][idx];
   if(cur===0) scores[team][idx]=null;
   else if(typeof cur==='number' && cur>0) scores[team][idx]=cur-1;
-  renderSB();
+  renderSB(); broadcast();
 }
 function nextInn(){
   bso.b=0; bso.s=0; bso.o=0;
@@ -684,7 +684,7 @@ function nextInn(){
   if(scores[team][idx]===null) scores[team][idx]=0;
   if(st.top) setTop(false);
   else{ adjInn(1); setTop(true); }
-  renderBSO(); renderDiamond(); renderSB();
+  renderBSO(); renderDiamond(); renderSB(); broadcast();
 }
 
 const st = { inn:1, top:true, maxInn:7 };
@@ -696,7 +696,7 @@ function setTop(isTop){
   document.getElementById('ind-home').className = 'team-ind' + (!isTop ? ' active' : '');
   document.getElementById('tb-omote').className = isTop  ? 'active' : '';
   document.getElementById('tb-ura').className   = !isTop ? 'active' : '';
-  renderSB();
+  renderSB(); broadcast();
 }
 
 function adjInn(d){
@@ -704,7 +704,7 @@ function adjInn(d){
   st.inn = Math.max(1, Math.min(n+1, st.inn + d));
   if(st.inn > st.maxInn) st.maxInn = st.inn;
   document.getElementById('inn-num').textContent = st.inn;
-  renderSB();
+  renderSB(); broadcast();
 }
 
 function renderSB(){
@@ -745,7 +745,7 @@ function renderTotals(){
   });
 }
 
-function setCurrentInn(n){ st.inn=n; document.getElementById('inn-num').textContent=n; renderSB(); }
+function setCurrentInn(n){ st.inn=n; document.getElementById('inn-num').textContent=n; renderSB(); broadcast(); }
 
 // ── SCORE INPUT PANEL ────────────────────────────────────────────────────────
 let _scTeam=null, _scIdx=null;
@@ -797,7 +797,7 @@ function scAdj(d){
   } else {
     scores[_scTeam][_scIdx]=Math.max(0,Math.min(99,cur+d));
   }
-  refreshSCDisplay(); renderSB();
+  refreshSCDisplay(); renderSB(); broadcast();
 }
 
 function scToggleX(){
@@ -811,7 +811,7 @@ function scToggleX(){
   } else {
     scores[_scTeam][_scIdx]='x'; xOn[key]=false;
   }
-  refreshSCDisplay(); renderSB();
+  refreshSCDisplay(); renderSB(); broadcast();
 }
 
 // ── チーム名長押し編集 ────────────────────────────────────────────────────────
@@ -942,12 +942,65 @@ function resetAll(){
   Object.assign(bases,{1:false,2:false,3:false});
   st.inn=1; st.top=true; st.maxInn=7;
   document.getElementById('inn-num').textContent=1;
-  renderSB(); renderBSO(); renderDiamond(); setTop(true);
+  renderSB(); renderBSO(); renderDiamond(); setTop(true); broadcast();
   closeDrawer();
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+let ws=null, _isSending=false;
+function connectWS(){
+  ws=new WebSocket('wss://'+location.host);
+  ws.onopen=()=>{ setTimeout(broadcast,300); };
+  ws.onclose=()=>{ setTimeout(connectWS,2000); };
+  ws.onerror=()=>ws.close();
+  ws.onmessage=e=>{
+    if(_isSending)return;
+    const h=t=>{try{applyRemote(JSON.parse(t));}catch(err){}};
+    if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
+  };
+}
+connectWS();
+
+function applyRemote(s){
+  if(!s)return;
+  st.inn=s.inn||st.inn; st.top=s.top!==undefined?s.top:st.top;
+  st.b=s.b||0; st.s=s.s||0; st.o=s.o||0;
+  st.r=s.r||{1:false,2:false,3:false};
+  st.maxInn=s.maxInn||st.maxInn;
+  if(s.asc)s.asc.forEach((v,i)=>{if(i<16)scores.away[i]=v;});
+  if(s.hsc)s.hsc.forEach((v,i)=>{if(i<16)scores.home[i]=v;});
+  if(s.xOn)Object.assign(xOn,s.xOn);
+  if(s.aab){const e=document.getElementById('name-away');if(e)e.textContent=s.aab;}
+  if(s.hnm){const e=document.getElementById('name-home');if(e)e.textContent=s.hnm;}
+  renderSB(); renderBSO(); renderDiamond(); setTop(st.top);
+}
+
+function broadcast(){
+  if(!ws||ws.readyState!==1)return;
+  const aab=document.getElementById('name-away')?.textContent||'先攻';
+  const hnm=document.getElementById('name-home')?.textContent||'後攻';
+  const pitSel=document.getElementById('sel-pitcher');
+  const catSel=document.getElementById('sel-catcher');
+  const batSel=document.getElementById('sel-batter');
+  const pitcher=pitSel&&pitSel.selectedIndex>0?pitSel.options[pitSel.selectedIndex].text:null;
+  const catcher=catSel&&catSel.selectedIndex>0?catSel.options[catSel.selectedIndex].text:null;
+  const batter =batSel&&batSel.selectedIndex>0?batSel.options[batSel.selectedIndex].text:null;
+  const payload=JSON.stringify({
+    ...st, ...bso, r:{...bases},
+    aab, hnm,
+    asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
+    batter, pitcher, catcher,
+    batterNext:null, batterNext2:null,
+    maxInn:st.maxInn
+  });
+  _isSending=true;
+  ws.send(payload);
+  setTimeout(()=>_isSending=false,100);
 }
 
 // 初期描画
 renderSB();
+setTimeout(()=>broadcast(),500);
 </script>
 </body>
 </html>
