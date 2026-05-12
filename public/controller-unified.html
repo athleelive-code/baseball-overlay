@@ -141,9 +141,9 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
 }
 .diamond-block{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 8px;border-right:1px solid #1a1a1a;gap:0;
+  padding:10px 8px;border-right:1px solid #1a1a1a;gap:0;overflow:hidden;
 }
-.diamond-block svg{pointer-events:all}
+.diamond-block svg{pointer-events:all;width:100%;max-width:200px}
 .diamond-block svg rect:not(.tap-area):not(#minus-btn){pointer-events:none}
 .diamond-block svg circle:not(#runner-drag):not(#runner1):not(#runner2):not(#runner3){pointer-events:none}
 .diamond-block svg text{pointer-events:none}
@@ -403,8 +403,8 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
   <!-- 左: BSO -->
   <div class="bso-block">
     <div class="bso-line"
-      ontouchstart="bsoLongStart('b',this)" ontouchend="bsoLongEnd('b')" ontouchcancel="bsoLongEnd(null)"
-      onmousedown="bsoLongStart('b',this)" onmouseup="bsoLongEnd('b')" onmouseleave="bsoLongEnd(null)">
+      ontouchstart="bsoLongStart('b',this)" ontouchend="event.preventDefault();bsoLongEnd('b')" ontouchcancel="bsoLongEnd(null)"
+      onclick="bsoClick('b')">
       <span class="bso-lbl">B</span>
       <div class="bso-dots">
         <div class="bdot" id="bd1"></div><div class="bdot" id="bd2"></div><div class="bdot" id="bd3"></div>
@@ -412,8 +412,8 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
       <button class="bso-c" onclick="event.stopPropagation();adjBSO('b',-1)">C</button>
     </div>
     <div class="bso-line"
-      ontouchstart="bsoLongStart('s',this)" ontouchend="bsoLongEnd('s')" ontouchcancel="bsoLongEnd(null)"
-      onmousedown="bsoLongStart('s',this)" onmouseup="bsoLongEnd('s')" onmouseleave="bsoLongEnd(null)">
+      ontouchstart="bsoLongStart('s',this)" ontouchend="event.preventDefault();bsoLongEnd('s')" ontouchcancel="bsoLongEnd(null)"
+      onclick="bsoClick('s')">
       <span class="bso-lbl">S</span>
       <div class="bso-dots">
         <div class="bdot" id="sd1"></div><div class="bdot" id="sd2"></div>
@@ -421,8 +421,8 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
       <button class="bso-c" onclick="event.stopPropagation();adjBSO('s',-1)">C</button>
     </div>
     <div class="bso-line"
-      ontouchstart="bsoLongStart('o',this)" ontouchend="bsoLongEnd('o')" ontouchcancel="bsoLongEnd(null)"
-      onmousedown="bsoLongStart('o',this)" onmouseup="bsoLongEnd('o')" onmouseleave="bsoLongEnd(null)">
+      ontouchstart="bsoLongStart('o',this)" ontouchend="event.preventDefault();bsoLongEnd('o')" ontouchcancel="bsoLongEnd(null)"
+      onclick="bsoClick('o')">
       <span class="bso-lbl">O</span>
       <div class="bso-dots">
         <div class="bdot out" id="od1"></div><div class="bdot out" id="od2"></div>
@@ -521,6 +521,9 @@ function bsoLongEnd(k){
   if(_bsoTimer){clearTimeout(_bsoTimer);_bsoTimer=null;}
   if(!_bsoFired && k) adjBSO(k,1);
   _bsoFired=false;
+}
+function bsoClick(k){
+  // touchend で処理済みなので何もしない（PC用フォールバックはなし）
 }
 
 function renderBSO(){
