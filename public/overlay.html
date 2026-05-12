@@ -13,8 +13,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov{
   position:fixed;
   right:20px;bottom:20px;
-  background:rgba(8,12,24,.70);
-  border:1px solid rgba(255,255,255,.1);
+  background:#080c18;
+  border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
   width:calc(50% - 20px);
@@ -300,38 +300,21 @@ function applyState(s){
   set('ov-catcher',s.catcher||'-');
 }
 
-// WebSocket（安定接続）
-let ws=null, _wsTimer=null, _stableTimer=null, _isStable=false;
-
+// WebSocket
+let ws=null, _wsTimer=null;
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
-  _isStable=false;
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
-    ws.onopen=()=>{
-      // 接続後1秒待って安定したとみなす（チラつき防止）
-      _stableTimer=setTimeout(()=>{ _isStable=true; },1000);
-    };
+    ws.onopen=()=>{};
     ws.onmessage=e=>{
-      const h=t=>{
-        try{
-          const parsed=JSON.parse(t);
-          if(_isStable) applyState(parsed);
-          else {
-            // 不安定期間中は状態だけ保持して描画しない
-            _pendingState=parsed;
-            clearTimeout(_stableTimer);
-            _stableTimer=setTimeout(()=>{ _isStable=true; if(_pendingState)applyState(_pendingState); },1000);
-          }
-        }catch(err){}
-      };
+      const h=t=>{try{applyState(JSON.parse(t));}catch(err){}};
       if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
     };
-    ws.onclose=()=>{ ws=null; _isStable=false; clearTimeout(_stableTimer); _wsTimer=setTimeout(connectWS,3000); };
+    ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
-let _pendingState=null;
 connectWS();
 </script>
 </body>
