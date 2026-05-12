@@ -9,6 +9,10 @@ const wss = new WebSocketServer({ server });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/', (req, res) => {
+  res.redirect('/controller-unified.html');
+});
+
 // 最後に受信した状態をキャッシュ
 let lastState = null;
 
