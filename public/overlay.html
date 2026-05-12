@@ -47,12 +47,12 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-team-ind.active{background:var(--red)}
 .ov-team-name{font-size:clamp(14px,3.5vw,22px);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
 
-/* イニングスコア表（チーム名と合計の間） */
-.ov-ist{flex:1;overflow:hidden;border-left:1px solid rgba(255,255,255,.1)}
-.ov-ist table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
+/* イニングスコア表（TOP ROWの下・全幅） */
+.ov-ist{border-top:1px solid rgba(255,255,255,.06);padding:2px 0}
+.ov-ist table{border-collapse:collapse;width:100%;table-layout:fixed}
 .ov-ist td{
   text-align:center;padding:3px 1px;
-  font-size:clamp(8px,1.8vw,11px);font-weight:600;
+  font-size:clamp(9px,2vw,13px);font-weight:600;
   color:rgba(255,255,255,.25);font-variant-numeric:tabular-nums;
 }
 .ov-ist tr:first-child td{border-bottom:1px solid rgba(255,255,255,.05)}
@@ -100,15 +100,16 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><div class="ov-team-name" id="ov-aname">先攻</div></div>
       <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><div class="ov-team-name" id="ov-hname">後攻</div></div>
     </div>
-    <!-- イニングスコア表（チーム名と合計の間） -->
-    <div class="ov-ist">
-      <table><thead></thead><tbody id="ov-ist-body"></tbody></table>
-    </div>
     <!-- 合計得点 -->
     <div class="ov-scores">
       <div class="ov-score-cell"><div class="ov-score-num" id="ov-score-away">0</div></div>
       <div class="ov-score-cell"><div class="ov-score-num" id="ov-score-home">0</div></div>
     </div>
+  </div>
+
+  <!-- イニングスコア表（TOP ROWの下） -->
+  <div class="ov-ist">
+    <table><thead></thead><tbody id="ov-ist-body"></tbody></table>
   </div>
 
   <!-- BOTTOM ROW -->
