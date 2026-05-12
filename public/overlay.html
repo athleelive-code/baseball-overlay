@@ -13,56 +13,62 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov{
   position:fixed;
   left:20px;right:20px;bottom:20px;
+  aspect-ratio:25/9;
   background:rgba(8,12,24,.70);
   border:1px solid rgba(255,255,255,.1);
   border-radius:8px;overflow:hidden;
   display:flex;flex-direction:column;
-  opacity:0.7;
 }
 
 /* ── TOP ROW: イニング + チーム名 + スコア表 + 得点 ── */
-.ov-top{display:flex;align-items:stretch;min-height:90px;overflow:visible}
+.ov-top{display:flex;align-items:stretch;flex:1;overflow:hidden}
 
 /* イニング */
 .ov-inn{
   background:rgba(200,16,46,.85);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:10px 14px;flex-shrink:0;gap:2px;
-  overflow:visible;position:relative;
 }
 .ov-inn-num{
-  font-size:clamp(52px,11vw,76px);font-weight:700;color:#fff;line-height:1;
+  font-size:clamp(36px,7vw,60px);font-weight:700;color:#fff;line-height:1;
   font-variant-numeric:tabular-nums;
 }
-.ov-inn-row{display:flex;align-items:center;gap:4px;overflow:visible}
+.ov-inn-row{display:flex;align-items:center;gap:4px}
 .ov-inn-tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .ov-inn-tb span{font-size:clamp(11px,2.5vw,16px);font-weight:700;color:rgba(255,255,255,.28);line-height:1}
 .ov-inn-tb span.active{color:#fff}
 
 /* チーム名 */
 .ov-teams{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-team-row{display:flex;align-items:center;flex:1;padding:4px 10px;gap:6px}
+.ov-team-row{display:flex;align-items:center;flex:1;padding:4px 12px;gap:8px}
 .ov-team-row:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-team-ind{width:4px;border-radius:2px;align-self:stretch;background:rgba(255,255,255,.1);flex-shrink:0}
+.ov-team-ind{width:12px;border-radius:2px;align-self:stretch;background:rgba(255,255,255,.1);flex-shrink:0}
 .ov-team-ind.active{background:var(--red)}
-.ov-team-name{font-size:clamp(14px,3.5vw,22px);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.ov-team-name{font-size:clamp(28px,6vw,52px);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* イニングスコア表（TOP ROWの下・全幅） */
-.ov-ist{border-top:1px solid rgba(255,255,255,.06);padding:2px 0}
-.ov-ist table{border-collapse:collapse;width:100%;table-layout:fixed}
-.ov-ist td{
-  text-align:center;padding:3px 1px;
-  font-size:clamp(9px,2vw,13px);font-weight:600;
-  color:rgba(255,255,255,.25);font-variant-numeric:tabular-nums;
+/* イニングスコア表（チーム名と得点の間・縦2行） */
+.ov-ist-inline{
+  flex:1;overflow:hidden;border-left:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:stretch;
 }
-.ov-ist tr:first-child td{border-bottom:1px solid rgba(255,255,255,.05)}
-.ov-ist td.cur{color:rgba(255,255,255,.75)}
+.ov-ist-table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
+.ov-ist-table td{
+  text-align:center;padding:2px 1px;
+  font-size:clamp(10px,2.2vw,16px);font-weight:600;
+  color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;
+  vertical-align:middle;
+}
+.ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.06)}
+.ov-ist-table td.cur{color:#fff}
+
+/* 旧 .ov-ist は不要になったが念のため残す */
+.ov-ist{display:none}
 
 /* 合計得点 */
 .ov-scores{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-score-cell{display:flex;align-items:center;justify-content:center;flex:1;padding:0 14px}
+.ov-score-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:0 16px}
 .ov-score-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-score-num{font-size:clamp(36px,8vw,56px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.ov-score-num{font-size:clamp(28px,6vw,52px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 .ov-bot{display:flex;align-items:stretch;border-top:1px solid rgba(255,255,255,.08)}
 
 /* BSO */
@@ -81,7 +87,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 </style>
 </head>
 <body>
-<div class="ov" id="ov" style="overflow:visible">
+<div class="ov" id="ov">
 
   <!-- TOP ROW -->
   <div class="ov-top">
@@ -100,16 +106,15 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><div class="ov-team-name" id="ov-aname">先攻</div></div>
       <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><div class="ov-team-name" id="ov-hname">後攻</div></div>
     </div>
-    <!-- 合計得点 -->
-    <div class="ov-scores">
+    <!-- イニングスコア（チーム名と得点の間） -->
+    <div class="ov-ist-inline">
+      <table class="ov-ist-table"><thead></thead><tbody id="ov-ist-body"></tbody></table>
+    </div>
+    <!-- 合計得点（右端） -->
+    <div class="ov-scores" style="margin-left:auto">
       <div class="ov-score-cell"><div class="ov-score-num" id="ov-score-away">0</div></div>
       <div class="ov-score-cell"><div class="ov-score-num" id="ov-score-home">0</div></div>
     </div>
-  </div>
-
-  <!-- イニングスコア表（TOP ROWの下） -->
-  <div class="ov-ist">
-    <table><thead></thead><tbody id="ov-ist-body"></tbody></table>
   </div>
 
   <!-- BOTTOM ROW -->
@@ -141,15 +146,19 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     <!-- ダイヤモンド（等角投影・横長）+ 投手捕手 -->
     <div style="flex:1;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.08)">
       <div style="display:flex;align-items:center;justify-content:center;padding:5px 8px">
-        <svg viewBox="0 0 160 56" xmlns="http://www.w3.org/2000/svg" style="width:clamp(110px,28vw,170px)">
-          <!-- 2塁（奥・倍サイズ） -->
+        <svg viewBox="-10 -8 180 72" xmlns="http://www.w3.org/2000/svg" style="width:clamp(110px,28vw,170px)">
+          <line x1="80" y1="5"  x2="22" y2="28" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+          <line x1="80" y1="5"  x2="138" y2="28" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+          <line x1="22" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+          <line x1="138" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+          <!-- 2塁（奥） -->
           <polygon id="ov-b2" points="80,-3 96,5 80,13 64,5" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.35)" stroke-width=".8"/>
-          <!-- 3塁（左・倍サイズ） -->
+          <!-- 3塁（左） -->
           <polygon id="ov-b3" points="10,21 26,29 10,37 -6,29" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.35)" stroke-width=".8"/>
-          <!-- 1塁（右・倍サイズ） -->
+          <!-- 1塁（右） -->
           <polygon id="ov-b1" points="150,21 166,29 150,37 134,29" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.35)" stroke-width=".8"/>
-          <!-- ホームベース（上下逆・手前・はみ出し可） -->
-          <polygon points="80,59 93,51 93,43 80,43 67,43 67,51" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
+          <!-- ホームベース -->
+          <polygon points="80,59 93,51 93,43 67,43 67,51" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
         </svg>
       </div>
       <div style="display:flex;border-top:1px solid rgba(255,255,255,.06)">
