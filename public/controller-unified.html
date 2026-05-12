@@ -36,26 +36,26 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
 .inn-block{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:8px 14px;border-right:1px solid #1a1a1a;flex-shrink:0;gap:2px;
-  background:#fff;
+  background:#000;
 }
 .inn-top-row{display:flex;align-items:center;gap:8px}
 .inn-tb{
   font-size:clamp(14px,4vw,22px);font-weight:700;
-  color:rgba(0,0,0,.25);line-height:1;
+  color:rgba(255,255,255,.3);line-height:1;
   display:flex;flex-direction:column;align-items:center;gap:4px;
 }
-.inn-tb span.active{color:#000}
+.inn-tb span.active{color:#fff}
 .inn-num{
-  font-size:clamp(40px,13vw,72px);font-weight:700;color:#000;
+  font-size:clamp(40px,13vw,72px);font-weight:700;color:#fff;
   font-variant-numeric:tabular-nums;line-height:1;
 }
 .inn-adj{display:flex;gap:6px;margin-top:4px}
 .inn-adj-btn{
-  background:rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.2);border-radius:6px;
-  color:#000;font-size:14px;font-weight:700;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:6px;
+  color:#fff;font-size:14px;font-weight:700;
   padding:3px 10px;cursor:pointer;
 }
-.inn-adj-btn:active{background:rgba(0,0,0,.2)}
+.inn-adj-btn:active{background:rgba(255,255,255,.25)}
 
 /* 中: チーム名 + インジケーター */
 .teams-block{
@@ -243,8 +243,8 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
     <div class="inn-top-row">
       <div class="inn-num" id="inn-num">1</div>
       <div class="inn-tb">
-        <span id="tb-omote" class="active">表</span>
-        <span id="tb-ura">ｳﾗ</span>
+        <span id="tb-omote" class="active">▲</span>
+        <span id="tb-ura">▼</span>
       </div>
     </div>
     <div class="inn-adj">
@@ -410,7 +410,6 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
       <div class="bso-dots">
         <div class="bdot" id="bd1"></div><div class="bdot" id="bd2"></div><div class="bdot" id="bd3"></div>
       </div>
-      <button class="bso-c" onclick="event.stopPropagation();adjBSO('b',-1)">C</button>
     </div>
     <div class="bso-line"
       ontouchstart="bsoLongStart('s',this)" ontouchend="event.preventDefault();bsoLongEnd('s')" ontouchcancel="bsoLongEnd(null)"
@@ -419,7 +418,6 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
       <div class="bso-dots">
         <div class="bdot" id="sd1"></div><div class="bdot" id="sd2"></div>
       </div>
-      <button class="bso-c" onclick="event.stopPropagation();adjBSO('s',-1)">C</button>
     </div>
     <div class="bso-line"
       ontouchstart="bsoLongStart('o',this)" ontouchend="event.preventDefault();bsoLongEnd('o')" ontouchcancel="bsoLongEnd(null)"
@@ -428,7 +426,6 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
       <div class="bso-dots">
         <div class="bdot out" id="od1"></div><div class="bdot out" id="od2"></div>
       </div>
-      <button class="bso-c" onclick="event.stopPropagation();adjBSO('o',-1)">C</button>
     </div>
   </div>
 
