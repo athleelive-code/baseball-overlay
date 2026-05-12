@@ -193,7 +193,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 <script>
 function g(id){return document.getElementById(id)}
-function set(id,v){const e=g(id);if(e)e.textContent=v}
+function set(id,v){const e=g(id);if(e&&e.textContent!==String(v))e.textContent=v;}
+function setAttr(id,attr,v){const e=g(id);if(e&&e.getAttribute(attr)!==v)e.setAttribute(attr,v);}
 
 function applyState(s){
   if(!s)return;
@@ -239,21 +240,33 @@ function applyState(s){
     }
   });
 
-  // BSO (フラット)
-  for(let i=0;i<3;i++){const d=g('ov-bd'+(i+1));if(d)d.setAttribute('fill',i<(s.b||0)?'#43a047':'#333');}
+  // BSO (フラット・変化時のみ更新)
+  for(let i=0;i<3;i++){
+    const d=g('ov-bd'+(i+1));
+    if(d) setAttr('ov-bd'+(i+1),'fill',i<(s.b||0)?'#43a047':'#333');
+  }
   for(let i=0;i<2;i++){
-    const sd=g('ov-sd'+(i+1));if(sd)sd.setAttribute('fill',i<(s.s||0)?'#f5c518':'#333');
-    const od=g('ov-od'+(i+1));if(od){od.setAttribute('fill',i<(s.o||0)?'#c8102e':'#282828');od.setAttribute('stroke',i<(s.o||0)?'#7a0000':'#444');}
+    const sd=g('ov-sd'+(i+1));
+    if(sd) setAttr('ov-sd'+(i+1),'fill',i<(s.s||0)?'#f5c518':'#333');
+    const od=g('ov-od'+(i+1));
+    if(od){
+      setAttr('ov-od'+(i+1),'fill',i<(s.o||0)?'#c8102e':'#282828');
+      setAttr('ov-od'+(i+1),'stroke',i<(s.o||0)?'#7a0000':'#444');
+    }
   }
 
-  // ダイヤモンド（フラット）
+  // ダイヤモンド（フラット・変化時のみ更新）
   const r=s.r||{};
   [1,2,3].forEach(n=>{
     const e=g('ov-b'+n);
-    if(e){e.setAttribute('fill',r[n]?'#f5c518':'rgba(255,255,255,.12)');e.setAttribute('stroke',r[n]?'#b8860b':'rgba(255,255,255,.3)');}
+    if(!e)return;
+    const newFill=r[n]?'#f5c518':'rgba(255,255,255,.12)';
+    const newStroke=r[n]?'#b8860b':'rgba(255,255,255,.3)';
+    if(e.getAttribute('fill')!==newFill) e.setAttribute('fill',newFill);
+    if(e.getAttribute('stroke')!==newStroke) e.setAttribute('stroke',newStroke);
   });
 
-  // イニングスコア表（得点のみ）
+  // イニングスコア表（変化時のみ更新）
   const istBody=g('ov-ist-body');
   if(istBody){
     let html='';
@@ -262,14 +275,13 @@ function applyState(s){
       for(let i=0;i<n;i++){
         const isCur=i+1===inn;
         const val=sc[i];
-        const disp=val===null?'':val==='x'?'×':String(val);
-        // 3の倍数の右側に広めのボーダー
+        const disp=val===null?'&nbsp;':val==='x'?'×':String(val);
         const borderRight=(i+1)%3===0?'border-right:2px solid rgba(255,255,255,.12)':'border-right:1px solid rgba(255,255,255,.06)';
         html+=`<td class="${isCur?'cur':''}" style="${borderRight}">${disp}</td>`;
       }
       html+='</tr>';
     });
-    istBody.innerHTML=html;
+    if(istBody._lastHtml!==html){ istBody.innerHTML=html; istBody._lastHtml=html; }
   }
 
   // 打者・投手・捕手
@@ -280,16 +292,20 @@ function applyState(s){
   set('ov-catcher',s.catcher||'-');
 }
 
-// WebSocket
-let ws=null;
+// WebSocket（安定接続）
+let ws=null, _wsTimer=null;
 function connectWS(){
-  ws=new WebSocket('wss://'+location.host);
-  ws.onmessage=e=>{
-    const h=t=>{try{applyState(JSON.parse(t));}catch(err){}};
-    if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
-  };
-  ws.onclose=()=>setTimeout(connectWS,2000);
-  ws.onerror=()=>ws.close();
+  if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
+  try{
+    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+    ws.onopen=()=>{ console.log('WS connected'); };
+    ws.onmessage=e=>{
+      const h=t=>{try{applyState(JSON.parse(t));}catch(err){}};
+      if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
+    };
+    ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
+    ws.onerror=()=>{ try{ws.close();}catch(e){} };
+  }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
 </script>
