@@ -825,12 +825,13 @@ function startNameEdit(team, e){
     const input = document.createElement('input');
     input.className = 'team-name-in';
     input.value = current;
-    input.onclick = e => e.stopPropagation();
+    input.onclick = ev => ev.stopPropagation();
     input.onblur = ()=>{
       const val = input.value.trim() || current;
       disp.textContent = val;
       input.replaceWith(disp);
       try{ localStorage.setItem('bb_'+team, val); }catch(e){}
+      broadcast();
     };
     input.onkeydown = e=>{ if(e.key==='Enter') input.blur(); };
     disp.replaceWith(input);
@@ -947,17 +948,20 @@ function resetAll(){
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws=null, _isSending=false;
+let ws=null, _isSending=false, _wsTimer=null;
 function connectWS(){
-  ws=new WebSocket('wss://'+location.host);
-  ws.onopen=()=>{ setTimeout(broadcast,300); };
-  ws.onclose=()=>{ setTimeout(connectWS,2000); };
-  ws.onerror=()=>ws.close();
-  ws.onmessage=e=>{
-    if(_isSending)return;
-    const h=t=>{try{applyRemote(JSON.parse(t));}catch(err){}};
-    if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
-  };
+  if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
+  try{
+    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+    ws.onopen=()=>{ /* lastStateはserver側がoverlay接続時に送るので不要 */ };
+    ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
+    ws.onerror=()=>{ try{ws.close();}catch(e){} };
+    ws.onmessage=e=>{
+      if(_isSending)return;
+      const h=t=>{try{applyRemote(JSON.parse(t));}catch(err){}};
+      if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
+    };
+  }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
 
