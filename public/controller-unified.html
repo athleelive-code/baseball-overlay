@@ -687,7 +687,7 @@ function nextInn(){
   renderBSO(); renderDiamond(); renderSB(); broadcast();
 }
 
-const st = { inn:1, top:true, maxInn:7 };
+const st = { inn:1, top:true, maxInn:7, configMaxInn:7 };
 const scores = { away:Array(16).fill(null), home:Array(16).fill(null) };
 
 function setTop(isTop){
@@ -700,9 +700,15 @@ function setTop(isTop){
 }
 
 function adjInn(d){
-  const n = Math.max(st.maxInn, st.inn);
-  st.inn = Math.max(1, Math.min(n+1, st.inn + d));
-  if(st.inn > st.maxInn) st.maxInn = st.inn;
+  if(d > 0){
+    st.inn = Math.min(15, st.inn + 1);
+    if(st.inn > st.maxInn) st.maxInn = st.inn;
+  } else {
+    // 設定の最終回（st.configMaxInn）以下には減らない
+    const floor = st.configMaxInn || 7;
+    st.inn = Math.max(1, st.inn - 1);
+    st.maxInn = Math.max(floor, st.inn);
+  }
   document.getElementById('inn-num').textContent = st.inn;
   renderSB(); broadcast();
 }
@@ -912,6 +918,7 @@ function updateSelects(){
 }
 function adjMaxInn(d){
   st.maxInn = Math.max(3, Math.min(15, st.maxInn + d));
+  st.configMaxInn = st.maxInn; // 設定値を保存
   const e = document.getElementById('max-inn-disp');
   if(e) e.textContent = st.maxInn;
   renderSB();
