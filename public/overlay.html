@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
 :root{--red:#c8102e;--gold:#f5c518;--bgreen:#43a047;--dg:#1b5e20}
-html,body{background:transparent;width:100%;height:100%;overflow:hidden}
+html,body{background:#000;width:100%;height:100%;overflow:hidden}
 
 /* ── OVERLAY CONTAINER ── */
 .ov{
@@ -18,6 +18,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
   width:calc(50% - 20px);
+  opacity:0;transition:opacity .3s;
 }
 
 /* ── TOP ROW ── */
@@ -316,6 +317,9 @@ function connectWS(){
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
+document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{ const e=document.getElementById('ov'); if(e) e.style.opacity='1'; },200);
+});
 </script>
 </body>
 </html>
