@@ -300,7 +300,7 @@ let ws=null, _wsTimer=null;
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
-    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/?overlay=1');
     ws.onopen=()=>{};
     ws.onmessage=e=>{
       const h=t=>{try{applyState(JSON.parse(t));}catch(err){}};
