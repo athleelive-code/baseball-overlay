@@ -969,7 +969,6 @@ function connectWS(){
     ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
     ws.onmessage=e=>{
-      // 接続後の最初のメッセージ（lastState）だけ適用して同期
       if(_synced) return;
       const h=t=>{
         if(t===_lastSentPayload) return;
