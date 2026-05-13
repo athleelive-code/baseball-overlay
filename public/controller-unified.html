@@ -722,7 +722,7 @@ function renderSB(){
   const head = document.getElementById('sb-head');
   head.innerHTML = '<th style="width:0;padding:0"></th>';
   for(let i=1;i<=n;i++){
-    head.innerHTML += `<th class="${i===st.inn?'cur':''}" onclick="setCurrentInn(${i})">${i}</th>`;
+    head.innerHTML += `<th class="${i===st.inn?'cur':''}">${i}</th>`;
   }
   buildRow('sb-away','away',n);
   buildRow('sb-home','home',n);
