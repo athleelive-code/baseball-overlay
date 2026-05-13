@@ -959,7 +959,8 @@ function resetAll(){
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws=null, _wsTimer=null, _justSent=false;
+let ws=null, _wsTimer=null, _lastSentPayload='';
+
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
@@ -968,8 +969,11 @@ function connectWS(){
     ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
     ws.onmessage=e=>{
-      if(_justSent) return; // 自分の送信の反射は無視
-      const h=t=>{try{applyRemote(JSON.parse(t));}catch(err){}};
+      const h=t=>{
+        // 自分が送った内容と同じなら無視
+        if(t===_lastSentPayload) return;
+        try{ applyRemote(JSON.parse(t)); }catch(err){}
+      };
       if(e.data instanceof Blob) e.data.text().then(h); else h(e.data);
     };
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
@@ -978,22 +982,28 @@ connectWS();
 
 function applyRemote(s){
   if(!s) return;
-  // 状態を上書き
-  st.inn = s.inn||st.inn;
+  st.inn = s.inn!==undefined ? s.inn : st.inn;
   st.top = s.top!==undefined ? s.top : st.top;
   st.maxInn = s.maxInn||st.maxInn;
   st.configMaxInn = s.maxInn||st.configMaxInn;
   bso.b = s.b||0; bso.s = s.s||0; bso.o = s.o||0;
-  bases[1]=s.r?s.r[1]||false:false;
-  bases[2]=s.r?s.r[2]||false:false;
-  bases[3]=s.r?s.r[3]||false:false;
+  if(s.r){ bases[1]=!!s.r[1]; bases[2]=!!s.r[2]; bases[3]=!!s.r[3]; }
   if(s.asc) s.asc.forEach((v,i)=>{ if(i<16) scores.away[i]=v; });
   if(s.hsc) s.hsc.forEach((v,i)=>{ if(i<16) scores.home[i]=v; });
   if(s.xOn) Object.assign(xOn, s.xOn);
-  if(s.aab){ const e=document.getElementById('name-away'); if(e&&e.textContent!==s.aab) e.textContent=s.aab; }
-  if(s.hnm){ const e=document.getElementById('name-home'); if(e&&e.textContent!==s.hnm) e.textContent=s.hnm; }
+  if(s.aab){ const e=document.getElementById('name-away'); if(e) e.textContent=s.aab; }
+  if(s.hnm){ const e=document.getElementById('name-home'); if(e) e.textContent=s.hnm; }
   document.getElementById('inn-num').textContent = st.inn;
   setTop(st.top); renderSB(); renderBSO(); renderDiamond();
+  // 受け取った状態を自分のlastSentとして記録（再broadcast不要）
+  _lastSentPayload = JSON.stringify({
+    inn:st.inn, top:st.top, maxInn:st.maxInn,
+    b:bso.b, s:bso.s, o:bso.o,
+    r:{1:bases[1],2:bases[2],3:bases[3]},
+    aab:s.aab||'先攻', hnm:s.hnm||'後攻',
+    asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
+    batter:s.batter||null, pitcher:s.pitcher||null, catcher:s.catcher||null
+  });
 }
 
 let _broadcastTimer=null;
@@ -1020,9 +1030,8 @@ function _doBroadcast(){
     asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
     batter, pitcher, catcher
   });
-  _justSent=true;
+  _lastSentPayload = payload;
   ws.send(payload);
-  setTimeout(()=>{ _justSent=false; }, 200);
 }
 
 // 初期描画
