@@ -248,8 +248,12 @@ html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidde
       </div>
     </div>
     <div class="inn-adj">
-      <button class="inn-adj-btn" onclick="adjInn(-1)">－</button>
-      <button class="inn-adj-btn" onclick="adjInn(+1)">＋</button>
+      <button class="inn-adj-btn"
+        ontouchend="event.preventDefault();adjInn(-1)"
+        onclick="adjInn(-1)">－</button>
+      <button class="inn-adj-btn"
+        ontouchend="event.preventDefault();adjInn(+1)"
+        onclick="adjInn(+1)">＋</button>
     </div>
   </div>
 
@@ -955,41 +959,24 @@ function resetAll(){
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws=null, _isSending=false, _wsTimer=null;
+let ws=null, _wsTimer=null;
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
-    ws.onopen=()=>{ /* lastStateはserver側がoverlay接続時に送るので不要 */ };
+    ws.onopen=()=>{};
     ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
-    ws.onmessage=e=>{
-      if(_isSending)return;
-      const h=t=>{try{applyRemote(JSON.parse(t));}catch(err){}};
-      if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
-    };
+    // controllerはoverlayへの送信専用　受信は無視
+    ws.onmessage=()=>{};
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
 
-function applyRemote(s){
-  if(!s)return;
-  st.inn=s.inn||st.inn; st.top=s.top!==undefined?s.top:st.top;
-  st.b=s.b||0; st.s=s.s||0; st.o=s.o||0;
-  st.r=s.r||{1:false,2:false,3:false};
-  st.maxInn=s.maxInn||st.maxInn;
-  if(s.asc)s.asc.forEach((v,i)=>{if(i<16)scores.away[i]=v;});
-  if(s.hsc)s.hsc.forEach((v,i)=>{if(i<16)scores.home[i]=v;});
-  if(s.xOn)Object.assign(xOn,s.xOn);
-  if(s.aab){const e=document.getElementById('name-away');if(e)e.textContent=s.aab;}
-  if(s.hnm){const e=document.getElementById('name-home');if(e)e.textContent=s.hnm;}
-  renderSB(); renderBSO(); renderDiamond(); setTop(st.top);
-}
-
 let _broadcastTimer=null;
 function broadcast(){
   if(_broadcastTimer) clearTimeout(_broadcastTimer);
-  _broadcastTimer=setTimeout(_doBroadcast, 80);
+  _broadcastTimer=setTimeout(_doBroadcast, 50);
 }
 function _doBroadcast(){
   _broadcastTimer=null;
@@ -1003,16 +990,14 @@ function _doBroadcast(){
   const catcher=catSel&&catSel.selectedIndex>0?catSel.options[catSel.selectedIndex].text:null;
   const batter =batSel&&batSel.selectedIndex>0?batSel.options[batSel.selectedIndex].text:null;
   const payload=JSON.stringify({
-    ...st, ...bso, r:{...bases},
+    inn:st.inn, top:st.top, maxInn:st.maxInn,
+    b:bso.b, s:bso.s, o:bso.o,
+    r:{1:bases[1],2:bases[2],3:bases[3]},
     aab, hnm,
     asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
-    batter, pitcher, catcher,
-    batterNext:null, batterNext2:null,
-    maxInn:st.maxInn
+    batter, pitcher, catcher
   });
-  _isSending=true;
   ws.send(payload);
-  setTimeout(()=>_isSending=false,100);
 }
 
 // 初期描画
