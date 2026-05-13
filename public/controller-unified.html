@@ -986,7 +986,13 @@ function applyRemote(s){
   renderSB(); renderBSO(); renderDiamond(); setTop(st.top);
 }
 
+let _broadcastTimer=null;
 function broadcast(){
+  if(_broadcastTimer) clearTimeout(_broadcastTimer);
+  _broadcastTimer=setTimeout(_doBroadcast, 80);
+}
+function _doBroadcast(){
+  _broadcastTimer=null;
   if(!ws||ws.readyState!==1)return;
   const aab=document.getElementById('name-away')?.textContent||'先攻';
   const hnm=document.getElementById('name-home')?.textContent||'後攻';
