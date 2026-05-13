@@ -241,21 +241,37 @@ function applyState(s){
   set('ov-score-away',at);
   set('ov-score-home',ht);
 
-  // イニングスコア表
+  // イニングスコア表（セル単位更新・構造変化なし）
   const istBody=g('ov-ist-body');
   if(istBody){
-    let html='';
-    [[asc,'away'],[hsc,'home']].forEach(([sc,team])=>{
-      html+='<tr>';
+    const rows=istBody.querySelectorAll('tr');
+    const data=[[asc,'away'],[hsc,'home']];
+    // 行数・列数が変わった時だけ再構築
+    const needRebuild = rows.length!==2 || (rows[0]&&rows[0].querySelectorAll('td').length!==n);
+    if(needRebuild){
+      let html='';
+      data.forEach(([sc])=>{
+        html+='<tr>';
+        for(let i=0;i<n;i++) html+=`<td class=""></td>`;
+        html+='</tr>';
+      });
+      istBody.innerHTML=html;
+    }
+    // セルの内容とクラスだけ更新
+    data.forEach(([sc,team],ri)=>{
+      const row=istBody.querySelectorAll('tr')[ri];
+      if(!row)return;
+      const cells=row.querySelectorAll('td');
       for(let i=0;i<n;i++){
-        const isCur=i+1===inn;
+        const td=cells[i];
+        if(!td)continue;
         const val=sc[i];
-        const disp=val===null?'&nbsp;':val==='x'?'×':String(val);
-        html+=`<td class="${isCur?'cur':''}">${disp}</td>`;
+        const disp=val===null?'':val==='x'?'×':String(val);
+        const cls=i+1===inn?'cur':'';
+        if(td.textContent!==disp) td.textContent=disp;
+        if(td.className!==cls) td.className=cls;
       }
-      html+='</tr>';
     });
-    if(istBody._lastHtml!==html){ istBody.innerHTML=html; istBody._lastHtml=html; }
   }
 
   // BSO
@@ -297,14 +313,24 @@ function applyState(s){
 
 // WebSocket
 let ws=null, _wsTimer=null;
+let _pendingState=null, _applyTimer=null;
+
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/?overlay=1');
     ws.onopen=()=>{};
     ws.onmessage=e=>{
-      const h=t=>{try{applyState(JSON.parse(t));}catch(err){}};
-      if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
+      const h=t=>{
+        try{
+          _pendingState=JSON.parse(t);
+          if(!_applyTimer) _applyTimer=setTimeout(()=>{
+            _applyTimer=null;
+            if(_pendingState) applyState(_pendingState);
+          },50);
+        }catch(err){}
+      };
+      if(e.data instanceof Blob) e.data.text().then(h); else h(e.data);
     };
     ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
