@@ -241,53 +241,7 @@ function applyState(s){
   set('ov-score-away',at);
   set('ov-score-home',ht);
 
-  // スコア表ヘッダー
-  const head=g('ov-sb-head');
-  if(head){
-    head.innerHTML='';
-    for(let i=1;i<=n;i++) head.innerHTML+=`<th class="${i===inn?'cur':''}">${i}</th>`;
-  }
-  // スコア表行
-  [[g('ov-sb-away'),asc,'away'],[g('ov-sb-home'),hsc,'home']].forEach(([row,sc,team])=>{
-    if(!row)return;
-    row.innerHTML='';
-    for(let i=0;i<n;i++){
-      const isCur=i+1===inn;
-      const val=sc[i];
-      const xFlag=xOn[`${team}-${i}`]||false;
-      const cls=isCur?(isTop?'cur-top':'cur-bot'):'';
-      let disp=val===null?'<span class="blank">－</span>':val==='x'?'<span style="color:#555">×</span>':`${val}${xFlag?'<span style="color:rgba(255,90,90,.7);font-size:.7em">×</span>':''}`;
-      row.innerHTML+=`<td class="${cls}">${disp}</td>`;
-    }
-  });
-
-  // BSO (フラット・変化時のみ更新)
-  for(let i=0;i<3;i++){
-    const d=g('ov-bd'+(i+1));
-    if(d) setAttr('ov-bd'+(i+1),'fill',i<(s.b||0)?'#43a047':'#333');
-  }
-  for(let i=0;i<2;i++){
-    const sd=g('ov-sd'+(i+1));
-    if(sd) setAttr('ov-sd'+(i+1),'fill',i<(s.s||0)?'#f5c518':'#333');
-    const od=g('ov-od'+(i+1));
-    if(od){
-      setAttr('ov-od'+(i+1),'fill',i<(s.o||0)?'#c8102e':'#282828');
-      setAttr('ov-od'+(i+1),'stroke',i<(s.o||0)?'#7a0000':'#444');
-    }
-  }
-
-  // ダイヤモンド（フラット・変化時のみ更新）
-  const r=s.r||{};
-  [1,2,3].forEach(n=>{
-    const e=g('ov-b'+n);
-    if(!e)return;
-    const newFill=r[n]?'#f5c518':'rgba(255,255,255,.12)';
-    const newStroke=r[n]?'#b8860b':'rgba(255,255,255,.3)';
-    if(e.getAttribute('fill')!==newFill) e.setAttribute('fill',newFill);
-    if(e.getAttribute('stroke')!==newStroke) e.setAttribute('stroke',newStroke);
-  });
-
-  // イニングスコア表（変化時のみ更新・均等割付）
+  // イニングスコア表
   const istBody=g('ov-ist-body');
   if(istBody){
     let html='';
@@ -304,10 +258,28 @@ function applyState(s){
     if(istBody._lastHtml!==html){ istBody.innerHTML=html; istBody._lastHtml=html; }
   }
 
+  // BSO
+  for(let i=0;i<3;i++) setAttr('ov-bd'+(i+1),'fill',i<(s.b||0)?'#43a047':'#333');
+  for(let i=0;i<2;i++){
+    setAttr('ov-sd'+(i+1),'fill',i<(s.s||0)?'#f5c518':'#333');
+    setAttr('ov-od'+(i+1),'fill',i<(s.o||0)?'#c8102e':'#282828');
+    setAttr('ov-od'+(i+1),'stroke',i<(s.o||0)?'#7a0000':'#444');
+  }
+
+  // ダイヤモンド
+  [1,2,3].forEach(n=>{
+    const e=g('ov-b'+n);
+    if(!e)return;
+    const f=r[n]?'#f5c518':'rgba(255,255,255,.12)';
+    const st2=r[n]?'#b8860b':'rgba(255,255,255,.3)';
+    if(e.getAttribute('fill')!==f) e.setAttribute('fill',f);
+    if(e.getAttribute('stroke')!==st2) e.setAttribute('stroke',st2);
+  });
+
   // 打者・投手・捕手
   set('ov-batter',s.batter||'-');
-  set('ov-batter-next', s.batterNext||'-');
-  set('ov-batter-next2', s.batterNext2||'-');
+  set('ov-batter-next',s.batterNext||'-');
+  set('ov-batter-next2',s.batterNext2||'-');
   set('ov-pitcher',s.pitcher||'-');
   set('ov-catcher',s.catcher||'-');
 }
