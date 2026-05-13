@@ -959,7 +959,8 @@ function resetAll(){
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws=null, _wsTimer=null, _lastSentPayload='';
+let ws=null, _wsTimer=null;
+const _myId = Math.random().toString(36).slice(2); // このcontrollerの一意ID
 
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
@@ -970,8 +971,11 @@ function connectWS(){
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
     ws.onmessage=e=>{
       const h=t=>{
-        if(t===_lastSentPayload) return; // 自分の送信の反射は無視
-        try{ applyRemote(JSON.parse(t)); }catch(err){}
+        try{
+          const s=JSON.parse(t);
+          if(s._from===_myId) return; // 自分の送信は無視
+          applyRemote(s);
+        }catch(err){}
       };
       if(e.data instanceof Blob) e.data.text().then(h); else h(e.data);
     };
@@ -996,16 +1000,6 @@ function applyRemote(s){
   if(s.hnm){ const e=document.getElementById('name-home'); if(e) e.textContent=s.hnm; }
   document.getElementById('inn-num').textContent = st.inn;
   setTop(st.top); renderSB(); renderBSO(); renderDiamond();
-  // 受け取った状態を_lastSentPayloadに記録して再broadcast防止
-  _lastSentPayload = JSON.stringify({
-    inn:st.inn, top:st.top, maxInn:st.maxInn,
-    b:bso.b, s:bso.s, o:bso.o,
-    r:{1:bases[1],2:bases[2],3:bases[3]},
-    aab:s.aab||document.getElementById('name-away')?.textContent||'先攻',
-    hnm:s.hnm||document.getElementById('name-home')?.textContent||'後攻',
-    asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
-    batter:s.batter||null, pitcher:s.pitcher||null, catcher:s.catcher||null
-  });
 }
 
 let _broadcastTimer=null;
@@ -1024,16 +1018,15 @@ function _doBroadcast(){
   const pitcher=pitSel&&pitSel.selectedIndex>0?pitSel.options[pitSel.selectedIndex].text:null;
   const catcher=catSel&&catSel.selectedIndex>0?catSel.options[catSel.selectedIndex].text:null;
   const batter =batSel&&batSel.selectedIndex>0?batSel.options[batSel.selectedIndex].text:null;
-  const payload=JSON.stringify({
+  ws.send(JSON.stringify({
+    _from:_myId,
     inn:st.inn, top:st.top, maxInn:st.maxInn,
     b:bso.b, s:bso.s, o:bso.o,
     r:{1:bases[1],2:bases[2],3:bases[3]},
     aab, hnm,
     asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
     batter, pitcher, catcher
-  });
-  _lastSentPayload = payload;
-  ws.send(payload);
+  }));
 }
 
 // 初期描画
