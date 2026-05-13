@@ -13,27 +13,27 @@ app.get('/', (req, res) => { res.redirect('/controller-unified.html'); });
 let lastState = null;
 
 wss.on('connection', (ws, req) => {
-  const url = req.url || '';
-  const isOverlay = url.includes('overlay');
+  const isOverlay = (req.url || '').includes('overlay');
+  ws._isOverlay = isOverlay;
 
-  // overlayにのみlastStateを送信（controllerには送らない）
+  // overlayのみlastStateで初期同期
   if (isOverlay && lastState) {
     ws.send(lastState);
   }
 
   ws.on('message', (data) => {
     const text = data.toString();
-    try {
-      JSON.parse(text);
-      lastState = text;
-    } catch(e) {}
+    try { JSON.parse(text); lastState = text; } catch(e) {}
 
-    // 送信元以外の全クライアントに転送
-    wss.clients.forEach((client) => {
-      if (client !== ws && client.readyState === 1) {
-        client.send(text);
-      }
-    });
+    // controllerからの送信 → overlayにのみ転送
+    // overlayからの送信 → 無視（overlayは送信しないが念のため）
+    if (!isOverlay) {
+      wss.clients.forEach((client) => {
+        if (client._isOverlay && client.readyState === 1) {
+          client.send(text);
+        }
+      });
+    }
   });
 
   ws.on('close', () => {});
