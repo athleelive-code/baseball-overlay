@@ -13,7 +13,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov{
   position:fixed;
   right:20px;bottom:20px;
-  background:#080c18;
+  background:rgba(8,12,24,.80);
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
@@ -47,18 +47,19 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* イニングスコア表（右詰め・数字幅のみ使用） */
 .ov-ist-inline{
   flex:1;overflow:hidden;border-left:1px solid rgba(255,255,255,.1);
-  display:flex;align-self:stretch;justify-content:flex-end;
+  align-self:stretch;
 }
-.ov-ist-table{border-collapse:collapse;table-layout:auto;height:100%}
-.ov-ist-table tbody{display:table;height:100%}
+.ov-ist-table{border-collapse:collapse;table-layout:fixed;width:100%;height:100%}
 .ov-ist-table tr{height:50%}
 .ov-ist-table td{
-  text-align:center;padding:0 3px;
+  text-align:center;padding:0;
   font-size:clamp(12px,2.5vw,22px);font-weight:700;
   color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;
   vertical-align:middle;white-space:nowrap;
+  border-right:1px solid rgba(255,255,255,.06);
 }
 .ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.06)}
+.ov-ist-table td:last-child{border-right:none}
 .ov-ist-table td.cur{color:#fff}
 .ov-ist{display:none}
 
@@ -275,7 +276,7 @@ function applyState(s){
     if(e.getAttribute('stroke')!==newStroke) e.setAttribute('stroke',newStroke);
   });
 
-  // イニングスコア表（変化時のみ更新）
+  // イニングスコア表（変化時のみ更新・均等割付）
   const istBody=g('ov-ist-body');
   if(istBody){
     let html='';
@@ -285,8 +286,7 @@ function applyState(s){
         const isCur=i+1===inn;
         const val=sc[i];
         const disp=val===null?'&nbsp;':val==='x'?'×':String(val);
-        const borderRight=(i+1)%3===0?'border-right:2px solid rgba(255,255,255,.12)':'border-right:1px solid rgba(255,255,255,.06)';
-        html+=`<td class="${isCur?'cur':''}" style="${borderRight}">${disp}</td>`;
+        html+=`<td class="${isCur?'cur':''}">${disp}</td>`;
       }
       html+='</tr>';
     });
