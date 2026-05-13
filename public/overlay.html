@@ -17,11 +17,20 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(50% - 20px);
+  width:calc(33% - 20px);
   opacity:0;transition:opacity .3s;
 }
 
-/* ── TOP ROW ── */
+/* ── TOP BAR ── */
+.ov-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:3px 10px;background:rgba(0,0,0,.4);
+  border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;
+}
+.ov-brand{font-size:clamp(11px,2vw,16px);font-weight:800;color:#c8102e;letter-spacing:.5px}
+.ov-brand span{color:#fff}
+.ov-topbar-inn{font-size:clamp(11px,2vw,15px);font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1px}
+.ov-clock{font-size:clamp(11px,2vw,15px);font-weight:600;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums;letter-spacing:.5px}
 .ov-top{display:flex;align-items:stretch}
 
 /* イニング */
@@ -89,6 +98,12 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 </head>
 <body>
 <div class="ov" id="ov">
+
+  <!-- TOP BAR -->
+  <div class="ov-topbar">
+    <span class="ov-brand">Athlee<span>Live</span></span>
+    <span class="ov-clock" id="ov-clock"></span>
+  </div>
 
   <!-- TOP ROW -->
   <div class="ov-top">
@@ -300,6 +315,13 @@ function applyState(s){
   set('ov-pitcher',s.pitcher||'-');
   set('ov-catcher',s.catcher||'-');
 }
+
+// 時計
+(function tick(){
+  const e=document.getElementById('ov-clock');
+  if(e){const n=new Date();e.textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0')+':'+n.getSeconds().toString().padStart(2,'0');}
+  setTimeout(tick,1000);
+})();
 
 // WebSocket
 let ws=null, _wsTimer=null;
