@@ -701,13 +701,13 @@ function setTop(isTop){
 
 function adjInn(d){
   if(d > 0){
-    st.inn = Math.min(15, st.inn + 1);
+    // 設定の最終回を超えない
+    if(st.inn >= st.configMaxInn) return;
+    st.inn = Math.min(st.configMaxInn, st.inn + 1);
     if(st.inn > st.maxInn) st.maxInn = st.inn;
   } else {
-    // 設定の最終回（st.configMaxInn）以下には減らない
-    const floor = st.configMaxInn || 7;
     st.inn = Math.max(1, st.inn - 1);
-    st.maxInn = Math.max(floor, st.inn);
+    st.maxInn = Math.max(st.configMaxInn, st.inn);
   }
   document.getElementById('inn-num').textContent = st.inn;
   renderSB(); broadcast();
@@ -948,7 +948,7 @@ function resetAll(){
   for(const k in xOn) delete xOn[k];
   bso.b=0; bso.s=0; bso.o=0;
   Object.assign(bases,{1:false,2:false,3:false});
-  st.inn=1; st.top=true; st.maxInn=7;
+  st.inn=1; st.top=true; st.maxInn=7; st.configMaxInn=7;
   document.getElementById('inn-num').textContent=1;
   renderSB(); renderBSO(); renderDiamond(); setTop(true); broadcast();
   closeDrawer();
