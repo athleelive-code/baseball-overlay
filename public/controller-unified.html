@@ -959,7 +959,7 @@ function resetAll(){
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws=null, _wsTimer=null;
+let ws=null, _wsTimer=null, _justSent=false;
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
@@ -967,11 +967,34 @@ function connectWS(){
     ws.onopen=()=>{};
     ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
-    // controllerはoverlayへの送信専用　受信は無視
-    ws.onmessage=()=>{};
+    ws.onmessage=e=>{
+      if(_justSent) return; // 自分の送信の反射は無視
+      const h=t=>{try{applyRemote(JSON.parse(t));}catch(err){}};
+      if(e.data instanceof Blob) e.data.text().then(h); else h(e.data);
+    };
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
+
+function applyRemote(s){
+  if(!s) return;
+  // 状態を上書き
+  st.inn = s.inn||st.inn;
+  st.top = s.top!==undefined ? s.top : st.top;
+  st.maxInn = s.maxInn||st.maxInn;
+  st.configMaxInn = s.maxInn||st.configMaxInn;
+  bso.b = s.b||0; bso.s = s.s||0; bso.o = s.o||0;
+  bases[1]=s.r?s.r[1]||false:false;
+  bases[2]=s.r?s.r[2]||false:false;
+  bases[3]=s.r?s.r[3]||false:false;
+  if(s.asc) s.asc.forEach((v,i)=>{ if(i<16) scores.away[i]=v; });
+  if(s.hsc) s.hsc.forEach((v,i)=>{ if(i<16) scores.home[i]=v; });
+  if(s.xOn) Object.assign(xOn, s.xOn);
+  if(s.aab){ const e=document.getElementById('name-away'); if(e&&e.textContent!==s.aab) e.textContent=s.aab; }
+  if(s.hnm){ const e=document.getElementById('name-home'); if(e&&e.textContent!==s.hnm) e.textContent=s.hnm; }
+  document.getElementById('inn-num').textContent = st.inn;
+  setTop(st.top); renderSB(); renderBSO(); renderDiamond();
+}
 
 let _broadcastTimer=null;
 function broadcast(){
@@ -980,7 +1003,7 @@ function broadcast(){
 }
 function _doBroadcast(){
   _broadcastTimer=null;
-  if(!ws||ws.readyState!==1)return;
+  if(!ws||ws.readyState!==1) return;
   const aab=document.getElementById('name-away')?.textContent||'先攻';
   const hnm=document.getElementById('name-home')?.textContent||'後攻';
   const pitSel=document.getElementById('sel-pitcher');
@@ -997,7 +1020,9 @@ function _doBroadcast(){
     asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
     batter, pitcher, catcher
   });
+  _justSent=true;
   ws.send(payload);
+  setTimeout(()=>{ _justSent=false; }, 200);
 }
 
 // 初期描画
