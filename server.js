@@ -13,26 +13,22 @@ app.get('/', (req, res) => {
   res.redirect('/controller-unified.html');
 });
 
-// 最後に受信した状態をキャッシュ
 let lastState = null;
 
 wss.on('connection', (ws) => {
-  console.log('Client connected. Total:', wss.clients.size);
-
-  // 新規接続時に最新状態を送信（overlay読み込み時に即同期）
-  if(lastState) {
+  // 新規接続クライアントにのみlastStateを送信（自分だけ）
+  if (lastState) {
     ws.send(lastState);
   }
 
   ws.on('message', (data) => {
     const text = data.toString();
-    // コントローラーからの状態更新をキャッシュ
     try {
-      JSON.parse(text); // 有効なJSONのみキャッシュ
-      lastState = text;
+      JSON.parse(text);
+      lastState = text; // 有効なJSONのみキャッシュ
     } catch(e) {}
 
-    console.log('Message received, broadcasting to', wss.clients.size - 1, 'clients');
+    // 送信元以外の全クライアントに転送
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) {
         client.send(text);
@@ -40,9 +36,7 @@ wss.on('connection', (ws) => {
     });
   });
 
-  ws.on('close', () => {
-    console.log('Client disconnected. Total:', wss.clients.size);
-  });
+  ws.on('close', () => {});
 });
 
 const PORT = process.env.PORT || 3000;
