@@ -8,16 +8,16 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/', (req, res) => {
-  res.redirect('/controller-unified.html');
-});
+app.get('/', (req, res) => { res.redirect('/controller-unified.html'); });
 
 let lastState = null;
 
-wss.on('connection', (ws) => {
-  // 新規接続クライアントにのみlastStateを送信（自分だけ）
-  if (lastState) {
+wss.on('connection', (ws, req) => {
+  const url = req.url || '';
+  const isOverlay = url.includes('overlay');
+
+  // overlayにのみlastStateを送信（controllerには送らない）
+  if (isOverlay && lastState) {
     ws.send(lastState);
   }
 
@@ -25,7 +25,7 @@ wss.on('connection', (ws) => {
     const text = data.toString();
     try {
       JSON.parse(text);
-      lastState = text; // 有効なJSONのみキャッシュ
+      lastState = text;
     } catch(e) {}
 
     // 送信元以外の全クライアントに転送
