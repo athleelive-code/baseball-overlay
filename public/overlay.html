@@ -209,23 +209,20 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 <script>
 function g(id){return document.getElementById(id)}
-function set(id,v){const e=g(id);if(e&&e.textContent!==String(v))e.textContent=v;}
+function set(id,v){const e=g(id);if(e&&e.textContent!==String(v))e.textContent=String(v);}
 function setAttr(id,attr,v){const e=g(id);if(e&&e.getAttribute(attr)!==v)e.setAttribute(attr,v);}
 function setCls(id,v){const e=g(id);if(e&&e.className!==v)e.className=v;}
 
-let _lastStateJson='';
+let _lastState=null;
 
 function applyState(s){
   if(!s)return;
-  // 変化がなければスキップ
-  const sJson=JSON.stringify(s);
-  if(sJson===_lastStateJson)return;
-  _lastStateJson=sJson;
 
   const inn=s.inn||1, isTop=s.top!==false;
   const n=Math.max(s.maxInn||7,inn);
   const asc=s.asc||[], hsc=s.hsc||[];
   const xOn=s.xOn||{};
+  const r=s.r||{};
 
   // イニング・表裏
   set('ov-inn',inn);
