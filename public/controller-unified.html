@@ -376,6 +376,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <div id="dtab-roster" style="display:none">
     <div class="drawer-sec">
       <div class="drawer-sec-t">先攻チーム</div>
+      <button onclick="scanRoster('away')" style="width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px">📷 写真からオーダー表を読み取る</button>
       <div id="roster-away-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
         <input id="roster-away-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
@@ -385,6 +386,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">後攻チーム</div>
+      <button onclick="scanRoster('home')" style="width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px">📷 写真からオーダー表を読み取る</button>
       <div id="roster-home-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
         <input id="roster-home-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
@@ -393,6 +395,21 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       </div>
     </div>
   </div>
+
+  <!-- 写真スキャン確認パネル -->
+  <div id="scan-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;overflow-y:auto">
+    <div style="background:#1c1c1e;border-radius:16px;padding:24px;width:92vw;max-width:500px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:32px;font-weight:700;color:#fff" id="scan-title">読み取り結果</span>
+        <button onclick="closeScan()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:40px;width:70px;height:70px;border-radius:50%;cursor:pointer">✕</button>
+      </div>
+      <div id="scan-status" style="font-size:28px;color:#888">読み取り中...</div>
+      <div id="scan-results" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button id="scan-confirm" onclick="confirmScan()" style="display:none;background:#007aff;border:none;border-radius:12px;color:#fff;font-size:36px;padding:20px;cursor:pointer;width:100%">この内容で登録</button>
+    </div>
+  </div>
+  <!-- hidden file input -->
+  <input type="file" id="scan-file" accept="image/*" capture="environment" style="display:none" onchange="onScanFile(event)"/>
 </div>
 
 <!-- SCORE INPUT PANEL -->
@@ -870,6 +887,84 @@ function cancelNameEdit(){
     }catch(e){}
   });
 })();
+
+// ── 写真スキャン ────────────────────────────────────────────────────────────────
+let _scanTeam=null, _scanPlayers=[];
+
+function scanRoster(team){
+  _scanTeam=team;
+  document.getElementById('scan-file').click();
+}
+
+function onScanFile(e){
+  const file=e.target.files[0];
+  e.target.value='';
+  if(!file)return;
+  const title=_scanTeam==='away'?'先攻チーム':'後攻チーム';
+  document.getElementById('scan-title').textContent=title+' 読み取り結果';
+  document.getElementById('scan-status').textContent='読み取り中... 少々お待ちください';
+  document.getElementById('scan-results').innerHTML='';
+  document.getElementById('scan-confirm').style.display='none';
+  document.getElementById('scan-bg').style.display='flex';
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const b64=ev.target.result.split(',')[1];
+    const mime=file.type||'image/jpeg';
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:1000,
+          messages:[{
+            role:'user',
+            content:[
+              {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+              {type:'text',text:'この野球のオーダー表から選手の背番号と名前を読み取ってください。JSONのみで返してください。形式: {"players":[{"num":"背番号","name":"選手名"},...]}\n背番号がない場合はnumを空文字にしてください。'}
+            ]
+          }]
+        })
+      });
+      const data=await res.json();
+      const text=data.content?.[0]?.text||'';
+      const clean=text.replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(clean);
+      _scanPlayers=parsed.players||[];
+      showScanResults(_scanPlayers);
+    }catch(err){
+      document.getElementById('scan-status').textContent='読み取りに失敗しました。もう一度お試しください。';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function showScanResults(players){
+  document.getElementById('scan-status').textContent=`${players.length}名を読み取りました。修正してから登録してください。`;
+  document.getElementById('scan-results').innerHTML=players.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center">
+      <input value="${p.num||''}" placeholder="#" style="width:90px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:30px;padding:12px;outline:none"
+        oninput="_scanPlayers[${i}].num=this.value"/>
+      <input value="${p.name||''}" placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:30px;padding:12px;outline:none"
+        oninput="_scanPlayers[${i}].name=this.value"/>
+      <button onclick="_scanPlayers.splice(${i},1);showScanResults(_scanPlayers)" style="background:#7a0000;border:none;border-radius:8px;color:#fff;font-size:30px;padding:12px 16px;cursor:pointer">×</button>
+    </div>
+  `).join('');
+  document.getElementById('scan-confirm').style.display='block';
+}
+
+function confirmScan(){
+  _scanPlayers.forEach(p=>{
+    if(p.name&&p.name.trim())
+      rosters[_scanTeam].push({id:Date.now()+Math.random(),num:p.num||'',name:p.name.trim()});
+  });
+  renderRosters(); updateSelects(); closeScan();
+}
+
+function closeScan(){
+  document.getElementById('scan-bg').style.display='none';
+  _scanTeam=null; _scanPlayers=[];
+}
 
 // ── DRAWER TABS ──────────────────────────────────────────────────────────────
 function switchDrawerTab(tab){
