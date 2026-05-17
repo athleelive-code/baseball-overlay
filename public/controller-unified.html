@@ -934,8 +934,10 @@ function onCsvFile(e, team){
       const players=rows.slice(1)
         .filter(r=>r[nameCol]&&String(r[nameCol]).trim())
         .map(r=>({
+          order:orderCol>=0?String(r[orderCol]||'').trim():'',
           num:String(r[numCol]||'').trim(),
-          name:String(r[nameCol]).trim()
+          name:String(r[nameCol]).trim(),
+          pos:posCol>=0?String(r[posCol]||'').trim():''
         }));
 
       if(players.length===0){
