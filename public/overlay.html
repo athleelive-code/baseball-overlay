@@ -91,8 +91,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* 打者・投手 */
 .ov-players{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;padding:6px 10px;border-left:1px solid rgba(255,255,255,.08)}
 .ov-player-row{display:flex;align-items:center;gap:6px;overflow:hidden}
-.ov-player-tag{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1.5px;flex-shrink:0}
-.ov-player-name{font-size:clamp(11px,2.8vw,16px);font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-player-tag{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:1.5px;flex-shrink:0;font-weight:600}
+.ov-player-name{font-size:clamp(16px,4vw,26px);font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -178,12 +178,12 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       </div>
       <div style="display:flex;border-top:1px solid rgba(255,255,255,.06)">
         <div style="flex:1;display:flex;align-items:center;gap:5px;padding:3px 8px;border-right:1px solid rgba(255,255,255,.06)">
-          <span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:1.5px;flex-shrink:0">P</span>
-          <span style="font-size:11px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-pitcher">-</span>
+          <span style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:1.5px;flex-shrink:0;font-weight:600">P</span>
+          <span style="font-size:clamp(16px,4vw,26px);font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-pitcher">-</span>
         </div>
         <div style="flex:1;display:flex;align-items:center;gap:5px;padding:3px 8px">
-          <span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:1.5px;flex-shrink:0">C</span>
-          <span style="font-size:11px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-catcher">-</span>
+          <span style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:1.5px;flex-shrink:0;font-weight:600">C</span>
+          <span style="font-size:clamp(16px,4vw,26px);font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-catcher">-</span>
         </div>
       </div>
     </div>
@@ -293,11 +293,11 @@ function applyState(s){
   });
 
   // 打者・投手・捕手
-  set('ov-batter',s.batter||'-');
-  set('ov-batter-next',s.batterNext||'-');
-  set('ov-batter-next2',s.batterNext2||'-');
-  set('ov-pitcher',s.pitcher||'-');
-  set('ov-catcher',s.catcher||'-');
+  set('ov-batter',s.batter||'');
+  set('ov-batter-next',s.batterNext||'');
+  set('ov-batter-next2',s.batterNext2||'');
+  set('ov-pitcher',s.pitcher||'');
+  set('ov-catcher',s.catcher||'');
 }
 
 // 時計（独立レイヤーで他要素の再描画を防ぐ）
