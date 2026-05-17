@@ -34,7 +34,7 @@ app.post('/api/scan-roster', async (req, res) => {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageBase64 } },
-            { type: 'text', text: 'この野球のオーダー表から選手の背番号と名前を読み取ってください。JSONのみで返してください。形式: {"players":[{"num":"背番号","name":"選手名"},...]}\n背番号がない場合はnumを空文字にしてください。' }
+            { type: 'text', text: 'この野球のオーダー表から選手の背番号・名前・守備位置を読み取ってください。JSONのみで返してください。形式: {"players":[{"num":"背番号","name":"選手名","pos":"守備位置"},...]}\n背番号や守備位置がない場合は空文字にしてください。' }
           ]
         }]
       })
