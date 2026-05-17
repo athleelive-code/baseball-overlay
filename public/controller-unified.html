@@ -376,7 +376,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <div id="dtab-roster" style="display:none">
     <div class="drawer-sec">
       <div class="drawer-sec-t">先攻チーム</div>
-      <button onclick="scanRoster('away')" style="width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px">📷 写真からオーダー表を読み取る</button>
+      <label for="scan-file-away" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📷 写真からオーダー表を読み取る</label>
+      <input type="file" id="scan-file-away" accept="image/*" style="display:none" onchange="onScanFile(event,'away')"/>
       <div id="roster-away-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
         <input id="roster-away-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
@@ -386,7 +387,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">後攻チーム</div>
-      <button onclick="scanRoster('home')" style="width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px">📷 写真からオーダー表を読み取る</button>
+      <label for="scan-file-home" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📷 写真からオーダー表を読み取る</label>
+      <input type="file" id="scan-file-home" accept="image/*" style="display:none" onchange="onScanFile(event,'home')"/>
       <div id="roster-home-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
         <input id="roster-home-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
@@ -396,8 +398,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     </div>
   </div>
 
-  <!-- 写真スキャン確認パネル -->
-  <div id="scan-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;overflow-y:auto">
+  <!-- 写真スキャン確認パネル --> style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;overflow-y:auto">
     <div style="background:#1c1c1e;border-radius:16px;padding:24px;width:92vw;max-width:500px;display:flex;flex-direction:column;gap:16px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:32px;font-weight:700;color:#fff" id="scan-title">読み取り結果</span>
@@ -408,8 +409,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <button id="scan-confirm" onclick="confirmScan()" style="display:none;background:#007aff;border:none;border-radius:12px;color:#fff;font-size:36px;padding:20px;cursor:pointer;width:100%">この内容で登録</button>
     </div>
   </div>
-  <!-- hidden file input -->
-  <input type="file" id="scan-file" accept="image/*" capture="environment" style="display:none" onchange="onScanFile(event)"/>
+
 </div>
 
 <!-- SCORE INPUT PANEL -->
@@ -891,12 +891,8 @@ function cancelNameEdit(){
 // ── 写真スキャン ────────────────────────────────────────────────────────────────
 let _scanTeam=null, _scanPlayers=[];
 
-function scanRoster(team){
+function onScanFile(e, team){
   _scanTeam=team;
-  document.getElementById('scan-file').click();
-}
-
-function onScanFile(e){
   const file=e.target.files[0];
   e.target.value='';
   if(!file)return;
