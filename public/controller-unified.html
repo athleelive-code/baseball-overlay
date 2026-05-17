@@ -14,7 +14,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
 :root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047}
-html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;background:#111;color:#fff;overflow-x:hidden;overflow-y:auto}
+html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;background:#111;color:#fff;overflow-x:hidden;overflow-y:auto;touch-action:pan-y}
 
 /* ── TOP BAR ── */
 .top-bar{
@@ -967,7 +967,6 @@ function resetAll(){
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 let ws=null, _wsTimer=null;
-const _myId = Math.random().toString(36).slice(2);
 
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
@@ -976,43 +975,15 @@ function connectWS(){
     ws.onopen=()=>{};
     ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
-    ws.onmessage=e=>{
-      const h=t=>{
-        try{
-          const s=JSON.parse(t);
-          if(s._from===_myId) return;
-          applyRemote(s);
-        }catch(err){}
-      };
-      if(e.data instanceof Blob) e.data.text().then(h); else h(e.data);
-    };
+    ws.onmessage=()=>{}; // 受信完全無視
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
 
-function applyRemote(s){
-  if(!s) return;
-  st.inn = s.inn!==undefined ? s.inn : st.inn;
-  st.top = s.top!==undefined ? s.top : st.top;
-  st.maxInn = s.maxInn||st.maxInn;
-  st.configMaxInn = s.maxInn||st.configMaxInn;
-  bso.b = s.b!==undefined ? s.b : bso.b;
-  bso.s = s.s!==undefined ? s.s : bso.s;
-  bso.o = s.o!==undefined ? s.o : bso.o;
-  if(s.r){ bases[1]=!!s.r[1]; bases[2]=!!s.r[2]; bases[3]=!!s.r[3]; }
-  if(s.asc) s.asc.forEach((v,i)=>{ if(i<16) scores.away[i]=v; });
-  if(s.hsc) s.hsc.forEach((v,i)=>{ if(i<16) scores.home[i]=v; });
-  if(s.xOn) Object.assign(xOn, s.xOn);
-  if(s.aab){ const e=document.getElementById('name-away'); if(e) e.textContent=s.aab; }
-  if(s.hnm){ const e=document.getElementById('name-home'); if(e) e.textContent=s.hnm; }
-  document.getElementById('inn-num').textContent = st.inn;
-  setTop(st.top); renderSB(); renderBSO(); renderDiamond();
-}
-
 let _broadcastTimer=null;
 function broadcast(){
   if(_broadcastTimer) clearTimeout(_broadcastTimer);
-  _broadcastTimer=setTimeout(_doBroadcast, 50);
+  _broadcastTimer=setTimeout(_doBroadcast,50);
 }
 function _doBroadcast(){
   _broadcastTimer=null;
@@ -1024,18 +995,16 @@ function _doBroadcast(){
   const batSel=document.getElementById('sel-batter');
   const pitcher=pitSel&&pitSel.selectedIndex>0?pitSel.options[pitSel.selectedIndex].text:null;
   const catcher=catSel&&catSel.selectedIndex>0?catSel.options[catSel.selectedIndex].text:null;
-  const batter =batSel&&batSel.selectedIndex>0?batSel.options[batSel.selectedIndex].text:null;
+  const batter=batSel&&batSel.selectedIndex>0?batSel.options[batSel.selectedIndex].text:null;
   ws.send(JSON.stringify({
-    _from:_myId,
-    inn:st.inn, top:st.top, maxInn:st.maxInn,
-    b:bso.b, s:bso.s, o:bso.o,
+    inn:st.inn,top:st.top,maxInn:st.maxInn,
+    b:bso.b,s:bso.s,o:bso.o,
     r:{1:bases[1],2:bases[2],3:bases[3]},
-    aab, hnm,
-    asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
-    batter, pitcher, catcher
+    aab,hnm,
+    asc:[...scores.away],hsc:[...scores.home],xOn:{...xOn},
+    batter,pitcher,catcher
   }));
 }
-
 // Service Worker登録
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').catch(()=>{});
