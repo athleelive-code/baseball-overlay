@@ -24,13 +24,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   padding:0 14px;min-height:52px;
 }
 .top-brand{
-  font-size:20px;font-weight:800;letter-spacing:.5px;
+  font-size:60px;font-weight:800;letter-spacing:.5px;
   color:var(--red);
 }
 .top-brand span{color:#fff}
 .top-gear{
   background:none;border:none;color:#888;
-  font-size:28px;line-height:1;cursor:pointer;padding:4px;
+  font-size:84px;line-height:1;cursor:pointer;padding:4px;
 }
 /* ── INNING AREA ── */
 .inning-area{
@@ -81,13 +81,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .team-ind.active{background:var(--red)}
 .team-name-disp{
-  color:#fff;font-size:clamp(16px,5vw,26px);font-weight:700;
+  color:#fff;font-size:clamp(32px,10vw,52px);font-weight:700;
   width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   cursor:pointer;
 }
 .team-name-in{
   background:rgba(255,255,255,.1);border:none;border-bottom:2px solid var(--red);
-  outline:none;color:#fff;font-size:clamp(16px,5vw,26px);font-weight:700;
+  outline:none;color:#fff;font-size:clamp(32px,10vw,52px);font-weight:700;
   width:100%;min-width:0;padding:2px 4px;border-radius:3px 3px 0 0;
 }
 
@@ -147,10 +147,10 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   background:#0a0a0a;border-bottom:1px solid #1a1a1a;
 }
 .diamond-block{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 8px;border-right:1px solid #1a1a1a;gap:0;overflow:hidden;
+  flex:1;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;
+  padding:4px;border-right:1px solid #1a1a1a;gap:0;overflow:hidden;
 }
-.diamond-block svg{pointer-events:all;width:100%;max-width:100%}
+.diamond-block svg{pointer-events:all;width:100%;height:100%;max-width:none}
 .diamond-block svg rect:not(.tap-area):not(#minus-btn){pointer-events:none}
 .diamond-block svg circle:not(#runner-drag):not(#runner1):not(#runner2):not(#runner3){pointer-events:none}
 .diamond-block svg text{pointer-events:none}
