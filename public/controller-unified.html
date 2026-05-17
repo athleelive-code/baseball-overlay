@@ -14,7 +14,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
 :root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047}
-html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;background:#111;color:#fff;overflow-x:hidden;overflow-y:auto;touch-action:pan-y}
+html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;background:#111;color:#fff;overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior-y:none}
 
 /* ── TOP BAR ── */
 .top-bar{
@@ -58,9 +58,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .inn-adj{display:flex;gap:6px;margin-top:4px}
 .inn-adj-btn{
-  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:6px;
-  color:#fff;font-size:14px;font-weight:700;
-  padding:3px 10px;cursor:pointer;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;
+  color:#fff;font-size:42px;font-weight:700;
+  padding:10px 30px;cursor:pointer;
 }
 .inn-adj-btn:active{background:rgba(255,255,255,.25)}
 
@@ -148,7 +148,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   min-height:50vh;
 }
 .diamond-block{
-  flex:1;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;
+  flex:1 1 50%;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;
   padding:0;border-right:1px solid #1a1a1a;gap:0;overflow:hidden;
 }
 .diamond-block svg{pointer-events:all;width:100%;height:100%;display:block;flex:1}
@@ -158,12 +158,12 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .diamond-block svg polygon{pointer-events:all}
 #minus-btn{pointer-events:all}
 .bso-block{
-  flex:1;display:flex;flex-direction:column;justify-content:stretch;
-  padding:8px 12px;gap:0;border-right:1px solid #1a1a1a;
+  flex:1 1 50%;display:flex;flex-direction:column;justify-content:center;
+  padding:4px 12px;gap:4px;border-right:1px solid #1a1a1a;
 }
 .bso-line{
-  display:flex;align-items:center;gap:10px;flex:1;
-  cursor:pointer;border-radius:8px;padding:4px 6px;
+  display:flex;align-items:center;gap:10px;flex:0 0 auto;
+  cursor:pointer;border-radius:8px;padding:2px 6px;
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
 .bso-line:active{background:rgba(255,255,255,.05)}
@@ -345,8 +345,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   </div>
   <!-- タブ -->
   <div style="display:flex;background:#2c2c2e;border-radius:8px;padding:3px;gap:2px;margin-bottom:14px">
-    <button id="dtab-config-btn" onclick="switchDrawerTab('config')" style="flex:1;padding:7px 0;border:none;border-radius:6px;font-size:12px;font-weight:600;background:#3a3a3c;color:#fff;cursor:pointer">設定</button>
-    <button id="dtab-roster-btn" onclick="switchDrawerTab('roster')" style="flex:1;padding:7px 0;border:none;border-radius:6px;font-size:12px;font-weight:600;background:transparent;color:#888;cursor:pointer">選手登録</button>
+    <button id="dtab-config-btn" onclick="switchDrawerTab('config')" style="flex:1;padding:20px 0;border:none;border-radius:6px;font-size:36px;font-weight:600;background:#3a3a3c;color:#fff;cursor:pointer">設定</button>
+    <button id="dtab-roster-btn" onclick="switchDrawerTab('roster')" style="flex:1;padding:20px 0;border:none;border-radius:6px;font-size:36px;font-weight:600;background:transparent;color:#888;cursor:pointer">選手登録</button>
   </div>
 
   <!-- 設定タブ -->
@@ -354,9 +354,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     <div class="drawer-sec">
       <div class="drawer-sec-t">最終回</div>
       <div style="display:flex;align-items:center;gap:12px">
-        <button class="drawer-btn" style="flex:1;font-size:22px;font-weight:700" onclick="adjMaxInn(-1)">－</button>
-        <div style="font-size:24px;font-weight:700;color:#fff;min-width:40px;text-align:center" id="max-inn-disp">7</div>
-        <button class="drawer-btn" style="flex:1;font-size:22px;font-weight:700" onclick="adjMaxInn(1)">＋</button>
+        <button class="drawer-btn" style="flex:1;font-size:60px;font-weight:700" onclick="adjMaxInn(-1)">－</button>
+        <div style="font-size:72px;font-weight:700;color:#fff;min-width:80px;text-align:center" id="max-inn-disp">7</div>
+        <button class="drawer-btn" style="flex:1;font-size:60px;font-weight:700" onclick="adjMaxInn(1)">＋</button>
       </div>
     </div>
     <div class="drawer-sec">
@@ -378,18 +378,18 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <div class="drawer-sec-t">先攻チーム</div>
       <div id="roster-away-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
-        <input id="roster-away-num"  type="number" placeholder="#" style="width:48px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:13px;padding:6px 8px;outline:none"/>
-        <input id="roster-away-name" type="text"   placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:13px;padding:6px 8px;outline:none"/>
-        <button onclick="addPlayer('away')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:13px;padding:6px 12px;cursor:pointer">追加</button>
+        <input id="roster-away-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
+        <input id="roster-away-name" type="text"   placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
+        <button onclick="addPlayer('away')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:36px;padding:16px 24px;cursor:pointer">追加</button>
       </div>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">後攻チーム</div>
       <div id="roster-home-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
-        <input id="roster-home-num"  type="number" placeholder="#" style="width:48px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:13px;padding:6px 8px;outline:none"/>
-        <input id="roster-home-name" type="text"   placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:13px;padding:6px 8px;outline:none"/>
-        <button onclick="addPlayer('home')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:13px;padding:6px 12px;cursor:pointer">追加</button>
+        <input id="roster-home-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
+        <input id="roster-home-name" type="text"   placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
+        <button onclick="addPlayer('home')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:36px;padding:16px 24px;cursor:pointer">追加</button>
       </div>
     </div>
   </div>
@@ -877,8 +877,10 @@ function switchDrawerTab(tab){
   document.getElementById('dtab-roster').style.display = tab==='roster'?'':'none';
   document.getElementById('dtab-config-btn').style.background = tab==='config'?'#3a3a3c':'transparent';
   document.getElementById('dtab-config-btn').style.color      = tab==='config'?'#fff':'#888';
+  document.getElementById('dtab-config-btn').style.fontSize   = '36px';
   document.getElementById('dtab-roster-btn').style.background = tab==='roster'?'#3a3a3c':'transparent';
   document.getElementById('dtab-roster-btn').style.color      = tab==='roster'?'#fff':'#888';
+  document.getElementById('dtab-roster-btn').style.fontSize   = '36px';
   if(tab==='roster') renderRosters();
 }
 
