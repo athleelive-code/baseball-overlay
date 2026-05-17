@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>AthleeLive Controller</title>
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -14,7 +14,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
 :root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047}
-html,body{width:100%;min-height:100%;background:#111;color:#fff;overflow-x:hidden;overflow-y:auto}
+html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;background:#111;color:#fff;overflow-x:hidden;overflow-y:auto}
 
 /* ── TOP BAR ── */
 .top-bar{
@@ -967,7 +967,7 @@ function resetAll(){
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 let ws=null, _wsTimer=null;
-const _myId = Math.random().toString(36).slice(2); // このcontrollerの一意ID
+const _myId = Math.random().toString(36).slice(2);
 
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
@@ -980,7 +980,7 @@ function connectWS(){
       const h=t=>{
         try{
           const s=JSON.parse(t);
-          if(s._from===_myId) return; // 自分の送信は無視
+          if(s._from===_myId) return;
           applyRemote(s);
         }catch(err){}
       };
