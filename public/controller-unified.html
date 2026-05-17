@@ -97,11 +97,11 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .drawer{position:fixed;bottom:0;left:0;right:0;background:#1c1c1e;border-top:1px solid #333;border-radius:16px 16px 0 0;padding:14px 16px 36px;transform:translateY(100%);transition:transform .3s;z-index:401;max-height:80vh;overflow-y:auto}
 .drawer.open{transform:translateY(0)}
 .drawer-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.drawer-ttl{font-size:13px;font-weight:700;color:#888;letter-spacing:1px;text-transform:uppercase}
-.drawer-x{background:none;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1}
+.drawer-ttl{font-size:36px;font-weight:700;color:#888;letter-spacing:1px;text-transform:uppercase}
+.drawer-x{background:none;border:none;color:#888;font-size:60px;cursor:pointer;line-height:1}
 .drawer-sec{margin-bottom:20px}
-.drawer-sec-t{font-size:10px;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
-.drawer-btn{width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:14px;font-weight:600;padding:12px;cursor:pointer;text-align:center}
+.drawer-sec-t{font-size:28px;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.drawer-btn{width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:40px;font-weight:600;padding:36px;cursor:pointer;text-align:center}
 .drawer-btn:active{background:#3a3a3c}
 .drawer-btn.danger{background:#7a0000;border-color:#c8102e;color:#fff}
 .drawer-btn.danger-confirm{background:#c8102e;border-color:#ff4444;color:#fff}
@@ -113,24 +113,24 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   background:rgba(28,28,30,.97);border:1px solid rgba(255,255,255,.12);
   border-radius:18px;padding:16px 18px 20px;
   display:flex;flex-direction:column;gap:12px;
-  min-width:260px;max-width:340px;width:88vw;
+  min-width:320px;max-width:94vw;width:94vw;
 }
 .sc-hdr{display:flex;align-items:center;justify-content:space-between}
-.sc-title{font-size:12px;font-weight:600;color:#888;letter-spacing:1px}
-.sc-close-x{background:rgba(255,255,255,.12);border:none;color:#ccc;font-size:16px;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sc-title{font-size:32px;font-weight:600;color:#888;letter-spacing:1px}
+.sc-close-x{background:rgba(255,255,255,.12);border:none;color:#ccc;font-size:48px;width:80px;height:80px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .sc-display{
   display:flex;align-items:center;justify-content:center;gap:10px;
-  min-height:60px;font-size:clamp(44px,12vw,64px);font-weight:700;
+  min-height:160px;font-size:clamp(100px,28vw,160px);font-weight:700;
   font-variant-numeric:tabular-nums;line-height:1;
 }
 .sc-num{color:#fff}
 .sc-x-disp{color:rgba(255,90,90,.8);font-size:.6em}
-.sc-blank{color:#333;font-size:clamp(28px,8vw,40px)}
+.sc-blank{color:#333;font-size:clamp(72px,22vw,120px)}
 .sc-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .sc-btn{
   border:none;border-radius:12px;
-  font-size:clamp(22px,7vw,34px);font-weight:700;
-  padding:14px 4px;cursor:pointer;line-height:1;
+  font-size:clamp(56px,18vw,90px);font-weight:700;
+  padding:40px 4px;cursor:pointer;line-height:1;
   background:rgba(60,60,65,.9);color:#fff;
 }
 .sc-btn:active{transform:scale(.92)}
@@ -138,19 +138,20 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .sc-btn-x.active{background:rgba(200,16,46,.35);border:2px solid rgba(200,16,46,.6)}
 .sc-done{
   background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
-  border-radius:12px;color:#ccc;font-size:15px;font-weight:500;
-  padding:13px;cursor:pointer;width:100%;text-align:center;
+  border-radius:12px;color:#ccc;font-size:40px;font-weight:500;
+  padding:36px;cursor:pointer;width:100%;text-align:center;
 }
 .sc-done:active{background:rgba(255,255,255,.2)}
 .field-row{
   display:flex;align-items:stretch;
   background:#0a0a0a;border-bottom:1px solid #1a1a1a;
+  min-height:50vh;
 }
 .diamond-block{
   flex:1;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;
-  padding:4px;border-right:1px solid #1a1a1a;gap:0;overflow:hidden;
+  padding:0;border-right:1px solid #1a1a1a;gap:0;overflow:hidden;
 }
-.diamond-block svg{pointer-events:all;width:100%;height:100%;max-width:none}
+.diamond-block svg{pointer-events:all;width:100%;height:100%;display:block;flex:1}
 .diamond-block svg rect:not(.tap-area):not(#minus-btn){pointer-events:none}
 .diamond-block svg circle:not(#runner-drag):not(#runner1):not(#runner2):not(#runner3){pointer-events:none}
 .diamond-block svg text{pointer-events:none}
@@ -442,7 +443,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
   <!-- 右: ダイヤモンド -->
   <div class="diamond-block" style="border-left:1px solid #1a1a1a;border-right:none">
-    <svg id="diamond-svg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="width:clamp(140px,38vw,210px)">
+    <svg id="diamond-svg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
       <!-- ランナーアイコン -->
       <circle id="runner1" cx="84" cy="52" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
         ontouchstart="dragStart(1,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
