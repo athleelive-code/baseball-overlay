@@ -3,7 +3,7 @@
   "short_name": "AthleeCtrl",
   "description": "野球配信用コントローラー",
   "start_url": "/controller-unified.html",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "any",
   "background_color": "#111111",
   "theme_color": "#c8102e",
