@@ -1,4 +1,4 @@
-const CACHE = 'athlee-v1';
+const CACHE = 'athlee-v2';
 const ASSETS = ['/controller-unified.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
@@ -14,9 +14,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // WebSocketはキャッシュしない
-  if(e.request.url.startsWith('ws')) return;
+  if(e.request.url.includes('ws')) return;
+  // 常にネットワーク優先、失敗時のみキャッシュ
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request).then(r => {
+      const clone = r.clone();
+      caches.open(CACHE).then(c => c.put(e.request, clone));
+      return r;
+    }).catch(() => caches.match(e.request))
   );
 });
