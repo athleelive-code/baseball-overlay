@@ -913,13 +913,17 @@ function onScanFile(e, team){
         body:JSON.stringify({imageBase64:b64, mimeType:mime})
       });
       const data=await res.json();
+      if(data.error){
+        document.getElementById('scan-status').textContent='APIエラー: '+JSON.stringify(data.error);
+        return;
+      }
       const text=data.content?.[0]?.text||'';
       const clean=text.replace(/```json|```/g,'').trim();
       const parsed=JSON.parse(clean);
       _scanPlayers=parsed.players||[];
       showScanResults(_scanPlayers);
     }catch(err){
-      document.getElementById('scan-status').textContent='読み取りに失敗しました。もう一度お試しください。';
+      document.getElementById('scan-status').textContent='エラー: '+err.message;
     }
   };
   reader.readAsDataURL(file);
