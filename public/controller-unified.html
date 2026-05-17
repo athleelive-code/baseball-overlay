@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Baseball Controller</title>
+<title>AthleeLive Controller</title>
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#c8102e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AthleeCtrl">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
 :root{--red:#c8102e;--gold:#f5c518;--green:#2e7d32;--bgreen:#43a047}
@@ -1027,6 +1034,11 @@ function _doBroadcast(){
     asc:[...scores.away], hsc:[...scores.home], xOn:{...xOn},
     batter, pitcher, catcher
   }));
+}
+
+// Service Worker登録
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 
 // 初期描画
