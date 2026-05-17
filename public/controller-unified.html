@@ -235,6 +235,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   min-width:2ch;text-align:center;
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -376,23 +377,29 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <div id="dtab-roster" style="display:none">
     <div class="drawer-sec">
       <div class="drawer-sec-t">先攻チーム</div>
-      <label for="scan-file-away" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📷 写真からオーダー表を読み取る</label>
+      <label for="scan-file-away" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:8px;text-align:center">📷 写真からオーダー表を読み取る</label>
       <input type="file" id="scan-file-away" accept="image/*" style="display:none" onchange="onScanFile(event,'away')"/>
+      <label for="csv-file-away" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #444;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📄 CSV/Excelから読み込む</label>
+      <input type="file" id="csv-file-away" accept=".csv,.xlsx,.xls" style="display:none" onchange="onCsvFile(event,'away')"/>
       <div id="roster-away-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
         <input id="roster-away-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
         <input id="roster-away-name" type="text"   placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
+        <input id="roster-away-pos"  type="text"   placeholder="守備" style="width:110px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
         <button onclick="addPlayer('away')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:36px;padding:16px 24px;cursor:pointer">追加</button>
       </div>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">後攻チーム</div>
-      <label for="scan-file-home" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📷 写真からオーダー表を読み取る</label>
+      <label for="scan-file-home" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:8px;text-align:center">📷 写真からオーダー表を読み取る</label>
       <input type="file" id="scan-file-home" accept="image/*" style="display:none" onchange="onScanFile(event,'home')"/>
+      <label for="csv-file-home" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #444;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📄 CSV/Excelから読み込む</label>
+      <input type="file" id="csv-file-home" accept=".csv,.xlsx,.xls" style="display:none" onchange="onCsvFile(event,'home')"/>
       <div id="roster-home-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
       <div style="display:flex;gap:6px">
         <input id="roster-home-num"  type="number" placeholder="#" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
         <input id="roster-home-name" type="text"   placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
+        <input id="roster-home-pos"  type="text"   placeholder="守備" style="width:110px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
         <button onclick="addPlayer('home')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:36px;padding:16px 24px;cursor:pointer">追加</button>
       </div>
     </div>
@@ -891,6 +898,63 @@ function cancelNameEdit(){
   });
 })();
 
+// ── CSV/Excel読み込み ──────────────────────────────────────────────────────────
+function onCsvFile(e, team){
+  const file=e.target.files[0];
+  e.target.value='';
+  if(!file) return;
+
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=new Uint8Array(ev.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+      if(rows.length<2){
+        alert('データが見つかりませんでした。');
+        return;
+      }
+
+      // ヘッダー行から背番号・選手名の列を自動検出
+      const header=rows[0].map(h=>String(h).toLowerCase());
+      let numCol=-1, nameCol=-1, posCol=-1;
+      header.forEach((h,i)=>{
+        if(numCol<0 && (h.includes('番号')||h.includes('no')||h.includes('#')||h.includes('num'))) numCol=i;
+        if(nameCol<0 && (h.includes('名前')||h.includes('name')||h.includes('選手')||h.includes('氏名'))) nameCol=i;
+        if(posCol<0 && (h.includes('守備')||h.includes('position')||h.includes('pos')||h.includes('ポジション'))) posCol=i;
+      });
+      if(numCol<0) numCol=0;
+      if(nameCol<0) nameCol=1;
+
+      const players=rows.slice(1)
+        .filter(r=>r[nameCol]&&String(r[nameCol]).trim())
+        .map(r=>({
+          num:String(r[numCol]||'').trim(),
+          name:String(r[nameCol]).trim()
+        }));
+
+      if(players.length===0){
+        alert('選手データが見つかりませんでした。ヘッダー行の列名を確認してください。');
+        return;
+      }
+
+      // スキャン確認パネルで確認
+      _scanTeam=team;
+      _scanPlayers=players;
+      const title=team==='away'?'先攻チーム':'後攻チーム';
+      document.getElementById('scan-title').textContent=title+' CSV読み込み結果';
+      document.getElementById('scan-bg').style.display='block';
+      showScanResults(players);
+
+    }catch(err){
+      alert('読み込みエラー: '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 // ── 写真スキャン ────────────────────────────────────────────────────────────────
 let _scanTeam=null, _scanPlayers=[];
 
@@ -935,12 +999,14 @@ function onScanFile(e, team){
 function showScanResults(players){
   document.getElementById('scan-status').textContent=`${players.length}名を読み取りました。修正してから登録してください。`;
   document.getElementById('scan-results').innerHTML=players.map((p,i)=>`
-    <div style="display:flex;gap:8px;align-items:center">
-      <input value="${p.num||''}" placeholder="#" style="width:90px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:30px;padding:12px;outline:none"
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+      <input value="${p.num||''}" placeholder="#" style="width:80px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:28px;padding:10px;outline:none"
         oninput="_scanPlayers[${i}].num=this.value"/>
-      <input value="${p.name||''}" placeholder="選手名" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:30px;padding:12px;outline:none"
+      <input value="${p.name||''}" placeholder="選手名" style="flex:1;min-width:120px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:28px;padding:10px;outline:none"
         oninput="_scanPlayers[${i}].name=this.value"/>
-      <button onclick="_scanPlayers.splice(${i},1);showScanResults(_scanPlayers)" style="background:#7a0000;border:none;border-radius:8px;color:#fff;font-size:30px;padding:12px 16px;cursor:pointer">×</button>
+      <input value="${p.pos||''}" placeholder="守備" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:28px;padding:10px;outline:none"
+        oninput="_scanPlayers[${i}].pos=this.value"/>
+      <button onclick="_scanPlayers.splice(${i},1);showScanResults(_scanPlayers)" style="background:#7a0000;border:none;border-radius:8px;color:#fff;font-size:28px;padding:10px 14px;cursor:pointer">×</button>
     </div>
   `).join('');
   document.getElementById('scan-confirm').style.display='block';
@@ -949,7 +1015,7 @@ function showScanResults(players){
 function confirmScan(){
   _scanPlayers.forEach(p=>{
     if(p.name&&p.name.trim())
-      rosters[_scanTeam].push({id:Date.now()+Math.random(),num:p.num||'',name:p.name.trim()});
+      rosters[_scanTeam].push({id:Date.now()+Math.random(),num:p.num||'',name:p.name.trim(),pos:p.pos||''});
   });
   renderRosters(); updateSelects(); closeScan();
 }
@@ -978,10 +1044,12 @@ const rosters = { away:[], home:[] };
 function addPlayer(team){
   const num  = document.getElementById('roster-'+team+'-num').value.trim();
   const name = document.getElementById('roster-'+team+'-name').value.trim();
+  const pos  = document.getElementById('roster-'+team+'-pos')?.value.trim()||'';
   if(!name) return;
-  rosters[team].push({ id:Date.now(), num, name });
+  rosters[team].push({ id:Date.now(), num, name, pos });
   document.getElementById('roster-'+team+'-num').value  = '';
   document.getElementById('roster-'+team+'-name').value = '';
+  const pe=document.getElementById('roster-'+team+'-pos'); if(pe) pe.value='';
   renderRosters();
   updateSelects();
 }
@@ -999,9 +1067,10 @@ function renderRosters(){
     list.innerHTML = rosters[team].length
       ? rosters[team].map(p=>`
         <div style="display:flex;align-items:center;gap:8px;background:#2c2c2e;border-radius:7px;padding:6px 10px">
-          <span style="font-size:11px;color:#888;min-width:28px">${p.num?'#'+p.num:''}</span>
-          <span style="flex:1;font-size:13px;color:#fff">${p.name}</span>
-          <button onclick="deletePlayer('${team}',${p.id})" style="background:none;border:none;color:#ff453a;font-size:14px;cursor:pointer;padding:0 2px">×</button>
+          <span style="font-size:28px;color:#888;min-width:50px">${p.num?'#'+p.num:''}</span>
+          <span style="flex:1;font-size:28px;color:#fff">${p.name}</span>
+          <span style="font-size:24px;color:#aaa;min-width:60px">${p.pos||''}</span>
+          <button onclick="deletePlayer('${team}',${p.id})" style="background:none;border:none;color:#ff453a;font-size:36px;cursor:pointer;padding:0 4px">×</button>
         </div>`).join('')
       : '<div style="font-size:11px;color:#555;padding:4px">選手なし</div>';
   });
