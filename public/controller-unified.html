@@ -47,13 +47,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .inn-top-row{display:flex;align-items:center;gap:8px}
 .inn-tb{
-  font-size:clamp(14px,4vw,22px);font-weight:700;
+  font-size:clamp(28px,8vw,44px);font-weight:700;
   color:rgba(255,255,255,.3);line-height:1;
   display:flex;flex-direction:column;align-items:center;gap:4px;
 }
 .inn-tb span.active{color:#fff}
 .inn-num{
-  font-size:clamp(40px,13vw,72px);font-weight:700;color:#fff;
+  font-size:clamp(80px,26vw,144px);font-weight:700;color:#fff;
   font-variant-numeric:tabular-nums;line-height:1;
 }
 .inn-adj{display:flex;gap:6px;margin-top:4px}
@@ -150,7 +150,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:10px 8px;border-right:1px solid #1a1a1a;gap:0;overflow:hidden;
 }
-.diamond-block svg{pointer-events:all;width:100%;max-width:200px}
+.diamond-block svg{pointer-events:all;width:100%;max-width:100%}
 .diamond-block svg rect:not(.tap-area):not(#minus-btn){pointer-events:none}
 .diamond-block svg circle:not(#runner-drag):not(#runner1):not(#runner2):not(#runner3){pointer-events:none}
 .diamond-block svg text{pointer-events:none}
@@ -166,9 +166,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
 .bso-line:active{background:rgba(255,255,255,.05)}
-.bso-lbl{font-size:clamp(22px,6.5vw,34px);font-weight:700;color:#ccc;width:34px;flex-shrink:0;pointer-events:none}
-.bso-dots{display:flex;gap:8px;pointer-events:none}
-.bdot{border-radius:50%;background:#333;border:2px solid #555;width:clamp(36px,10vw,52px);height:clamp(36px,10vw,52px);flex-shrink:0}
+.bso-lbl{font-size:clamp(48px,14vw,72px);font-weight:700;color:#ccc;width:70px;flex-shrink:0;pointer-events:none}
+.bso-dots{display:flex;gap:16px;pointer-events:none}
+.bdot{border-radius:50%;background:#333;border:2px solid #555;width:clamp(80px,22vw,120px);height:clamp(80px,22vw,120px);flex-shrink:0}
 .bdot.on-b{background:#43a047;border-color:#1b5e20}
 .bdot.on-s{background:#f5c518;border-color:#b8860b}
 .bdot.out{background:#282828;border:2px solid #444}
@@ -188,12 +188,12 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .battery-cell:first-child{border-right:none}
 .battery-tag{
-  font-size:10px;color:#555;letter-spacing:1.5px;
+  font-size:16px;color:#555;letter-spacing:1.5px;
   font-weight:600;flex-shrink:0;
 }
 .battery-sel{
   background:transparent;border:none;outline:none;
-  color:#fff;font-size:clamp(14px,4vw,18px);font-weight:500;
+  color:#fff;font-size:clamp(28px,8vw,40px);font-weight:500;
   width:100%;-webkit-appearance:none;cursor:pointer;
 }
 .battery-sel option{color:#111;background:#fff}
@@ -203,7 +203,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .sb-table{border-collapse:collapse;width:100%;table-layout:fixed}
 .sb-head th{
-  background:#1a3a1a;color:#fff;font-weight:700;font-size:clamp(9px,2.2vw,13px);
+  background:#1a3a1a;color:#fff;font-weight:700;font-size:clamp(16px,4vw,22px);
   text-align:center;padding:3px 1px;
   border-right:1px solid #333;white-space:nowrap;cursor:pointer;user-select:none;
 }
@@ -214,8 +214,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .sb-body td:first-child{border-left:none;border-right:2px solid #333;width:0;padding:0}
 .sb-cell{
-  min-height:clamp(36px,9vw,54px);display:flex;align-items:center;justify-content:center;
-  font-size:clamp(11px,3vw,17px);font-weight:700;font-variant-numeric:tabular-nums;
+  min-height:clamp(60px,15vw,90px);display:flex;align-items:center;justify-content:center;
+  font-size:clamp(22px,6vw,36px);font-weight:700;font-variant-numeric:tabular-nums;
 }
 .sb-cell.blank{color:#1e1e1e}
 .sb-cell.cur-top{background:rgba(200,16,46,.12)}
@@ -229,7 +229,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .score-cell:first-child{border-bottom:1px solid #1a1a1a}
 .score-num{
-  font-size:clamp(40px,13vw,72px);font-weight:700;color:#fff;
+  font-size:clamp(80px,26vw,144px);font-weight:700;color:#fff;
   font-variant-numeric:tabular-nums;line-height:1;
   min-width:2ch;text-align:center;
 }
