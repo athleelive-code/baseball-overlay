@@ -34,7 +34,7 @@ app.post('/api/scan-roster', async (req, res) => {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageBase64 } },
-            { type: 'text', text: 'この野球のオーダー表から選手の背番号・名前・守備位置を読み取ってください。JSONのみで返してください。形式: {"players":[{"num":"背番号","name":"選手名","pos":"守備位置"},...]}\n背番号や守備位置がない場合は空文字にしてください。' }
+            { type: 'text', text: 'この野球のオーダー表から打順・背番号・選手名・守備位置を読み取ってください。JSONのみで返してください。形式: {"players":[{"order":"打順","num":"背番号","name":"選手名","pos":"守備位置番号"},...]}\n項目がない場合は空文字にしてください。守備位置は番号で返してください: 投手=1,捕手=2,一塁手=3,二塁手=4,三塁手=5,遊撃手=6,左翼手=7,中堅手=8,右翼手=9,指名打者=DH' }
           ]
         }]
       })
