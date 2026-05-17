@@ -907,20 +907,10 @@ function onScanFile(e, team){
     const b64=ev.target.result.split(',')[1];
     const mime=file.type||'image/jpeg';
     try{
-      const res=await fetch('https://api.anthropic.com/v1/messages',{
+      const res=await fetch('/api/scan-roster',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-20250514',
-          max_tokens:1000,
-          messages:[{
-            role:'user',
-            content:[
-              {type:'image',source:{type:'base64',media_type:mime,data:b64}},
-              {type:'text',text:'この野球のオーダー表から選手の背番号と名前を読み取ってください。JSONのみで返してください。形式: {"players":[{"num":"背番号","name":"選手名"},...]}\n背番号がない場合はnumを空文字にしてください。'}
-            ]
-          }]
-        })
+        body:JSON.stringify({imageBase64:b64, mimeType:mime})
       });
       const data=await res.json();
       const text=data.content?.[0]?.text||'';
