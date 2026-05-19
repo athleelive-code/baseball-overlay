@@ -1554,6 +1554,8 @@ function _doBroadcast(){
     aab,hnm,
     asc:[...scores.away],hsc:[...scores.home],xOn:{...xOn},
     batter,pitcher,catcher,
+    batterNext:document.getElementById('next-batter')?.textContent||'',
+    batterNext2:document.getElementById('next2-batter')?.textContent||'',
     showBat:_batVisible,showDef:_defVisible,
     defRoster:_defRoster,defTeam:_defTeam
   }));
