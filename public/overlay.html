@@ -6,205 +6,211 @@
 <title>Baseball Overlay</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
-:root{--red:#c8102e;--gold:#f5c518;--bgreen:#43a047;--dg:#1b5e20}
+:root{--red:#c8102e}
 html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
-/* ── OVERLAY CONTAINER ── */
-.ov{
-  position:fixed;
-  right:20px;bottom:20px;
-  background:rgba(8,12,24,.80);
+/* ── 左上：スコア＋BSO＋ダイヤモンド＋P/C/B＋打順 ── */
+.ov-left{
+  position:fixed;left:20px;top:20px;
+  background:rgba(8,12,24,.88);
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(33% - 20px);
+  width:calc(42% - 20px);
 }
 
-/* ── TOP BAR ── */
-.ov-topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:3px 10px;background:rgba(0,0,0,.4);
-  border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;
+/* ── 右上：守備配置（独立・フェードイン） ── */
+.ov-right{
+  position:fixed;right:20px;top:20px;
+  background:rgba(8,12,24,.88);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:8px;overflow:hidden;
+  display:inline-flex;flex-direction:column;
+  width:calc(43% - 20px);
+  opacity:0;transition:opacity .4s ease;
+  pointer-events:none;
 }
-.ov-brand{font-size:clamp(11px,2vw,16px);font-weight:800;color:#c8102e;letter-spacing:.5px}
+.ov-right.open{opacity:1}
+
+/* TOP BAR */
+.ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:1px 6px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.ov-brand{font-size:7px;font-weight:800;color:#c8102e}
 .ov-brand span{color:#fff}
-.ov-topbar-inn{font-size:clamp(11px,2vw,15px);font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1px}
-.ov-clock{font-size:clamp(11px,2vw,15px);font-weight:600;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums;letter-spacing:.5px;will-change:contents}
-.ov-top{display:flex;align-items:stretch}
+.ov-clock{font-size:7px;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;will-change:contents}
+
+/* スコア行 */
+.ov-score-row{display:flex;align-items:stretch}
 
 /* イニング */
-.ov-inn{
-  background:rgba(200,16,46,.85);
-  display:flex;align-items:center;justify-content:center;
-  padding:6px 10px;flex-shrink:0;
-}
-.ov-inn-num{font-size:clamp(36px,7vw,60px);font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-.ov-inn-row{display:flex;align-items:center;gap:4px}
-.ov-inn-tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-.ov-inn-tb span{font-size:clamp(11px,2.5vw,16px);font-weight:700;color:rgba(255,255,255,.28);line-height:1}
+.ov-inn-block{background:rgba(200,16,46,.85);display:flex;align-items:center;justify-content:center;padding:1px 4px;flex-shrink:0}
+.ov-inn-num{font-size:14px;font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.ov-inn-tb{display:flex;flex-direction:column;align-items:center;gap:1px;margin-left:2px}
+.ov-inn-tb span{font-size:5px;font-weight:700;color:rgba(255,255,255,.25);line-height:1}
 .ov-inn-tb span.active{color:#fff}
 
-/* チーム名（水平パディング最小） */
-.ov-teams{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-team-row{display:flex;align-items:center;padding:6px 14px;gap:10px;flex:1}
+/* チーム名 */
+.ov-teams{display:flex;flex-direction:column;flex:1;border-left:1px solid rgba(255,255,255,.1)}
+.ov-team-row{display:flex;align-items:center;flex:1;padding:1px 5px;gap:3px}
 .ov-team-row:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-team-ind{width:12px;border-radius:2px;align-self:stretch;margin:4px 0;background:rgba(255,255,255,.1);flex-shrink:0}
+.ov-team-ind{width:3px;border-radius:1px;align-self:stretch;background:rgba(255,255,255,.1);flex-shrink:0}
 .ov-team-ind.active{background:var(--red)}
-.ov-team-name{font-size:clamp(22px,4.5vw,40px);font-weight:700;color:#fff;white-space:nowrap;line-height:1}
+.ov-team-name{font-size:9px;font-weight:700;color:#fff;white-space:nowrap}
 
-/* イニングスコア表（右詰め・数字幅のみ使用） */
-.ov-ist-inline{
-  flex:1;overflow:hidden;border-left:1px solid rgba(255,255,255,.1);
-  align-self:stretch;
-}
-.ov-ist-table{border-collapse:collapse;table-layout:fixed;width:100%;height:100%}
+/* イニングスコア表 */
+.ov-ist-wrap{flex:1;border-left:1px solid rgba(255,255,255,.1);overflow:hidden}
+.ov-ist-table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
 .ov-ist-table tr{height:50%}
-.ov-ist-table td{
-  text-align:center;padding:0;
-  font-size:clamp(12px,2.5vw,22px);font-weight:700;
-  color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;
-  vertical-align:middle;white-space:nowrap;
-  border-right:1px solid rgba(255,255,255,.06);
-}
-.ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.06)}
+.ov-ist-table td{text-align:center;padding:0;font-size:6px;font-weight:700;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;vertical-align:middle;border-right:1px solid rgba(255,255,255,.06)}
+.ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.05)}
 .ov-ist-table td:last-child{border-right:none}
 .ov-ist-table td.cur{color:#fff}
-.ov-ist{display:none}
 
-/* 合計得点（パディング最小） */
-.ov-scores{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-score-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:6px 10px}
-.ov-score-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-score-num{font-size:clamp(22px,4.5vw,40px);font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+/* 合計得点 */
+.ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
+.ov-total-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:1px 4px}
+.ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-total-num{font-size:11px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
-/* BOTTOM ROW */
-.ov-bot{display:flex;align-items:stretch;border-top:1px solid rgba(255,255,255,.08)}
+/* BSO＋ダイヤモンド行 */
+.ov-bso-dia-row{display:flex;align-items:stretch;border-top:1px solid rgba(255,255,255,.08)}
 
-/* BSO（余白なし） */
-.ov-bso{display:flex;flex-direction:column;justify-content:space-evenly;padding:4px 8px 4px;flex-shrink:0;gap:2px;border-right:1px solid rgba(255,255,255,.08)}
+/* BSO縦並び */
+.ov-bso{display:flex;flex-direction:column;justify-content:center;padding:2px 4px;gap:2px;border-right:1px solid rgba(255,255,255,.08);flex-shrink:0}
 .ov-bso-line{display:flex;align-items:center;gap:2px}
 
-/* ダイヤモンド */
-.ov-diamond{flex:1;display:flex;align-items:center;justify-content:center;padding:8px}
-.ov-diamond svg{width:clamp(60px,14vw,90px)}
+/* ダイヤモンド（縮小） */
+.ov-dia{flex:1;display:flex;align-items:center;justify-content:center;padding:2px 1px;border-right:1px solid rgba(255,255,255,.08)}
 
-/* 打者・投手 */
-.ov-players{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;padding:6px 10px;border-left:1px solid rgba(255,255,255,.08)}
-.ov-player-row{display:flex;align-items:center;gap:6px;overflow:hidden}
-.ov-player-tag{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:1.5px;flex-shrink:0;font-weight:600}
-.ov-player-name{font-size:clamp(16px,4vw,26px);font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* P/C/B行 */
+.ov-pcb{display:flex;align-items:center;border-top:1px solid rgba(255,255,255,.08);padding:2px 5px;gap:5px;flex-wrap:wrap}
+.ov-pcb-tag{font-size:8px;font-weight:700;color:rgba(255,255,255,.4)}
+.ov-pcb-name{font-size:10px;color:#fff;white-space:nowrap}
+.ov-pcb-sep{width:1px;height:10px;background:rgba(255,255,255,.1);flex-shrink:0}
+.ov-pcb-next{font-size:9px;color:rgba(255,255,255,.45)}
+
+/* 打順パネル */
+.ov-bat-panel{overflow:hidden;max-height:0;transition:max-height .4s ease}
+.ov-bat-panel.open{max-height:400px;border-top:1px solid rgba(255,255,255,.08)}
+.ov-bat-hdr{padding:1px 5px}
+.ov-bat-hdr span{font-size:7px;color:rgba(255,255,255,.3);letter-spacing:1px}
+.ov-bat-list{padding:1px 3px 2px;display:flex;flex-direction:column;gap:0}
+.ov-bat-row{display:grid;grid-template-columns:16px 26px 1fr 24px;gap:2px;align-items:center;padding:1px 2px}
+.ov-bat-row.cur{background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)}
+
+/* 守備配置エリア */
+.ov-def-hdr{padding:2px 7px;background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-def-hdr span{font-size:7px;color:rgba(255,255,255,.3);letter-spacing:.8px}
+.ov-def-body{padding:3px 5px}
 </style>
 </head>
 <body>
-<div class="ov" id="ov">
 
-  <!-- TOP BAR -->
+<!-- 左上：スコア＋BSO＋ダイヤモンド＋打順 -->
+<div class="ov-left" id="ov">
+
   <div class="ov-topbar">
     <span class="ov-brand">Athlee<span>Live</span></span>
     <span class="ov-clock" id="ov-clock"></span>
   </div>
 
-  <!-- TOP ROW -->
-  <div class="ov-top">
-    <!-- イニング -->
-    <div class="ov-inn">
-      <div class="ov-inn-row">
-        <div class="ov-inn-num" id="ov-inn">1</div>
+  <!-- スコア行 -->
+  <div class="ov-score-row">
+    <!-- flex:2.5 スコアエリア -->
+    <div style="display:flex;align-items:stretch;flex:2.5">
+      <div class="ov-inn-block">
+        <span class="ov-inn-num" id="ov-inn">1</span>
         <div class="ov-inn-tb">
           <span id="ov-tb-top" class="active">▲</span>
           <span id="ov-tb-bot">▼</span>
         </div>
       </div>
+      <div class="ov-teams">
+        <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><span class="ov-team-name" id="ov-aname">先攻</span></div>
+        <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><span class="ov-team-name" id="ov-hname">後攻</span></div>
+      </div>
+      <div class="ov-ist-wrap">
+        <table class="ov-ist-table"><tbody id="ov-ist-body"></tbody></table>
+      </div>
+      <div class="ov-totals">
+        <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-away">0</span></div>
+        <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-home">0</span></div>
+      </div>
     </div>
-    <!-- チーム名 -->
-    <div class="ov-teams">
-      <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><div class="ov-team-name" id="ov-aname">先攻</div></div>
-      <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><div class="ov-team-name" id="ov-hname">後攻</div></div>
-    </div>
-    <!-- イニングスコア（チーム名と得点の間） -->
-    <div class="ov-ist-inline">
-      <table class="ov-ist-table"><thead></thead><tbody id="ov-ist-body"></tbody></table>
-    </div>
-    <!-- 合計得点（右端） -->
-    <div class="ov-scores" style="margin-left:auto">
-      <div class="ov-score-cell"><div class="ov-score-num" id="ov-score-away">0</div></div>
-      <div class="ov-score-cell"><div class="ov-score-num" id="ov-score-home">0</div></div>
+    <!-- flex:1 BSO＋ダイヤモンド -->
+    <div style="display:flex;align-items:stretch;flex:1;border-left:1px solid rgba(255,255,255,.1)">
+      <div class="ov-bso">
+        <div class="ov-bso-line">
+          <svg width="30" height="10" viewBox="0 0 30 10"><circle cx="5" cy="5" r="4" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="4" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="4" id="ov-bd3" fill="#333"/></svg>
+        </div>
+        <div class="ov-bso-line">
+          <svg width="20" height="10" viewBox="0 0 20 10"><circle cx="5" cy="5" r="4" id="ov-sd1" fill="#333"/><circle cx="15" cy="5" r="4" id="ov-sd2" fill="#333"/></svg>
+        </div>
+        <div class="ov-bso-line">
+          <svg width="20" height="10" viewBox="0 0 20 10"><circle cx="5" cy="5" r="4" id="ov-od1" fill="#282828" stroke="#444" stroke-width="1"/><circle cx="15" cy="5" r="4" id="ov-od2" fill="#282828" stroke="#444" stroke-width="1"/></svg>
+        </div>
+      </div>
+      <!-- ダイヤモンド縮小・ホームベースなし -->
+      <div class="ov-dia">
+        <svg viewBox="10 0 140 52" style="width:46px">
+          <line x1="80" y1="5" x2="30" y2="28" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+          <line x1="80" y1="5" x2="130" y2="28" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+          <line x1="30" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+          <line x1="130" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+          <polygon id="ov-b2" points="80,0 94,8 80,16 66,8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
+          <polygon id="ov-b3" points="20,21 34,29 20,37 6,29" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
+          <polygon id="ov-b1" points="140,21 154,29 140,37 126,29" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
+        </svg>
+      </div>
     </div>
   </div>
 
-  <!-- BOTTOM ROW -->
-  <div class="ov-bot">
-
-    <!-- BSO -->
-    <div class="ov-bso">
-      <div class="ov-bso-line">
-        <svg width="102" height="28" viewBox="0 0 66 20" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="10" cy="10" r="9" fill="#333" id="ov-bd1"/>
-          <circle cx="33" cy="10" r="9" fill="#333" id="ov-bd2"/>
-          <circle cx="56" cy="10" r="9" fill="#333" id="ov-bd3"/>
-        </svg>
+  <!-- P/C/B/次 行 -->
+  <div class="ov-pcb">
+    <div style="display:flex;gap:8px">
+      <div style="display:flex;align-items:center;gap:2px">
+        <span class="ov-pcb-tag">P</span><span class="ov-pcb-name" id="ov-pitcher"></span>
       </div>
-      <div class="ov-bso-line">
-        <svg width="102" height="28" viewBox="0 0 66 20" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="10" cy="10" r="9" fill="#333" id="ov-sd1"/>
-          <circle cx="33" cy="10" r="9" fill="#333" id="ov-sd2"/>
-        </svg>
-      </div>
-      <div class="ov-bso-line">
-        <svg width="102" height="28" viewBox="0 0 66 20" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="10" cy="10" r="9" fill="#282828" stroke="#444" stroke-width="1.5" id="ov-od1"/>
-          <circle cx="33" cy="10" r="9" fill="#282828" stroke="#444" stroke-width="1.5" id="ov-od2"/>
-        </svg>
+      <div style="display:flex;align-items:center;gap:2px">
+        <span class="ov-pcb-tag">C</span><span class="ov-pcb-name" id="ov-catcher"></span>
       </div>
     </div>
-
-    <!-- ダイヤモンド（等角投影・横長）+ 投手捕手 -->
-    <div style="flex:1;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.08)">
-      <div style="display:flex;align-items:center;justify-content:center;padding:5px 8px">
-        <svg viewBox="-10 -8 180 72" xmlns="http://www.w3.org/2000/svg" style="width:clamp(110px,28vw,170px)">
-          <line x1="80" y1="5"  x2="22" y2="28" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-          <line x1="80" y1="5"  x2="138" y2="28" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-          <line x1="22" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-          <line x1="138" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-          <!-- 2塁（奥） -->
-          <polygon id="ov-b2" points="80,-3 96,5 80,13 64,5" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.35)" stroke-width=".8"/>
-          <!-- 3塁（左） -->
-          <polygon id="ov-b3" points="10,21 26,29 10,37 -6,29" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.35)" stroke-width=".8"/>
-          <!-- 1塁（右） -->
-          <polygon id="ov-b1" points="150,21 166,29 150,37 134,29" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.35)" stroke-width=".8"/>
-          <!-- ホームベース -->
-          <polygon points="80,59 93,51 93,43 67,43 67,51" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
-        </svg>
-      </div>
-      <div style="display:flex;border-top:1px solid rgba(255,255,255,.06)">
-        <div style="flex:1;display:flex;align-items:center;gap:5px;padding:3px 8px;border-right:1px solid rgba(255,255,255,.06)">
-          <span style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:1.5px;flex-shrink:0;font-weight:600">P</span>
-          <span style="font-size:clamp(16px,4vw,26px);font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-pitcher">-</span>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;gap:5px;padding:3px 8px">
-          <span style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:1.5px;flex-shrink:0;font-weight:600">C</span>
-          <span style="font-size:clamp(16px,4vw,26px);font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-catcher">-</span>
-        </div>
-      </div>
+    <div class="ov-pcb-sep"></div>
+    <div style="display:flex;align-items:center;gap:3px">
+      <span class="ov-pcb-tag">B</span>
+      <span style="font-size:10px;font-weight:600;color:#fff" id="ov-batter"></span>
+      <span style="font-size:8px;color:rgba(255,255,255,.3);margin-left:3px">次</span>
+      <span class="ov-pcb-next" id="ov-batter-next"></span>
     </div>
-
-    <!-- 打者 -->
-    <div class="ov-players" style="border-left:1px solid rgba(255,255,255,.08)">
-      <div class="ov-player-row"><span class="ov-player-tag">B</span><span class="ov-player-name" id="ov-batter">-</span></div>
-      <div style="display:flex;flex-direction:column;gap:2px;padding:0 0 4px 0">
-        <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:7px;color:rgba(255,255,255,.2);letter-spacing:1px;flex-shrink:0">NEXT</span>
-          <span style="font-size:10px;color:rgba(255,255,255,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-batter-next">-</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:7px;color:rgba(255,255,255,.15);letter-spacing:1px;flex-shrink:0">ON DECK</span>
-          <span style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ov-batter-next2">-</span>
-        </div>
-      </div>
-    </div>
-
   </div>
 
+  <!-- 打順パネル -->
+  <div class="ov-bat-panel" id="ov-bat-panel">
+    <div class="ov-bat-hdr"><span id="ov-bat-label">打順</span></div>
+    <div class="ov-bat-list" id="ov-bat-list"></div>
+  </div>
+
+</div>
+
+<!-- 右上：守備配置 -->
+<div class="ov-right" id="ov-right">
+  <div class="ov-def-hdr"><span id="ov-def-label">守備配置</span></div>
+  <div class="ov-def-body">
+    <svg id="ov-def-svg" viewBox="-35 -30 230 150" style="width:100%;display:block">
+      <line x1="80" y1="92" x2="-25" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
+      <line x1="80" y1="92" x2="185" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
+      <line x1="80" y1="5" x2="140" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+      <line x1="140" y1="50" x2="80" y2="95" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+      <line x1="80" y1="95" x2="20" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+      <line x1="20" y1="50" x2="80" y2="5" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+      <polygon points="80,0 88,8 80,16 72,8" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
+      <polygon points="140,43 148,51 140,59 132,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
+      <polygon points="80,88 88,96 80,104 72,96" fill="rgba(255,255,255,.65)" stroke="rgba(255,255,255,.75)" stroke-width=".5"/>
+      <polygon points="20,43 28,51 20,59 12,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
+      <ellipse cx="80" cy="57" rx="7" ry="4.5" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)" stroke-width=".7"/>
+      <!-- バッジ（JS で更新） -->
+      <g id="ov-def-badges"></g>
+    </svg>
+  </div>
 </div>
 
 <script>
@@ -213,63 +219,128 @@ function set(id,v){const e=g(id);if(e&&e.textContent!==String(v))e.textContent=S
 function setAttr(id,attr,v){const e=g(id);if(e&&e.getAttribute(attr)!==v)e.setAttribute(attr,v);}
 function setCls(id,v){const e=g(id);if(e&&e.className!==v)e.className=v;}
 
-let _lastState=null;
+// 守備位置座標マップ（viewBox -35 -30 230 150）
+const DEF_POS = {
+  '8':{x:80,y:-17,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'8 CF'},
+  '7':{x:1,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'7 LF'},
+  '9':{x:159,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'9 RF'},
+  '4':{x:128,y:18,c:'rgba(15,80,50,.93)',s:'#208a60',l:'4 2B'},
+  '6':{x:32,y:18,c:'rgba(15,80,50,.93)',s:'#208a60',l:'6 SS'},
+  '3':{x:165,y:38,c:'rgba(15,80,50,.93)',s:'#208a60',l:'3 1B'},
+  '5':{x:1,y:38,c:'rgba(15,80,50,.93)',s:'#208a60',l:'5 3B'},
+  '1':{x:80,y:48,c:'rgba(150,60,20,.93)',s:'#c07030',l:'1 P'},
+  '2':{x:80,y:88,c:'rgba(20,60,140,.93)',s:'#3070c0',l:'2 C'},
+  'DH':{x:1,y:70,c:'rgba(60,40,130,.93)',s:'#7050b0',l:'DH'},
+};
+
+function renderDefBadges(roster){
+  const g2=g('ov-def-badges');
+  if(!g2)return;
+  if(!roster||roster.length===0){g2.innerHTML='';return;}
+  const ns='http://www.w3.org/2000/svg';
+  g2.innerHTML='';
+  roster.forEach(p=>{
+    const posKey=String(p.pos||'');
+    const coord=DEF_POS[posKey];
+    if(!coord)return;
+    const cx=coord.x, cy=coord.y;
+    const grp=document.createElementNS(ns,'g');
+    const rect=document.createElementNS(ns,'rect');
+    rect.setAttribute('x',cx-34); rect.setAttribute('y',cy);
+    rect.setAttribute('width','68'); rect.setAttribute('height','16');
+    rect.setAttribute('rx','8'); rect.setAttribute('fill',coord.c);
+    rect.setAttribute('stroke',coord.s); rect.setAttribute('stroke-width','.7');
+    const t1=document.createElementNS(ns,'text');
+    t1.setAttribute('font-family','sans-serif'); t1.setAttribute('font-size','4.5');
+    t1.setAttribute('fill','rgba(255,255,255,.4)'); t1.setAttribute('x',cx);
+    t1.setAttribute('y',cy+7); t1.setAttribute('text-anchor','middle');
+    t1.textContent=coord.l;
+    const t2=document.createElementNS(ns,'text');
+    t2.setAttribute('font-family','sans-serif'); t2.setAttribute('font-size','7');
+    t2.setAttribute('font-weight','500'); t2.setAttribute('fill','#fff');
+    t2.setAttribute('x',cx); t2.setAttribute('y',cy+14);
+    t2.setAttribute('text-anchor','middle');
+    const numPart=p.num?'#'+p.num+' ':'';
+    t2.textContent=numPart+(p.name||'');
+    grp.appendChild(rect); grp.appendChild(t1); grp.appendChild(t2);
+    g2.appendChild(grp);
+  });
+}
+
+function renderBatList(roster,currentBatter,teamLabel){
+  const list=g('ov-bat-list');
+  const lbl=g('ov-bat-label');
+  if(!list)return;
+  if(lbl) lbl.textContent='打順 — '+(teamLabel||'');
+  if(!roster||roster.length===0){list.innerHTML='';return;}
+  const ordered=roster.filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
+  const dh=roster.filter(p=>String(p.pos||'').toUpperCase()==='DH'&&!p.order);
+  const all=[...ordered,...dh];
+  const posColors={'P':'#e09060','C':'#6eaaee','1B':'#5dc9a0','2B':'#5dc9a0','3B':'#5dc9a0','SS':'#5dc9a0','LF':'#86c867','CF':'#86c867','RF':'#86c867','DH':'#b09eee'};
+  list.innerHTML=all.map(p=>{
+    const isCur=currentBatter&&p.name&&currentBatter.includes(p.name.split(' ')[0]);
+    const posLabel=p.pos?String(p.pos).replace(/^\d+$/,n=>({'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF'}[n]||n)):'';
+    const c=posColors[posLabel]||'#aaa';
+    return `<div class="ov-bat-row${isCur?' cur':''}" style="display:grid;grid-template-columns:16px 26px 1fr 24px;gap:2px;align-items:center;padding:1px 2px${isCur?';background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)':''}">
+      <span style="font-size:${isCur?8:7}px;color:${isCur?'#c8102e':'rgba(255,255,255,.4)'};font-weight:${isCur?700:400}">${p.order||'DH'}</span>
+      <span style="font-size:8px;color:${isCur?'#bbb':'#555'}">#${p.num||''}</span>
+      <span style="font-size:10px;color:${isCur?'#fff':'rgba(255,255,255,.65)'};font-weight:${isCur?700:400};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
+      <span style="font-size:7px;color:${c}">${posLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+let _defVisible=false, _batVisible=false;
+let _lastRoster=null, _lastTeam='';
 
 function applyState(s){
   if(!s)return;
-
   const inn=s.inn||1, isTop=s.top!==false;
   const n=Math.max(s.maxInn||7,inn);
   const asc=s.asc||[], hsc=s.hsc||[];
-  const xOn=s.xOn||{};
   const r=s.r||{};
 
-  // イニング・表裏
+  // イニング
   set('ov-inn',inn);
   setCls('ov-tb-top',isTop?'active':'');
   setCls('ov-tb-bot',!isTop?'active':'');
 
-  // チーム名・インジケーター
+  // チーム名
   set('ov-aname',s.aab||'先攻');
   set('ov-hname',s.hnm||'後攻');
   setCls('ov-ind-away','ov-team-ind'+(isTop?' active':''));
   setCls('ov-ind-home','ov-team-ind'+(!isTop?' active':''));
 
-  // 合計得点
+  // 得点
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
-  set('ov-score-away',at);
-  set('ov-score-home',ht);
+  set('ov-score-away',at); set('ov-score-home',ht);
 
-  // イニングスコア表（セル単位更新・構造変化なし）
+  // イニングスコア表
   const istBody=g('ov-ist-body');
   if(istBody){
     const rows=istBody.querySelectorAll('tr');
-    const data=[[asc,'away'],[hsc,'home']];
-    // 行数・列数が変わった時だけ再構築
-    const needRebuild = rows.length!==2 || (rows[0]&&rows[0].querySelectorAll('td').length!==n);
+    const needRebuild=rows.length!==2||(rows[0]&&rows[0].querySelectorAll('td').length!==n);
     if(needRebuild){
       let html='';
-      data.forEach(([sc])=>{
+      [[asc],[hsc]].forEach(([sc])=>{
         html+='<tr>';
-        for(let i=0;i<n;i++) html+=`<td class=""></td>`;
+        for(let i=0;i<n;i++)html+=`<td></td>`;
         html+='</tr>';
       });
       istBody.innerHTML=html;
     }
-    // セルの内容とクラスだけ更新
-    data.forEach(([sc,team],ri)=>{
+    [[asc],[hsc]].forEach(([sc],ri)=>{
       const row=istBody.querySelectorAll('tr')[ri];
       if(!row)return;
       const cells=row.querySelectorAll('td');
       for(let i=0;i<n;i++){
-        const td=cells[i];
-        if(!td)continue;
+        const td=cells[i]; if(!td)continue;
         const val=sc[i];
         const disp=val===null?'':val==='x'?'×':String(val);
         const cls=i+1===inn?'cur':'';
-        if(td.textContent!==disp) td.textContent=disp;
-        if(td.className!==cls) td.className=cls;
+        if(td.textContent!==disp)td.textContent=disp;
+        if(td.className!==cls)td.className=cls;
       }
     });
   }
@@ -282,39 +353,54 @@ function applyState(s){
     setAttr('ov-od'+(i+1),'stroke',i<(s.o||0)?'#7a0000':'#444');
   }
 
-  // ダイヤモンド
-  [1,2,3].forEach(n=>{
-    const e=g('ov-b'+n);
+  // ダイヤモンド（ホームベースなし・3塁のみ）
+  [1,2,3].forEach(n2=>{
+    const e=g('ov-b'+n2);
     if(!e)return;
-    const f=r[n]?'#f5c518':'rgba(255,255,255,.12)';
-    const st2=r[n]?'#b8860b':'rgba(255,255,255,.3)';
-    if(e.getAttribute('fill')!==f) e.setAttribute('fill',f);
-    if(e.getAttribute('stroke')!==st2) e.setAttribute('stroke',st2);
+    const f=r[n2]?'#f5c518':'rgba(255,255,255,.22)';
+    const st=r[n2]?'#b8860b':'rgba(255,255,255,.6)';
+    if(e.getAttribute('fill')!==f)e.setAttribute('fill',f);
+    if(e.getAttribute('stroke')!==st)e.setAttribute('stroke',st);
   });
 
-  // 打者・投手・捕手
-  set('ov-batter',s.batter||'');
-  set('ov-batter-next',s.batterNext||'');
-  set('ov-batter-next2',s.batterNext2||'');
+  // P/C/B/次
   set('ov-pitcher',s.pitcher||'');
   set('ov-catcher',s.catcher||'');
+  set('ov-batter',s.batter||'');
+  set('ov-batter-next',s.batterNext||'');
+
+  // 守備配置・打順（rosterが届いた場合）
+  if(s.defRoster){
+    _lastRoster=s.defRoster;
+    _lastTeam=s.defTeam||'';
+    renderDefBadges(_lastRoster);
+    const lbl=g('ov-def-label');
+    if(lbl)lbl.textContent='守備配置 — '+(s.defTeam||'');
+    renderBatList(_lastRoster,s.batter,s.defTeam);
+  }
 }
 
-// 時計（独立レイヤーで他要素の再描画を防ぐ）
+// 守備配置・打順の表示切替（controllerから受信）
+function setDefVisible(v){
+  _defVisible=v;
+  const el=g('ov-right');
+  if(el)el.classList.toggle('open',v);
+}
+function setBatVisible(v){
+  _batVisible=v;
+  const el=g('ov-bat-panel');
+  if(el)el.classList.toggle('open',v);
+}
+
+// 時計
 (function tick(){
-  const e=document.getElementById('ov-clock');
-  if(e){
-    const n=new Date();
-    const t=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0')+':'+n.getSeconds().toString().padStart(2,'0');
-    if(e.textContent!==t) e.textContent=t;
-  }
+  const e=g('ov-clock');
+  if(e){const n=new Date(),t=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0')+':'+n.getSeconds().toString().padStart(2,'0');if(e.textContent!==t)e.textContent=t;}
   setTimeout(tick,1000);
 })();
 
 // WebSocket
-let ws=null, _wsTimer=null;
-let _pendingState=null, _applyTimer=null;
-
+let ws=null,_wsTimer=null,_pendingState=null,_applyTimer=null;
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
@@ -324,17 +410,14 @@ function connectWS(){
       const h=t=>{
         try{
           _pendingState=JSON.parse(t);
-          if(!_applyTimer) _applyTimer=setTimeout(()=>{
-            _applyTimer=null;
-            if(_pendingState) applyState(_pendingState);
-          },50);
+          if(!_applyTimer)_applyTimer=setTimeout(()=>{_applyTimer=null;if(_pendingState)applyState(_pendingState);},50);
         }catch(err){}
       };
-      if(e.data instanceof Blob) e.data.text().then(h); else h(e.data);
+      if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
     };
-    ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
-    ws.onerror=()=>{ try{ws.close();}catch(e){} };
-  }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
+    ws.onclose=()=>{ws=null;_wsTimer=setTimeout(connectWS,3000);};
+    ws.onerror=()=>{try{ws.close();}catch(e){}};
+  }catch(e){_wsTimer=setTimeout(connectWS,3000);}
 }
 connectWS();
 </script>
