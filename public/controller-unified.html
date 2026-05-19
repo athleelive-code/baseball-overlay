@@ -303,30 +303,39 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
 <!-- BATTERY ROW -->
 <div class="battery-row">
-  <div class="battery-cell" style="flex-direction:column;align-items:flex-start;gap:4px">
+  <!-- 左：打者エリア -->
+  <div class="battery-cell" style="flex-direction:column;align-items:flex-start;gap:6px">
+    <!-- 打者セレクト -->
     <div style="display:flex;align-items:center;gap:8px;width:100%">
       <span class="battery-tag">打</span>
-      <select class="battery-sel" id="sel-batter">
+      <select class="battery-sel" id="sel-batter" onchange="onBatterChange()">
         <option value="">-- 打者 --</option>
       </select>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-left:2px">
-      <div style="display:flex;gap:10px">
-        <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:8px;color:rgba(255,255,255,.25);white-space:nowrap">次</span>
-          <span style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis" id="next-batter">-</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:8px;color:rgba(255,255,255,.25);white-space:nowrap">次々</span>
-          <span style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis" id="next2-batter">-</span>
-        </div>
+    <!-- 次・次々打者 -->
+    <div style="display:flex;gap:12px;padding-left:4px">
+      <div style="display:flex;align-items:center;gap:4px">
+        <span style="font-size:9px;color:rgba(255,255,255,.3);white-space:nowrap">次</span>
+        <span style="font-size:13px;color:rgba(255,255,255,.55);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis" id="next-batter">-</span>
       </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span style="font-size:9px;color:rgba(255,255,255,.2);white-space:nowrap">次々</span>
+        <span style="font-size:13px;color:rgba(255,255,255,.4);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis" id="next2-batter">-</span>
+      </div>
+    </div>
+    <!-- 打順表示ボタン＋打順変更ボタン -->
+    <div style="display:flex;gap:8px;width:100%">
       <button id="btn-bat-visible" onclick="toggleBatVisible()"
-        style="background:#1a1a3a;border:1px solid #3a3a8a;border-radius:16px;color:#8888ee;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+        style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:14px;font-weight:600;padding:10px 6px;cursor:pointer;white-space:nowrap">
         打順 表示
+      </button>
+      <button onclick="openBatOrderPanel()"
+        style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:14px;font-weight:600;padding:10px 6px;cursor:pointer;white-space:nowrap">
+        打順 変更
       </button>
     </div>
   </div>
+  <!-- 右：投手・捕手エリア -->
   <div style="flex:1;display:flex;flex-direction:column;border-left:1px solid #1a1a1a">
     <div class="battery-cell" style="border-bottom:1px solid #1a1a1a">
       <span class="battery-tag">投</span>
@@ -340,11 +349,102 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <option value="">-- 捕手 --</option>
       </select>
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;padding:5px 8px">
+    <!-- 守備配置表示ボタン -->
+    <div style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
       <button id="btn-def-visible" onclick="toggleDefVisible()"
-        style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:16px;color:#86c867;font-size:11px;font-weight:600;padding:5px 10px;cursor:pointer">
+        style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:14px;font-weight:600;padding:10px 8px;cursor:pointer">
         守備配置 表示
       </button>
+    </div>
+    <!-- 守備位置変更ボタン -->
+    <div style="padding:4px 8px 6px">
+      <button onclick="openDefSubPanel()"
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:14px;font-weight:600;padding:10px 8px;cursor:pointer">
+        守備位置 変更
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 打順変更パネル（モーダル） -->
+<div id="bat-order-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200" onclick="closeBatOrderPanel()"></div>
+<div id="bat-order-panel" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#1c1c1e;border:1px solid #333;border-radius:14px;padding:16px;width:90%;max-width:400px;max-height:80vh;overflow-y:auto;z-index:201">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span style="font-size:18px;font-weight:700;color:#fff">打順 変更</span>
+    <button onclick="closeBatOrderPanel()" style="background:none;border:none;color:#888;font-size:28px;cursor:pointer">✕</button>
+  </div>
+  <div style="font-size:12px;color:#555;margin-bottom:10px" id="bat-order-team-label">チームを選択してください</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button onclick="setBatOrderTeam('away')" id="bot-away-btn"
+      style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#aaa;font-size:14px;font-weight:600;padding:8px;cursor:pointer">先攻</button>
+    <button onclick="setBatOrderTeam('home')" id="bot-home-btn"
+      style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#aaa;font-size:14px;font-weight:600;padding:8px;cursor:pointer">後攻</button>
+  </div>
+  <div id="bat-order-list" style="display:flex;flex-direction:column;gap:6px"></div>
+  <div id="bat-order-confirm" style="display:none;margin-top:12px">
+    <div style="font-size:13px;color:#888;margin-bottom:8px">打順を変更しますか？</div>
+    <div style="font-size:16px;color:#fff;background:#2c2c2e;border-radius:8px;padding:10px;margin-bottom:10px" id="bat-order-confirm-text"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmBatOrder()" style="flex:1;background:#c8102e;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;padding:12px;cursor:pointer">確定</button>
+      <button onclick="cancelBatOrder()" style="flex:1;background:#2c2c2e;border:none;border-radius:10px;color:#888;font-size:14px;padding:12px;cursor:pointer">戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- 守備位置変更パネル（モーダル） -->
+<div id="def-sub-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200" onclick="closeDefSubPanel()"></div>
+<div id="def-sub-panel" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#1c1c1e;border:1px solid #333;border-radius:14px;padding:16px;width:90%;max-width:400px;max-height:80vh;overflow-y:auto;z-index:201">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span style="font-size:18px;font-weight:700;color:#fff">守備位置 変更</span>
+    <button onclick="closeDefSubPanel()" style="background:none;border:none;color:#888;font-size:28px;cursor:pointer">✕</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button onclick="setDefSubTeam('away')" id="dst-away-btn"
+      style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#aaa;font-size:14px;font-weight:600;padding:8px;cursor:pointer">先攻</button>
+    <button onclick="setDefSubTeam('home')" id="dst-home-btn"
+      style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#aaa;font-size:14px;font-weight:600;padding:8px;cursor:pointer">後攻</button>
+  </div>
+  <!-- フィールド図（タップで選手選択） -->
+  <div style="font-size:11px;color:#555;margin-bottom:8px">バッジを長押しで交代</div>
+  <div id="def-sub-field" style="background:#0d1a0d;border-radius:8px;padding:6px;margin-bottom:10px">
+    <svg id="def-sub-svg" viewBox="-25 -25 210 145" style="width:100%">
+      <path d="M -15 95 Q 80 -18 175 95" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
+      <line x1="80" y1="5" x2="22" y2="28" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+      <line x1="80" y1="5" x2="138" y2="28" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+      <line x1="22" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+      <line x1="138" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+      <polygon points="80,-3 90,5 80,13 70,5" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.4)" stroke-width=".8"/>
+      <polygon points="10,21 20,29 10,37 0,29" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.4)" stroke-width=".8"/>
+      <polygon points="150,21 160,29 150,37 140,29" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.4)" stroke-width=".8"/>
+      <polygon points="80,59 93,51 93,43 67,43 67,51" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
+      <g id="def-sub-badges"></g>
+      <!-- 長押しプログレスバー -->
+      <rect id="dsub-prog-bg" x="20" y="112" width="120" height="5" rx="2.5" fill="#2a2a2a" opacity="0"/>
+      <rect id="dsub-prog-bar" x="20" y="112" width="0" height="5" rx="2.5" fill="#c8102e" opacity="0"/>
+    </svg>
+  </div>
+  <!-- 控え選手リスト（タップで交代確認） -->
+  <div id="def-sub-bench" style="display:none">
+    <div style="font-size:13px;color:#888;margin-bottom:8px">交代する選手を選択</div>
+    <div id="def-sub-target-info" style="font-size:15px;font-weight:700;color:#ff6b6b;margin-bottom:8px"></div>
+    <div id="def-sub-bench-list" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+  <!-- 確認 -->
+  <div id="def-sub-confirm" style="display:none;margin-top:12px">
+    <div style="font-size:13px;color:#888;margin-bottom:8px">交代確認</div>
+    <div style="background:#1a1a1a;border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:12px;color:#555">退く</span>
+        <span style="font-size:17px;color:#ff6b6b;font-weight:600" id="def-sub-out-name"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-top:1px solid #2a2a2a;padding-top:8px">
+        <span style="font-size:12px;color:#555">入る</span>
+        <span style="font-size:17px;color:#6bff9e;font-weight:600" id="def-sub-in-name"></span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmDefSub()" style="flex:1;background:#c8102e;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;padding:12px;cursor:pointer">交代確定</button>
+      <button onclick="backToDefField()" style="flex:1;background:#2c2c2e;border:none;border-radius:10px;color:#888;font-size:14px;padding:12px;cursor:pointer">戻る</button>
     </div>
   </div>
 </div>
@@ -1167,6 +1267,243 @@ function connectWS(){
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
+
+// ── 打者変更時：次打者・次々打者を更新 ─────────────────────────────────────
+function onBatterChange(){
+  const sel=document.getElementById('sel-batter');
+  if(!sel) return;
+  const selId=Number(sel.value);
+  const team=st.top?'away':'home';
+  const roster=rosters[team].filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
+  const idx=roster.findIndex(p=>p.id===selId);
+  const next1=idx>=0?roster[(idx+1)%roster.length]:null;
+  const next2=idx>=0?roster[(idx+2)%roster.length]:null;
+  const fmt=p=>p?(p.num?'#'+p.num+' ':'')+p.name:'-';
+  const n1=document.getElementById('next-batter');
+  const n2=document.getElementById('next2-batter');
+  if(n1) n1.textContent=fmt(next1);
+  if(n2) n2.textContent=fmt(next2);
+  const defTeamName=team==='away'
+    ?(document.getElementById('name-away')?.textContent||'先攻')
+    :(document.getElementById('name-home')?.textContent||'後攻');
+  _defRoster=rosters[team].map(p=>({...p,pos:posLabel(p.pos)||p.pos}));
+  _defTeam=defTeamName;
+  broadcast();
+}
+
+// ── 打順変更パネル ──────────────────────────────────────────────────────────
+let _batOrderTeam=null,_batOrderChanging=null;
+function openBatOrderPanel(){
+  document.getElementById('bat-order-bg').style.display='block';
+  document.getElementById('bat-order-panel').style.display='block';
+  document.getElementById('bat-order-confirm').style.display='none';
+  _batOrderTeam=null;
+  document.getElementById('bat-order-list').innerHTML='';
+  document.getElementById('bat-order-team-label').textContent='チームを選択してください';
+  document.getElementById('bot-away-btn').style.background='#2c2c2e';
+  document.getElementById('bot-away-btn').style.borderColor='#444';
+  document.getElementById('bot-home-btn').style.background='#2c2c2e';
+  document.getElementById('bot-home-btn').style.borderColor='#444';
+}
+function closeBatOrderPanel(){
+  document.getElementById('bat-order-bg').style.display='none';
+  document.getElementById('bat-order-panel').style.display='none';
+}
+function setBatOrderTeam(team){
+  _batOrderTeam=team;
+  const tname=team==='away'
+    ?(document.getElementById('name-away')?.textContent||'先攻')
+    :(document.getElementById('name-home')?.textContent||'後攻');
+  document.getElementById('bat-order-team-label').textContent=tname+' の打順';
+  document.getElementById('bot-away-btn').style.background=team==='away'?'#1a3a1a':'#2c2c2e';
+  document.getElementById('bot-away-btn').style.borderColor=team==='away'?'#3a6a2a':'#444';
+  document.getElementById('bot-home-btn').style.background=team==='home'?'#1a3a1a':'#2c2c2e';
+  document.getElementById('bot-home-btn').style.borderColor=team==='home'?'#3a6a2a':'#444';
+  renderBatOrderList();
+}
+function renderBatOrderList(){
+  if(!_batOrderTeam) return;
+  const roster=rosters[_batOrderTeam].filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
+  const posColors={'P':'#e09060','C':'#6eaaee','1B':'#5dc9a0','2B':'#5dc9a0','3B':'#5dc9a0','SS':'#5dc9a0','LF':'#86c867','CF':'#86c867','RF':'#86c867','DH':'#b09eee'};
+  const list=document.getElementById('bat-order-list');
+  document.getElementById('bat-order-confirm').style.display='none';
+  list.innerHTML=roster.map(p=>{
+    const pl=posLabel(p.pos);
+    const col=posColors[pl]||'#aaa';
+    return `<div style="display:grid;grid-template-columns:36px 44px 1fr 44px 60px;gap:6px;align-items:center;background:#1a1a1a;border-radius:8px;padding:8px 10px">
+      <span style="font-size:14px;font-weight:700;color:#888">${p.order}</span>
+      <span style="font-size:14px;color:#666">${p.num?'#'+p.num:''}</span>
+      <span style="font-size:16px;color:#fff">${p.name}</span>
+      <span style="font-size:12px;color:${col}">${pl}</span>
+      <button style="background:#2c2c2e;border:1px solid #444;border-radius:6px;color:#aaa;font-size:13px;padding:5px 8px;cursor:pointer" onclick="editBatOrder(${p.id})">変更</button>
+    </div>`;
+  }).join('');
+}
+function editBatOrder(id){
+  _batOrderChanging=id;
+  const p=rosters[_batOrderTeam].find(p=>p.id===id);
+  if(!p) return;
+  const roster=rosters[_batOrderTeam].filter(r=>r.order).sort((a,b)=>Number(a.order)-Number(b.order));
+  const nums=Array.from({length:roster.length},(_,i)=>i+1).filter(n=>n!==Number(p.order));
+  const opts=nums.map(n=>`<option value="${n}">${n}番</option>`).join('');
+  document.getElementById('bat-order-confirm-text').innerHTML=
+    `<b>#${p.num||''} ${p.name}</b> を<br><select id="bat-ord-sel" style="background:#2c2c2e;border:1px solid #555;border-radius:6px;color:#fff;font-size:16px;padding:6px 12px;margin-top:6px">${opts}</select> に変更`;
+  document.getElementById('bat-order-confirm').style.display='block';
+}
+function confirmBatOrder(){
+  if(!_batOrderChanging||!_batOrderTeam) return;
+  const sel=document.getElementById('bat-ord-sel');
+  if(!sel) return;
+  const newOrd=Number(sel.value);
+  const p=rosters[_batOrderTeam].find(r=>r.id===_batOrderChanging);
+  if(!p) return;
+  const oldOrd=Number(p.order);
+  rosters[_batOrderTeam].forEach(r=>{
+    if(!r.order) return;
+    const o=Number(r.order);
+    if(r.id===_batOrderChanging){r.order=newOrd;return;}
+    if(newOrd>oldOrd&&o>oldOrd&&o<=newOrd) r.order=o-1;
+    else if(newOrd<oldOrd&&o>=newOrd&&o<oldOrd) r.order=o+1;
+  });
+  renderBatOrderList(); updateSelects(); broadcast();
+}
+function cancelBatOrder(){renderBatOrderList();}
+
+// ── 守備位置変更パネル ─────────────────────────────────────────────────────
+const DEF_POS_COORDS={
+  '8':{x:80,y:5},'7':{x:22,y:18},'9':{x:138,y:18},
+  '4':{x:118,y:28},'6':{x:42,y:28},
+  '3':{x:148,y:39},'5':{x:12,y:39},
+  '1':{x:80,y:36},'2':{x:80,y:56},'DH':{x:10,y:56}
+};
+const DEF_COLORS={'1':'rgba(150,60,20,.93)','2':'rgba(20,60,140,.93)','3':'rgba(15,80,50,.93)','4':'rgba(15,80,50,.93)','5':'rgba(15,80,50,.93)','6':'rgba(15,80,50,.93)','7':'rgba(30,80,15,.93)','8':'rgba(30,80,15,.93)','9':'rgba(30,80,15,.93)','DH':'rgba(60,40,130,.93)'};
+let _defSubTeam=null,_defSubOutId=null,_defSubInId=null,_dsubLT=null,_dsubProg=null;
+
+function openDefSubPanel(){
+  document.getElementById('def-sub-bg').style.display='block';
+  document.getElementById('def-sub-panel').style.display='block';
+  document.getElementById('def-sub-bench').style.display='none';
+  document.getElementById('def-sub-confirm').style.display='none';
+  _defSubTeam=null;
+  document.getElementById('def-sub-badges').innerHTML='';
+  document.getElementById('dst-away-btn').style.background='#2c2c2e';
+  document.getElementById('dst-away-btn').style.borderColor='#444';
+  document.getElementById('dst-home-btn').style.background='#2c2c2e';
+  document.getElementById('dst-home-btn').style.borderColor='#444';
+}
+function closeDefSubPanel(){
+  document.getElementById('def-sub-bg').style.display='none';
+  document.getElementById('def-sub-panel').style.display='none';
+  cancelDsubLong();
+}
+function setDefSubTeam(team){
+  _defSubTeam=team;
+  document.getElementById('dst-away-btn').style.background=team==='away'?'#1a3a1a':'#2c2c2e';
+  document.getElementById('dst-away-btn').style.borderColor=team==='away'?'#3a6a2a':'#444';
+  document.getElementById('dst-home-btn').style.background=team==='home'?'#1a3a1a':'#2c2c2e';
+  document.getElementById('dst-home-btn').style.borderColor=team==='home'?'#3a6a2a':'#444';
+  renderDefSubField();
+}
+function renderDefSubField(){
+  const ns='http://www.w3.org/2000/svg';
+  const g2=document.getElementById('def-sub-badges');
+  g2.innerHTML='';
+  if(!_defSubTeam) return;
+  rosters[_defSubTeam].forEach(p=>{
+    const pKey=posLabel(p.pos);
+    const rawKey=String(p.pos||'');
+    const lk=DEF_POS_COORDS[pKey]?pKey:DEF_POS_COORDS[rawKey]?rawKey:null;
+    if(!lk) return;
+    const coord=DEF_POS_COORDS[lk];
+    const bg=DEF_COLORS[rawKey]||DEF_COLORS[pKey]||'rgba(80,80,80,.9)';
+    const grp=document.createElementNS(ns,'g');
+    grp.style.cursor='pointer';
+    const rect=document.createElementNS(ns,'rect');
+    rect.setAttribute('x',coord.x-30); rect.setAttribute('y',coord.y-1);
+    rect.setAttribute('width','60'); rect.setAttribute('height','14');
+    rect.setAttribute('rx','7'); rect.setAttribute('fill',bg);
+    rect.setAttribute('stroke','rgba(255,255,255,.3)'); rect.setAttribute('stroke-width','.6');
+    const t1=document.createElementNS(ns,'text');
+    t1.setAttribute('font-family','sans-serif'); t1.setAttribute('font-size','4.5');
+    t1.setAttribute('fill','rgba(255,255,255,.5)'); t1.setAttribute('x',coord.x);
+    t1.setAttribute('y',coord.y+5); t1.setAttribute('text-anchor','middle');
+    t1.textContent=pKey;
+    const t2=document.createElementNS(ns,'text');
+    t2.setAttribute('font-family','sans-serif'); t2.setAttribute('font-size','6');
+    t2.setAttribute('font-weight','500'); t2.setAttribute('fill','#fff');
+    t2.setAttribute('x',coord.x); t2.setAttribute('y',coord.y+12);
+    t2.setAttribute('text-anchor','middle');
+    t2.textContent=(p.num?'#'+p.num+' ':'')+p.name;
+    grp.appendChild(rect); grp.appendChild(t1); grp.appendChild(t2);
+    grp.addEventListener('mousedown',()=>startDsubLong(p,lk));
+    grp.addEventListener('touchstart',ev=>{ev.preventDefault();startDsubLong(p,lk);},{passive:false});
+    grp.addEventListener('mouseup',cancelDsubLong);
+    grp.addEventListener('touchend',cancelDsubLong);
+    grp.addEventListener('mouseleave',cancelDsubLong);
+    grp.addEventListener('touchcancel',cancelDsubLong);
+    g2.appendChild(grp);
+  });
+}
+function startDsubLong(player,posKey){
+  cancelDsubLong();
+  const bg2=document.getElementById('dsub-prog-bg');
+  const bar=document.getElementById('dsub-prog-bar');
+  bg2.setAttribute('opacity','1'); bar.setAttribute('opacity','1'); bar.setAttribute('width','0');
+  let w=0;
+  _dsubProg=setInterval(()=>{w=Math.min(w+3,120);bar.setAttribute('width',w);},20);
+  _dsubLT=setTimeout(()=>{cancelDsubLong();openBenchSelect(player,posKey);},700);
+}
+function cancelDsubLong(){
+  if(_dsubLT){clearTimeout(_dsubLT);_dsubLT=null;}
+  if(_dsubProg){clearInterval(_dsubProg);_dsubProg=null;}
+  const bg2=document.getElementById('dsub-prog-bg');
+  const bar=document.getElementById('dsub-prog-bar');
+  if(bg2){bg2.setAttribute('opacity','0');bar.setAttribute('opacity','0');bar.setAttribute('width','0');}
+}
+function openBenchSelect(player,posKey){
+  _defSubOutId=player.id;
+  document.getElementById('def-sub-target-info').textContent=posKey+' #'+(player.num||'')+' '+player.name+' を交代';
+  const bench=rosters[_defSubTeam].filter(p=>p.id!==player.id);
+  const list=document.getElementById('def-sub-bench-list');
+  list.innerHTML=bench.map(p=>`
+    <div style="display:grid;grid-template-columns:44px 1fr 44px;gap:8px;align-items:center;background:#1a1a1a;border-radius:10px;padding:10px 12px;cursor:pointer" onclick="selectDefSubPlayer(${p.id})">
+      <span style="font-size:18px;font-weight:700;color:#aaa">${p.num?'#'+p.num:''}</span>
+      <span style="font-size:16px;color:#fff">${p.name}</span>
+      <span style="font-size:12px;color:#888">${posLabel(p.pos)||'控'}</span>
+    </div>`).join('');
+  document.getElementById('def-sub-bench').style.display='block';
+  document.getElementById('def-sub-confirm').style.display='none';
+}
+function selectDefSubPlayer(newId){
+  _defSubInId=newId;
+  const outP=rosters[_defSubTeam].find(p=>p.id===_defSubOutId);
+  const inP=rosters[_defSubTeam].find(p=>p.id===newId);
+  if(!outP||!inP) return;
+  document.getElementById('def-sub-out-name').textContent='#'+(outP.num||'')+' '+outP.name;
+  document.getElementById('def-sub-in-name').textContent='#'+(inP.num||'')+' '+inP.name;
+  document.getElementById('def-sub-confirm').style.display='block';
+  document.getElementById('def-sub-bench').style.display='none';
+}
+function confirmDefSub(){
+  const outP=rosters[_defSubTeam].find(p=>p.id===_defSubOutId);
+  const inP=rosters[_defSubTeam].find(p=>p.id===_defSubInId);
+  if(!outP||!inP) return;
+  const tp=outP.pos; outP.pos=inP.pos; inP.pos=tp;
+  const to=outP.order; outP.order=inP.order; inP.order=to;
+  renderDefSubField(); updateSelects(); renderRosters();
+  const defTeamName=_defSubTeam==='away'
+    ?(document.getElementById('name-away')?.textContent||'先攻')
+    :(document.getElementById('name-home')?.textContent||'後攻');
+  _defRoster=rosters[_defSubTeam].map(p=>({...p,pos:posLabel(p.pos)||p.pos}));
+  _defTeam=defTeamName;
+  broadcast();
+  document.getElementById('def-sub-bench').style.display='none';
+  document.getElementById('def-sub-confirm').style.display='none';
+}
+function backToDefField(){
+  document.getElementById('def-sub-bench').style.display='none';
+  document.getElementById('def-sub-confirm').style.display='none';
+}
 
 let _broadcastTimer=null;
 let _batVisible=false, _defVisible=false;
