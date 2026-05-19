@@ -238,7 +238,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 <script>
 function g(id){return document.getElementById(id)}
-function set(id,v){const e=g(id);if(e&&e.textContent!==String(v))e.textContent=String(v);}
+function set(id,v){const e=g(id);const s=(v===null||v===undefined)?'':String(v);if(e&&e.textContent!==s)e.textContent=s;}
 function setAttr(id,attr,v){const e=g(id);if(e&&e.getAttribute(attr)!==v)e.setAttribute(attr,v);}
 function setCls(id,v){const e=g(id);if(e&&e.className!==v)e.className=v;}
 
@@ -467,11 +467,19 @@ function setBatVisible(v,autoHideSec){
 
 // WebSocket
 let ws=null,_wsTimer=null,_pendingState=null,_applyTimer=null;
+// WS状態インジケーター（右下隅・小さく）
+function _wsStatus(s,c){
+  let el=document.getElementById('_ws_ind');
+  if(!el){el=document.createElement('div');el.id='_ws_ind';
+    el.style.cssText='position:fixed;right:4px;bottom:4px;font-size:9px;padding:2px 5px;border-radius:4px;opacity:.6;z-index:9999;font-family:monospace;pointer-events:none';
+    document.body.appendChild(el);}
+  el.textContent=s;el.style.background=c;
+}
 function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/?overlay=1');
-    ws.onopen=()=>{};
+    ws.onopen=()=>{_wsStatus('WS●','#1a5a1a');};
     ws.onmessage=e=>{
       const h=t=>{
         try{
@@ -481,8 +489,8 @@ function connectWS(){
       };
       if(e.data instanceof Blob)e.data.text().then(h);else h(e.data);
     };
-    ws.onclose=()=>{ws=null;_wsTimer=setTimeout(connectWS,3000);};
-    ws.onerror=()=>{try{ws.close();}catch(e){}};
+    ws.onclose=()=>{ws=null;_wsStatus('WS○','#5a1a1a');_wsTimer=setTimeout(connectWS,3000);};
+    ws.onerror=()=>{_wsStatus('WS!','#5a3a00');try{ws.close();}catch(e){}};
   }catch(e){_wsTimer=setTimeout(connectWS,3000);}
 }
 connectWS();
