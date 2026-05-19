@@ -9,60 +9,51 @@
 :root{--red:#c8102e}
 html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
-/* ── 左上：スコア＋BSO＋ダイヤモンド ── */
+/* ── 左上：スコア ── */
 .ov-score{
   position:fixed;left:20px;top:20px;
   background:rgba(8,12,24,.88);
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  min-width:300px;max-width:calc(55% - 20px);
+  width:calc(26% - 10px);
+  min-width:180px;
 }
-
-/* TOP BAR */
-.ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-brand{font-size:16px;font-weight:800;color:#c8102e}
+.ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-brand{font-size:13px;font-weight:800;color:#c8102e}
 .ov-brand span{color:#fff}
-.ov-clock{font-size:16px;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;will-change:contents}
-
-/* スコア行 */
+.ov-clock{font-size:12px;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
 .ov-score-row{display:flex;align-items:stretch}
-
-/* イニング */
-.ov-inn-block{background:rgba(200,16,46,.85);display:flex;align-items:center;justify-content:center;padding:10px 14px;flex-shrink:0}
-.ov-inn-num{font-size:38px;font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-.ov-inn-tb{display:flex;flex-direction:column;align-items:center;gap:1px;margin-left:2px}
-.ov-inn-tb span{font-size:12px;font-weight:700;color:rgba(255,255,255,.25);line-height:1}
+.ov-inn-block{background:rgba(200,16,46,.85);display:flex;align-items:center;justify-content:center;padding:8px 10px;flex-shrink:0}
+.ov-inn-num{font-size:32px;font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.ov-inn-tb{display:flex;flex-direction:column;align-items:center;gap:1px;margin-left:3px}
+.ov-inn-tb span{font-size:10px;font-weight:700;color:rgba(255,255,255,.25);line-height:1}
 .ov-inn-tb span.active{color:#fff}
-
-/* チーム名 */
 .ov-teams{display:flex;flex-direction:column;flex:1;border-left:1px solid rgba(255,255,255,.1)}
-.ov-team-row{display:flex;align-items:center;flex:1;padding:10px 12px;gap:5px}
+.ov-team-row{display:flex;align-items:center;flex:1;padding:6px 8px;gap:4px}
 .ov-team-row:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-team-ind{width:3px;border-radius:1px;align-self:stretch;background:rgba(255,255,255,.1);flex-shrink:0}
 .ov-team-ind.active{background:var(--red)}
-.ov-team-name{font-size:22px;font-weight:700;color:#fff;white-space:nowrap}
+.ov-team-name{font-size:16px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
+.ov-total-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:6px 8px}
+.ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-total-num{font-size:24px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
-/* イニングスコア表 */
-.ov-ist-wrap{flex:1;border-left:1px solid rgba(255,255,255,.1);overflow:hidden}
-.ov-ist-table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
-.ov-ist-table tr{height:50%}
-.ov-ist-table td{text-align:center;padding:0;font-size:16px;font-weight:700;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;vertical-align:middle;border-right:1px solid rgba(255,255,255,.06)}
+/* スコア表（イニング別） - スコアブロック下に */
+.ov-ist-block{border-top:1px solid rgba(255,255,255,.08)}
+.ov-ist-table{border-collapse:collapse;width:100%;table-layout:fixed}
+.ov-ist-table td{text-align:center;padding:2px 0;font-size:12px;font-weight:700;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;border-right:1px solid rgba(255,255,255,.06)}
 .ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.05)}
 .ov-ist-table td:last-child{border-right:none}
 .ov-ist-table td.cur{color:#fff}
 
-/* 合計得点 */
-.ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-total-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:10px 12px}
-.ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-total-num{font-size:30px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
-
-/* BSO＋ダイヤモンド行 */
+/* BSO＋ダイヤモンド（スコアの下） */
 .ov-bso-dia{display:flex;align-items:stretch;border-top:1px solid rgba(255,255,255,.08)}
-.ov-bso{display:flex;flex-direction:column;justify-content:center;padding:8px 10px;gap:5px;border-right:1px solid rgba(255,255,255,.08);flex-shrink:0}
-.ov-bso-line{display:flex;align-items:center;gap:2px}
-.ov-dia{flex:1;display:flex;align-items:center;justify-content:center;padding:2px 4px}
+.ov-bso{display:flex;flex-direction:column;justify-content:center;padding:6px 8px;gap:4px;border-right:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.ov-bso-row{display:flex;align-items:center;gap:4px}
+.ov-bso-lbl{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);width:12px;text-align:right;flex-shrink:0;line-height:1}
+.ov-dia{flex:1;display:flex;align-items:center;justify-content:center;padding:4px}
 
 /* ── 右上：P/C ＋ 守備配置スライドダウン ── */
 .ov-pc-wrap{
@@ -71,128 +62,114 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  min-width:200px;max-width:calc(42% - 20px);
+  width:calc(44% - 10px);
+  min-width:260px;
 }
-
-/* P/C 常時表示行 */
 .ov-pc-row{display:flex;align-items:stretch}
-.ov-pc-cell{display:flex;align-items:center;gap:8px;padding:10px 14px;flex:1}
+.ov-pc-cell{display:flex;align-items:center;gap:8px;padding:12px 16px;flex:1}
 .ov-pc-cell:first-child{border-right:1px solid rgba(255,255,255,.1)}
-.ov-pc-tag{font-size:18px;font-weight:700;color:rgba(255,255,255,.4);flex-shrink:0}
-.ov-pc-name{font-size:20px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* 守備配置スライドダウン */
-.ov-def-panel{
-  max-height:0;overflow:hidden;
-  transition:max-height .45s ease;
-  border-top:0 solid rgba(255,255,255,.08);
-}
-.ov-def-panel.open{
-  max-height:500px;
-  border-top:1px solid rgba(255,255,255,.08);
-}
-.ov-def-hdr{padding:4px 10px;background:rgba(0,0,0,.2)}
-.ov-def-hdr span{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.8px}
+.ov-pc-tag{font-size:22px;font-weight:800;color:rgba(255,255,255,.35);flex-shrink:0;letter-spacing:-1px}
+.ov-pc-name{font-size:22px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-def-panel{max-height:0;overflow:hidden;transition:max-height .45s ease}
+.ov-def-panel.open{max-height:500px;border-top:1px solid rgba(255,255,255,.08)}
+.ov-def-hdr{padding:3px 10px;background:rgba(0,0,0,.2)}
+.ov-def-hdr span{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.8px}
 .ov-def-body{padding:4px 6px}
 
-/* ── 左下：B/次/次々 ＋ 打順スライドアップ ── */
+/* ── 左下：打者＋打順スライドアップ ── */
 .ov-bat-wrap{
-  position:fixed;left:20px;bottom:20px;
+  position:fixed;right:20px;bottom:20px;
   background:rgba(8,12,24,.88);
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  min-width:260px;max-width:calc(45% - 20px);
+  width:calc(44% - 10px);
+  min-width:280px;
 }
-
-/* 打順スライドアップ（下からupへ：flex-direction:column-reverseで実現） */
-.ov-bat-panel{
-  max-height:0;overflow:hidden;
-  transition:max-height .45s ease;
-  border-bottom:0 solid rgba(255,255,255,.08);
-  order:-1; /* B/次行より上に表示 */
-}
-.ov-bat-panel.open{
-  max-height:400px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-}
-.ov-bat-hdr{padding:4px 10px;background:rgba(0,0,0,.2)}
-.ov-bat-hdr span{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1px}
+.ov-bat-panel{max-height:0;overflow:hidden;transition:max-height .45s ease;order:-1}
+.ov-bat-panel.open{max-height:400px;border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-bat-hdr{padding:3px 10px;background:rgba(0,0,0,.2)}
+.ov-bat-hdr span{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:1px}
 .ov-bat-list{padding:2px 4px 3px;display:flex;flex-direction:column;gap:0}
-.ov-bat-row{display:grid;grid-template-columns:26px 40px 1fr 34px;gap:4px;align-items:center;padding:4px 6px}
+.ov-bat-row{display:grid;grid-template-columns:24px 38px 1fr 32px;gap:3px;align-items:center;padding:3px 5px}
 .ov-bat-row.cur{background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)}
 
-/* B/次/次々 常時表示行 */
-.ov-b-row{display:flex;align-items:center;padding:10px 14px;gap:10px;flex-wrap:wrap}
-.ov-b-tag{font-size:18px;font-weight:700;color:rgba(255,255,255,.4);flex-shrink:0}
-.ov-b-name{font-size:22px;font-weight:600;color:#fff;white-space:nowrap}
+/* B/NB/NNB 打者エリア */
+.ov-b-area{display:flex;align-items:center;flex-direction:row;padding:10px 12px;gap:10px}
+.ov-b-cell{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .ov-b-sep{width:1px;height:18px;background:rgba(255,255,255,.12);flex-shrink:0}
-.ov-b-next-tag{font-size:15px;color:rgba(255,255,255,.35);flex-shrink:0}
-.ov-b-next-name{font-size:17px;color:rgba(255,255,255,.55);white-space:nowrap}
-.ov-b-next2-name{font-size:15px;color:rgba(255,255,255,.38);white-space:nowrap}
+.ov-b-tag{font-size:18px;font-weight:800;color:rgba(255,255,255,.35);flex-shrink:0;white-space:nowrap}
+.ov-b-name{font-size:20px;font-weight:700;color:#fff;white-space:nowrap}
+.ov-b-name.sub{font-size:16px;color:rgba(255,255,255,.6)}
+.ov-b-name.sub2{font-size:14px;color:rgba(255,255,255,.42)}
 </style>
 </head>
 <body>
 
-<!-- 左上：スコア＋BSO＋ダイヤモンド -->
+<!-- 左上：スコア（幅half）＋BSO＋ダイヤモンド -->
 <div class="ov-score" id="ov">
   <div class="ov-topbar">
     <span class="ov-brand">Athlee<span>Live</span></span>
     <span class="ov-clock" id="ov-clock"></span>
   </div>
+  <!-- チーム名・得点行 -->
   <div class="ov-score-row">
-    <!-- スコアエリア -->
-    <div style="display:flex;align-items:stretch;flex:2.5">
-      <div class="ov-inn-block">
-        <span class="ov-inn-num" id="ov-inn">1</span>
-        <div class="ov-inn-tb">
-          <span id="ov-tb-top" class="active">▲</span>
-          <span id="ov-tb-bot">▼</span>
-        </div>
-      </div>
-      <div class="ov-teams">
-        <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><span class="ov-team-name" id="ov-aname">先攻</span></div>
-        <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><span class="ov-team-name" id="ov-hname">後攻</span></div>
-      </div>
-      <div class="ov-ist-wrap">
-        <table class="ov-ist-table"><tbody id="ov-ist-body"></tbody></table>
-      </div>
-      <div class="ov-totals">
-        <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-away">0</span></div>
-        <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-home">0</span></div>
+    <div class="ov-inn-block">
+      <span class="ov-inn-num" id="ov-inn">1</span>
+      <div class="ov-inn-tb">
+        <span id="ov-tb-top" class="active">▲</span>
+        <span id="ov-tb-bot">▼</span>
       </div>
     </div>
-    <!-- BSO＋ダイヤモンド -->
-    <div style="display:flex;align-items:stretch;flex:1;border-left:1px solid rgba(255,255,255,.1)">
-      <div class="ov-bso">
-        <div class="ov-bso-line">
-          <svg width="84" height="28" viewBox="0 0 30 10"><circle cx="5" cy="5" r="4" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="4" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="4" id="ov-bd3" fill="#333"/></svg>
-        </div>
-        <div class="ov-bso-line">
-          <svg width="56" height="28" viewBox="0 0 20 10"><circle cx="5" cy="5" r="4" id="ov-sd1" fill="#333"/><circle cx="15" cy="5" r="4" id="ov-sd2" fill="#333"/></svg>
-        </div>
-        <div class="ov-bso-line">
-          <svg width="56" height="28" viewBox="0 0 20 10"><circle cx="5" cy="5" r="4" id="ov-od1" fill="#282828" stroke="#444" stroke-width="1"/><circle cx="15" cy="5" r="4" id="ov-od2" fill="#282828" stroke="#444" stroke-width="1"/></svg>
-        </div>
+    <div class="ov-teams">
+      <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><span class="ov-team-name" id="ov-aname">先攻</span></div>
+      <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><span class="ov-team-name" id="ov-hname">後攻</span></div>
+    </div>
+    <div class="ov-totals">
+      <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-away">0</span></div>
+      <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-home">0</span></div>
+    </div>
+  </div>
+  <!-- イニング別スコア表 -->
+  <div class="ov-ist-block">
+    <table class="ov-ist-table"><tbody id="ov-ist-body"></tbody></table>
+  </div>
+  <!-- BSO横並び＋ダイヤモンド -->
+  <div class="ov-bso-dia">
+    <div class="ov-bso">
+      <!-- B横並び -->
+      <div class="ov-bso-row">
+        <span class="ov-bso-lbl">B</span>
+        <svg width="72" height="12" viewBox="0 0 30 10" style="display:block"><circle cx="5" cy="5" r="4" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="4" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="4" id="ov-bd3" fill="#333"/></svg>
       </div>
-      <div class="ov-dia">
-        <svg viewBox="10 0 140 52" style="width:120px">
-          <line x1="80" y1="5" x2="30" y2="28" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
-          <line x1="80" y1="5" x2="130" y2="28" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
-          <line x1="30" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
-          <line x1="130" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
-          <polygon id="ov-b2" points="80,0 94,8 80,16 66,8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
-          <polygon id="ov-b3" points="20,21 34,29 20,37 6,29" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
-          <polygon id="ov-b1" points="140,21 154,29 140,37 126,29" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
-        </svg>
+      <!-- S横並び -->
+      <div class="ov-bso-row">
+        <span class="ov-bso-lbl">S</span>
+        <svg width="48" height="12" viewBox="0 0 20 10" style="display:block"><circle cx="5" cy="5" r="4" id="ov-sd1" fill="#333"/><circle cx="15" cy="5" r="4" id="ov-sd2" fill="#333"/></svg>
       </div>
+      <!-- O横並び -->
+      <div class="ov-bso-row">
+        <span class="ov-bso-lbl">O</span>
+        <svg width="48" height="12" viewBox="0 0 20 10" style="display:block"><circle cx="5" cy="5" r="4" id="ov-od1" fill="#282828" stroke="#444" stroke-width="1"/><circle cx="15" cy="5" r="4" id="ov-od2" fill="#282828" stroke="#444" stroke-width="1"/></svg>
+      </div>
+    </div>
+    <!-- ダイヤモンド -->
+    <div class="ov-dia">
+      <svg viewBox="10 0 140 52" style="width:100%;max-width:100px">
+        <line x1="80" y1="5" x2="30" y2="28" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+        <line x1="80" y1="5" x2="130" y2="28" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+        <line x1="30" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+        <line x1="130" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+        <polygon id="ov-b2" points="80,0 94,8 80,16 66,8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
+        <polygon id="ov-b3" points="20,21 34,29 20,37 6,29" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
+        <polygon id="ov-b1" points="140,21 154,29 140,37 126,29" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>
+      </svg>
     </div>
   </div>
 </div>
 
-<!-- 右上：P/C ＋ 守備配置スライドダウン -->
+<!-- 右上：P/C ＋ 守備配置スライドダウン（幅2倍・強調） -->
 <div class="ov-pc-wrap" id="ov-pc-wrap">
-  <!-- P/C 常時表示 -->
   <div class="ov-pc-row">
     <div class="ov-pc-cell">
       <span class="ov-pc-tag">P</span>
@@ -203,7 +180,6 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       <span class="ov-pc-name" id="ov-catcher"></span>
     </div>
   </div>
-  <!-- 守備配置スライドダウン -->
   <div class="ov-def-panel" id="ov-def-panel">
     <div class="ov-def-hdr"><span id="ov-def-label">守備配置</span></div>
     <div class="ov-def-body">
@@ -225,27 +201,28 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   </div>
 </div>
 
-<!-- 左下：B/次/次々 ＋ 打順スライドアップ -->
+<!-- 左下：打者B/NB/NNB ＋ 打順スライドアップ（幅2倍・強調） -->
 <div class="ov-bat-wrap" id="ov-bat-wrap">
-  <!-- 打順パネル（上へスライドアップ：order:-1で上に） -->
+  <!-- 打順スライドアップ -->
   <div class="ov-bat-panel" id="ov-bat-panel">
     <div class="ov-bat-hdr"><span id="ov-bat-label">打順</span></div>
     <div class="ov-bat-list" id="ov-bat-list"></div>
   </div>
-  <!-- 打者・次打者・次々打者 常時表示 -->
-  <div class="ov-b-row">
-    <span class="ov-b-tag">B</span>
-    <span class="ov-b-name" id="ov-batter"></span>
+  <!-- B / NB / NNB 常時表示（1行横並び） -->
+  <div class="ov-b-area">
+    <div class="ov-b-cell">
+      <span class="ov-b-tag">B</span>
+      <span class="ov-b-name" id="ov-batter"></span>
+    </div>
     <div class="ov-b-sep"></div>
-    <div style="display:flex;flex-direction:column;gap:2px">
-      <div style="display:flex;align-items:center;gap:5px">
-        <span class="ov-b-next-tag">次</span>
-        <span class="ov-b-next-name" id="ov-batter-next"></span>
-      </div>
-      <div style="display:flex;align-items:center;gap:5px">
-        <span class="ov-b-next-tag" style="font-size:13px;color:rgba(255,255,255,.25)">次々</span>
-        <span class="ov-b-next2-name" id="ov-batter-next2"></span>
-      </div>
+    <div class="ov-b-cell">
+      <span class="ov-b-tag">NB</span>
+      <span class="ov-b-name sub" id="ov-batter-next"></span>
+    </div>
+    <div class="ov-b-sep"></div>
+    <div class="ov-b-cell">
+      <span class="ov-b-tag">NNB</span>
+      <span class="ov-b-name sub2" id="ov-batter-next2"></span>
     </div>
   </div>
 </div>
@@ -256,19 +233,32 @@ function set(id,v){const e=g(id);if(e&&e.textContent!==String(v))e.textContent=S
 function setAttr(id,attr,v){const e=g(id);if(e&&e.getAttribute(attr)!==v)e.setAttribute(attr,v);}
 function setCls(id,v){const e=g(id);if(e&&e.className!==v)e.className=v;}
 
+// ポジションラベル→番号マップ（controllerからラベルで来る場合に対応）
+const POS_LABEL_TO_NUM={
+  'P':'1','C':'2','1B':'3','2B':'4','3B':'5','SS':'6','LF':'7','CF':'8','RF':'9',
+  '1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
+  'DH':'DH','dh':'DH'
+};
+
 // 守備位置座標マップ（viewBox -35 -30 230 150）
 const DEF_POS={
-  '8':{x:80,y:-17,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'8 CF'},
-  '7':{x:1,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'7 LF'},
-  '9':{x:159,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'9 RF'},
-  '4':{x:128,y:18,c:'rgba(15,80,50,.93)',s:'#208a60',l:'4 2B'},
-  '6':{x:32,y:18,c:'rgba(15,80,50,.93)',s:'#208a60',l:'6 SS'},
-  '3':{x:165,y:38,c:'rgba(15,80,50,.93)',s:'#208a60',l:'3 1B'},
-  '5':{x:1,y:38,c:'rgba(15,80,50,.93)',s:'#208a60',l:'5 3B'},
   '1':{x:80,y:48,c:'rgba(150,60,20,.93)',s:'#c07030',l:'1 P'},
   '2':{x:80,y:88,c:'rgba(20,60,140,.93)',s:'#3070c0',l:'2 C'},
+  '3':{x:165,y:38,c:'rgba(15,80,50,.93)',s:'#208a60',l:'3 1B'},
+  '4':{x:128,y:18,c:'rgba(15,80,50,.93)',s:'#208a60',l:'4 2B'},
+  '5':{x:1,y:38,c:'rgba(15,80,50,.93)',s:'#208a60',l:'5 3B'},
+  '6':{x:32,y:18,c:'rgba(15,80,50,.93)',s:'#208a60',l:'6 SS'},
+  '7':{x:1,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'7 LF'},
+  '8':{x:80,y:-17,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'8 CF'},
+  '9':{x:159,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'9 RF'},
   'DH':{x:1,y:70,c:'rgba(60,40,130,.93)',s:'#7050b0',l:'DH'},
 };
+
+function posToKey(rawPos){
+  // 数字文字列、ラベル文字列どちらにも対応
+  const s=String(rawPos||'').trim();
+  return POS_LABEL_TO_NUM[s]||POS_LABEL_TO_NUM[s.toUpperCase()]||null;
+}
 
 function renderDefBadges(roster){
   const g2=g('ov-def-badges');
@@ -277,8 +267,9 @@ function renderDefBadges(roster){
   const ns='http://www.w3.org/2000/svg';
   g2.innerHTML='';
   roster.forEach(p=>{
-    const posKey=String(p.pos||'');
-    const coord=DEF_POS[posKey];
+    const key=posToKey(p.pos);
+    if(!key)return;
+    const coord=DEF_POS[key];
     if(!coord)return;
     const cx=coord.x,cy=coord.y;
     const grp=document.createElementNS(ns,'g');
@@ -297,7 +288,7 @@ function renderDefBadges(roster){
     t2.setAttribute('font-weight','500');t2.setAttribute('fill','#fff');
     t2.setAttribute('x',cx);t2.setAttribute('y',cy+14);
     t2.setAttribute('text-anchor','middle');
-    t2.textContent=(p.num?'#'+p.num+' ':'')+( p.name||'');
+    t2.textContent=(p.num?'#'+p.num+' ':'')+(p.name||'');
     grp.appendChild(rect);grp.appendChild(t1);grp.appendChild(t2);
     g2.appendChild(grp);
   });
@@ -310,18 +301,20 @@ function renderBatList(roster,currentBatter,teamLabel){
   if(lbl)lbl.textContent='打順 — '+(teamLabel||'');
   if(!roster||roster.length===0){list.innerHTML='';return;}
   const ordered=roster.filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
-  const dh=roster.filter(p=>String(p.pos||'').toUpperCase()==='DH'&&!p.order);
+  const dh=roster.filter(p=>{const k=posToKey(p.pos);return k==='DH'&&!p.order;});
   const all=[...ordered,...dh];
-  const posColors={'P':'#e09060','C':'#6eaaee','1B':'#5dc9a0','2B':'#5dc9a0','3B':'#5dc9a0','SS':'#5dc9a0','LF':'#86c867','CF':'#86c867','RF':'#86c867','DH':'#b09eee'};
+  const posColors={'1':'#e09060','2':'#6eaaee','3':'#5dc9a0','4':'#5dc9a0','5':'#5dc9a0','6':'#5dc9a0','7':'#86c867','8':'#86c867','9':'#86c867','DH':'#b09eee','P':'#e09060','C':'#6eaaee','1B':'#5dc9a0','2B':'#5dc9a0','3B':'#5dc9a0','SS':'#5dc9a0','LF':'#86c867','CF':'#86c867','RF':'#86c867'};
+  const posLblMap={'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF','DH':'DH'};
   list.innerHTML=all.map(p=>{
     const isCur=currentBatter&&p.name&&currentBatter.includes(p.name.split(' ')[0]);
-    const posLabel=p.pos?String(p.pos).replace(/^\d+$/,n=>({'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF'}[n]||n)):'';
-    const c=posColors[posLabel]||'#aaa';
-    return `<div style="display:grid;grid-template-columns:26px 40px 1fr 34px;gap:4px;align-items:center;padding:4px 6px${isCur?';background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)':''}">
+    const key=posToKey(p.pos);
+    const posDisp=posLblMap[key]||String(p.pos||'');
+    const c=posColors[key]||posColors[posDisp]||'#aaa';
+    return `<div style="display:grid;grid-template-columns:24px 38px 1fr 32px;gap:3px;align-items:center;padding:3px 5px${isCur?';background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)':''}">
       <span style="font-size:${isCur?10:9}px;color:${isCur?'#c8102e':'rgba(255,255,255,.4)'};font-weight:${isCur?700:400}">${p.order||'DH'}</span>
       <span style="font-size:10px;color:${isCur?'#bbb':'#555'}">#${p.num||''}</span>
       <span style="font-size:12px;color:${isCur?'#fff':'rgba(255,255,255,.65)'};font-weight:${isCur?700:400};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
-      <span style="font-size:9px;color:${c}">${posLabel}</span>
+      <span style="font-size:9px;color:${c}">${posDisp}</span>
     </div>`;
   }).join('');
 }
@@ -335,18 +328,14 @@ function applyState(s){
   const asc=s.asc||[],hsc=s.hsc||[];
   const r=s.r||{};
 
-  // イニング
   set('ov-inn',inn);
   setCls('ov-tb-top',isTop?'active':'');
   setCls('ov-tb-bot',!isTop?'active':'');
-
-  // チーム名
   set('ov-aname',s.aab||'先攻');
   set('ov-hname',s.hnm||'後攻');
   setCls('ov-ind-away','ov-team-ind'+(isTop?' active':''));
   setCls('ov-ind-home','ov-team-ind'+(!isTop?' active':''));
 
-  // 得点
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   set('ov-score-away',at);set('ov-score-home',ht);
@@ -358,12 +347,10 @@ function applyState(s){
     const needRebuild=rows.length!==2||(rows[0]&&rows[0].querySelectorAll('td').length!==n);
     if(needRebuild){
       let html='';
-      [[asc],[hsc]].forEach(([sc])=>{
-        html+='<tr>';for(let i=0;i<n;i++)html+='<td></td>';html+='</tr>';
-      });
+      [asc,hsc].forEach(()=>{html+='<tr>';for(let i=0;i<n;i++)html+='<td></td>';html+='</tr>';});
       istBody.innerHTML=html;
     }
-    [[asc],[hsc]].forEach(([sc],ri)=>{
+    [asc,hsc].forEach((sc,ri)=>{
       const row=istBody.querySelectorAll('tr')[ri];if(!row)return;
       const cells=row.querySelectorAll('td');
       for(let i=0;i<n;i++){
@@ -398,7 +385,7 @@ function applyState(s){
   set('ov-pitcher',s.pitcher||'');
   set('ov-catcher',s.catcher||'');
 
-  // B/次/次々
+  // B/NB/NNB
   set('ov-batter',s.batter||'');
   set('ov-batter-next',s.batterNext||'');
   set('ov-batter-next2',s.batterNext2||'');
