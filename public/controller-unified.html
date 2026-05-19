@@ -654,6 +654,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
 </div>
 <script>
+var _autoHideSec=0; // must be first
+
+
 // ── BSO ───────────────────────────────────────────────────────────────────────
 const bso = {b:0, s:0, o:0};
 const BSO_MAX = {b:4, s:3, o:3};
@@ -1565,9 +1568,6 @@ function initTeamColors(){
   });
 }
 
-// ── 自動非表示秒数 ──────────────────────────────────────────────────────────
-let _autoHideSec=0;
-
 function adjAutoHide(d){
   _autoHideSec=Math.max(0,Math.min(60,_autoHideSec+d));
   try{localStorage.setItem('bb_autohide',_autoHideSec);}catch(e){}
@@ -1585,9 +1585,6 @@ function initAutoHide(){
   updateAutoHideDisp();
 }
 
-let _broadcastTimer=null;
-let _batVisible=false, _defVisible=false;
-let _defRoster=null, _defTeam='';
 
 function toggleBatVisible(){
   _batVisible=!_batVisible;
@@ -1612,6 +1609,11 @@ function toggleDefVisible(){
   }
   broadcast();
 }
+// ── 状態変数まとめ ──────────────────────────────────────────────────────────
+var _batVisible=false, _defVisible=false;
+var _defRoster=null, _defTeam='';
+var _broadcastTimer=null;
+
 function broadcast(){
   if(_broadcastTimer) clearTimeout(_broadcastTimer);
   _broadcastTimer=setTimeout(_doBroadcast,50);
