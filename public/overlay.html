@@ -9,31 +9,18 @@
 :root{--red:#c8102e}
 html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
-/* ── 左上：スコア＋BSO＋ダイヤモンド＋P/C/B＋打順 ── */
-.ov-left{
+/* ── 左上：スコア＋BSO＋ダイヤモンド ── */
+.ov-score{
   position:fixed;left:20px;top:20px;
   background:rgba(8,12,24,.88);
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(42% - 20px);
+  min-width:300px;max-width:calc(55% - 20px);
 }
-
-/* ── 右上：守備配置（独立・フェードイン） ── */
-.ov-right{
-  position:fixed;right:20px;top:20px;
-  background:rgba(8,12,24,.88);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:8px;overflow:hidden;
-  display:inline-flex;flex-direction:column;
-  width:calc(43% - 20px);
-  opacity:0;transition:opacity .4s ease;
-  pointer-events:none;
-}
-.ov-right.open{opacity:1}
 
 /* TOP BAR */
-.ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-brand{font-size:16px;font-weight:800;color:#c8102e}
 .ov-brand span{color:#fff}
 .ov-clock{font-size:16px;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;will-change:contents}
@@ -72,50 +59,89 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-total-num{font-size:30px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
 /* BSO＋ダイヤモンド行 */
-.ov-bso-dia-row{display:flex;align-items:stretch;border-top:1px solid rgba(255,255,255,.08)}
-
-/* BSO縦並び */
+.ov-bso-dia{display:flex;align-items:stretch;border-top:1px solid rgba(255,255,255,.08)}
 .ov-bso{display:flex;flex-direction:column;justify-content:center;padding:8px 10px;gap:5px;border-right:1px solid rgba(255,255,255,.08);flex-shrink:0}
 .ov-bso-line{display:flex;align-items:center;gap:2px}
+.ov-dia{flex:1;display:flex;align-items:center;justify-content:center;padding:2px 4px}
 
-/* ダイヤモンド（縮小） */
-.ov-dia{flex:1;display:flex;align-items:center;justify-content:center;padding:2px 1px;border-right:1px solid rgba(255,255,255,.08)}
+/* ── 右上：P/C ＋ 守備配置スライドダウン ── */
+.ov-pc-wrap{
+  position:fixed;right:20px;top:20px;
+  background:rgba(8,12,24,.88);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:8px;overflow:hidden;
+  display:inline-flex;flex-direction:column;
+  min-width:200px;max-width:calc(42% - 20px);
+}
 
-/* P/C/B行 */
-.ov-pcb{display:flex;align-items:center;border-top:1px solid rgba(255,255,255,.08);padding:10px 12px;gap:10px;flex-wrap:wrap}
-.ov-pcb-tag{font-size:18px;font-weight:700;color:rgba(255,255,255,.4)}
-.ov-pcb-name{font-size:22px;color:#fff;white-space:nowrap}
-.ov-pcb-sep{width:1px;height:16px;background:rgba(255,255,255,.1);flex-shrink:0}
-.ov-pcb-next{font-size:18px;color:rgba(255,255,255,.45)}
+/* P/C 常時表示行 */
+.ov-pc-row{display:flex;align-items:stretch}
+.ov-pc-cell{display:flex;align-items:center;gap:8px;padding:10px 14px;flex:1}
+.ov-pc-cell:first-child{border-right:1px solid rgba(255,255,255,.1)}
+.ov-pc-tag{font-size:18px;font-weight:700;color:rgba(255,255,255,.4);flex-shrink:0}
+.ov-pc-name{font-size:20px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* 打順パネル */
-.ov-bat-panel{overflow:hidden;max-height:0;transition:max-height .4s ease}
-.ov-bat-panel.open{max-height:400px;border-top:1px solid rgba(255,255,255,.08)}
-.ov-bat-hdr{padding:4px 8px}
+/* 守備配置スライドダウン */
+.ov-def-panel{
+  max-height:0;overflow:hidden;
+  transition:max-height .45s ease;
+  border-top:0 solid rgba(255,255,255,.08);
+}
+.ov-def-panel.open{
+  max-height:500px;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.ov-def-hdr{padding:4px 10px;background:rgba(0,0,0,.2)}
+.ov-def-hdr span{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.8px}
+.ov-def-body{padding:4px 6px}
+
+/* ── 左下：B/次/次々 ＋ 打順スライドアップ ── */
+.ov-bat-wrap{
+  position:fixed;left:20px;bottom:20px;
+  background:rgba(8,12,24,.88);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:8px;overflow:hidden;
+  display:inline-flex;flex-direction:column;
+  min-width:260px;max-width:calc(45% - 20px);
+}
+
+/* 打順スライドアップ（下からupへ：flex-direction:column-reverseで実現） */
+.ov-bat-panel{
+  max-height:0;overflow:hidden;
+  transition:max-height .45s ease;
+  border-bottom:0 solid rgba(255,255,255,.08);
+  order:-1; /* B/次行より上に表示 */
+}
+.ov-bat-panel.open{
+  max-height:400px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.ov-bat-hdr{padding:4px 10px;background:rgba(0,0,0,.2)}
 .ov-bat-hdr span{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1px}
-.ov-bat-list{padding:1px 3px 2px;display:flex;flex-direction:column;gap:0}
+.ov-bat-list{padding:2px 4px 3px;display:flex;flex-direction:column;gap:0}
 .ov-bat-row{display:grid;grid-template-columns:26px 40px 1fr 34px;gap:4px;align-items:center;padding:4px 6px}
 .ov-bat-row.cur{background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)}
 
-/* 守備配置エリア */
-.ov-def-hdr{padding:5px 10px;background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-def-hdr span{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.8px}
-.ov-def-body{padding:6px 8px}
+/* B/次/次々 常時表示行 */
+.ov-b-row{display:flex;align-items:center;padding:10px 14px;gap:10px;flex-wrap:wrap}
+.ov-b-tag{font-size:18px;font-weight:700;color:rgba(255,255,255,.4);flex-shrink:0}
+.ov-b-name{font-size:22px;font-weight:600;color:#fff;white-space:nowrap}
+.ov-b-sep{width:1px;height:18px;background:rgba(255,255,255,.12);flex-shrink:0}
+.ov-b-next-tag{font-size:15px;color:rgba(255,255,255,.35);flex-shrink:0}
+.ov-b-next-name{font-size:17px;color:rgba(255,255,255,.55);white-space:nowrap}
+.ov-b-next2-name{font-size:15px;color:rgba(255,255,255,.38);white-space:nowrap}
 </style>
 </head>
 <body>
 
-<!-- 左上：スコア＋BSO＋ダイヤモンド＋打順 -->
-<div class="ov-left" id="ov">
-
+<!-- 左上：スコア＋BSO＋ダイヤモンド -->
+<div class="ov-score" id="ov">
   <div class="ov-topbar">
     <span class="ov-brand">Athlee<span>Live</span></span>
     <span class="ov-clock" id="ov-clock"></span>
   </div>
-
-  <!-- スコア行 -->
   <div class="ov-score-row">
-    <!-- flex:2.5 スコアエリア -->
+    <!-- スコアエリア -->
     <div style="display:flex;align-items:stretch;flex:2.5">
       <div class="ov-inn-block">
         <span class="ov-inn-num" id="ov-inn">1</span>
@@ -136,7 +162,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
         <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-home">0</span></div>
       </div>
     </div>
-    <!-- flex:1 BSO＋ダイヤモンド -->
+    <!-- BSO＋ダイヤモンド -->
     <div style="display:flex;align-items:stretch;flex:1;border-left:1px solid rgba(255,255,255,.1)">
       <div class="ov-bso">
         <div class="ov-bso-line">
@@ -149,7 +175,6 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
           <svg width="56" height="28" viewBox="0 0 20 10"><circle cx="5" cy="5" r="4" id="ov-od1" fill="#282828" stroke="#444" stroke-width="1"/><circle cx="15" cy="5" r="4" id="ov-od2" fill="#282828" stroke="#444" stroke-width="1"/></svg>
         </div>
       </div>
-      <!-- ダイヤモンド縮小・ホームベースなし -->
       <div class="ov-dia">
         <svg viewBox="10 0 140 52" style="width:120px">
           <line x1="80" y1="5" x2="30" y2="28" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
@@ -163,53 +188,65 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       </div>
     </div>
   </div>
+</div>
 
-  <!-- P/C/B/次 行 -->
-  <div class="ov-pcb">
-    <div style="display:flex;gap:8px">
-      <div style="display:flex;align-items:center;gap:2px">
-        <span class="ov-pcb-tag">P</span><span class="ov-pcb-name" id="ov-pitcher"></span>
-      </div>
-      <div style="display:flex;align-items:center;gap:2px">
-        <span class="ov-pcb-tag">C</span><span class="ov-pcb-name" id="ov-catcher"></span>
-      </div>
+<!-- 右上：P/C ＋ 守備配置スライドダウン -->
+<div class="ov-pc-wrap" id="ov-pc-wrap">
+  <!-- P/C 常時表示 -->
+  <div class="ov-pc-row">
+    <div class="ov-pc-cell">
+      <span class="ov-pc-tag">P</span>
+      <span class="ov-pc-name" id="ov-pitcher"></span>
     </div>
-    <div class="ov-pcb-sep"></div>
-    <div style="display:flex;align-items:center;gap:3px">
-      <span class="ov-pcb-tag">B</span>
-      <span style="font-size:22px;font-weight:600;color:#fff" id="ov-batter"></span>
-      <span style="font-size:17px;color:rgba(255,255,255,.3);margin-left:6px">次</span>
-      <span class="ov-pcb-next" id="ov-batter-next"></span>
+    <div class="ov-pc-cell">
+      <span class="ov-pc-tag">C</span>
+      <span class="ov-pc-name" id="ov-catcher"></span>
     </div>
   </div>
+  <!-- 守備配置スライドダウン -->
+  <div class="ov-def-panel" id="ov-def-panel">
+    <div class="ov-def-hdr"><span id="ov-def-label">守備配置</span></div>
+    <div class="ov-def-body">
+      <svg id="ov-def-svg" viewBox="-35 -30 230 150" style="width:100%;display:block">
+        <line x1="80" y1="92" x2="-25" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
+        <line x1="80" y1="92" x2="185" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
+        <line x1="80" y1="5" x2="140" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+        <line x1="140" y1="50" x2="80" y2="95" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+        <line x1="80" y1="95" x2="20" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+        <line x1="20" y1="50" x2="80" y2="5" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+        <polygon points="80,0 88,8 80,16 72,8" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
+        <polygon points="140,43 148,51 140,59 132,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
+        <polygon points="80,88 88,96 80,104 72,96" fill="rgba(255,255,255,.65)" stroke="rgba(255,255,255,.75)" stroke-width=".5"/>
+        <polygon points="20,43 28,51 20,59 12,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
+        <ellipse cx="80" cy="57" rx="7" ry="4.5" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)" stroke-width=".7"/>
+        <g id="ov-def-badges"></g>
+      </svg>
+    </div>
+  </div>
+</div>
 
-  <!-- 打順パネル -->
+<!-- 左下：B/次/次々 ＋ 打順スライドアップ -->
+<div class="ov-bat-wrap" id="ov-bat-wrap">
+  <!-- 打順パネル（上へスライドアップ：order:-1で上に） -->
   <div class="ov-bat-panel" id="ov-bat-panel">
     <div class="ov-bat-hdr"><span id="ov-bat-label">打順</span></div>
     <div class="ov-bat-list" id="ov-bat-list"></div>
   </div>
-
-</div>
-
-<!-- 右上：守備配置 -->
-<div class="ov-right" id="ov-right">
-  <div class="ov-def-hdr"><span id="ov-def-label">守備配置</span></div>
-  <div class="ov-def-body">
-    <svg id="ov-def-svg" viewBox="-35 -30 230 150" style="width:100%;display:block">
-      <line x1="80" y1="92" x2="-25" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
-      <line x1="80" y1="92" x2="185" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
-      <line x1="80" y1="5" x2="140" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
-      <line x1="140" y1="50" x2="80" y2="95" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
-      <line x1="80" y1="95" x2="20" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
-      <line x1="20" y1="50" x2="80" y2="5" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
-      <polygon points="80,0 88,8 80,16 72,8" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
-      <polygon points="140,43 148,51 140,59 132,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
-      <polygon points="80,88 88,96 80,104 72,96" fill="rgba(255,255,255,.65)" stroke="rgba(255,255,255,.75)" stroke-width=".5"/>
-      <polygon points="20,43 28,51 20,59 12,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
-      <ellipse cx="80" cy="57" rx="7" ry="4.5" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)" stroke-width=".7"/>
-      <!-- バッジ（JS で更新） -->
-      <g id="ov-def-badges"></g>
-    </svg>
+  <!-- 打者・次打者・次々打者 常時表示 -->
+  <div class="ov-b-row">
+    <span class="ov-b-tag">B</span>
+    <span class="ov-b-name" id="ov-batter"></span>
+    <div class="ov-b-sep"></div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="ov-b-next-tag">次</span>
+        <span class="ov-b-next-name" id="ov-batter-next"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="ov-b-next-tag" style="font-size:13px;color:rgba(255,255,255,.25)">次々</span>
+        <span class="ov-b-next2-name" id="ov-batter-next2"></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -220,7 +257,7 @@ function setAttr(id,attr,v){const e=g(id);if(e&&e.getAttribute(attr)!==v)e.setAt
 function setCls(id,v){const e=g(id);if(e&&e.className!==v)e.className=v;}
 
 // 守備位置座標マップ（viewBox -35 -30 230 150）
-const DEF_POS = {
+const DEF_POS={
   '8':{x:80,y:-17,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'8 CF'},
   '7':{x:1,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'7 LF'},
   '9':{x:159,y:0,c:'rgba(30,80,15,.93)',s:'#4a8a20',l:'9 RF'},
@@ -243,26 +280,25 @@ function renderDefBadges(roster){
     const posKey=String(p.pos||'');
     const coord=DEF_POS[posKey];
     if(!coord)return;
-    const cx=coord.x, cy=coord.y;
+    const cx=coord.x,cy=coord.y;
     const grp=document.createElementNS(ns,'g');
     const rect=document.createElementNS(ns,'rect');
-    rect.setAttribute('x',cx-34); rect.setAttribute('y',cy);
-    rect.setAttribute('width','68'); rect.setAttribute('height','16');
-    rect.setAttribute('rx','8'); rect.setAttribute('fill',coord.c);
-    rect.setAttribute('stroke',coord.s); rect.setAttribute('stroke-width','.7');
+    rect.setAttribute('x',cx-34);rect.setAttribute('y',cy);
+    rect.setAttribute('width','68');rect.setAttribute('height','16');
+    rect.setAttribute('rx','8');rect.setAttribute('fill',coord.c);
+    rect.setAttribute('stroke',coord.s);rect.setAttribute('stroke-width','.7');
     const t1=document.createElementNS(ns,'text');
-    t1.setAttribute('font-family','sans-serif'); t1.setAttribute('font-size','4.5');
-    t1.setAttribute('fill','rgba(255,255,255,.4)'); t1.setAttribute('x',cx);
-    t1.setAttribute('y',cy+7); t1.setAttribute('text-anchor','middle');
+    t1.setAttribute('font-family','sans-serif');t1.setAttribute('font-size','4.5');
+    t1.setAttribute('fill','rgba(255,255,255,.4)');t1.setAttribute('x',cx);
+    t1.setAttribute('y',cy+7);t1.setAttribute('text-anchor','middle');
     t1.textContent=coord.l;
     const t2=document.createElementNS(ns,'text');
-    t2.setAttribute('font-family','sans-serif'); t2.setAttribute('font-size','7');
-    t2.setAttribute('font-weight','500'); t2.setAttribute('fill','#fff');
-    t2.setAttribute('x',cx); t2.setAttribute('y',cy+14);
+    t2.setAttribute('font-family','sans-serif');t2.setAttribute('font-size','7');
+    t2.setAttribute('font-weight','500');t2.setAttribute('fill','#fff');
+    t2.setAttribute('x',cx);t2.setAttribute('y',cy+14);
     t2.setAttribute('text-anchor','middle');
-    const numPart=p.num?'#'+p.num+' ':'';
-    t2.textContent=numPart+(p.name||'');
-    grp.appendChild(rect); grp.appendChild(t1); grp.appendChild(t2);
+    t2.textContent=(p.num?'#'+p.num+' ':'')+( p.name||'');
+    grp.appendChild(rect);grp.appendChild(t1);grp.appendChild(t2);
     g2.appendChild(grp);
   });
 }
@@ -271,7 +307,7 @@ function renderBatList(roster,currentBatter,teamLabel){
   const list=g('ov-bat-list');
   const lbl=g('ov-bat-label');
   if(!list)return;
-  if(lbl) lbl.textContent='打順 — '+(teamLabel||'');
+  if(lbl)lbl.textContent='打順 — '+(teamLabel||'');
   if(!roster||roster.length===0){list.innerHTML='';return;}
   const ordered=roster.filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
   const dh=roster.filter(p=>String(p.pos||'').toUpperCase()==='DH'&&!p.order);
@@ -281,23 +317,22 @@ function renderBatList(roster,currentBatter,teamLabel){
     const isCur=currentBatter&&p.name&&currentBatter.includes(p.name.split(' ')[0]);
     const posLabel=p.pos?String(p.pos).replace(/^\d+$/,n=>({'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF'}[n]||n)):'';
     const c=posColors[posLabel]||'#aaa';
-    return `<div class="ov-bat-row${isCur?' cur':''}" style="display:grid;grid-template-columns:16px 26px 1fr 24px;gap:2px;align-items:center;padding:1px 2px${isCur?';background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)':''}">
-      <span style="font-size:${isCur?8:7}px;color:${isCur?'#c8102e':'rgba(255,255,255,.4)'};font-weight:${isCur?700:400}">${p.order||'DH'}</span>
-      <span style="font-size:8px;color:${isCur?'#bbb':'#555'}">#${p.num||''}</span>
-      <span style="font-size:10px;color:${isCur?'#fff':'rgba(255,255,255,.65)'};font-weight:${isCur?700:400};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
-      <span style="font-size:7px;color:${c}">${posLabel}</span>
+    return `<div style="display:grid;grid-template-columns:26px 40px 1fr 34px;gap:4px;align-items:center;padding:4px 6px${isCur?';background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)':''}">
+      <span style="font-size:${isCur?10:9}px;color:${isCur?'#c8102e':'rgba(255,255,255,.4)'};font-weight:${isCur?700:400}">${p.order||'DH'}</span>
+      <span style="font-size:10px;color:${isCur?'#bbb':'#555'}">#${p.num||''}</span>
+      <span style="font-size:12px;color:${isCur?'#fff':'rgba(255,255,255,.65)'};font-weight:${isCur?700:400};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
+      <span style="font-size:9px;color:${c}">${posLabel}</span>
     </div>`;
   }).join('');
 }
 
-let _defVisible=false, _batVisible=false;
-let _lastRoster=null, _lastTeam='';
+let _defVisible=false,_batVisible=false;
 
 function applyState(s){
   if(!s)return;
-  const inn=s.inn||1, isTop=s.top!==false;
+  const inn=s.inn||1,isTop=s.top!==false;
   const n=Math.max(s.maxInn||7,inn);
-  const asc=s.asc||[], hsc=s.hsc||[];
+  const asc=s.asc||[],hsc=s.hsc||[];
   const r=s.r||{};
 
   // イニング
@@ -314,7 +349,7 @@ function applyState(s){
   // 得点
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
-  set('ov-score-away',at); set('ov-score-home',ht);
+  set('ov-score-away',at);set('ov-score-home',ht);
 
   // イニングスコア表
   const istBody=g('ov-ist-body');
@@ -324,18 +359,15 @@ function applyState(s){
     if(needRebuild){
       let html='';
       [[asc],[hsc]].forEach(([sc])=>{
-        html+='<tr>';
-        for(let i=0;i<n;i++)html+=`<td></td>`;
-        html+='</tr>';
+        html+='<tr>';for(let i=0;i<n;i++)html+='<td></td>';html+='</tr>';
       });
       istBody.innerHTML=html;
     }
     [[asc],[hsc]].forEach(([sc],ri)=>{
-      const row=istBody.querySelectorAll('tr')[ri];
-      if(!row)return;
+      const row=istBody.querySelectorAll('tr')[ri];if(!row)return;
       const cells=row.querySelectorAll('td');
       for(let i=0;i<n;i++){
-        const td=cells[i]; if(!td)continue;
+        const td=cells[i];if(!td)continue;
         const val=sc[i];
         const disp=val===null?'':val==='x'?'×':String(val);
         const cls=i+1===inn?'cur':'';
@@ -353,41 +385,40 @@ function applyState(s){
     setAttr('ov-od'+(i+1),'stroke',i<(s.o||0)?'#7a0000':'#444');
   }
 
-  // ダイヤモンド（ホームベースなし・3塁のみ）
+  // ダイヤモンド
   [1,2,3].forEach(n2=>{
-    const e=g('ov-b'+n2);
-    if(!e)return;
+    const e=g('ov-b'+n2);if(!e)return;
     const f=r[n2]?'#f5c518':'rgba(255,255,255,.22)';
     const st=r[n2]?'#b8860b':'rgba(255,255,255,.6)';
     if(e.getAttribute('fill')!==f)e.setAttribute('fill',f);
     if(e.getAttribute('stroke')!==st)e.setAttribute('stroke',st);
   });
 
-  // P/C/B/次
+  // P/C
   set('ov-pitcher',s.pitcher||'');
   set('ov-catcher',s.catcher||'');
+
+  // B/次/次々
   set('ov-batter',s.batter||'');
   set('ov-batter-next',s.batterNext||'');
+  set('ov-batter-next2',s.batterNext2||'');
 
   // 表示切替
-  if(typeof s.showBat==='boolean') setBatVisible(s.showBat);
-  if(typeof s.showDef==='boolean') setDefVisible(s.showDef);
+  if(typeof s.showBat==='boolean')setBatVisible(s.showBat);
+  if(typeof s.showDef==='boolean')setDefVisible(s.showDef);
 
-  // 守備配置・打順（rosterが届いた場合）
+  // 守備配置・打順
   if(s.defRoster){
-    _lastRoster=s.defRoster;
-    _lastTeam=s.defTeam||'';
-    renderDefBadges(_lastRoster);
+    renderDefBadges(s.defRoster);
     const lbl=g('ov-def-label');
     if(lbl)lbl.textContent='守備配置 — '+(s.defTeam||'');
-    renderBatList(_lastRoster,s.batter,s.defTeam);
+    renderBatList(s.defRoster,s.batter,s.defTeam);
   }
 }
 
-// 守備配置・打順の表示切替（controllerから受信）
 function setDefVisible(v){
   _defVisible=v;
-  const el=g('ov-right');
+  const el=g('ov-def-panel');
   if(el)el.classList.toggle('open',v);
 }
 function setBatVisible(v){
