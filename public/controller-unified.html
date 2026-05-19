@@ -482,6 +482,36 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       </div>
     </div>
     <div class="drawer-sec">
+      <div class="drawer-sec-t">チームカラー</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="font-size:26px;font-weight:700;color:#fff;min-width:70px" id="clr-away-lbl">先攻</span>
+          <input type="color" id="color-away" value="#c8102e" oninput="onTeamColorChange('away')"
+            style="width:72px;height:52px;border:none;border-radius:10px;cursor:pointer;padding:2px;background:none"/>
+          <span style="font-size:20px;color:#888;font-family:monospace" id="color-away-hex">#c8102e</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="font-size:26px;font-weight:700;color:#fff;min-width:70px" id="clr-home-lbl">後攻</span>
+          <input type="color" id="color-home" value="#1a56a0" oninput="onTeamColorChange('home')"
+            style="width:72px;height:52px;border:none;border-radius:10px;cursor:pointer;padding:2px;background:none"/>
+          <span style="font-size:20px;color:#888;font-family:monospace" id="color-home-hex">#1a56a0</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">打順/守備配置 自動非表示</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">表示後に自動で非表示（0 = 手動のみ）</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="drawer-btn" style="flex:1;font-size:44px;font-weight:700" onclick="adjAutoHide(-5)">－</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:90px">
+          <span style="font-size:52px;font-weight:700;color:#fff" id="auto-hide-disp">0</span>
+          <span style="font-size:18px;color:#666">秒</span>
+        </div>
+        <button class="drawer-btn" style="flex:1;font-size:44px;font-weight:700" onclick="adjAutoHide(5)">＋</button>
+      </div>
+      <div style="font-size:18px;color:#555;margin-top:6px;text-align:center" id="auto-hide-note">無効（手動のみ）</div>
+    </div>
+    <div class="drawer-sec">
       <div class="drawer-sec-t">最終回</div>
       <div style="display:flex;align-items:center;gap:12px">
         <button class="drawer-btn" style="flex:1;font-size:60px;font-weight:700" onclick="adjMaxInn(-1)">－</button>
@@ -489,19 +519,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <button class="drawer-btn" style="flex:1;font-size:60px;font-weight:700" onclick="adjMaxInn(1)">＋</button>
       </div>
     </div>
-    <div class="drawer-sec">
-      <div class="drawer-sec-t">打順/守備配置 自動非表示</div>
-      <div style="font-size:22px;color:#888;margin-bottom:10px">表示後に自動で非表示にする時間（0=無効）</div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <button class="drawer-btn" style="flex:1;font-size:48px;font-weight:700" onclick="adjAutoHide(-5)">－</button>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:100px">
-          <span style="font-size:56px;font-weight:700;color:#fff" id="auto-hide-disp">0</span>
-          <span style="font-size:20px;color:#666">秒</span>
-        </div>
-        <button class="drawer-btn" style="flex:1;font-size:48px;font-weight:700" onclick="adjAutoHide(5)">＋</button>
-      </div>
-      <div style="font-size:20px;color:#555;margin-top:8px;text-align:center" id="auto-hide-note">無効（手動のみ）</div>
-    </div>
+
     <div class="drawer-sec">
       <div class="drawer-sec-t">データリセット</div>
       <div id="rst-step1">
@@ -654,7 +672,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
 </div>
 <script>
-var _autoHideSec=0; // must be first
+var _autoHideSec = 0;
+
 
 
 // ── BSO ───────────────────────────────────────────────────────────────────────
@@ -1046,7 +1065,6 @@ function cancelNameEdit(){
 })();
 
 initTeamColors();
-initAutoHide();
 // ── CSV/Excel読み込み ──────────────────────────────────────────────────────────
 function onCsvFile(e, team){
   const file=e.target.files[0];
@@ -1262,7 +1280,14 @@ function openDrawer(){
   document.getElementById('drawer-bg').className='drawer-bg open';
   const e=document.getElementById('max-inn-disp');
   if(e) e.textContent=st.maxInn;
-  updateAutoHideDisp();
+  _updateAutoHideDisp();
+  // カラーラベルをチーム名に更新
+  var _na=document.getElementById('name-away');
+  var _nh=document.getElementById('name-home');
+  var _ca=document.getElementById('clr-away-lbl');
+  var _ch=document.getElementById('clr-home-lbl');
+  if(_na&&_ca) _ca.textContent=_na.textContent;
+  if(_nh&&_ch) _ch.textContent=_nh.textContent;
   // チーム名をカラーラベルに反映
   const na=document.getElementById('name-away');const nh=document.getElementById('name-home');
   const ca=document.getElementById('color-away-name');const ch=document.getElementById('color-home-name');
@@ -1568,29 +1593,14 @@ function initTeamColors(){
   });
 }
 
-function adjAutoHide(d){
-  _autoHideSec=Math.max(0,Math.min(60,_autoHideSec+d));
-  try{localStorage.setItem('bb_autohide',_autoHideSec);}catch(e){}
-  updateAutoHideDisp();
-  broadcast();
-}
-function updateAutoHideDisp(){
-  const el=document.getElementById('auto-hide-disp');
-  const note=document.getElementById('auto-hide-note');
-  if(el)el.textContent=_autoHideSec;
-  if(note)note.textContent=_autoHideSec===0?'無効（手動のみ）':_autoHideSec+'秒後に自動非表示';
-}
-function initAutoHide(){
-  try{const v=localStorage.getItem('bb_autohide');if(v!=null)_autoHideSec=Number(v);}catch(e){}
-  updateAutoHideDisp();
-}
+
 
 
 function toggleBatVisible(){
   _batVisible=!_batVisible;
   const btn=document.getElementById('btn-bat-visible');
   if(btn){
-    btn.textContent=_batVisible?'打順 非表示':(_autoHideSec>0?'打順 表示 ('+_autoHideSec+'s)':'打順 表示');
+    btn.textContent=_batVisible?'打順 非表示':(_autoHideSec>0?'打順 表示('+_autoHideSec+'s)':'打順 表示');
     btn.style.background=_batVisible?'#3a1a3a':'#1a1a3a';
     btn.style.borderColor=_batVisible?'#8a3a8a':'#3a3a8a';
     btn.style.color=_batVisible?'#ee88ff':'#8888ee';
@@ -1602,7 +1612,7 @@ function toggleDefVisible(){
   _defVisible=!_defVisible;
   const btn=document.getElementById('btn-def-visible');
   if(btn){
-    btn.textContent=_defVisible?'守備配置 非表示':(_autoHideSec>0?'守備配置 表示 ('+_autoHideSec+'s)':'守備配置 表示');
+    btn.textContent=_defVisible?'守備配置 非表示':(_autoHideSec>0?'守備配置 表示('+_autoHideSec+'s)':'守備配置 表示');
     btn.style.background=_defVisible?'#3a1a1a':'#1a3a1a';
     btn.style.borderColor=_defVisible?'#6a3a3a':'#3a6a2a';
     btn.style.color=_defVisible?'#ff6b6b':'#86c867';
@@ -1614,6 +1624,45 @@ var _batVisible=false, _defVisible=false;
 var _defRoster=null, _defTeam='';
 var _broadcastTimer=null;
 
+function adjAutoHide(d){
+  _autoHideSec = Math.max(0, Math.min(120, _autoHideSec + d));
+  try{ localStorage.setItem('bb_autohide', _autoHideSec); }catch(e){}
+  _updateAutoHideDisp();
+  broadcast();
+}
+function _updateAutoHideDisp(){
+  var el = document.getElementById('auto-hide-disp');
+  var note = document.getElementById('auto-hide-note');
+  if(el) el.textContent = _autoHideSec;
+  if(note) note.textContent = _autoHideSec === 0 ? '無効（手動のみ）' : _autoHideSec + '秒後に自動非表示';
+}
+function _initAutoHide(){
+  try{ var v=localStorage.getItem('bb_autohide'); if(v!=null) _autoHideSec=Number(v); }catch(e){}
+  _updateAutoHideDisp();
+}
+function onTeamColorChange(team){
+  var inp = document.getElementById('color-'+team);
+  var hex = document.getElementById('color-'+team+'-hex');
+  if(!inp) return;
+  _teamColors[team] = inp.value;
+  if(hex) hex.textContent = inp.value;
+  try{ localStorage.setItem('bb_clr_'+team, inp.value); }catch(e){}
+  broadcast();
+}
+function _initTeamColors(){
+  ['away','home'].forEach(function(t){
+    try{
+      var v=localStorage.getItem('bb_clr_'+t);
+      if(v){
+        _teamColors[t]=v;
+        var inp=document.getElementById('color-'+t);
+        var hex=document.getElementById('color-'+t+'-hex');
+        if(inp) inp.value=v;
+        if(hex) hex.textContent=v;
+      }
+    }catch(e){}
+  });
+}
 function broadcast(){
   if(_broadcastTimer) clearTimeout(_broadcastTimer);
   _broadcastTimer=setTimeout(_doBroadcast,50);
@@ -1650,6 +1699,8 @@ if('serviceWorker' in navigator){
 }
 
 // 初期描画
+_initAutoHide();
+_initTeamColors();
 renderSB();
 </script>
 </body>
