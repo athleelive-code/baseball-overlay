@@ -310,15 +310,21 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <option value="">-- 打者 --</option>
       </select>
     </div>
-    <div style="display:flex;gap:10px;padding-left:4px">
-      <div style="display:flex;align-items:center;gap:4px">
-        <span style="font-size:8px;color:rgba(255,255,255,.25);white-space:nowrap">次</span>
-        <span style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis" id="next-batter">-</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-left:2px">
+      <div style="display:flex;gap:10px">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:8px;color:rgba(255,255,255,.25);white-space:nowrap">次</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis" id="next-batter">-</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:8px;color:rgba(255,255,255,.25);white-space:nowrap">次々</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis" id="next2-batter">-</span>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px">
-        <span style="font-size:8px;color:rgba(255,255,255,.25);white-space:nowrap">次々</span>
-        <span style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis" id="next2-batter">-</span>
-      </div>
+      <button id="btn-bat-visible" onclick="toggleBatVisible()"
+        style="background:#1a1a3a;border:1px solid #3a3a8a;border-radius:16px;color:#8888ee;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+        打順 表示
+      </button>
     </div>
   </div>
   <div style="flex:1;display:flex;flex-direction:column;border-left:1px solid #1a1a1a">
@@ -328,11 +334,17 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <option value="">-- 投手 --</option>
       </select>
     </div>
-    <div class="battery-cell">
+    <div class="battery-cell" style="border-bottom:1px solid #1a1a1a">
       <span class="battery-tag">捕</span>
       <select class="battery-sel" id="sel-catcher">
         <option value="">-- 捕手 --</option>
       </select>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;padding:5px 8px">
+      <button id="btn-def-visible" onclick="toggleDefVisible()"
+        style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:16px;color:#86c867;font-size:11px;font-weight:600;padding:5px 10px;cursor:pointer">
+        守備配置 表示
+      </button>
     </div>
   </div>
 </div>
@@ -1157,6 +1169,32 @@ function connectWS(){
 connectWS();
 
 let _broadcastTimer=null;
+let _batVisible=false, _defVisible=false;
+let _defRoster=null, _defTeam='';
+
+function toggleBatVisible(){
+  _batVisible=!_batVisible;
+  const btn=document.getElementById('btn-bat-visible');
+  if(btn){
+    btn.textContent=_batVisible?'打順 非表示':'打順 表示';
+    btn.style.background=_batVisible?'#3a1a3a':'#1a1a3a';
+    btn.style.borderColor=_batVisible?'#8a3a8a':'#3a3a8a';
+    btn.style.color=_batVisible?'#ee88ff':'#8888ee';
+  }
+  broadcast();
+}
+
+function toggleDefVisible(){
+  _defVisible=!_defVisible;
+  const btn=document.getElementById('btn-def-visible');
+  if(btn){
+    btn.textContent=_defVisible?'守備配置 非表示':'守備配置 表示';
+    btn.style.background=_defVisible?'#3a1a1a':'#1a3a1a';
+    btn.style.borderColor=_defVisible?'#6a3a3a':'#3a6a2a';
+    btn.style.color=_defVisible?'#ff6b6b':'#86c867';
+  }
+  broadcast();
+}
 function broadcast(){
   if(_broadcastTimer) clearTimeout(_broadcastTimer);
   _broadcastTimer=setTimeout(_doBroadcast,50);
@@ -1178,7 +1216,9 @@ function _doBroadcast(){
     r:{1:bases[1],2:bases[2],3:bases[3]},
     aab,hnm,
     asc:[...scores.away],hsc:[...scores.home],xOn:{...xOn},
-    batter,pitcher,catcher
+    batter,pitcher,catcher,
+    showBat:_batVisible,showDef:_defVisible,
+    defRoster:_defRoster,defTeam:_defTeam
   }));
 }
 // Service Worker登録
