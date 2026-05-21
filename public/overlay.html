@@ -118,7 +118,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     <span class="ov-brand">Athlee<span>Live</span></span>
     <span class="ov-clock" id="ov-clock"></span>
   </div>
-  <!-- チーム名・得点行 -->
+  <!-- チーム名・スコア表・得点行（1行） -->
   <div class="ov-score-row">
     <div class="ov-inn-block">
       <span class="ov-inn-num" id="ov-inn">1</span>
@@ -131,14 +131,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><span class="ov-team-name" id="ov-aname">先攻</span></div>
       <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><span class="ov-team-name" id="ov-hname">後攻</span></div>
     </div>
+    <!-- スコア表：チーム名と得点の間 -->
+    <div class="ov-ist-wrap" style="flex:2">
+      <table class="ov-ist-table"><tbody id="ov-ist-body"></tbody></table>
+    </div>
     <div class="ov-totals">
       <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-away">0</span></div>
       <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-home">0</span></div>
     </div>
-  </div>
-  <!-- イニング別スコア表 -->
-  <div class="ov-ist-block">
-    <table class="ov-ist-table"><tbody id="ov-ist-body"></tbody></table>
   </div>
   <!-- BSO＋ダイヤモンド 1行横並び -->
   <div class="ov-bso-dia">
@@ -157,14 +157,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     </div>
     <div class="ov-dia-sep"></div>
     <div class="ov-dia">
-      <svg viewBox="15 3 130 46" style="width:100%;display:block">
-        <line x1="80" y1="5" x2="30" y2="28" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
-        <line x1="80" y1="5" x2="130" y2="28" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
-        <line x1="30" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
-        <line x1="130" y1="28" x2="80" y2="51" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
-        <polygon id="ov-b2" points="80,0 91,7 80,14 69,7" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/>
-        <polygon id="ov-b3" points="22,23 33,30 22,37 11,30" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/>
-        <polygon id="ov-b1" points="138,23 149,30 138,37 127,30" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/>
+      <svg viewBox="0 -5 160 66" style="width:100%;display:block">
+        <line x1="80" y1="5" x2="25" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+        <line x1="80" y1="5" x2="135" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+        <line x1="25" y1="32" x2="80" y2="59" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+        <line x1="135" y1="32" x2="80" y2="59" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+        <polygon id="ov-b2" points="80,-2 96,8 80,18 64,8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
+        <polygon id="ov-b3" points="13,22 29,32 13,42 -3,32" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
+        <polygon id="ov-b1" points="147,22 163,32 147,42 131,32" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
       </svg>
     </div>
   </div>
@@ -417,11 +417,19 @@ function applyState(s){
   if(typeof s.showBat==='boolean')setBatVisible(s.showBat);
   if(typeof s.showDef==='boolean')setDefVisible(s.showDef);
 
-  // 守備配置・打順
+  // チームロスターを攻撃/守備で振り分け
   if(s.defRoster){
+    // defRoster は「defTeam」のロスター（通常は守備側チーム）
+    // 攻撃側チームのロスターは batRoster で来る想定
+    // 守備配置 → defRoster (守備側)
     renderDefBadges(s.defRoster);
-    const lbl=g('ov-def-label');
-    if(lbl)lbl.textContent='守備配置 — '+(s.defTeam||'');
+    var defLbl=g('ov-def-label');
+    if(defLbl)defLbl.textContent='守備配置 — '+(s.defTeam||'');
+  }
+  // 打順 → batRoster (攻撃側) があればそちら、なければ defRoster
+  if(s.batRoster){
+    renderBatList(s.batRoster,s.batter,s.batTeam);
+  } else if(s.defRoster){
     renderBatList(s.defRoster,s.batter,s.defTeam);
   }
 }
