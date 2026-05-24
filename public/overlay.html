@@ -16,7 +16,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(26% - 10px);
+  width:calc(20% - 10px);
   min-width:180px;
 }
 .ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08)}
@@ -36,14 +36,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-team-ind.active{background:var(--red)}
 .ov-team-name{font-size:16px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-total-cell{display:flex;align-items:center;justify-content:flex-end;flex:1;padding:6px 8px}
+.ov-total-cell{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;padding:4px 6px}
 .ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-total-num{font-size:24px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.ov-total-num{font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
 /* スコア表（イニング別） - スコアブロック下に */
 .ov-ist-block{border-top:1px solid rgba(255,255,255,.08)}
 .ov-ist-table{border-collapse:collapse;width:100%;table-layout:fixed}
-.ov-ist-table td{text-align:center;padding:2px 0;font-size:12px;font-weight:700;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;border-right:1px solid rgba(255,255,255,.06)}
+.ov-ist-table td{text-align:center;padding:2px 0;font-size:15px;font-weight:700;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;border-right:1px solid rgba(255,255,255,.06)}
 .ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.05)}
 .ov-ist-table td:last-child{border-right:none}
 .ov-ist-table td.cur{color:#fff}
