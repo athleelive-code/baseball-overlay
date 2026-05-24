@@ -118,8 +118,9 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     <span class="ov-brand">Athlee<span>Live</span></span>
     <span class="ov-clock" id="ov-clock"></span>
   </div>
-  <!-- チーム名・スコア表・得点行（1行） -->
-  <div class="ov-score-row">
+  <!-- スコアエリア：先攻行＋後攻行の2行 -->
+  <div style="display:flex;align-items:stretch">
+    <!-- イニング（2行にまたがる） -->
     <div class="ov-inn-block">
       <span class="ov-inn-num" id="ov-inn">1</span>
       <div class="ov-inn-tb">
@@ -127,17 +128,40 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
         <span id="ov-tb-bot">▼</span>
       </div>
     </div>
-    <div class="ov-teams">
-      <div class="ov-team-row"><div class="ov-team-ind active" id="ov-ind-away"></div><span class="ov-team-name" id="ov-aname">先攻</span></div>
-      <div class="ov-team-row"><div class="ov-team-ind" id="ov-ind-home"></div><span class="ov-team-name" id="ov-hname">後攻</span></div>
-    </div>
-    <!-- スコア表：チーム名と得点の間 -->
-    <div class="ov-ist-wrap" style="flex:2">
-      <table class="ov-ist-table"><tbody id="ov-ist-body"></tbody></table>
-    </div>
-    <div class="ov-totals">
-      <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-away">0</span></div>
-      <div class="ov-total-cell"><span class="ov-total-num" id="ov-score-home">0</span></div>
+    <!-- 右側：先攻行＋後攻行 -->
+    <div style="flex:1;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,.1)">
+      <!-- 先攻行 -->
+      <div style="display:flex;align-items:stretch;flex:1;border-bottom:1px solid rgba(255,255,255,.08)">
+        <!-- チーム名 -->
+        <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:80px">
+          <div class="ov-team-ind active" id="ov-ind-away"></div>
+          <span class="ov-team-name" id="ov-aname">先攻</span>
+        </div>
+        <!-- スコア表（先攻行） -->
+        <div class="ov-ist-wrap" style="flex:1;border-left:1px solid rgba(255,255,255,.08)">
+          <table class="ov-ist-table" style="height:100%"><tbody id="ov-ist-body-away"></tbody></table>
+        </div>
+        <!-- 得点 -->
+        <div class="ov-total-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+          <span class="ov-total-num" id="ov-score-away">0</span>
+        </div>
+      </div>
+      <!-- 後攻行 -->
+      <div style="display:flex;align-items:stretch;flex:1">
+        <!-- チーム名 -->
+        <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:80px">
+          <div class="ov-team-ind" id="ov-ind-home"></div>
+          <span class="ov-team-name" id="ov-hname">後攻</span>
+        </div>
+        <!-- スコア表（後攻行） -->
+        <div class="ov-ist-wrap" style="flex:1;border-left:1px solid rgba(255,255,255,.08)">
+          <table class="ov-ist-table" style="height:100%"><tbody id="ov-ist-body-home"></tbody></table>
+        </div>
+        <!-- 得点 -->
+        <div class="ov-total-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+          <span class="ov-total-num" id="ov-score-home">0</span>
+        </div>
+      </div>
     </div>
   </div>
   <!-- BSO＋ダイヤモンド 1行横並び -->
@@ -355,29 +379,28 @@ function applyState(s){
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   set('ov-score-away',at);set('ov-score-home',ht);
 
-  // イニングスコア表
-  const istBody=g('ov-ist-body');
-  if(istBody){
-    const rows=istBody.querySelectorAll('tr');
-    const needRebuild=rows.length!==2||(rows[0]&&rows[0].querySelectorAll('td').length!==n);
-    if(needRebuild){
-      let html='';
-      [asc,hsc].forEach(()=>{html+='<tr>';for(let i=0;i<n;i++)html+='<td></td>';html+='</tr>';});
-      istBody.innerHTML=html;
+  // イニングスコア表（先攻・後攻それぞれ1行）
+  [[g('ov-ist-body-away'),asc],[g('ov-ist-body-home'),hsc]].forEach(function(pair){
+    var tbody=pair[0], sc=pair[1];
+    if(!tbody) return;
+    var rows=tbody.querySelectorAll('tr');
+    if(rows.length!==1||(rows[0]&&rows[0].querySelectorAll('td').length!==n)){
+      var html='<tr>';
+      for(var i=0;i<n;i++) html+='<td></td>';
+      html+='</tr>';
+      tbody.innerHTML=html;
     }
-    [asc,hsc].forEach((sc,ri)=>{
-      const row=istBody.querySelectorAll('tr')[ri];if(!row)return;
-      const cells=row.querySelectorAll('td');
-      for(let i=0;i<n;i++){
-        const td=cells[i];if(!td)continue;
-        const val=sc[i];
-        const disp=val===null?'':val==='x'?'×':String(val);
-        const cls=i+1===inn?'cur':'';
-        if(td.textContent!==disp)td.textContent=disp;
-        if(td.className!==cls)td.className=cls;
-      }
-    });
-  }
+    var row=tbody.querySelector('tr'); if(!row) return;
+    var cells=row.querySelectorAll('td');
+    for(var i=0;i<n;i++){
+      var td=cells[i]; if(!td) continue;
+      var val=sc[i];
+      var disp=val===null?'':val==='x'?'×':String(val);
+      var cls=i+1===inn?'cur':'';
+      if(td.textContent!==disp) td.textContent=disp;
+      if(td.className!==cls) td.className=cls;
+    }
+  });
 
   // BSO
   for(let i=0;i<3;i++) setAttr('ov-bd'+(i+1),'fill',i<(s.b||0)?'#43a047':'#333');
