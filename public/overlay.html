@@ -47,9 +47,11 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.05)}
 .ov-ist-table td:last-child{border-right:none}
 .ov-ist-table td.cur{color:#fff}
+.ov-ist-table td.sep3{border-right:2px solid rgba(255,255,255,.3)}
+.ov-ist-table td.cur.sep3{color:#fff;border-right:2px solid rgba(255,255,255,.3)}
 
 /* BSO＋ダイヤモンド（スコアの下） */
-.ov-bso-dia{display:flex;flex-direction:row;align-items:center;justify-content:center;border-top:1px solid rgba(255,255,255,.08);padding:6px 10px;gap:10px}
+.ov-bso-dia{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;border-top:1px solid rgba(255,255,255,.08);padding:6px 10px;gap:10px}
 .ov-bso{display:flex;flex-direction:row;align-items:center;gap:6px;flex-shrink:0}
 .ov-bso-item{display:flex;align-items:center;gap:3px}
 .ov-bso-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
@@ -102,15 +104,15 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-bat-order-num{font-size:32px;font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
 /* B/NB/NNB 打者エリア */
 .ov-b-area{display:flex;align-items:stretch;flex-direction:row}
-.ov-b-inner{display:flex;align-items:center;padding:10px 12px;gap:10px;border-left:1px solid rgba(255,255,255,.1)}
+.ov-b-inner{display:flex;align-items:center;padding:12px 16px;gap:10px;border-left:1px solid rgba(255,255,255,.1)}
 .ov-b-cell{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .ov-b-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
-.ov-b-tag{font-size:16px;font-weight:800;color:rgba(255,255,255,.35);flex-shrink:0;white-space:nowrap}
-.ov-b-name{font-size:26px;font-weight:700;color:#fff;white-space:nowrap}
+.ov-b-tag{display:none}
+.ov-b-name{font-size:36px;font-weight:700;color:#fff;white-space:nowrap}
 .ov-b-name.sub{font-size:19px;color:rgba(255,255,255,.55)}
 
-.ov-b-pos{font-size:18px;font-weight:700;color:rgba(255,255,255,.5);flex-shrink:0;white-space:nowrap}
-.ov-b-num{font-size:18px;color:rgba(255,255,255,.45);flex-shrink:0;white-space:nowrap}
+.ov-b-pos{font-size:24px;font-weight:700;color:rgba(255,255,255,.5);flex-shrink:0;white-space:nowrap}
+.ov-b-num{font-size:24px;color:rgba(255,255,255,.45);flex-shrink:0;white-space:nowrap}
 .ov-b-arrow{font-size:14px;color:rgba(255,255,255,.5);flex-shrink:0}
 </style>
 </head>
@@ -185,7 +187,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     </div>
     <div class="ov-dia-sep"></div>
     <div class="ov-dia">
-      <svg viewBox="0 -5 160 66" width="52" height="22" style="display:block">
+      <svg viewBox="-8 -5 176 66" width="72" height="30" style="display:block">
         <line x1="80" y1="5" x2="25" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
         <line x1="80" y1="5" x2="135" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
         <line x1="25" y1="32" x2="80" y2="59" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
@@ -255,13 +257,11 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
         <span class="ov-b-name" id="ov-batter"></span>
         <span class="ov-b-num" id="ov-batter-num"></span>
       </div>
-      <span class="ov-b-arrow">▶</span>
-      <div class="ov-b-cell">
+      <div class="ov-b-cell ov-b-nb">
         <span class="ov-b-tag">NB</span>
         <span class="ov-b-name sub" id="ov-batter-next"></span>
       </div>
-      <span class="ov-b-arrow">▶</span>
-      <div class="ov-b-cell">
+      <div class="ov-b-cell ov-b-nb">
         <span class="ov-b-tag">NNB</span>
         <span class="ov-b-name sub2" id="ov-batter-next2"></span>
       </div>
@@ -405,9 +405,10 @@ function applyState(s){
       var td=cells[i]; if(!td) continue;
       var val=sc[i];
       var disp=val===null?'':val==='x'?'×':String(val);
-      var cls=i+1===inn?'cur':'';
+      // 3列ごと（i=2,5,8...）に太線クラス付与
+      var cls=(i+1===inn?'cur':'')+(((i+1)%3===0&&i+1<n)?' sep3':'');
       if(td.textContent!==disp) td.textContent=disp;
-      if(td.className!==cls) td.className=cls;
+      if(td.className!==cls.trim()) td.className=cls.trim();
     }
   });
 
