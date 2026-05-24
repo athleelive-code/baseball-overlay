@@ -111,8 +111,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-b-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
 .ov-b-tag{display:none}
 .ov-b-name{font-size:36px;font-weight:700;color:#fff;white-space:nowrap}
-.ov-b-name.sub{font-size:18px;color:rgba(255,255,255,.6)}
-.ov-b-name.sub2{font-size:18px;color:rgba(255,255,255,.6)}
+.ov-b-name.sub{font-size:20px;color:rgba(255,255,255,.6)}
+.ov-b-name.sub2{font-size:20px;color:rgba(255,255,255,.6)}
 
 .ov-b-pos{font-size:24px;font-weight:700;color:rgba(255,255,255,.5);flex-shrink:0;white-space:nowrap}
 .ov-b-num{font-size:24px;color:rgba(255,255,255,.45);flex-shrink:0;white-space:nowrap}
@@ -247,9 +247,10 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   </div>
   <!-- 打順強調ブロック＋B/NB/NNB 常時表示 -->
   <div class="ov-b-area">
-    <!-- 打順番号（イニングと同スタイル） -->
-    <div class="ov-bat-order-block">
+    <!-- 打順番号＋前回結果 -->
+    <div class="ov-bat-order-block" style="flex-direction:column;gap:2px">
       <span class="ov-bat-order-num" id="ov-bat-order">-</span>
+      <span id="ov-last-result" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.8);letter-spacing:.5px;line-height:1;min-height:12px"></span>
     </div>
     <!-- B / NB / NNB -->
     <div class="ov-b-inner">
@@ -466,13 +467,19 @@ function applyState(s){
     }
     set('ov-batter',name); set('ov-batter-pos',pos); set('ov-batter-num',num);
   })();
-  // 打順番号（defRosterから現打者の打順を取得）
-  if(s.defRoster&&s.batter){
-    const bp=s.defRoster.find(p=>p.name&&s.batter.includes(p.name.split(' ')[0]));
+  // 打順番号＋前回打席結果
+  (function(){
+    var rosterRef=s.batRoster||s.defRoster;
+    var bp=rosterRef&&s.batter?rosterRef.find(function(p){return p.name&&s.batter.includes(p.name.split(' ')[0]);}):null;
     set('ov-bat-order',bp&&bp.order?bp.order:'-');
-  } else if(!s.batter){
-    set('ov-bat-order','-');
-  }
+    var lastRes='';
+    if(bp&&s.atBatResults){
+      var team=s.top!==false?'away':'home';
+      var arr=s.atBatResults[team]&&s.atBatResults[team][bp.id];
+      if(arr&&arr.length>0) lastRes=arr[arr.length-1];
+    }
+    set('ov-last-result',lastRes);
+  })();
   set('ov-batter-next',s.batterNext||'');
   set('ov-batter-next2',s.batterNext2||'');
 
