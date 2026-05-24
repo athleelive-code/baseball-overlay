@@ -751,7 +751,7 @@ function setAtBatResult(result){
   document.querySelectorAll('.ab-btn').forEach(function(b){
     b.style.opacity = b.textContent.trim() === result || 
       (result==='out'&&b.textContent.trim()==='凡退') ||
-      (result==='SAC'&&b.textContent.trim()==='犠打') ||
+      (result==='SAC'&&b.textContent.trim()==='犠打')
        ? '1' : '0.4';
   });
   broadcast();
