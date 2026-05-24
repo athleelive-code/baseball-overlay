@@ -416,7 +416,7 @@ function applyState(s){
   // 2桁得点があるときフォント縮小
   var _hasDouble=asc.concat(hsc).some(function(v){return typeof v==='number'&&v>=10;});
   var _tables=document.querySelectorAll('.ov-ist-table');
-  _tables.forEach(function(t){ t.style.fontSize=_hasDouble?'14px':''; });
+  _tables.forEach(function(t){ t.style.fontSize=_hasDouble?'12px':''; });
 
 
   // BSO
