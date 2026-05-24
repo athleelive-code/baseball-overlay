@@ -413,6 +413,10 @@ function applyState(s){
       if(td.className!==cls.trim()) td.className=cls.trim();
     }
   });
+  // 2桁得点があるときフォント縮小
+  var _hasDouble=asc.concat(hsc).some(function(v){return typeof v==='number'&&v>=10;});
+  var _tables=document.querySelectorAll('.ov-ist-table');
+  _tables.forEach(function(t){ t.style.fontSize=_hasDouble?'14px':''; });
 
 
   // BSO
