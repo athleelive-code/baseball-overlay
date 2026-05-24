@@ -16,8 +16,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(26% - 10px);
-  min-width:180px;
+  width:calc(23% - 10px);
+  min-width:160px;
 }
 .ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-brand{font-size:13px;font-weight:800;color:#c8102e}
@@ -38,7 +38,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
 .ov-total-cell{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;padding:4px 6px}
 .ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-total-num{font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.ov-total-num{font-size:28px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
 /* スコア表（イニング別） - スコアブロック下に */
 .ov-ist-block{border-top:1px solid rgba(255,255,255,.08)}
@@ -184,7 +184,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       </div>
       <div class="ov-bso-sep"></div>
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">O</span><svg width="60" height="18" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-od1" fill="#282828" stroke="#444" stroke-width="1"/><circle cx="15" cy="5" r="5" id="ov-od2" fill="#282828" stroke="#444" stroke-width="1"/></svg>
+        <span class="ov-bso-lbl">O</span><svg width="60" height="18" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-od1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-od2" fill="#333"/></svg>
       </div>
     </div>
     <div class="ov-dia-sep"></div>
@@ -424,8 +424,8 @@ function applyState(s){
   for(let i=0;i<3;i++) setAttr('ov-bd'+(i+1),'fill',i<(s.b||0)?'#43a047':'#333');
   for(let i=0;i<2;i++){
     setAttr('ov-sd'+(i+1),'fill',i<(s.s||0)?'#f5c518':'#333');
-    setAttr('ov-od'+(i+1),'fill',i<(s.o||0)?'#c8102e':'#282828');
-    setAttr('ov-od'+(i+1),'stroke',i<(s.o||0)?'#7a0000':'#444');
+    setAttr('ov-od'+(i+1),'fill',i<(s.o||0)?'#c8102e':'#333');
+    setAttr('ov-od'+(i+1),'stroke','none');
   }
 
   // ダイヤモンド
