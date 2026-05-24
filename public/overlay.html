@@ -16,9 +16,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(24% - 10px);
-  min-width:200px;
-  transition:width .3s ease;
+  width:calc(32% - 10px);
+  min-width:220px;
 }
 .ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-brand{font-size:13px;font-weight:800;color:#c8102e}
@@ -41,7 +40,6 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-total-num{font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
-.ov-score.wide{width:calc(30% - 10px)!important}
 /* スコア表（イニング別） - スコアブロック下に */
 .ov-ist-block{border-top:1px solid rgba(255,255,255,.08)}
 .ov-ist-table{border-collapse:collapse;width:100%;table-layout:fixed}
@@ -142,7 +140,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       <!-- 先攻行 -->
       <div style="display:flex;align-items:stretch;flex:1;border-bottom:1px solid rgba(255,255,255,.08)">
         <!-- チーム名 -->
-        <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:80px">
+        <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:30px">
           <div class="ov-team-ind active" id="ov-ind-away"></div>
           <span class="ov-team-name" id="ov-aname">先攻</span>
         </div>
@@ -158,7 +156,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       <!-- 後攻行 -->
       <div style="display:flex;align-items:stretch;flex:1">
         <!-- チーム名 -->
-        <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:80px">
+        <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:30px">
           <div class="ov-team-ind" id="ov-ind-home"></div>
           <span class="ov-team-name" id="ov-hname">後攻</span>
         </div>
@@ -415,9 +413,7 @@ function applyState(s){
       if(td.className!==cls.trim()) td.className=cls.trim();
     }
   });
-  // 2桁得点があるときだけスコアエリアを拡大
-  var _hasDouble=asc.concat(hsc).some(function(v){return typeof v==='number'&&v>=10;});
-  var _scoreEl=g('ov'); if(_scoreEl) _scoreEl.classList.toggle('wide',_hasDouble);
+
 
   // BSO
   for(let i=0;i<3;i++) setAttr('ov-bd'+(i+1),'fill',i<(s.b||0)?'#43a047':'#333');
