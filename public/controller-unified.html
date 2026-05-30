@@ -1553,12 +1553,15 @@ function _initScoreDispSec(){
   _updateScoreDispSecUI();
 }
 function showScoreOverlay(){
-  _pendingShowScore = _scoreOverlayVisible ? 'hide' : 'show';
   _scoreOverlayVisible = !_scoreOverlayVisible;
-  // ボタンラベル更新
-  var btn=document.querySelector('[onclick="showScoreOverlay()"]');
-  if(btn) btn.textContent=_scoreOverlayVisible?'📊 スコア非表示':'📊 スコア表示';
+  _pendingShowScore = _scoreOverlayVisible ? 'show' : 'hide';
+  var btns=document.querySelectorAll('[onclick="showScoreOverlay()"]');
+  btns.forEach(function(btn){
+    btn.textContent=_scoreOverlayVisible?'📊 スコア非表示':'📊 スコア表示';
+    btn.style.background=_scoreOverlayVisible?'#1a2a4a':'#2a2a4a';
+  });
   broadcast();
+  // 送信後リセットを防ぐため少し遅延してリセット
 }
 
 var _pendingShowScore = false;
@@ -1971,11 +1974,10 @@ function _doBroadcast(){
     batRoster:(()=>{const team=st.top?'away':'home';return rosters[team].map(p=>({...p,pos:posLabel(p.pos)||String(p.pos||'')}));})(),
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
     awayColor:_teamColors.away,homeColor:_teamColors.home,
-    scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
+    scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,scoreVisible:_scoreOverlayVisible,
     autoHideSec:_autoHideSec
   }));
-  _pendingShowScore=false;
-  saveState();
+  var _tmp=_pendingShowScore; _pendingShowScore=null; saveState();
 }
 // Service Worker登録
 if('serviceWorker' in navigator){
