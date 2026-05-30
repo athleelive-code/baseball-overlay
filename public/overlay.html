@@ -148,8 +148,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
           <div class="ov-team-ind active" id="ov-ind-away"></div>
           <span class="ov-team-name" id="ov-aname">先攻</span>
         </div>
-        <!-- スコア表（先攻行） -->
-        <div class="ov-ist-wrap" style="flex:1;border-left:1px solid rgba(255,255,255,.08)">
+        <!-- スコア表（先攻行・非表示） -->
+        <div class="ov-ist-wrap" style="display:none">
           <table class="ov-ist-table" style="height:100%"><tbody id="ov-ist-body-away"></tbody></table>
         </div>
         <!-- 得点 -->
@@ -164,8 +164,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
           <div class="ov-team-ind" id="ov-ind-home"></div>
           <span class="ov-team-name" id="ov-hname">後攻</span>
         </div>
-        <!-- スコア表（後攻行） -->
-        <div class="ov-ist-wrap" style="flex:1;border-left:1px solid rgba(255,255,255,.08)">
+        <!-- スコア表（後攻行・非表示） -->
+        <div class="ov-ist-wrap" style="display:none">
           <table class="ov-ist-table" style="height:100%"><tbody id="ov-ist-body-home"></tbody></table>
         </div>
         <!-- 得点 -->
@@ -557,11 +557,32 @@ function showScoreBig(state, sec){
   var el=g('score-big-overlay');
   el.style.display='flex';
 
-  // 現在イニングセル点滅3回
-  _startBlink(inn);
+  // DOM反映後に点滅開始
+  if(_blinkTimer){clearInterval(_blinkTimer);_blinkTimer=null;}
+  setTimeout(function(){ _startBlink(inn); }, 50);
 
-  // タイマー（secが0なら消えない）
+  // タイマー（sec>0なら設定秒数後に非表示）
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
+  if(sec>0){
+    _scoreDispTimer=setTimeout(function(){ hideScoreBig(); }, sec*1000);
+  }
+}
+
+function _startBlink(inn){
+  if(_blinkTimer){clearInterval(_blinkTimer);_blinkTimer=null;}
+  var ids=['sbo-cell-a-'+(inn-1),'sbo-cell-h-'+(inn-1)];
+  var cells=ids.map(function(id){return g(id);}).filter(Boolean);
+  if(!cells.length) return;
+  var count=0, visible=true;
+  _blinkTimer=setInterval(function(){
+    visible=!visible;
+    cells.forEach(function(el){ el.style.opacity=visible?'1':'0'; });
+    count++;
+    if(count>=6){
+      clearInterval(_blinkTimer);_blinkTimer=null;
+      cells.forEach(function(el){ el.style.opacity='1'; });
+    }
+  },350);
 }
 
 function hideScoreBig(){
