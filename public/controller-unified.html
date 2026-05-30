@@ -947,7 +947,9 @@ function addRun(){
   const team=st.top?'away':'home'; const idx=st.inn-1;
   if(scores[team][idx]===null) scores[team][idx]=1;
   else if(typeof scores[team][idx]==='number') scores[team][idx]++;
-  renderSB(); broadcast();
+  renderSB();
+  if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; }
+  broadcast();
 }
 function removeRun(){
   const team=st.top?'away':'home'; const idx=st.inn-1;
@@ -1086,7 +1088,9 @@ function scAdj(d){
   } else {
     scores[_scTeam][_scIdx]=Math.max(0,Math.min(99,cur+d));
   }
-  refreshSCDisplay(); renderSB(); broadcast();
+  refreshSCDisplay(); renderSB();
+  if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; }
+  broadcast();
 }
 
 function scToggleX(){
@@ -1530,7 +1534,7 @@ function importRosters(e){
 }
 
 // ── スコア拡大表示 ────────────────────────────────────────────────────────
-var _scoreDispSec = 0;
+var _scoreDispSec = 10;
 
 function adjScoreDispSec(d){
   _scoreDispSec = Math.max(0, Math.min(60, _scoreDispSec + d));
@@ -1545,7 +1549,7 @@ function _updateScoreDispSecUI(){
   if(note) note.textContent = _scoreDispSec === 0 ? '無効（手動のみ）' : _scoreDispSec + '秒間表示';
 }
 function _initScoreDispSec(){
-  try{ var v=localStorage.getItem('bb_score_disp_sec'); if(v!=null) _scoreDispSec=Number(v); }catch(e){}
+  try{ var v=localStorage.getItem('bb_score_disp_sec'); if(v!=null) _scoreDispSec=Number(v); else _scoreDispSec=10; }catch(e){ _scoreDispSec=10; }
   _updateScoreDispSecUI();
 }
 function showScoreOverlay(){
