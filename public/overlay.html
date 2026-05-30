@@ -66,12 +66,12 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 /* BSO＋ダイヤモンド（スコアの下） */
 .ov-bso-dia{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;border-top:1px solid rgba(255,255,255,.08);padding:6px 10px;gap:10px}
-.ov-bso{display:flex;flex-direction:row;align-items:center;gap:6px;flex-shrink:0}
+.ov-bso{display:flex;flex-direction:row;align-items:center;gap:6px;flex-shrink:0;flex:0 0 auto}
 .ov-bso-item{display:flex;align-items:center;gap:3px}
 .ov-bso-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
 .ov-bso-lbl{display:none}
 .ov-dia-sep{width:1px;height:22px;background:rgba(255,255,255,.1);flex-shrink:0}
-.ov-dia{flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.ov-dia{flex:1;display:flex;align-items:center;justify-content:center;min-width:0}
 
 /* ── 右上：P/C ＋ 守備配置スライドダウン ── */
 .ov-pc-wrap{
@@ -204,7 +204,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     </div>
     <div class="ov-dia-sep"></div>
     <div class="ov-dia">
-      <svg viewBox="-8 -5 176 66" width="144" height="40" style="display:block">
+      <svg viewBox="-12 -8 184 72" style="width:100%;height:auto;display:block">
         <line x1="80" y1="5" x2="25" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
         <line x1="80" y1="5" x2="135" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
         <line x1="25" y1="32" x2="80" y2="59" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
