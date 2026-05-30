@@ -528,6 +528,20 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <div style="font-size:18px;color:#555;margin-top:6px;text-align:center" id="auto-hide-note">無効（手動のみ）</div>
     </div>
     <div class="drawer-sec">
+      <div class="drawer-sec-t">スコア拡大表示</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">イニング交代時に自動表示する秒数（0=無効）</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="drawer-btn" style="flex:1;font-size:44px;font-weight:700" onclick="adjScoreDispSec(-5)">－</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:90px">
+          <span style="font-size:52px;font-weight:700;color:#fff" id="score-disp-sec-val">0</span>
+          <span style="font-size:18px;color:#666">秒</span>
+        </div>
+        <button class="drawer-btn" style="flex:1;font-size:44px;font-weight:700" onclick="adjScoreDispSec(5)">＋</button>
+      </div>
+      <div style="font-size:18px;color:#555;margin-top:6px;text-align:center" id="score-disp-sec-note">無効（手動のみ）</div>
+
+    </div>
+    <div class="drawer-sec">
       <div class="drawer-sec-t">最終回</div>
       <div style="display:flex;align-items:center;gap:12px">
         <button class="drawer-btn" style="flex:1;font-size:60px;font-weight:700" onclick="adjMaxInn(-1)">－</button>
@@ -672,7 +686,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   </div>
 
   <!-- 右: ダイヤモンド -->
-  <div class="diamond-block" style="border-left:1px solid #1a1a1a;border-right:none">
+  <div class="diamond-block" style="border-left:1px solid #1a1a1a;border-right:none;flex-direction:column">
     <svg id="diamond-svg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
       <!-- ランナーアイコン -->
       <circle id="runner1" cx="84" cy="52" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
@@ -709,6 +723,11 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <rect class="tap-area" x="64" y="28" width="36" height="48" fill="transparent"
         onclick="tapBase(1)" style="cursor:pointer"/>
     </svg>
+    <div style="padding:6px 8px;flex-shrink:0">
+      <button onclick="showScoreOverlay()" style="width:100%;background:#2a2a4a;border:1px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:22px;font-weight:700;padding:12px 6px;cursor:pointer">
+        📊 スコア表示
+      </button>
+    </div>
   </div>
 
 </div>
@@ -946,7 +965,9 @@ function nextInn(){
   if(scores[team][idx]===null) scores[team][idx]=0;
   if(st.top) setTop(false);
   else{ adjInn(1); setTop(true); }
-  renderBSO(); renderDiamond(); renderSB(); broadcast();
+  renderBSO(); renderDiamond(); renderSB();
+  if(_scoreDispSec>0) _pendingShowScore=true;
+  broadcast();
 }
 
 const st = { inn:1, top:true, maxInn:7, configMaxInn:7 };
@@ -1338,6 +1359,7 @@ function openDrawer(){
   const e=document.getElementById('max-inn-disp');
   if(e) e.textContent=st.maxInn;
   _updateAutoHideDisp();
+  _updateScoreDispSecUI();
   // カラーラベルをチーム名に更新
   var _na=document.getElementById('name-away');
   var _nh=document.getElementById('name-home');
@@ -1506,6 +1528,34 @@ function importRosters(e){
   };
   reader.readAsText(file,'UTF-8');
 }
+
+// ── スコア拡大表示 ────────────────────────────────────────────────────────
+var _scoreDispSec = 0;
+
+function adjScoreDispSec(d){
+  _scoreDispSec = Math.max(0, Math.min(60, _scoreDispSec + d));
+  try{ localStorage.setItem('bb_score_disp_sec', _scoreDispSec); }catch(e){}
+  _updateScoreDispSecUI();
+  broadcast();
+}
+function _updateScoreDispSecUI(){
+  var el = document.getElementById('score-disp-sec-val');
+  var note = document.getElementById('score-disp-sec-note');
+  if(el) el.textContent = _scoreDispSec;
+  if(note) note.textContent = _scoreDispSec === 0 ? '無効（手動のみ）' : _scoreDispSec + '秒間表示';
+}
+function _initScoreDispSec(){
+  try{ var v=localStorage.getItem('bb_score_disp_sec'); if(v!=null) _scoreDispSec=Number(v); }catch(e){}
+  _updateScoreDispSecUI();
+}
+function showScoreOverlay(){
+  broadcast();  // 最新状態を送ってから表示
+  // showScoreOverlay=trueをbroadcastに含める
+  _pendingShowScore = true;
+  broadcast();
+}
+
+var _pendingShowScore = false;
 
 function resetAll(){
   scores.away=Array(16).fill(null);
@@ -1914,8 +1964,10 @@ function _doBroadcast(){
     batRoster:(()=>{const team=st.top?'away':'home';return rosters[team].map(p=>({...p,pos:posLabel(p.pos)||String(p.pos||'')}));})(),
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
     awayColor:_teamColors.away,homeColor:_teamColors.home,
+    scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
     autoHideSec:_autoHideSec
   }));
+  _pendingShowScore=false;
   saveState();
 }
 // Service Worker登録
@@ -2012,6 +2064,7 @@ function restoreState(){
 // 初期描画
 _initAutoHide();
 _initTeamColors();
+_initScoreDispSec();
 renderSB();
 restoreState(); // 最後に復元（renderSB後）
 </script>
