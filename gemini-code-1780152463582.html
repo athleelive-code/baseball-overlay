@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AthleeLive（アスリーライブ） | 野球・スポーツ専門ライブ配信</title>
+    <style>
+        /* 全体のリセットと共通設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            line-height: 1.6;
+            color: #111111;
+            background-color: #fafafa;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* ヘッダー */
+        header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+        
+        /* ロゴ画像配置エリア */
+        .logo-area {
+            display: flex;
+            align-items: center;
+        }
+        .logo-img {
+            height: 52px;
+            width: auto;
+            display: block;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        nav ul li {
+            margin-left: 24px;
+        }
+        nav ul li a {
+            font-weight: 700;
+            color: #333333;
+            transition: color 0.3s;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+        nav ul li a:hover {
+            color: #D60000;
+        }
+
+        /* メインビジュアル（野球中継・プロカメラのイメージ） */
+        .hero {
+            background: linear-gradient(rgba(11, 11, 11, 0.55), rgba(11, 11, 11, 0.75)), url('https://images.unsplash.com/photo-1508704019882-f9cf40e475b4?auto=format&fit=crop&w=1200&q=80') no-repeat center center/cover;
+            color: #fff;
+            height: 65vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+        .hero h1 {
+            font-size: 2.8rem;
+            margin-bottom: 18px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-shadow: 0 3px 15px rgba(0,0,0,0.6);
+        }
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 35px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        }
+        .btn-cta {
+            background-color: #D60000;
+            color: #fff;
+            padding: 15px 40px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            transition: background 0.3s, transform 0.2s;
+            box-shadow: 0 4px 18px rgba(214, 0, 0, 0.4);
+            letter-spacing: 1px;
+        }
+        .btn-cta:hover {
+            background-color: #b30000;
+            transform: translateY(-2px);
+        }
+
+        /* コンテンツ共通 */
+        section {
+            padding: 90px 20px;
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            color: #111111;
+            margin-bottom: 60px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 45px;
+            height: 4px;
+            background-color: #D60000;
+            margin: 15px auto 0;
+        }
+
+        /* 特長セクション */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 35px;
+        }
+        .feature-card {
+            background: #fff;
+            padding: 45px 30px;
+            border-radius: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            text-align: center;
+            border-top: 4px solid #111111;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-top-color: #D60000;
+        }
+        .feature-card h3 {
+            color: #111111;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        .feature-card p {
+            color: #444444;
+            font-size: 0.95rem;
+            text-align: left;
+            line-height: 1.7;
+        }
+
+        /* 使用機材セクション */
+        .equipments {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .equipment-card {
+            background: #fff;
+            padding: 35px 25px;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            text-align: center;
+            border: 1px solid #eeeeee;
+        }
+        .equipment-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .equipment-card h4 {
+            font-size: 1.15rem;
+            color: #111111;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .equipment-card p {
+            font-size: 0.9rem;
+            color: #555555;
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        /* お問い合わせ */
+        .contact-text {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            color: #333333;
+        }
+        .btn-contact {
+            display: block;
+            width: fit-content;
+            margin: 0 auto;
+            background-color: #111111;
+            color: #fff;
+            padding: 16px 50px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: background 0.3s;
+            letter-spacing: 0.5px;
+        }
+        .btn-contact:hover {
+            background-color: #D60000;
+        }
+
+        /* フッター */
+        footer {
+            background-color: #111111;
+            color: #aaaaaa;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 80px;
+            font-size: 0.85rem;
+            border-top: 4px solid #D60000;
+            letter-spacing: 0.5px;
+        }
+
+        /* スマートフォン画面用の設定（レスポンシブ対応） */
+        @media (max-width: 768px) {
+            .header-container { 
+                flex-direction: column; 
+                padding: 15px 20px; 
+            }
+            .logo-img { 
+                height: 45px; 
+                margin-bottom: 10px;
+            }
+            nav ul { 
+                margin-top: 10px; 
+                width: 100%;
+                justify-content: center;
+            }
+            nav ul li { 
+                margin: 0 10px; 
+            }
+            .hero {
+                height: auto;
+                padding: 70px 20px;
+            }
+            .hero h1 { 
+                font-size: 1.8rem; 
+                letter-spacing: 1px;
+                line-height: 1.4;
+            }
+            .hero p { 
+                font-size: 1.05rem; 
+                margin-bottom: 25px;
+            }
+            .btn-cta {
+                padding: 12px 30px;
+                font-size: 1.05rem;
+            }
+            section { 
+                padding: 50px 20px; 
+            }
+            .section-title {
+                font-size: 1.8rem;
+                margin-bottom: 40px;
+            }
+            .features, .equipments {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .feature-card, .equipment-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="logo-area">
+                <img src="athleelive_logo.jpg" alt="AthleeLive" class="logo-img">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#features">特長</a></li>
+                    <li><a href="#equipment">使用機材</a></li>
+                    <li><a href="#contact">お問い合わせ</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h1>あの一瞬を、いつでも、どこからでも。</h1>
+        <p>アマチュア野球・スポーツ配信に特化した、高品質ライブ配信サービス「アスリーライブ」</p>
+        <a href="#contact" class="btn-cta">配信を依頼する</a>
+    </section>
+
+    <section id="features">
+        <h2 class="section-title">AthleeLiveの特長</h2>
+        <div class="features">
+            <div class="feature-card">
+                <h3>一球一球を逃さないカメラワーク</h3>
+                <p>超望遠レンズを駆使し、ピッチャーの指先からバッターの豪快なスイング、球際を攻める白熱の守備まで、野球ならではの緊迫感と感動を余すことなく捉えます。</p>
+            </div>
+            <div class="feature-card">
+                <h3>リアルタイム・スコア＆カウント表示</h3>
+                <p>試合のイニング、得点、さらに野球には欠かせないBSOカウント状況を画面にリアルタイムで重ねて表示。まるでテレビの公式中継を見ているかのような臨場感をご提供します。</p>
+            </div>
+            <div class="feature-card">
+                <h3>ワンオペによる圧倒的な低価格</h3>
+                <p>無駄な人員や大きな中継車を必要としない、計算されたコンパクトな「ワンオペレーション運用」を確立。だからこそ、保護者会やチームに負担の少ない価格帯を守り続けます。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="equipment" style="border-top: 1px solid #eeeeee;">
+        <h2 class="section-title">使用機材のご紹介</h2>
+        <div class="equipments">
+            <div class="equipment-card">
+                <span class="icon">🎥</span>
+                <h4>4K対応高倍率カメラ</h4>
+                <p>パナソニック製のプロ仕様カメラを使用。バックネット裏やスタンドからの定点撮影でも、破綻のない鮮明なフルHD/4Kクオリティの映像を確保します。</p>
+            </div>
+            <div class="equipment-card">
+                <span class="icon">🔭</span>
+                <h4>超望遠ズームレンズ</h4>
+                <p>スタジアムの離れた場所からでも、マウンド上のピッチャーの表情やバッターボックスの緊張感、外野のファインプレーまでバッチリ引き寄せます。</p>
+            </div>
+            <div class="equipment-card">
+                <span class="icon">💻</span>
+                <h4>専用ライブエンコーダー</h4>
+                <p>屋外の不安定なグラウンド環境でも安定して高品質な映像を送り出せる、独立型の配信用ハードウェア（YoloBox等）を導入。途切れにくい滑らかな中継を実現します。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" style="background-color: #f4f5f6; max-width: 100%;">
+        <div style="max-width: 1050px; margin: 0 auto; padding: 0 20px;">
+            <h2 class="section-title">お問い合わせ</h2>
+            <p class="contact-text">練習試合、公式戦、各種大会の配信スケジュール確保や、詳細なカスタマイズ・お見積りのご相談はお気軽にお問い合わせください。</p>
+            <a href="mailto:athleelive@gmail.com?subject=【アスリーライブ】配信のお問い合わせ・ご相談" class="btn-contact">メールで相談する</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 AthleeLive. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
