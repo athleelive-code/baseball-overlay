@@ -8,6 +8,10 @@
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
 :root{--red:#c8102e}
 html,body{background:transparent;width:100%;height:100%;overflow:hidden}
+@keyframes scoreFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scoreFadeOut{from{opacity:1}to{opacity:0}}
+#score-big-overlay.fading-in{animation:scoreFadeIn .4s ease both}
+#score-big-overlay.fading-out{animation:scoreFadeOut .4s ease both}
 
 @keyframes slideInLeft{
   from{opacity:0;transform:translateX(-60px);}
@@ -487,22 +491,14 @@ function applyState(s){
 
   // 表示切替
   if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
-  // scoreVisible で状態同期（常にtrue/false）
-  if(typeof s.scoreVisible==='boolean'){
-    var el=g('score-big-overlay');
-    if(s.scoreVisible && el && el.style.display==='none'){
-      var useSec=(typeof s.scoreDispSec==='number')?s.scoreDispSec:_scoreDispSec;
-      showScoreBig(s,useSec);
-    } else if(!s.scoreVisible && el && el.style.display!=='none'){
-      hideScoreBig();
-    }
-  }
-  // showScoreOverlay は即時コマンド
+  // showScoreOverlay: 'show'/'hide' コマンドのみで制御
+  if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
   if(s.showScoreOverlay==='show'){
-    var useSec2=(typeof s.scoreDispSec==='number')?s.scoreDispSec:_scoreDispSec;
-    showScoreBig(s,useSec2);
+    var _sec=(typeof s.scoreDispSec==='number')?s.scoreDispSec:_scoreDispSec;
+    showScoreBig(s,_sec);
+  } else if(s.showScoreOverlay==='hide'){
+    hideScoreBig();
   }
-  if(s.showScoreOverlay==='hide') hideScoreBig();
   if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
   if(typeof s.showBat==='boolean')setBatVisible(s.showBat);
   if(typeof s.showDef==='boolean')setDefVisible(s.showDef);
@@ -576,15 +572,12 @@ function showScoreBig(state, sec){
   }
   tbody.innerHTML = makeRow(aname,asc,at,'a',true) + makeRow(hname,hsc,ht,'h',false);
 
-  // 表示（左からスライドイン）
+  // 表示（フェードイン）
   var el=g('score-big-overlay');
+  el.classList.remove('fading-out','fading-in');
+  void el.offsetWidth;
   el.style.display='flex';
-  var inner=el.querySelector('div');
-  if(inner){
-    inner.classList.remove('score-big-anim');
-    void inner.offsetWidth; // reflow でアニメーションリセット
-    inner.classList.add('score-big-anim');
-  }
+  el.classList.add('fading-in');
 
   // タイマー（sec>0なら設定秒数後に非表示）
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
@@ -596,9 +589,15 @@ function showScoreBig(state, sec){
 
 function hideScoreBig(){
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
-  if(_blinkTimer){clearInterval(_blinkTimer);_blinkTimer=null;}
   var el=g('score-big-overlay');
-  if(el) el.style.display='none';
+  if(!el||el.style.display==='none') return;
+  el.classList.remove('fading-in','fading-out');
+  void el.offsetWidth;
+  el.classList.add('fading-out');
+  setTimeout(function(){
+    el.style.display='none';
+    el.classList.remove('fading-out');
+  }, 400);
 }
 
 function setDefVisible(v){
