@@ -328,8 +328,12 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       style="width:100%;background:#c8102e;border:none;border-radius:10px;color:#fff;font-size:18px;font-weight:700;padding:14px 6px;cursor:pointer;white-space:nowrap">
       ▶ 次打者
     </button>
-    <!-- 打順表示ボタン＋打順変更ボタン -->
+    <!-- 打者表示/非表示 + 打順表示 + 打順変更 -->
     <div style="display:flex;gap:8px;width:100%">
+      <button id="btn-batter-visible" onclick="toggleBatterVisible()"
+        style="flex:1;background:#3a1a1a;border:1px solid #8a3a3a;border-radius:10px;color:#ff8888;font-size:14px;font-weight:600;padding:10px 6px;cursor:pointer;white-space:nowrap">
+        打者 表示
+      </button>
       <button id="btn-bat-visible" onclick="toggleBatVisible()"
         style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:14px;font-weight:600;padding:10px 6px;cursor:pointer;white-space:nowrap">
         打順 表示
@@ -353,6 +357,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <select class="battery-sel" id="sel-catcher">
         <option value="">-- 捕手 --</option>
       </select>
+    </div>
+    <!-- 投手捕手 表示/非表示ボタン -->
+    <div style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
+      <button id="btn-pc-visible" onclick="togglePCVisible()"
+        style="width:100%;background:#3a2a1a;border:1px solid #8a6a3a;border-radius:10px;color:#ffaa66;font-size:14px;font-weight:600;padding:10px 8px;cursor:pointer">
+        投手捕手 表示
+      </button>
     </div>
     <!-- 守備配置表示ボタン -->
     <div style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
@@ -1785,6 +1796,28 @@ function initTeamColors(){
 
 
 
+function toggleBatterVisible(){
+  _batterVisible=!_batterVisible;
+  const btn=document.getElementById('btn-batter-visible');
+  if(btn){
+    btn.textContent=_batterVisible?'打者 非表示':'打者 表示';
+    btn.style.background=_batterVisible?'#5a1a1a':'#3a1a1a';
+    btn.style.borderColor=_batterVisible?'#aa3a3a':'#8a3a3a';
+  }
+  broadcast();
+}
+
+function togglePCVisible(){
+  _pcVisible=!_pcVisible;
+  const btn=document.getElementById('btn-pc-visible');
+  if(btn){
+    btn.textContent=_pcVisible?'投手捕手 非表示':'投手捕手 表示';
+    btn.style.background=_pcVisible?'#5a3a1a':'#3a2a1a';
+    btn.style.borderColor=_pcVisible?'#aa8a3a':'#8a6a3a';
+  }
+  broadcast();
+}
+
 function toggleBatVisible(){
   _batVisible=!_batVisible;
   const btn=document.getElementById('btn-bat-visible');
@@ -1809,7 +1842,7 @@ function toggleDefVisible(){
   broadcast();
 }
 // ── 状態変数まとめ ──────────────────────────────────────────────────────────
-var _batVisible=false, _defVisible=false;
+var _batVisible=false, _defVisible=false, _batterVisible=false, _pcVisible=false;
 var _defRoster=null, _defTeam='';
 var _broadcastTimer=null;
 
@@ -1876,7 +1909,7 @@ function _doBroadcast(){
     batter,pitcher,catcher,
     batterNext:(()=>{const sel=document.getElementById('sel-batter');if(!sel||!sel.value)return'';const team=st.top?'away':'home';const r=rosters[team].filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));const idx=r.findIndex(p=>p.id===Number(sel.value));if(idx<0)return'';const p=r[(idx+1)%r.length];return p?(p.num?'#'+p.num+' ':'')+p.name:'';})(),
     batterNext2:(()=>{const sel=document.getElementById('sel-batter');if(!sel||!sel.value)return'';const team=st.top?'away':'home';const r=rosters[team].filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));const idx=r.findIndex(p=>p.id===Number(sel.value));if(idx<0)return'';const p=r[(idx+2)%r.length];return p?(p.num?'#'+p.num+' ':'')+p.name:'';})(),
-    showBat:_batVisible,showDef:_defVisible,
+    showBat:_batVisible,showDef:_defVisible,showBatter:_batterVisible,showPC:_pcVisible,
     defRoster:_defRoster,defTeam:_defTeam,
     batRoster:(()=>{const team=st.top?'away':'home';return rosters[team].map(p=>({...p,pos:posLabel(p.pos)||String(p.pos||'')}));})(),
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
