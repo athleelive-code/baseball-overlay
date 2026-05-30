@@ -966,7 +966,7 @@ function nextInn(){
   if(st.top) setTop(false);
   else{ adjInn(1); setTop(true); }
   renderBSO(); renderDiamond(); renderSB();
-  if(_scoreDispSec>0) _pendingShowScore=true;
+  if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; }
   broadcast();
 }
 
@@ -1549,13 +1549,16 @@ function _initScoreDispSec(){
   _updateScoreDispSecUI();
 }
 function showScoreOverlay(){
-  broadcast();  // 最新状態を送ってから表示
-  // showScoreOverlay=trueをbroadcastに含める
-  _pendingShowScore = true;
+  _pendingShowScore = _scoreOverlayVisible ? 'hide' : 'show';
+  _scoreOverlayVisible = !_scoreOverlayVisible;
+  // ボタンラベル更新
+  var btn=document.querySelector('[onclick="showScoreOverlay()"]');
+  if(btn) btn.textContent=_scoreOverlayVisible?'📊 スコア非表示':'📊 スコア表示';
   broadcast();
 }
 
 var _pendingShowScore = false;
+var _scoreOverlayVisible = false;
 
 function resetAll(){
   scores.away=Array(16).fill(null);
