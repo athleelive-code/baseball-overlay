@@ -1974,10 +1974,10 @@ function _doBroadcast(){
     batRoster:(()=>{const team=st.top?'away':'home';return rosters[team].map(p=>({...p,pos:posLabel(p.pos)||String(p.pos||'')}));})(),
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
     awayColor:_teamColors.away,homeColor:_teamColors.home,
-    scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,scoreVisible:_scoreOverlayVisible,
+    scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
     autoHideSec:_autoHideSec
   }));
-  var _tmp=_pendingShowScore; _pendingShowScore=null; saveState();
+  _pendingShowScore=null; saveState();
 }
 // Service Worker登録
 if('serviceWorker' in navigator){
