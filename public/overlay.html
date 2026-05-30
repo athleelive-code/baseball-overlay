@@ -478,6 +478,8 @@ function applyState(s){
   set('ov-batter-next2',s.batterNext2||'');
 
   // 表示切替
+  if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
+  if(s.showScoreOverlay===true) showScoreBig(s, _scoreDispSec);
   if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
   if(typeof s.showBat==='boolean')setBatVisible(s.showBat);
   if(typeof s.showDef==='boolean')setDefVisible(s.showDef);
@@ -509,6 +511,96 @@ function applyState(s){
 
 var _defHideTimer=null, _batHideTimer=null;
 var _autoHideSec=0;
+
+// ── スコア拡大表示 ─────────────────────────────────────────────────────────
+var _scoreDispTimer=null;
+var _scoreDispSec=0;
+var _blinkCount=0;
+var _blinkTimer=null;
+
+function showScoreBig(state, sec){
+  // データ更新
+  var s=state;
+  var inn=s.inn||1, isTop=s.top!==false;
+  var n=Math.max(s.maxInn||7,inn);
+  var asc=s.asc||[], hsc=s.hsc||[];
+  var aname=s.aab||'先攻', hname=s.hnm||'後攻';
+  var at=asc.filter(function(x){return typeof x==='number';}).reduce(function(a,b){return a+b;},0);
+  var ht=hsc.filter(function(x){return typeof x==='number';}).reduce(function(a,b){return a+b;},0);
+
+  g('sbo-aname').textContent=aname;
+  g('sbo-hname').textContent=hname;
+  g('sbo-ascore').textContent=at;
+  g('sbo-hscore').textContent=ht;
+  g('sbo-inn-tb').textContent=isTop?'▲':'▼';
+  g('sbo-inn-num').textContent=inn;
+
+  // スコア表：表→裏の順で各イニングを列に
+  var thead=g('sbo-thead'), tbody=g('sbo-tbody');
+  // ヘッダー行（イニング番号）
+  var hdr='<tr><th style="font-size:16px;color:rgba(255,255,255,.4);padding:4px 6px;text-align:left;width:80px"></th>';
+  for(var i=0;i<n;i++){
+    var isCur=(i+1===inn);
+    var sep=((i+1)%3===0&&i+1<n)?';border-right:2px solid rgba(255,255,255,.3)':'';
+    hdr+='<th style="font-size:18px;color:'+(isCur?'#fff':'rgba(255,255,255,.4)')+';padding:4px 6px;text-align:center'+sep+'">'+(i+1)+'</th>';
+  }
+  hdr+='<th style="font-size:18px;color:rgba(255,255,255,.4);padding:4px 12px;text-align:right">計</th></tr>';
+  thead.innerHTML=hdr;
+
+  // データ行（先攻、後攻）
+  function makeRow(name, sc, total, color){
+    var row='<tr><td style="font-size:22px;font-weight:700;color:'+color+';padding:6px 6px;white-space:nowrap">'+name+'</td>';
+    for(var i=0;i<n;i++){
+      var val=sc[i]; var disp=val===null?'':val==='x'?'×':String(val);
+      var isCur=(i+1===inn);
+      var sep=((i+1)%3===0&&i+1<n)?';border-right:2px solid rgba(255,255,255,.3)':'';
+      row+='<td id="sbo-cell-'+(color==='#fff'?'a':'h')+'-'+i+'" style="font-size:24px;font-weight:700;color:'+(isCur?'#fff':'rgba(255,255,255,.6)')+';padding:6px;text-align:center'+sep+'">'+disp+'</td>';
+    }
+    row+='<td style="font-size:28px;font-weight:700;color:'+color+';padding:6px 12px;text-align:right;border-left:1px solid rgba(255,255,255,.15)">'+total+'</td></tr>';
+    return row;
+  }
+  tbody.innerHTML = makeRow(aname,asc,at,'#fff') + makeRow(hname,hsc,ht,'#fff');
+
+  // 表示
+  var el=g('score-big-overlay');
+  el.style.display='flex';
+
+  // 現在の最終イニングの数字を3回点滅
+  _startBlink(inn, n);
+
+  // タイマー
+  if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
+  if(sec>0){
+    _scoreDispTimer=setTimeout(function(){ hideScoreBig(); }, sec*1000);
+  }
+}
+
+function _startBlink(inn, maxInn){
+  if(_blinkTimer){clearInterval(_blinkTimer);_blinkTimer=null;}
+  // 現イニングのセルを取得（先攻・後攻両行）
+  var cells=['sbo-cell-a-'+(inn-1),'sbo-cell-h-'+(inn-1)];
+  var count=0;
+  var visible=true;
+  _blinkTimer=setInterval(function(){
+    visible=!visible;
+    cells.forEach(function(id){
+      var el=g(id);
+      if(el) el.style.opacity=visible?'1':'0';
+    });
+    count++;
+    if(count>=6){ // 3回点滅（on/off×3）
+      clearInterval(_blinkTimer);_blinkTimer=null;
+      cells.forEach(function(id){var el=g(id);if(el)el.style.opacity='1';});
+    }
+  },300);
+}
+
+function hideScoreBig(){
+  if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
+  if(_blinkTimer){clearInterval(_blinkTimer);_blinkTimer=null;}
+  var el=g('score-big-overlay');
+  if(el) el.style.display='none';
+}
 
 function setDefVisible(v){
   _defVisible=v;
@@ -567,5 +659,36 @@ function connectWS(){
 }
 connectWS();
 </script>
+
+<!-- スコア拡大表示モーダル -->
+<div id="score-big-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px">
+  <div style="background:rgba(10,14,28,.96);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:24px 30px;width:90%;max-width:900px">
+    <!-- チーム名・トータル得点 -->
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span id="sbo-aname" style="font-size:36px;font-weight:700;color:#fff"></span>
+        <span id="sbo-ascore" style="font-size:56px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;min-width:60px;text-align:right"></span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span id="sbo-hname" style="font-size:36px;font-weight:700;color:#fff"></span>
+        <span id="sbo-hscore" style="font-size:56px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;min-width:60px;text-align:right"></span>
+      </div>
+    </div>
+    <!-- スコア表（表→裏の順で縦並び） -->
+    <div id="sbo-table-wrap" style="overflow-x:auto">
+      <table id="sbo-table" style="border-collapse:collapse;width:100%;table-layout:fixed">
+        <thead id="sbo-thead"></thead>
+        <tbody id="sbo-tbody"></tbody>
+      </table>
+    </div>
+    <!-- 現在イニング表示 -->
+    <div style="display:flex;align-items:center;justify-content:center;margin-top:14px;gap:10px">
+      <span id="sbo-inn-tb" style="font-size:28px;font-weight:700;color:rgba(255,255,255,.6)"></span>
+      <span id="sbo-inn-num" style="font-size:52px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums"></span>
+      <span style="font-size:28px;font-weight:500;color:rgba(255,255,255,.5)">回</span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
