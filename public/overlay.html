@@ -570,19 +570,34 @@ function showScoreBig(state, sec){
 
 function _startBlink(inn){
   if(_blinkTimer){clearInterval(_blinkTimer);_blinkTimer=null;}
-  var ids=['sbo-cell-a-'+(inn-1),'sbo-cell-h-'+(inn-1)];
+  var idx=inn-1;
+  var ids=['sbo-cell-a-'+idx,'sbo-cell-h-'+idx];
   var cells=ids.map(function(id){return g(id);}).filter(Boolean);
-  if(!cells.length) return;
-  var count=0, visible=true;
+  if(!cells.length){
+    // セルが見つからない場合はリトライ
+    setTimeout(function(){ _startBlink(inn); },100);
+    return;
+  }
+  var count=0, lit=true;
+  // 背景色で点滅（色ありの方が確実）
+  cells.forEach(function(el){
+    el.dataset.origBg=el.style.background||'';
+  });
   _blinkTimer=setInterval(function(){
-    visible=!visible;
-    cells.forEach(function(el){ el.style.opacity=visible?'1':'0'; });
+    lit=!lit;
+    cells.forEach(function(el){
+      el.style.background=lit?'rgba(255,200,0,.35)':'transparent';
+      el.style.color=lit?'#fff':'rgba(255,255,255,.65)';
+    });
     count++;
-    if(count>=6){
+    if(count>=8){
       clearInterval(_blinkTimer);_blinkTimer=null;
-      cells.forEach(function(el){ el.style.opacity='1'; });
+      cells.forEach(function(el){
+        el.style.background='';
+        el.style.color='';
+      });
     }
-  },350);
+  },250);
 }
 
 function hideScoreBig(){
