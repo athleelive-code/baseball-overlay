@@ -64,6 +64,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* ── 右上：P/C ＋ 守備配置スライドダウン ── */
 .ov-pc-wrap{
   position:fixed;right:20px;top:20px;
+  transition:opacity .3s;
   background:rgba(8,12,24,.7);
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
@@ -86,6 +87,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* ── 左下：打者＋打順スライドアップ ── */
 .ov-bat-wrap{
   position:fixed;right:20px;bottom:20px;
+  transition:opacity .3s;
   background:rgba(8,12,24,.7);
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
@@ -479,6 +481,14 @@ function applyState(s){
   if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
   if(typeof s.showBat==='boolean')setBatVisible(s.showBat);
   if(typeof s.showDef==='boolean')setDefVisible(s.showDef);
+  if(typeof s.showBatter==='boolean'){
+    var bw=g('ov-bat-wrap');
+    if(bw){bw.style.opacity=s.showBatter?'1':'0';bw.style.pointerEvents=s.showBatter?'':'none';}
+  }
+  if(typeof s.showPC==='boolean'){
+    var pw=g('ov-pc-wrap');
+    if(pw){pw.style.opacity=s.showPC?'1':'0';pw.style.pointerEvents=s.showPC?'':'none';}
+  }
 
   // チームロスターを攻撃/守備で振り分け
   if(s.defRoster){
