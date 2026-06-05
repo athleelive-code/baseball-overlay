@@ -734,6 +734,23 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 <script>
 var _autoHideSec = 0;
 
+// ── スリープ防止 (Screen Wake Lock API) ─────────────────────────────────
+var _wakeLock = null;
+async function _requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      _wakeLock = await navigator.wakeLock.request('screen');
+      _wakeLock.addEventListener('release', function(){
+        setTimeout(_requestWakeLock, 1000);
+      });
+    }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible') _requestWakeLock();
+});
+_requestWakeLock();
+
 
 
 // ── BSO ───────────────────────────────────────────────────────────────────────
