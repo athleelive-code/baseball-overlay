@@ -332,18 +332,19 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       style="width:100%;background:#c8102e;border:none;border-radius:10px;color:#fff;font-size:24px;font-weight:700;padding:26px 6px;cursor:pointer;white-space:nowrap">
       ▶ 次打者
     </button>
-    <!-- 打者表示/非表示 + 打順表示 + 打順変更 -->
+    <!-- 打者表示ON/OFF（1ボタン）-->
+    <button id="btn-batter-visible" onclick="toggleBatterVisible()"
+      style="width:100%;background:#3a1a1a;border:1px solid #8a3a3a;border-radius:10px;color:#ff8888;font-size:28px;font-weight:700;padding:22px 6px;cursor:pointer">
+      打者 表示
+    </button>
+    <!-- 打順表示 + 打順変更 -->
     <div style="display:flex;gap:8px;width:100%">
-      <button id="btn-batter-visible" onclick="toggleBatterVisible()"
-        style="flex:1;background:#3a1a1a;border:1px solid #8a3a3a;border-radius:10px;color:#ff8888;font-size:14px;font-weight:600;padding:10px 6px;cursor:pointer;white-space:nowrap">
-        打者 表示
-      </button>
       <button id="btn-bat-visible" onclick="toggleBatVisible()"
-        style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:14px;font-weight:600;padding:10px 6px;cursor:pointer;white-space:nowrap">
+        style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:700;padding:22px 6px;cursor:pointer">
         打順 表示
       </button>
       <button onclick="openBatOrderPanel()"
-        style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:14px;font-weight:600;padding:10px 6px;cursor:pointer;white-space:nowrap">
+        style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:28px;font-weight:700;padding:22px 6px;cursor:pointer">
         打順 変更
       </button>
     </div>
@@ -736,10 +737,11 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       onclick="bsoClick('o')">
       <span class="bso-lbl">O</span>
       <div class="bso-dots">
-        <div class="bdot out" id="od1"></div><div class="bdot out" id="od2"></div><div class="bdot out" id="od3" style="background:#00bcd4;border-color:#006080"
+        <div class="bdot out" id="od1"></div><div class="bdot out" id="od2"></div><div id="od3" style="background:#00bcd4;border:3px solid #006080;border-radius:8px;width:clamp(80px,22vw,120px);height:clamp(80px,22vw,120px);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer"
           ontouchstart="event.stopPropagation();acLongStart()" ontouchend="event.stopPropagation();acLongEnd()" ontouchcancel="event.stopPropagation();acLongEnd()"
-          onmousedown="event.stopPropagation();acLongStart()" onmouseup="event.stopPropagation();acLongEnd()" onmouseleave="event.stopPropagation();acLongEnd()"
-          ></div>
+          onmousedown="event.stopPropagation();acLongStart()" onmouseup="event.stopPropagation();acLongEnd()" onmouseleave="event.stopPropagation();acLongEnd()">
+          <span style="font-size:clamp(22px,6vw,34px);font-weight:900;color:#fff;pointer-events:none;letter-spacing:-1px">AC</span>
+        </div>
       </div>
     </div>
 
