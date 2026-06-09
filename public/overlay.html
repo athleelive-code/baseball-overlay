@@ -486,8 +486,27 @@ function applyState(s){
     var bp=rosterRef&&s.batter?rosterRef.find(function(p){return p.name&&s.batter.includes(p.name.split(' ')[0]);}):null;
     set('ov-bat-order',bp&&bp.order?bp.order:'-');
   })();
-  set('ov-batter-next',s.batterNext||'');
-  set('ov-batter-next2',s.batterNext2||'');
+  // NB/NNB: s.batterNextが空でもbatRosterから再計算
+  (function(){
+    var nb=s.batterNext||'', nnb=s.batterNext2||'';
+    if((!nb||!nnb) && (s.batRoster||s.defRoster) && s.batter){
+      var roster=s.batRoster||s.defRoster;
+      var ordered=roster.filter(function(p){return p.order;}).sort(function(a,b){return Number(a.order)-Number(b.order);});
+      if(ordered.length){
+        var bname=s.batter;
+        var idx=ordered.findIndex(function(p){return p.name&&bname.includes(p.name.split(' ')[0]);});
+        if(idx>=0){
+          var p1=ordered[(idx+1)%ordered.length];
+          var p2=ordered[(idx+2)%ordered.length];
+          var fmt=function(p){return p?(p.num?'#'+p.num+' ':'')+p.name:'';};
+          if(!nb) nb=fmt(p1);
+          if(!nnb) nnb=fmt(p2);
+        }
+      }
+    }
+    set('ov-batter-next',nb);
+    set('ov-batter-next2',nnb);
+  })();
 
   // 表示切替
   if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
