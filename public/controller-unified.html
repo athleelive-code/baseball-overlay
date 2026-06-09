@@ -365,21 +365,21 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     <!-- 投手捕手 表示/非表示ボタン -->
     <div style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
       <button id="btn-pc-visible" onclick="togglePCVisible()"
-        style="width:100%;background:#3a2a1a;border:1px solid #8a6a3a;border-radius:10px;color:#ffaa66;font-size:18px;font-weight:600;padding:20px 8px;cursor:pointer">
+        style="width:100%;background:#3a2a1a;border:1px solid #8a6a3a;border-radius:10px;color:#ffaa66;font-size:28px;font-weight:700;padding:22px 8px;cursor:pointer">
         投手捕手 表示
       </button>
     </div>
     <!-- 守備配置表示ボタン -->
     <div style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
       <button id="btn-def-visible" onclick="toggleDefVisible()"
-        style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:18px;font-weight:600;padding:20px 8px;cursor:pointer">
+        style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:700;padding:22px 8px;cursor:pointer">
         守備配置 表示
       </button>
     </div>
     <!-- 守備位置変更ボタン -->
     <div style="padding:4px 8px 6px">
       <button onclick="openDefSubPanel()"
-        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:18px;font-weight:600;padding:20px 8px;cursor:pointer">
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:28px;font-weight:700;padding:22px 8px;cursor:pointer">
         守備位置 変更
       </button>
     </div>
@@ -1098,6 +1098,11 @@ function setTop(isTop){
   document.getElementById('ind-home').className = 'team-ind' + (!isTop ? ' active' : '');
   document.getElementById('tb-omote').className = isTop  ? 'active' : '';
   document.getElementById('tb-ura').className   = !isTop ? 'active' : '';
+  var _defKey = isTop ? 'home' : 'away';
+  var _defEl = document.getElementById('name-'+_defKey);
+  _defRoster = rosters[_defKey].map(function(p){return Object.assign({},p,{pos:posLabel(p.pos)||String(p.pos||'')});});
+  _defTeam = _defEl ? _defEl.textContent : (_defKey==='away'?'先攻':'後攻');
+  updateSelects();
   renderSB(); broadcast();
 }
 
