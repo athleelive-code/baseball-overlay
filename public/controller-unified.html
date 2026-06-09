@@ -732,14 +732,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <div class="bdot" id="sd1"></div><div class="bdot" id="sd2"></div>
       </div>
     </div>
-    <div class="bso-line"
-      ontouchstart="bsoLongStart('o',this)" ontouchend="event.preventDefault();bsoLongEnd('o')" ontouchcancel="bsoLongEnd(null)"
-      onclick="bsoClick('o')">
+    <div class="bso-line" onclick="adjBSO('o',1)">
       <span class="bso-lbl">O</span>
       <div class="bso-dots">
         <div class="bdot out" id="od1"></div><div class="bdot out" id="od2"></div><div id="od3" style="background:#00bcd4;border:3px solid #006080;border-radius:8px;width:clamp(80px,22vw,120px);height:clamp(80px,22vw,120px);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer"
-          ontouchstart="event.stopPropagation();acLongStart()" ontouchend="event.stopPropagation();acLongEnd()" ontouchcancel="event.stopPropagation();acLongEnd()"
-          onmousedown="event.stopPropagation();acLongStart()" onmouseup="event.stopPropagation();acLongEnd()" onmouseleave="event.stopPropagation();acLongEnd()">
+          ontouchstart="event.stopPropagation();acLongStart()" ontouchend="event.stopPropagation();event.preventDefault();acLongEnd()" ontouchcancel="event.stopPropagation();acLongEnd()"
+          onmousedown="event.stopPropagation();acLongStart()" onmouseup="event.stopPropagation();acLongEnd()" onmouseleave="event.stopPropagation();acLongEnd()"
+          onclick="event.stopPropagation()">
           <span style="font-size:clamp(22px,6vw,34px);font-weight:900;color:#fff;pointer-events:none;letter-spacing:-1px">AC</span>
         </div>
       </div>
