@@ -919,9 +919,10 @@ function renderBSO(){
   for(let i=0;i<2;i++){
     const s=document.getElementById('sd'+(i+1)); if(s) s.className='bdot'+(i<bso.s?' on-s':'');
   }
-  for(let i=0;i<3;i++){
+  for(let i=0;i<2;i++){
     const o=document.getElementById('od'+(i+1)); if(o) o.className='bdot out'+(i<bso.o?' on':'');
   }
+  // od3はACボタンのためclassname変更しない
 }
 
 // ── DIAMOND ──────────────────────────────────────────────────────────────────
