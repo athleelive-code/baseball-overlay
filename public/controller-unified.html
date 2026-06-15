@@ -803,6 +803,10 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 <script>
 var _autoHideSec = 0;
 
+// ── 長押しコンテキストメニュー完全無効化 ─────────────────────────────────
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); return false; });
+document.addEventListener('touchstart', function(){}, {passive:true});
+
 // ── スリープ防止 (Screen Wake Lock API) ─────────────────────────────────
 var _wakeLock = null;
 async function _requestWakeLock(){
