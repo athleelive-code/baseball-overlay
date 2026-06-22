@@ -272,6 +272,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
   <!-- 中: チーム名 + インジケーター -->
   <div class="teams-block" style="position:relative">
+  <button onclick="openFirstBatModal()" style="position:absolute;right:56px;top:50%;transform:translateY(-50%);background:#1a3a5a;border:1px solid #3a6a9a;border-radius:20px;color:#aaccff;font-size:18px;font-weight:700;padding:8px 12px;cursor:pointer;z-index:10;white-space:nowrap">先攻選択</button>
   <button onclick="swapTeams()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:#2a2a4a;border:1px solid #4a4a8a;border-radius:20px;color:#aaaaff;font-size:20px;font-weight:700;padding:8px 14px;cursor:pointer;z-index:10">⇄</button>
     <div class="team-row" onclick="setTop(true)">
       <div class="team-ind active" id="ind-away"></div>
@@ -557,7 +558,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <!-- 選手登録タブ -->
   <div id="dtab-roster" style="display:none">
     <div class="drawer-sec">
-      <div class="drawer-sec-t">先攻チーム</div>
+      <div class="drawer-sec-t">1塁側チーム</div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('away')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('away')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -577,7 +578,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       </div>
     </div>
     <div class="drawer-sec">
-      <div class="drawer-sec-t">後攻チーム</div>
+      <div class="drawer-sec-t">3塁側チーム</div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('home')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('home')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -626,14 +627,14 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <!-- 先攻/後攻タブ -->
   <div style="display:flex;gap:8px;margin-bottom:12px">
     <button id="rtab-away-btn" onclick="switchRosterTab('away')"
-      style="flex:1;padding:16px;border:none;border-radius:8px;font-size:28px;font-weight:600;background:#3a3a3c;color:#fff;cursor:pointer">先攻</button>
+      style="flex:1;padding:16px;border:none;border-radius:8px;font-size:28px;font-weight:600;background:#3a3a3c;color:#fff;cursor:pointer">1塁側</button>
     <button id="rtab-home-btn" onclick="switchRosterTab('home')"
-      style="flex:1;padding:16px;border:none;border-radius:8px;font-size:28px;font-weight:600;background:transparent;color:#888;cursor:pointer">後攻</button>
+      style="flex:1;padding:16px;border:none;border-radius:8px;font-size:28px;font-weight:600;background:transparent;color:#888;cursor:pointer">3塁側</button>
   </div>
   <!-- 先攻登録エリア -->
   <div id="rtab-away">
     <div class="drawer-sec">
-      <div class="drawer-sec-t">先攻チーム</div>
+      <div class="drawer-sec-t">1塁側チーム</div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('away')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('away')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -653,7 +654,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <!-- 後攻登録エリア -->
   <div id="rtab-home" style="display:none">
     <div class="drawer-sec">
-      <div class="drawer-sec-t">後攻チーム</div>
+      <div class="drawer-sec-t">3塁側チーム</div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('home')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('home')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -683,6 +684,21 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   </div>
 </div>
 
+
+<!-- 先攻/後攻 選択モーダル -->
+<div id="firstbat-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:600;align-items:center;justify-content:center;flex-direction:column;padding:20px">
+  <div style="background:#1c1c1e;border-radius:16px;padding:30px 24px;width:90%;max-width:420px">
+    <div style="font-size:32px;font-weight:700;color:#fff;text-align:center;margin-bottom:24px">先攻・後攻を選択</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <button onclick="setFirstBat('1')" style="width:100%;background:#1a3a5a;border:2px solid #3a6a9a;border-radius:12px;color:#fff;font-size:28px;font-weight:700;padding:22px;cursor:pointer">
+        1塁側チームが先攻
+      </button>
+      <button onclick="setFirstBat('3')" style="width:100%;background:#5a1a1a;border:2px solid #9a3a3a;border-radius:12px;color:#fff;font-size:28px;font-weight:700;padding:22px;cursor:pointer">
+        3塁側チームが先攻
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- SCAN PANEL -->
 <div id="scan-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;overflow-y:auto;padding:20px">
@@ -1749,6 +1765,27 @@ var _pendingShowScore = false;
 var _scoreOverlayVisible = false;
 
 // ── 先攻↔後攻 入れ替え ─────────────────────────────────────────────────────
+// ── 先攻/後攻選択（1塁側/3塁側ベンチから割り当て） ──────────────────────────
+// 内部的にrosters.away/homeは「1塁側/3塁側」のロスターとして登録される。
+// この関数で「どちらが先攻(away表示)か」を決定し、表示用に整理する。
+var _benchAssigned = false;
+function setFirstBat(side){
+  // side: '1'=1塁側が先攻, '3'=3塁側が先攻
+  // rosters.away = 1塁側ベンチ, rosters.home = 3塁側ベンチ（登録時の物理割り当て）
+  if(side==='3'){
+    // 3塁側が先攻 → away(先攻表示)とhome(後攻表示)を入れ替え
+    const tmpRoster=[...rosters.away]; rosters.away=[...rosters.home]; rosters.home=tmpRoster;
+    const tmpScore=[...scores.away]; scores.away=[...scores.home]; scores.home=tmpScore;
+    const tmpColor=_teamColors.away; _teamColors.away=_teamColors.home; _teamColors.home=tmpColor;
+  }
+  _benchAssigned=true;
+  document.getElementById('firstbat-modal').style.display='none';
+  renderRosters(); updateSelects(); refreshSCDisplay(); renderSB(); broadcast(); saveState();
+}
+function openFirstBatModal(){
+  document.getElementById('firstbat-modal').style.display='flex';
+}
+
 function swapTeams(){
   if(!confirm('先攻と後攻を入れ替えますか？')) return;
   // チーム名入れ替え
