@@ -314,6 +314,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     <!-- 打者セレクト -->
     <div style="display:flex;align-items:center;gap:8px;width:100%">
       <span class="battery-tag">打</span>
+      <span id="batter-order-num" style="font-size:30px;font-weight:800;color:#c8102e;min-width:36px;text-align:center;flex-shrink:0">-</span>
       <select class="battery-sel" id="sel-batter" onchange="onBatterChange()">
         <option value="">-- 打者 --</option>
       </select>
@@ -1559,6 +1560,14 @@ function updateSelects(){
     const cat = defRoster.find(p=>posLabel(p.pos)==='C'||String(p.pos)==='2');
     if(cat) catSel.value=String(cat.id);
   }
+  // 打順番号表示も更新
+  const orderEl=document.getElementById('batter-order-num');
+  if(orderEl){
+    const batSel=document.getElementById('sel-batter');
+    const curBatId=batSel?Number(batSel.value):0;
+    const curP=rosters[batTeam].find(p=>p.id===curBatId);
+    orderEl.textContent=curP&&curP.order?curP.order:'-';
+  }
 }
 function adjMaxInn(d){
   st.maxInn = Math.max(3, Math.min(15, st.maxInn + d));
@@ -1873,6 +1882,12 @@ function onBatterChange(){
   const team=st.top?'away':'home';
   const roster=rosters[team].filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
   const idx=roster.findIndex(p=>p.id===selId);
+  // 打順番号表示
+  const orderEl=document.getElementById('batter-order-num');
+  if(orderEl){
+    const curP=rosters[team].find(p=>p.id===selId);
+    orderEl.textContent=curP&&curP.order?curP.order:'-';
+  }
   const next1=idx>=0?roster[(idx+1)%roster.length]:null;
   const next2=idx>=0?roster[(idx+2)%roster.length]:null;
   const fmt=p=>p?(p.num?'#'+p.num+' ':'')+p.name:'-';
