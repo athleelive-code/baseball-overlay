@@ -559,6 +559,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <div id="dtab-roster" style="display:none">
     <div class="drawer-sec">
       <div class="drawer-sec-t">1塁側チーム</div>
+      <input id="teamname-away" type="text" placeholder="チーム名を入力" value=""
+        oninput="document.getElementById('name-away').textContent=this.value||'先攻'"
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('away')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('away')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -579,6 +582,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">3塁側チーム</div>
+      <input id="teamname-home" type="text" placeholder="チーム名を入力" value=""
+        oninput="document.getElementById('name-home').textContent=this.value||'後攻'"
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('home')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('home')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -635,6 +641,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <div id="rtab-away">
     <div class="drawer-sec">
       <div class="drawer-sec-t">1塁側チーム</div>
+      <input id="teamname-away" type="text" placeholder="チーム名を入力" value=""
+        oninput="document.getElementById('name-away').textContent=this.value||'先攻'"
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('away')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('away')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -655,6 +664,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <div id="rtab-home" style="display:none">
     <div class="drawer-sec">
       <div class="drawer-sec-t">3塁側チーム</div>
+      <input id="teamname-home" type="text" placeholder="チーム名を入力" value=""
+        oninput="document.getElementById('name-home').textContent=this.value||'後攻'"
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('home')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('home')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
@@ -1438,6 +1450,13 @@ function switchRosterTab(side){
   document.getElementById('rtab-away-btn').style.color=side==='away'?'#fff':'#888';
   document.getElementById('rtab-home-btn').style.background=side==='home'?'#3a3a3c':'transparent';
   document.getElementById('rtab-home-btn').style.color=side==='home'?'#fff':'#888';
+  // チーム名入力欄に現在値を反映
+  var tnAway=document.getElementById('teamname-away');
+  var tnHome=document.getElementById('teamname-home');
+  var curAway=document.getElementById('name-away').textContent;
+  var curHome=document.getElementById('name-home').textContent;
+  if(tnAway) tnAway.value=(curAway==='先攻')?'':curAway;
+  if(tnHome) tnHome.value=(curHome==='後攻')?'':curHome;
   // ロスター一覧を表示
   renderRosterInDrawer(side);
 }
@@ -1777,6 +1796,9 @@ function setFirstBat(side){
     const tmpRoster=[...rosters.away]; rosters.away=[...rosters.home]; rosters.home=tmpRoster;
     const tmpScore=[...scores.away]; scores.away=[...scores.home]; scores.home=tmpScore;
     const tmpColor=_teamColors.away; _teamColors.away=_teamColors.home; _teamColors.home=tmpColor;
+    // チーム名(name-away/name-home)も入れ替え
+    const na=document.getElementById('name-away'), nh=document.getElementById('name-home');
+    if(na&&nh){ const t=na.textContent; na.textContent=nh.textContent; nh.textContent=t; }
   }
   _benchAssigned=true;
   document.getElementById('firstbat-modal').style.display='none';
