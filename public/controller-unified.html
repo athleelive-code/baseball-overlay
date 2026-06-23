@@ -880,7 +880,7 @@ function goNextBatter(){
   let roster = rosters[team].filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
   if(!roster.length) roster = rosters[team];
   if(!roster.length) return;
-  const curId = Number(sel.value);
+  const curId = Number(sel.value) || _lastBatterId[team] || 0;
   const idx = roster.findIndex(p=>p.id===curId);
   const nextP = idx>=0 ? roster[(idx+1)%roster.length] : roster[0];
   if(nextP){
@@ -1126,6 +1126,7 @@ function nextInn(){
 }
 
 const st = { inn:1, top:true, maxInn:7, configMaxInn:7 };
+var _lastBatterId = { away:null, home:null }; // チーム別最終打者ID（イニング間で維持）
 const scores = { away:Array(16).fill(null), home:Array(16).fill(null) };
 
 function setTop(isTop){
@@ -1541,9 +1542,10 @@ function updateSelects(){
   ['batter','pitcher','catcher'].forEach(role=>{
     const sel = document.getElementById('sel-'+role);
     if(!sel) return;
-    const cur = sel.value;
-    const label = role==='batter'?'-- 打者 --':role==='pitcher'?'-- 投手 --':'-- 捕手 --';
     const team = role==='batter' ? batTeam : defTeam;
+    // 打者は、そのチームの最終打者IDを優先して復元（イニング間で打順維持）
+    const cur = role==='batter' ? (sel.value || String(_lastBatterId[team]||'')) : sel.value;
+    const label = role==='batter'?'-- 打者 --':role==='pitcher'?'-- 投手 --':'-- 捕手 --';
     const list = rosters[team];
     sel.innerHTML = `<option value="">${label}</option>`
       + list.map(p=>`<option value="${p.id}"${p.id==cur?' selected':''}>${p.num?'#'+p.num+' ':''}${p.name}</option>`).join('');
@@ -1880,6 +1882,7 @@ function onBatterChange(){
   if(!sel) return;
   const selId=Number(sel.value);
   const team=st.top?'away':'home';
+  if(selId) _lastBatterId[team]=selId; // 打者選択を記憶（イニング間で維持）
   const roster=rosters[team].filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
   const idx=roster.findIndex(p=>p.id===selId);
   // 打順番号表示
@@ -2289,6 +2292,7 @@ function saveState(){
       catcherId:sel_c?Number(sel_c.value)||0:0,
       nameAway:na?na.textContent:'先攻',
       nameHome:nh?nh.textContent:'後攻',
+      lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
       savedAt:Date.now()
     };
     localStorage.setItem('bb_state',JSON.stringify(snap));
@@ -2321,6 +2325,8 @@ function restoreState(){
       rosters.away=snap.rosters.away||[];
       rosters.home=snap.rosters.home||[];
     }
+    // 打者記憶を復元
+    if(snap.lastBatterId){ _lastBatterId.away=snap.lastBatterId.away||null; _lastBatterId.home=snap.lastBatterId.home||null; }
     // チーム名
     const na=document.getElementById('name-away');
     const nh=document.getElementById('name-home');
