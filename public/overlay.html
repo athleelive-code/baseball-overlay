@@ -62,14 +62,16 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-ist-block{border-top:1px solid rgba(255,255,255,.08)}
 .ov-ist-slide{flex:0 1 auto;max-width:0;overflow:hidden;opacity:0;transition:max-width .5s ease,opacity .4s ease;border-left:1px solid rgba(255,255,255,.08)}
 .ov-ist-slide.open{max-width:600px;opacity:1}
+.ov-ad-slide{flex:0 1 auto;max-width:0;overflow:hidden;opacity:0;transition:max-width .5s ease,opacity .4s ease;display:flex;align-items:center}
+.ov-ad-slide.open{max-width:300px;opacity:1;margin-left:auto}
 .ov-ist-table td.ov-ist-num{font-size:13px;color:rgba(255,255,255,.45);padding:1px 4px;border-bottom:1px solid rgba(255,255,255,.15)}
 .ov-ist-table td.ov-ist-num.cur{color:#fff;font-weight:700}
 .ov-ist-table{border-collapse:collapse;width:100%;table-layout:fixed}
-.ov-ist-table td{text-align:center;padding:2px 4px;font-size:20px;transition:font-size .2s;font-weight:700;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;border-right:1px solid rgba(255,255,255,.06)}
+.ov-ist-table td{text-align:center;padding:2px 6px;font-size:26px;transition:font-size .2s;font-weight:700;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;border-right:1px solid rgba(255,255,255,.06)}
 .ov-ist-table tr:first-child td{border-bottom:1px solid rgba(255,255,255,.05)}
 .ov-ist-table td:last-child{border-right:none}
 .ov-ist-table td.cur{color:#fff}
-.ov-ist-table.small td{font-size:14px}
+.ov-ist-table.small td{font-size:18px}
 .ov-ist-table td.sep3{border-right:1px solid rgba(255,255,255,.25);padding-right:4px}
 .ov-ist-table td.sep3+td{padding-left:4px}
 .ov-ist-table td.cur.sep3{color:#fff;border-right:1px solid rgba(255,255,255,.25);padding-right:4px}
@@ -223,6 +225,10 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
         <polygon id="ov-b3" points="13,22 29,32 13,42 -3,32" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
         <polygon id="ov-b1" points="147,22 163,32 147,42 131,32" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
       </svg>
+    </div>
+    <!-- 広告エリア（スライド展開時に表示） -->
+    <div class="ov-ad-slide" id="ov-ad-area">
+      <img id="ov-ad-img" src="" alt="" style="height:100%;width:auto;max-height:60px;object-fit:contain;display:block;border-radius:4px"/>
     </div>
   </div>
 </div>
@@ -586,11 +592,28 @@ var _autoHideSec=0;
 var _scoreDispTimer=null;
 var _scoreDispSec=0;
 
+// ── 広告ローテーション ─────────────────────────────
+// 広告画像リスト: publicフォルダに配置した画像パスを追加してください
+var _adImages = ['ad1.png','ad2.png','ad3.png'];
+var _adIndex = 0;
+
+function _showNextAd(){
+  var area=g('ov-ad-area');
+  var img=g('ov-ad-img');
+  if(!area||!img||!_adImages.length) return;
+  // 画像が存在するかチェックしながら表示
+  img.onerror=function(){ area.classList.remove('open'); };
+  img.onload=function(){ area.classList.add('open'); };
+  img.src=_adImages[_adIndex % _adImages.length];
+  _adIndex++;
+}
+
 function showScoreBig(state, sec){
   // 常設スコアエリア内のイニングスコアをスライド展開
   var sc=document.querySelector('.ov-score');
   if(sc) sc.classList.add('expanded');
   document.querySelectorAll('.ov-ist-slide').forEach(function(el){ el.classList.add('open'); });
+  _showNextAd();
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
   if(sec>0){
     _scoreDispTimer=setTimeout(function(){ hideScoreBig(); }, sec*1000);
@@ -603,6 +626,7 @@ function hideScoreBig(){
   var sc=document.querySelector('.ov-score');
   if(sc) sc.classList.remove('expanded');
   document.querySelectorAll('.ov-ist-slide').forEach(function(el){ el.classList.remove('open'); });
+  var ad=g('ov-ad-area'); if(ad) ad.classList.remove('open');
 }
 
 function setDefVisible(v){
