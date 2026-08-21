@@ -567,6 +567,10 @@ function applyState(s){
     var pw=g('ov-pc-wrap');
     if(pw){pw.style.opacity=s.showPC?'1':'0';pw.style.pointerEvents=s.showPC?'':'none';}
   }
+  if(typeof s.showBSO==='boolean'){
+    var bd=document.querySelector('.ov-bso');
+    if(bd) bd.style.display=s.showBSO?'':'none';
+  }
 
   // チームロスターを攻撃/守備で振り分け
   if(s.defRoster){
