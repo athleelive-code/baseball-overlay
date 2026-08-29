@@ -1937,6 +1937,86 @@ function resetAll(){
   closeDrawer();
 }
 
+// ── 他デバイスからの状態を反映（複数コントローラー同時操作） ──────────────
+function applyRemoteState(s){
+  _applyingRemote=true;
+  try{
+    // イニング・カウント・走者
+    if(typeof s.inn==='number') st.inn=s.inn;
+    if(typeof s.top==='boolean') st.top=s.top;
+    if(typeof s.maxInn==='number') st.maxInn=s.maxInn;
+    if(typeof s.b==='number') bso.b=s.b;
+    if(typeof s.s==='number') bso.s=s.s;
+    if(typeof s.o==='number') bso.o=s.o;
+    if(s.r){ bases[1]=!!s.r[1]; bases[2]=!!s.r[2]; bases[3]=!!s.r[3]; }
+
+    // スコア
+    if(Array.isArray(s.asc)) scores.away=[...s.asc];
+    if(Array.isArray(s.hsc)) scores.home=[...s.hsc];
+    if(s.xOnAll){ for(var k in xOn){ delete xOn[k]; } Object.assign(xOn, s.xOnAll); }
+
+    // チーム名・カラー
+    var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
+    if(na&&s.aab) na.textContent=s.aab;
+    if(nh&&s.hnm) nh.textContent=s.hnm;
+    if(s.awayColor) _teamColors.away=s.awayColor;
+    if(s.homeColor) _teamColors.home=s.homeColor;
+
+    // 選手登録（ロスター）
+    if(s.rostersAll){
+      if(Array.isArray(s.rostersAll.away)) rosters.away=JSON.parse(JSON.stringify(s.rostersAll.away));
+      if(Array.isArray(s.rostersAll.home)) rosters.home=JSON.parse(JSON.stringify(s.rostersAll.home));
+    }
+    if(s.lastBatterId){
+      _lastBatterId.away=s.lastBatterId.away||null;
+      _lastBatterId.home=s.lastBatterId.home||null;
+    }
+
+    // 表示フラグ
+    if(typeof s.showBat==='boolean') _batVisible=s.showBat;
+    if(typeof s.showDef==='boolean') _defVisible=s.showDef;
+    if(typeof s.showBatter==='boolean') _batterVisible=s.showBatter;
+    if(typeof s.showPC==='boolean') _pcVisible=s.showPC;
+    if(typeof s.showBSO==='boolean') _bsoVisible=s.showBSO;
+    if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
+    if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
+
+    // 再描画（セレクトの選択は updateSelects の前に入れる）
+    updateSelects();
+    if(s.selIds){
+      var sb=document.getElementById('sel-batter');
+      var sp=document.getElementById('sel-pitcher');
+      var sc=document.getElementById('sel-catcher');
+      if(sb&&s.selIds.batter) sb.value=String(s.selIds.batter);
+      if(sp&&s.selIds.pitcher) sp.value=String(s.selIds.pitcher);
+      if(sc&&s.selIds.catcher) sc.value=String(s.selIds.catcher);
+    }
+    if(typeof renderRosters==='function') renderRosters();
+    renderBSO(); renderDiamond(); renderSB(); refreshSCDisplay();
+
+    // 表裏インジケーター
+    var ia=document.getElementById('ind-away'), ih=document.getElementById('ind-home');
+    if(ia) ia.className='team-ind'+(st.top?' active':'');
+    if(ih) ih.className='team-ind'+(!st.top?' active':'');
+    var to=document.getElementById('tb-omote'), tu=document.getElementById('tb-ura');
+    if(to) to.className=st.top?'active':'';
+    if(tu) tu.className=!st.top?'active':'';
+    var innEl=document.getElementById('inn-num');
+    if(innEl) innEl.textContent=st.inn;
+
+    // 表示ボタンのラベル同期
+    var bb=document.getElementById('btn-bso-visible');
+    if(bb) bb.textContent=_bsoVisible?'BSO 非表示':'BSO 表示';
+    var btv=document.getElementById('btn-batter-visible');
+    if(btv) btv.textContent=_batterVisible?'打者 非表示':'打者 表示';
+
+    saveState();
+  }catch(e){
+    console.log('applyRemoteState error', e);
+  }
+  _applyingRemote=false;
+}
+
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 let ws=null, _wsTimer=null;
 
@@ -1947,7 +2027,12 @@ function connectWS(){
     ws.onopen=()=>{};
     ws.onclose=()=>{ ws=null; _wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=()=>{ try{ws.close();}catch(e){} };
-    ws.onmessage=()=>{}; // 受信完全無視
+    ws.onmessage=(ev)=>{
+      var s=null;
+      try{ s=JSON.parse(ev.data); }catch(e){ return; }
+      if(!s||s._ctl!==true) return;   // 他コントローラーからの状態のみ受け取る
+      applyRemoteState(s);
+    };
   }catch(e){ _wsTimer=setTimeout(connectWS,3000); }
 }
 connectWS();
@@ -2322,7 +2407,9 @@ function _initTeamColors(){
     }catch(e){}
   });
 }
+var _applyingRemote=false;
 function broadcast(){
+  if(_applyingRemote) return;   // リモート適用中は送り返さない（ループ防止）
   if(_broadcastTimer) clearTimeout(_broadcastTimer);
   _broadcastTimer=setTimeout(_doBroadcast,50);
 }
@@ -2352,7 +2439,16 @@ function _doBroadcast(){
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
     awayColor:_teamColors.away,homeColor:_teamColors.home,
     scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
-    autoHideSec:_autoHideSec
+    autoHideSec:_autoHideSec,
+    _ctl:true,
+    rostersAll:{away:rosters.away,home:rosters.home},
+    selIds:{
+      batter:batSel?Number(batSel.value)||0:0,
+      pitcher:pitSel?Number(pitSel.value)||0:0,
+      catcher:catSel?Number(catSel.value)||0:0
+    },
+    lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
+    xOnAll:{...xOn}
   }));
   _pendingShowScore=null; saveState();
 }
