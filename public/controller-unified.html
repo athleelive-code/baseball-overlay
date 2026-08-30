@@ -448,10 +448,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   </table>
 </div>
 
-<!-- イニングスコア表示ボタン -->
-<div style="padding:8px 14px 10px;background:#0a0a0a;border-bottom:1px solid #1a1a1a">
-  <button onclick="showScoreOverlay()" style="width:100%;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:28px;font-weight:800;padding:18px 6px;cursor:pointer;line-height:1.2">
+<!-- イニングスコア表示・イニングコール -->
+<div style="padding:8px 14px 10px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;gap:8px">
+  <button onclick="showScoreOverlay()" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:26px;font-weight:800;padding:18px 6px;cursor:pointer;line-height:1.2">
     📊 イニングスコア 表示
+  </button>
+  <button onclick="announceCurrentInning()" style="flex:0 0 auto;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:26px;font-weight:800;padding:18px 20px;cursor:pointer;line-height:1.2;white-space:nowrap">
+    🔊 回<br>コール
   </button>
 </div>
 
@@ -481,6 +484,11 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     <button onclick="goNextBatter()"
       style="width:100%;background:#c8102e;border:none;border-radius:10px;color:#fff;font-size:24px;font-weight:700;padding:26px 6px;cursor:pointer;white-space:nowrap">
       ▶ 次打者
+    </button>
+    <!-- 打者アナウンス -->
+    <button onclick="announceCurrentBatter()"
+      style="width:100%;background:#2a3a1a;border:1px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:28px;font-weight:700;padding:22px 6px;cursor:pointer">
+      🔊 打者コール
     </button>
     <!-- 打者表示ON/OFF（1ボタン）-->
     <button id="btn-batter-visible" onclick="toggleBatterVisible()"
@@ -1044,7 +1052,7 @@ function _speak(text){
 
   _fetchVoice(text)
     .then(function(url){ _play(url); })
-    .catch(function(){ _speakLocal(text); });   // 失敗時は端末音声に切替
+    .catch(function(e){ console.warn('[TTS] Azure失敗 → 端末音声に切替:', e && e.message); _speakLocal(text); });   // 失敗時は端末音声に切替
 }
 
 function _play(url){
@@ -1080,6 +1088,23 @@ function announceInning(){
   var teamEl = st.top ? document.getElementById('name-away') : document.getElementById('name-home');
   var team = teamEl ? teamEl.textContent : (st.top ? '先攻' : '後攻');
   _speak(st.inn + '回' + (st.top ? '表' : '裏') + '、' + team + 'の攻撃');
+}
+
+// 現在選択中の打者を読み上げる
+function announceCurrentBatter(){
+  if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  var sel=document.getElementById('sel-batter');
+  if(!sel || !sel.value){ alert('打者が選択されていません'); return; }
+  var team = st.top ? 'away' : 'home';
+  var p = rosters[team].find(function(x){ return x.id===Number(sel.value); });
+  if(!p) return;
+  announceBatter(p);
+}
+
+// 現在のイニングを読み上げる
+function announceCurrentInning(){
+  if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  announceInning();
 }
 
 function toggleAnnounce(){
@@ -1509,8 +1534,7 @@ function nextInn(){
   _defTeam = _newDefNameEl ? _newDefNameEl.textContent : (_newDefTeam==='away'?'先攻':'後攻');
   // セレクトを更新（投手・捕手が守備側に、打者が攻撃側に）
   updateSelects();
-  // 場内アナウンス
-  if(typeof announceInning==='function') announceInning();
+
   if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; _refreshScoreBtn(); _armScoreAutoHide(); }
   broadcast();
 }
@@ -2487,11 +2511,6 @@ function onBatterChange(){
     :(document.getElementById('name-home')?.textContent||'後攻');
   _defRoster=rosters[team].map(p=>({...p,pos:posLabel(p.pos)||p.pos}));
   _defTeam=defTeamName;
-  // 場内アナウンス（打者が実際に変わったときだけ）
-  if(typeof announceBatter==='function' && selId && selId!==_lastAnnouncedBatter){
-    _lastAnnouncedBatter = selId;
-    announceBatter(rosters[team].find(p=>p.id===selId));
-  }
   broadcast();
 }
 var _lastAnnouncedBatter = null;
