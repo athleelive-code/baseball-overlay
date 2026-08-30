@@ -781,6 +781,7 @@ function setBatter(team, id){
   }
 
   renderAll();
+  renderFieldPane();
   renderGame(lastRemote);
   pushState();
   toast('打者：'+p.name);
@@ -1110,9 +1111,9 @@ function applyRemote(s){
     }
     if(s.aab){ teamNames.away=s.aab; document.getElementById('tname-away').value=(s.aab==='先攻'?'':s.aab); }
     if(s.hnm){ teamNames.home=s.hnm; document.getElementById('tname-home').value=(s.hnm==='後攻'?'':s.hnm); }
+    renderFieldPane();
     renderAll();
     renderGame(s);
-    renderFieldPane();
     renderLog();
     if(typeof s.abPitch==='number'){ _abPitch=s.abPitch; _abFoul=s.abFoul||0; _abBallSeq=s.abBallSeq||[]; }
     _updateAbDispPC();
@@ -1321,7 +1322,6 @@ function pickStrikeout(label){
     _abResetPC(); _pcSyncAb();
     renderGame(lastRemote);
     _updateAbDispPC();
-    pushState();
   }
   goNextBatterPC();
   toast(label);
@@ -1426,7 +1426,6 @@ function rpResult(label, outs){
     _abResetPC(); _pcSyncAb();
     renderGame(lastRemote);
     _updateAbDispPC();
-    pushState();
   }
   goNextBatterPC();
   toast(label);
