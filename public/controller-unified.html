@@ -717,7 +717,11 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <button id="btn-prebuild" onclick="prebuildVoices()" style="width:100%;background:#3a2a1a;border:1px solid #8a6a3a;border-radius:10px;color:#ffaa66;font-size:24px;font-weight:600;padding:12px;cursor:pointer;margin-top:8px">
         🎙 音声を事前生成
       </button>
-      <div style="font-size:18px;color:#666;margin-top:6px">試合前に押しておくと、登録選手とイニングコールの音声を作りためて、試合中の待ち時間がなくなります</div>
+      <div style="font-size:18px;color:#666;margin-top:6px">試合前に押しておくと、登録選手とイニングコールの音声を作りためて、試合中の待ち時間がなくなります。保存した音声は次回も残ります</div>
+      <button onclick="if(confirm('保存済みの音声をすべて削除しますか？'))clearVoiceCache().then(function(){alert('削除しました');})"
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:22px;font-weight:600;padding:12px;cursor:pointer;margin-top:8px">
+        🗑 保存音声を削除
+      </button>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">オーバーレイ表示</div>
@@ -786,6 +790,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <input id="roster-away-pos"  type="text"   placeholder="守備" style="width:110px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
         <button onclick="addPlayer('away')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:36px;padding:16px 24px;cursor:pointer">追加</button>
       </div>
+      <input id="roster-away-yomi" type="text" placeholder="読み仮名（例：やまだ たろう）※アナウンス用" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none;margin-top:6px"/>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">3塁側チーム</div>
@@ -809,6 +814,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <input id="roster-home-pos"  type="text"   placeholder="守備" style="width:110px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none"/>
         <button onclick="addPlayer('home')" style="background:#007aff;border:none;border-radius:8px;color:#fff;font-size:36px;padding:16px 24px;cursor:pointer">追加</button>
       </div>
+      <input id="roster-home-yomi" type="text" placeholder="読み仮名（例：やまだ たろう）※アナウンス用" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:36px;padding:16px 12px;outline:none;margin-top:6px"/>
     </div>
     <!-- バックアップ / インポート -->
     <div class="drawer-sec">
@@ -1009,23 +1015,109 @@ function _initTTS(){
   }catch(e){}
 }
 
+
+// ── 音声の永続保存（IndexedDB） ───────────────────────────────────────────
+// 生成した音声をブラウザに保存し、再読み込み後もすぐ鳴るようにする
+var _voiceDB = null;
+
+function _openVoiceDB(){
+  return new Promise(function(resolve){
+    if(_voiceDB){ resolve(_voiceDB); return; }
+    if(!window.indexedDB){ resolve(null); return; }
+    try{
+      var rq = indexedDB.open('athleelive_voice', 1);
+      rq.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if(!db.objectStoreNames.contains('clips')) db.createObjectStore('clips');
+      };
+      rq.onsuccess = function(e){ _voiceDB = e.target.result; resolve(_voiceDB); };
+      rq.onerror   = function(){ resolve(null); };
+    }catch(e){ resolve(null); }
+  });
+}
+
+function _dbGet(key){
+  return _openVoiceDB().then(function(db){
+    if(!db) return null;
+    return new Promise(function(resolve){
+      try{
+        var tx = db.transaction('clips','readonly');
+        var rq = tx.objectStore('clips').get(key);
+        rq.onsuccess = function(){ resolve(rq.result || null); };
+        rq.onerror   = function(){ resolve(null); };
+      }catch(e){ resolve(null); }
+    });
+  });
+}
+
+function _dbPut(key, val){
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    try{
+      var tx = db.transaction('clips','readwrite');
+      tx.objectStore('clips').put(val, key);
+    }catch(e){}
+  });
+}
+
+// 保存済み音声をまとめてメモリに読み込む
+function _loadVoiceCache(){
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    return new Promise(function(resolve){
+      try{
+        var tx = db.transaction('clips','readonly');
+        var store = tx.objectStore('clips');
+        var kq = store.getAllKeys(), vq = store.getAll();
+        var keys=null, vals=null;
+        var done=function(){
+          if(keys && vals){
+            for(var i=0;i<keys.length;i++) _ttsCache[keys[i]] = vals[i];
+          }
+          resolve();
+        };
+        kq.onsuccess=function(){ keys=kq.result; if(vals) done(); };
+        vq.onsuccess=function(){ vals=vq.result; if(keys) done(); };
+        kq.onerror=vq.onerror=function(){ resolve(); };
+      }catch(e){ resolve(); }
+    });
+  });
+}
+
+// 保存済み音声をすべて削除
+function clearVoiceCache(){
+  _ttsCache = {};
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    try{
+      var tx = db.transaction('clips','readwrite');
+      tx.objectStore('clips').clear();
+    }catch(e){}
+  });
+}
+
 function _ttsKey(text){ return _ttsVoice + '|' + _ttsStyle + '|' + _annRate + '|' + text; }
 
 // 音声を取得してキャッシュに入れる（再生はしない）
 function _fetchVoice(text){
   var key = _ttsKey(text);
   if(_ttsCache[key]) return Promise.resolve(_ttsCache[key]);
-  return fetch('/api/tts', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ text: text, voice: _ttsVoice, rate: _annRate, style: _ttsStyle })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    if(!d.audio) throw new Error(d.error || 'no audio');
-    var url = 'data:audio/mp3;base64,' + d.audio;
-    _ttsCache[key] = url;
-    return url;
+  // 保存済みがあれば通信しない
+  return _dbGet(key).then(function(saved){
+    if(saved){ _ttsCache[key]=saved; return saved; }
+    return fetch('/api/tts', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ text: text, voice: _ttsVoice, rate: _annRate, style: _ttsStyle })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.audio) throw new Error(d.error || 'no audio');
+      var url = 'data:audio/mp3;base64,' + d.audio;
+      _ttsCache[key] = url;
+      _dbPut(key, url);
+      return url;
+    });
   });
 }
 
@@ -1069,17 +1161,11 @@ function _play(url){
   }catch(e){}
 }
 
-// 「3番、ショート、山田くん」
+// 「3番、ショート、山田くん、背番号7」
 function announceBatter(player){
   if(!_annOn || !player) return;
-  var parts = [];
-  if(player.order) parts.push(player.order + '番');
-  var pl = POS_YOMI[String(player.pos)] || POS_YOMI[posLabel(player.pos)] || '';
-  if(pl) parts.push(pl);
-  var nm = String(player.name || '').trim();
-  if(!nm) return;
-  parts.push(nm + 'くん');
-  _speak(parts.join('、'));
+  var t=_batterPhrase(player);
+  if(t) _speak(t);
 }
 
 // 「1回表、綾羽高校の攻撃」
@@ -1138,15 +1224,17 @@ function testAnnounce(){
 }
 
 // 打者アナウンスの文言を組み立てる
-function _batterPhrase(player){
-  if(!player) return '';
+function _batterPhrase(p){
+  if(!p) return '';
   var parts=[];
-  if(player.order) parts.push(player.order+'番');
-  var pl = POS_YOMI[String(player.pos)] || POS_YOMI[posLabel(player.pos)] || '';
+  if(p.order) parts.push(p.order+'番');
+  var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
   if(pl) parts.push(pl);
-  var nm = String(player.name||'').trim();
+  // 読み仮名があれば読み上げに使う
+  var nm = String(p.yomi || p.name || '').trim();
   if(!nm) return '';
   parts.push(nm+'くん');
+  if(p.num) parts.push('背番号'+p.num);
   return parts.join('、');
 }
 
@@ -1162,7 +1250,7 @@ function prebuildVoices(){
   });
   var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
   var an=na?na.textContent:'先攻', hn=nh?nh.textContent:'後攻';
-  for(var i=1;i<=Math.max(st.maxInn||7,9);i++){
+  for(var i=1;i<=10;i++){
     texts.push(i+'回表、'+an+'の攻撃');
     texts.push(i+'回裏、'+hn+'の攻撃');
   }
@@ -1229,6 +1317,7 @@ function _initAnnounce(){
   var el=document.getElementById('ann-rate-val');
   if(el) el.textContent=_annRate.toFixed(2);
   _initTTS();
+  _loadVoiceCache();
 }
 _initAnnounce();
 
@@ -1890,7 +1979,7 @@ function renderRosterInDrawer(side){
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #1a1a1a">'
       +'<span style="font-size:22px;color:#888;min-width:32px">'+(p.order||'-')+'</span>'
       +'<span style="font-size:22px;color:#aaa;min-width:44px">'+(p.num?'#'+p.num:'')+'</span>'
-      +'<span style="font-size:24px;color:#fff;flex:1">'+p.name+'</span>'
+      +'<span style="font-size:24px;color:#fff;flex:1">'+p.name+(p.yomi?'<span style="font-size:16px;color:#777"> ('+p.yomi+')</span>':'')+'</span>'
       +'<span style="font-size:18px;color:#888">'+pl+'</span>'
       +'</div>';
   }).join('');
@@ -1915,10 +2004,12 @@ function addPlayer(team){
   const name = document.getElementById('roster-'+team+'-name').value.trim();
   const pos   = document.getElementById('roster-'+team+'-pos')?.value.trim()||'';
   const order = document.getElementById('roster-'+team+'-order')?.value.trim()||'';
+  const yomi  = document.getElementById('roster-'+team+'-yomi')?.value.trim()||'';
   if(!name) return;
-  rosters[team].push({ id:Date.now(), order, num, name, pos });
+  rosters[team].push({ id:Date.now(), order, num, name, yomi, pos });
   document.getElementById('roster-'+team+'-num').value  = '';
   document.getElementById('roster-'+team+'-name').value = '';
+  const ye=document.getElementById('roster-'+team+'-yomi'); if(ye) ye.value='';
   const pe=document.getElementById('roster-'+team+'-pos'); if(pe) pe.value='';
   const oe=document.getElementById('roster-'+team+'-order'); if(oe) oe.value='';
   renderRosters();
@@ -2477,6 +2568,8 @@ function connectWS(){
     ws.onmessage=(ev)=>{
       var s=null;
       try{ s=JSON.parse(ev.data); }catch(e){ return; }
+      // 状態要求には現在の状態を返す
+      if(s && s._req==='state'){ _doBroadcast(); return; }
       if(!s||s._ctl!==true) return;   // 他コントローラーからの状態のみ受け取る
       applyRemoteState(s);
     };
