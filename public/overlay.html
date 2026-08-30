@@ -80,6 +80,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-bso-dia{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;border-top:1px solid rgba(255,255,255,.08);padding:6px 10px;gap:10px}
 .ov-bso{display:flex;flex-direction:row;align-items:center;gap:6px;flex-shrink:0;flex:0 0 auto}
 .ov-bso-item{display:flex;align-items:center;gap:3px}
+.ov-bnum{font-size:6px;font-weight:800;fill:#0a2a0a;text-anchor:middle;
+  dominant-baseline:central;font-family:inherit;pointer-events:none}
+.ov-ab{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  margin-left:8px;flex-shrink:0;min-width:44px}
+.ov-ab-f{font-size:13px;font-weight:800;color:#e8a33d;line-height:1.1;
+  font-variant-numeric:tabular-nums}
+.ov-ab-t{font-size:12px;font-weight:700;color:rgba(255,255,255,.55);line-height:1.1;
+  font-variant-numeric:tabular-nums}
 .ov-bso-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
 .ov-bso-lbl{display:none}
 .ov-dia-sep{width:1px;height:22px;background:rgba(255,255,255,.1);flex-shrink:0}
@@ -203,7 +211,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   <div class="ov-bso-dia">
     <div class="ov-bso">
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">B</span><svg width="90" height="18" viewBox="0 0 30 10"><circle cx="5" cy="5" r="5" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="5" id="ov-bd3" fill="#333"/></svg>
+        <span class="ov-bso-lbl">B</span><svg width="90" height="18" viewBox="0 0 30 10"><circle cx="5" cy="5" r="5" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="5" id="ov-bd3" fill="#333"/><text class="ov-bnum" id="ov-bn1" x="5" y="5">​</text><text class="ov-bnum" id="ov-bn2" x="15" y="5">​</text><text class="ov-bnum" id="ov-bn3" x="25" y="5">​</text></svg>
       </div>
       <div class="ov-bso-sep"></div>
       <div class="ov-bso-item">
@@ -212,6 +220,10 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
       <div class="ov-bso-sep"></div>
       <div class="ov-bso-item">
         <span class="ov-bso-lbl">O</span><svg width="60" height="18" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-od1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-od2" fill="#333"/></svg>
+      </div>
+      <div class="ov-ab" id="ov-ab">
+        <span class="ov-ab-f" id="ov-ab-foul"></span>
+        <span class="ov-ab-t" id="ov-ab-total"></span>
       </div>
     </div>
     <div class="ov-dia-sep"></div>
@@ -474,12 +486,27 @@ function applyState(s){
 
 
   // BSO
-  for(let i=0;i<3;i++) setAttr('ov-bd'+(i+1),'fill',i<(s.b||0)?'#43a047':'#333');
+  var _bseq = Array.isArray(s.abBallSeq) ? s.abBallSeq : [];
+  for(let i=0;i<3;i++){
+    var _on = i<(s.b||0);
+    setAttr('ov-bd'+(i+1),'fill', _on ? '#43a047' : '#333');
+    // 点灯しているボールには「打席の何球目か」を表示
+    var _t=g('ov-bn'+(i+1));
+    if(_t) _t.textContent = (_on && _bseq[i]) ? String(_bseq[i]) : '';
+  }
   for(let i=0;i<2;i++){
     setAttr('ov-sd'+(i+1),'fill',i<(s.s||0)?'#f5c518':'#333');
     setAttr('ov-od'+(i+1),'fill',i<(s.o||0)?'#c8102e':'#333');
     setAttr('ov-od'+(i+1),'stroke','none');
   }
+
+  // ファウル数・打席球数
+  (function(){
+    var f=g('ov-ab-foul'), t=g('ov-ab-total');
+    var nf=s.abFoul||0, np=s.abPitch||0;
+    if(f) f.textContent = nf>0 ? ('F'+nf) : '';
+    if(t) t.textContent = np>0 ? (np+'球') : '';
+  })();
 
   // ダイヤモンド
   [1,2,3].forEach(n2=>{
