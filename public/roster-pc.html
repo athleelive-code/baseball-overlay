@@ -157,6 +157,10 @@ body.locked .row{cursor:default}
 .scan-row{display:grid;grid-template-columns:56px 62px 1fr 96px 40px;gap:8px;align-items:center;
   padding:7px 0;border-bottom:1px solid #262628}
 .modal-acts{display:flex;gap:10px;margin-top:16px}
+.set-sec{padding:14px 0;border-top:1px solid #262628}
+.set-lbl{font-size:13px;color:var(--sub);margin-bottom:8px;letter-spacing:.5px}
+.set-sel{width:100%;background:#2c2c2e;border:1px solid #444;border-radius:8px;
+  color:#fff;font-size:15px;padding:12px;outline:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#2c2c2e;
   border:1px solid #444;border-radius:10px;color:#fff;font-size:14px;padding:12px 20px;
   z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -181,6 +185,7 @@ body.locked .row{cursor:default}
     <span class="hdr-div"></span>
     <span class="ws-dot" id="ws-dot"></span>
     <span class="ws-label" id="ws-label">接続中…</span>
+    <button class="btn" onclick="openSettings()">⚙ 設定</button>
     <button class="btn btn-save" onclick="exportJSON()">⬇ JSON書出</button>
     <label class="btn btn-load" style="margin:0">⬆ JSON読込
       <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
@@ -352,6 +357,63 @@ body.locked .row{cursor:default}
     <div id="load-list"></div>
     <div class="modal-acts">
       <button class="btn" style="flex:1" onclick="closeModal('load-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="mask" id="settings-mask">
+  <div class="modal" style="max-width:560px">
+    <h3>⚙ 設定</h3>
+    <div class="note" id="set-tts-status">確認中…</div>
+
+    <div class="set-sec">
+      <div class="set-lbl">場内アナウンス</div>
+      <button class="btn" id="set-ann-toggle" onclick="toggleAnnounce()"
+        style="width:100%;font-size:16px;padding:14px">🔈 アナウンス OFF</button>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">声の種類</div>
+      <select class="set-sel" id="set-voice" onchange="setTtsVoice(this.value)">
+        <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
+        <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
+        <option value="ja-JP-AoiNeural">女性・明るめ（あおい）</option>
+        <option value="ja-JP-MayuNeural">女性・やわらかい（まゆ）</option>
+        <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
+        <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
+        <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
+      </select>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">話し方</div>
+      <select class="set-sel" id="set-style" onchange="setTtsStyle(this.value)">
+        <option value="">標準</option>
+        <option value="chat">やわらかい会話調</option>
+        <option value="cheerful">明るい</option>
+        <option value="customerservice">案内調</option>
+      </select>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">読み上げ速度</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjAnnRate(-0.05)">－</button>
+        <span id="set-rate-val" style="flex:1;text-align:center;font-size:26px;font-weight:700">0.95</span>
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjAnnRate(0.05)">＋</button>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <button class="btn btn-load" style="width:100%;font-size:15px;padding:13px" onclick="testAnnounce()">▶ テスト再生</button>
+      <button class="btn" style="width:100%;font-size:15px;padding:13px;margin-top:8px;background:#3a2a1a;border-color:#8a6a3a;color:#ffaa66"
+        id="set-prebuild" onclick="prebuildVoices()">🎙 音声を事前生成</button>
+      <div class="note" style="margin-top:8px">試合前に押しておくと、登録選手とイニングコールの音声を作りためて、試合中の待ち時間がなくなります</div>
+    </div>
+
+    <div class="modal-acts">
+      <button class="btn" style="flex:1" onclick="closeModal('settings-mask')">閉じる</button>
     </div>
   </div>
 </div>
@@ -793,11 +855,103 @@ function _initTTS(){
   _refreshAnnBtn();
 }
 
+function openSettings(){
+  document.getElementById('settings-mask').classList.add('open');
+  _refreshSettingsUI();
+}
+
+function _refreshSettingsUI(){
+  var v=document.getElementById('set-voice');   if(v) v.value=_ttsVoice;
+  var s=document.getElementById('set-style');   if(s) s.value=_ttsStyle;
+  var r=document.getElementById('set-rate-val');if(r) r.textContent=_annRate.toFixed(2);
+  var b=document.getElementById('set-ann-toggle');
+  if(b){
+    b.textContent=_annOn?'🔊 アナウンス ON':'🔈 アナウンス OFF';
+    b.style.background=_annOn?'#1a3a1a':'#2c2c2e';
+    b.style.borderColor=_annOn?'#3a6a2a':'#3a3a3c';
+    b.style.color=_annOn?'#86c867':'#ddd';
+  }
+  var st_=document.getElementById('set-tts-status');
+  if(st_){
+    st_.textContent=_ttsReady?'高品質音声（Azure）を使用中':'端末内蔵の音声を使用中';
+    st_.style.color=_ttsReady?'#7fd47f':'#c88';
+  }
+}
+
+function setTtsVoice(v){
+  _ttsVoice=v; _ttsCache={};
+  try{ localStorage.setItem('bb_tts_voice',v); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function setTtsStyle(v){
+  _ttsStyle=v; _ttsCache={};
+  try{ localStorage.setItem('bb_tts_style',v); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function adjAnnRate(d){
+  _annRate=Math.max(0.5, Math.min(1.5, Math.round((_annRate+d)*100)/100));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_rate',_annRate); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function testAnnounce(){
+  var saved=_annOn; _annOn=true;
+  _speak('あの瞬間をいつでも。アスリーライブが配信をお送りいたします。');
+  _annOn=saved;
+}
+
+// 登録選手＋イニングコールをまとめて事前生成
+function prebuildVoices(){
+  if(!_ttsReady){ toast('音声合成が利用できません'); return; }
+  var texts=[];
+  ['away','home'].forEach(function(t){
+    rosters[t].forEach(function(p){
+      var s=_batterPhrase(p);
+      if(s) texts.push(s);
+    });
+  });
+  var an=teamNames.away||'先攻', hn=teamNames.home||'後攻';
+  var maxI = (lastRemote && lastRemote.maxInn) ? Math.max(lastRemote.maxInn,9) : 9;
+  for(var i=1;i<=maxI;i++){
+    texts.push(i+'回表、'+an+'の攻撃');
+    texts.push(i+'回裏、'+hn+'の攻撃');
+  }
+  texts=texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
+
+  var btn=document.getElementById('set-prebuild');
+  var total=texts.length, done=0, ng=0;
+  if(btn){ btn.disabled=true; btn.textContent='生成中… 0/'+total; }
+
+  var step=function(){
+    if(!texts.length){
+      if(btn){
+        btn.disabled=false;
+        btn.textContent = ng ? ('完了（'+ng+'件失敗）') : '✅ 事前生成 完了';
+        setTimeout(function(){ btn.textContent='🎙 音声を事前生成'; },3000);
+      }
+      return;
+    }
+    var t=texts.shift();
+    _fetchVoice(t)
+      .catch(function(){ ng++; })
+      .then(function(){
+        done++;
+        if(btn) btn.textContent='生成中… '+done+'/'+total;
+        setTimeout(step,60);
+      });
+  };
+  step();
+}
+
 function _refreshTtsStatus(){
   var el=document.getElementById('ann-status');
   if(!el) return;
   el.textContent = _ttsReady ? 'Azure音声' : '端末音声';
   el.style.color = _ttsReady ? '#7fd47f' : '#c88';
+  _refreshSettingsUI();
 }
 
 function _refreshAnnBtn(){
@@ -811,6 +965,7 @@ function toggleAnnounce(){
   _annOn=!_annOn;
   try{ localStorage.setItem('bb_announce', _annOn?'1':'0'); }catch(e){}
   _refreshAnnBtn();
+  _refreshSettingsUI();
   if(_annOn) _speak('アナウンスを開始します');
 }
 
