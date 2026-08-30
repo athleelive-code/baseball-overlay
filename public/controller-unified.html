@@ -249,65 +249,6 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 </div>
 
 <!-- INNING AREA -->
-<div class="inning-area">
-
-  <!-- 左: イニング -->
-  <div class="inn-block">
-    <div class="inn-top-row">
-      <div class="inn-num" id="inn-num">1</div>
-      <div class="inn-tb">
-        <span id="tb-omote" class="active">▲</span>
-        <span id="tb-ura">▼</span>
-      </div>
-    </div>
-    <div class="inn-adj">
-      <button class="inn-adj-btn"
-        ontouchend="event.preventDefault();adjInn(-1)"
-        onclick="adjInn(-1)">－</button>
-      <button class="inn-adj-btn"
-        ontouchend="event.preventDefault();adjInn(+1)"
-        onclick="adjInn(+1)">＋</button>
-    </div>
-  </div>
-
-  <!-- 中: チーム名 + インジケーター -->
-  <div class="teams-block" style="position:relative">
-  <button onclick="openFirstBatModal()" style="position:absolute;right:56px;top:50%;transform:translateY(-50%);background:#1a3a5a;border:1px solid #3a6a9a;border-radius:20px;color:#aaccff;font-size:18px;font-weight:700;padding:8px 12px;cursor:pointer;z-index:10;white-space:nowrap">先攻選択</button>
-  <button onclick="swapTeams()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:#2a2a4a;border:1px solid #4a4a8a;border-radius:20px;color:#aaaaff;font-size:20px;font-weight:700;padding:8px 14px;cursor:pointer;z-index:10">⇄</button>
-    <div class="team-row" onclick="setTop(true)">
-      <div class="team-ind active" id="ind-away"></div>
-      <div class="team-name-disp" id="name-away"
-        ontouchstart="startNameEdit('away',event)" ontouchend="cancelNameEdit()"
-        onmousedown="startNameEdit('away',event)" onmouseup="cancelNameEdit()" onmouseleave="cancelNameEdit()">先攻</div>
-    </div>
-    <div class="team-row" onclick="setTop(false)">
-      <div class="team-ind" id="ind-home"></div>
-      <div class="team-name-disp" id="name-home"
-        ontouchstart="startNameEdit('home',event)" ontouchend="cancelNameEdit()"
-        onmousedown="startNameEdit('home',event)" onmouseup="cancelNameEdit()" onmouseleave="cancelNameEdit()">後攻</div>
-    </div>
-  </div>
-
-  <!-- 右: スコア -->
-  <div class="scores-block">
-    <div class="score-cell"><div class="score-num" id="score-away">0</div></div>
-    <div class="score-cell"><div class="score-num" id="score-home">0</div></div>
-  </div>
-
-</div>
-
-<!-- スコアボード -->
-<div class="sb-wrap">
-  <table class="sb-table">
-    <thead><tr class="sb-head" id="sb-head"></tr></thead>
-    <tbody>
-      <tr class="sb-body" id="sb-away"></tr>
-      <tr class="sb-body" id="sb-home"></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- BATTERY ROW -->
 <div class="field-row">
 
   <!-- 左: BSO -->
@@ -398,6 +339,65 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   </div>
 
 </div>
+
+<div class="inning-area">
+
+  <!-- 左: イニング -->
+  <div class="inn-block">
+    <div class="inn-top-row">
+      <div class="inn-num" id="inn-num">1</div>
+      <div class="inn-tb">
+        <span id="tb-omote" class="active">▲</span>
+        <span id="tb-ura">▼</span>
+      </div>
+    </div>
+    <div class="inn-adj">
+      <button class="inn-adj-btn"
+        ontouchend="event.preventDefault();adjInn(-1)"
+        onclick="adjInn(-1)">－</button>
+      <button class="inn-adj-btn"
+        ontouchend="event.preventDefault();adjInn(+1)"
+        onclick="adjInn(+1)">＋</button>
+    </div>
+  </div>
+
+  <!-- 中: チーム名 + インジケーター -->
+  <div class="teams-block" style="position:relative">
+  <button onclick="openFirstBatModal()" style="position:absolute;right:56px;top:50%;transform:translateY(-50%);background:#1a3a5a;border:1px solid #3a6a9a;border-radius:20px;color:#aaccff;font-size:18px;font-weight:700;padding:8px 12px;cursor:pointer;z-index:10;white-space:nowrap">先攻選択</button>
+  <button onclick="swapTeams()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:#2a2a4a;border:1px solid #4a4a8a;border-radius:20px;color:#aaaaff;font-size:20px;font-weight:700;padding:8px 14px;cursor:pointer;z-index:10">⇄</button>
+    <div class="team-row" onclick="setTop(true)">
+      <div class="team-ind active" id="ind-away"></div>
+      <div class="team-name-disp" id="name-away"
+        ontouchstart="startNameEdit('away',event)" ontouchend="cancelNameEdit()"
+        onmousedown="startNameEdit('away',event)" onmouseup="cancelNameEdit()" onmouseleave="cancelNameEdit()">先攻</div>
+    </div>
+    <div class="team-row" onclick="setTop(false)">
+      <div class="team-ind" id="ind-home"></div>
+      <div class="team-name-disp" id="name-home"
+        ontouchstart="startNameEdit('home',event)" ontouchend="cancelNameEdit()"
+        onmousedown="startNameEdit('home',event)" onmouseup="cancelNameEdit()" onmouseleave="cancelNameEdit()">後攻</div>
+    </div>
+  </div>
+
+  <!-- 右: スコア -->
+  <div class="scores-block">
+    <div class="score-cell"><div class="score-num" id="score-away">0</div></div>
+    <div class="score-cell"><div class="score-num" id="score-home">0</div></div>
+  </div>
+
+</div>
+
+<!-- スコアボード -->
+<div class="sb-wrap">
+  <table class="sb-table">
+    <thead><tr class="sb-head" id="sb-head"></tr></thead>
+    <tbody>
+      <tr class="sb-body" id="sb-away"></tr>
+      <tr class="sb-body" id="sb-home"></tr>
+    </tbody>
+  </table>
+</div>
+
 <div class="battery-row">
   <!-- 左：打者エリア -->
   <div class="battery-cell" style="flex-direction:column;align-items:flex-start;gap:6px">
