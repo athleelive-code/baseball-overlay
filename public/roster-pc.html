@@ -76,11 +76,14 @@ body{padding-bottom:40px}
 .gb-bt-tag.def{background:rgba(26,86,160,.25);color:#8ab4ff}
 
 .gb-flags{display:flex;flex-wrap:wrap;gap:5px;align-content:center;max-width:190px}
-.gb-ann{display:flex;flex-direction:column;gap:5px;margin-left:auto}
-.ann-btn{background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#999;
-  font-size:13px;font-weight:700;padding:8px 12px;cursor:pointer;white-space:nowrap;transition:.15s}
+.gb-ann{display:flex;flex-direction:row;align-items:center;gap:8px;margin-left:auto}
+.ann-btn{background:#2c2c2e;border:2px solid #3a3a3c;border-radius:10px;color:#aaa;
+  font-size:16px;font-weight:800;padding:18px 20px;cursor:pointer;white-space:nowrap;transition:.15s;
+  line-height:1.25;min-height:62px}
 .ann-btn:hover{background:#3a3a3c}
 .ann-btn.on{background:#1a3a1a;border-color:#3a6a2a;color:#86c867}
+.ann-btn.play{background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff}
+.ann-btn.play:hover{background:#36284a}
 .ann-btn.call{background:#22301a;border-color:#4a6a2a;color:#b8e878}
 .ann-btn.call:hover{background:#2e4022}
 .gb-flag{font-size:12px;font-weight:700;padding:4px 9px;border-radius:12px;
@@ -91,6 +94,53 @@ body{padding-bottom:40px}
 body.locked .team input,body.locked .team select,body.locked .team button,
 body.locked .team label{pointer-events:none;opacity:.5}
 body.locked .row{cursor:default}
+
+/* 攻撃打順・守備位置図 */
+.fieldpane{display:grid;grid-template-columns:300px 1fr;gap:16px;
+  padding:14px 16px;background:#0e0e10;border-bottom:1px solid var(--line)}
+@media(max-width:1000px){.fieldpane{grid-template-columns:1fr}}
+.fp-left,.fp-right{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.fp-hd{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:1px solid var(--line);
+  font-size:16px;font-weight:700;color:#fff}
+.fp-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.fp-badge.atk{background:rgba(200,16,46,.2);color:#ff8090;border:1px solid rgba(200,16,46,.45)}
+.fp-badge.def{background:rgba(26,86,160,.24);color:#8ab4ff;border:1px solid rgba(26,86,160,.55)}
+.fp-hint{margin-left:auto;font-size:11px;color:#666;font-weight:400}
+
+.fp-order{padding:5px 8px}
+.fp-ord-row{display:grid;grid-template-columns:30px 42px 1fr 44px;gap:7px;align-items:center;
+  padding:7px 5px;border-bottom:1px solid #232325;font-size:15px}
+.fp-ord-row.cur{background:rgba(200,160,46,.14);box-shadow:inset 3px 0 0 #c8a02e;border-radius:5px}
+.fp-ord-no{font-size:17px;font-weight:800;color:#c8a02e;text-align:center}
+.fp-ord-num{font-size:14px;color:#8a8a8a;text-align:right}
+.fp-ord-nm{color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fp-ord-row.cur .fp-ord-nm{color:#fff;font-weight:700}
+.fp-ord-pos{font-size:12px;color:#777;text-align:center}
+
+.fp-body{display:grid;grid-template-columns:1fr 190px;gap:10px;padding:10px 12px 12px}
+@media(max-width:1300px){.fp-body{grid-template-columns:1fr 160px}}
+#fp-field{width:100%;height:auto;display:block}
+#fp-field .fld{fill:#16301a;stroke:#2a4a2e;stroke-width:2}
+#fp-field .inf{fill:#3a2a1c;stroke:#54402c;stroke-width:2}
+#fp-field .base{fill:#d8d8d8}
+#fp-field .slot{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.18);stroke-width:1.5;
+  cursor:pointer;transition:.12s}
+#fp-field .slot:hover{fill:rgba(255,255,255,.12)}
+#fp-field .slot.over{fill:rgba(200,160,46,.4);stroke:#e8c33d;stroke-width:2.5}
+#fp-field text{pointer-events:none;font-family:inherit}
+#fp-field .p-pos{font-size:11px;font-weight:800;fill:#8ab4ff}
+#fp-field .p-num{font-size:12px;font-weight:700;fill:#aaa}
+#fp-field .p-nm{font-size:14px;font-weight:700;fill:#fff}
+
+.fp-bench{background:#161618;border:1px solid #262628;border-radius:9px;padding:9px;
+  max-height:300px;overflow-y:auto}
+.fp-bench-t{font-size:11px;color:var(--sub);margin-bottom:7px;letter-spacing:.5px}
+.fp-bp{display:flex;align-items:center;gap:7px;padding:8px 9px;margin-bottom:5px;
+  background:#242426;border:1px solid #313133;border-radius:7px;cursor:grab;font-size:14px}
+.fp-bp:active{cursor:grabbing}
+.fp-bp.dragging{opacity:.4}
+.fp-bp-num{font-size:12px;color:#888;min-width:26px}
+.fp-bp-nm{color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* レイアウト */
 .wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;max-width:1600px;margin:0 auto}
@@ -241,10 +291,33 @@ body.locked .row{cursor:default}
   <div class="gb-flags" id="gb-flags"></div>
 
   <div class="gb-ann">
-    <button class="ann-btn" id="ann-toggle" onclick="toggleAnnounce()">🔈 OFF</button>
-    <span id="ann-status" style="font-size:10px;color:#666;text-align:center">確認中…</span>
-    <button class="ann-btn call" onclick="announceCurrentBatter()">🔊 打者コール</button>
-    <button class="ann-btn call" onclick="announceCurrentInning()">🔊 回コール</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <button class="ann-btn" id="ann-toggle" onclick="toggleAnnounce()" style="padding:14px 16px;min-height:0">🔈 OFF</button>
+      <span id="ann-status" style="font-size:10px;color:#666">確認中…</span>
+    </div>
+    <button class="ann-btn call" onclick="announceCurrentBatter()">🔊 打者<br>コール</button>
+    <button class="ann-btn call" onclick="announceCurrentInning()">🔊 回<br>コール</button>
+    <button class="ann-btn play" onclick="announceSituation()">🎙 解説</button>
+  </div>
+</div>
+
+<!-- 攻撃側の打順 ／ 守備位置図 -->
+<div class="fieldpane">
+  <div class="fp-left">
+    <div class="fp-hd"><span class="fp-badge atk">攻撃</span><span id="fp-atk-team">先攻</span></div>
+    <div id="fp-order" class="fp-order"></div>
+  </div>
+  <div class="fp-right">
+    <div class="fp-hd"><span class="fp-badge def">守備</span><span id="fp-def-team">後攻</span>
+      <span class="fp-hint">ベンチの選手をポジションへドラッグすると交代できます</span>
+    </div>
+    <div class="fp-body">
+      <svg id="fp-field" viewBox="0 0 400 330" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="fp-bench">
+        <div class="fp-bench-t">ベンチ</div>
+        <div id="fp-bench-list"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -387,6 +460,17 @@ body.locked .row{cursor:default}
         <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
         <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
         <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
+      </select>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">解説の声（状況アナウンス用）</div>
+      <select class="set-sel" id="set-cmt-voice" onchange="setCmtVoice(this.value)">
+        <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
+        <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
+        <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
+        <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
+        <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
       </select>
     </div>
 
@@ -865,6 +949,7 @@ function applyRemote(s){
     if(s.hnm){ teamNames.home=s.hnm; document.getElementById('tname-home').value=(s.hnm==='後攻'?'':s.hnm); }
     renderAll();
     renderGame(s);
+    renderFieldPane();
   }catch(e){}
   applyingRemote=false;
 }
@@ -890,6 +975,185 @@ function doPush(){
   ws.send(JSON.stringify(base));
 }
 
+// ── 攻撃打順 ／ 守備位置図 ────────────────────────────────────────────────
+// 守備位置の座標（viewBox 400x330）
+var FIELD_SLOTS = [
+  { pos:'8', x:200, y:66,  label:'CF' },
+  { pos:'7', x:78,  y:110, label:'LF' },
+  { pos:'9', x:322, y:110, label:'RF' },
+  { pos:'6', x:142, y:158, label:'SS' },
+  { pos:'4', x:258, y:158, label:'2B' },
+  { pos:'5', x:88,  y:210, label:'3B' },
+  { pos:'3', x:312, y:210, label:'1B' },
+  { pos:'1', x:200, y:212, label:'P'  },
+  { pos:'2', x:200, y:290, label:'C'  }
+];
+
+function _atkTeam(){ return (lastRemote && lastRemote.top===false) ? 'home' : 'away'; }
+function _defTeam(){ return _atkTeam()==='away' ? 'home' : 'away'; }
+
+function renderFieldPane(){
+  var atk=_atkTeam(), def=_defTeam();
+  var an=(atk==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻');
+  var dn=(def==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻');
+  var e1=document.getElementById('fp-atk-team'); if(e1) e1.textContent=an;
+  var e2=document.getElementById('fp-def-team'); if(e2) e2.textContent=dn;
+
+  // 左：攻撃側の打順
+  var curId = (lastRemote && lastRemote.selIds) ? (lastRemote.selIds.batter||0) : 0;
+  var ordered = rosters[atk].filter(function(p){ return p.order; })
+    .sort(function(a,b){ return Number(a.order)-Number(b.order); });
+  var el=document.getElementById('fp-order');
+  if(el){
+    if(!ordered.length){
+      el.innerHTML='<div style="padding:20px 6px;text-align:center;color:#555;font-size:13px">打順が未設定です</div>';
+    }else{
+      el.innerHTML=ordered.map(function(p){
+        var cur = (p.id===curId) ? ' cur' : '';
+        return '<div class="fp-ord-row'+cur+'" onclick="setBatter(\''+atk+'\','+p.id+')" style="cursor:pointer">'
+          +'<span class="fp-ord-no">'+esc(p.order)+'</span>'
+          +'<span class="fp-ord-num">'+(p.num?'#'+esc(p.num):'')+'</span>'
+          +'<span class="fp-ord-nm">'+esc(p.name)+'</span>'
+          +'<span class="fp-ord-pos">'+esc(posLabel(p.pos)||'')+'</span>'
+        +'</div>';
+      }).join('');
+    }
+  }
+
+  renderField(def);
+  renderBench(def);
+}
+
+function renderField(team){
+  var svg=document.getElementById('fp-field');
+  if(!svg) return;
+  var h='';
+  // 外野・内野
+  h+='<path class="fld" d="M200 300 L18 132 A250 250 0 0 1 382 132 Z"/>';
+  h+='<path class="inf" d="M200 288 L108 200 L200 112 L292 200 Z"/>';
+  // ベース
+  h+='<rect class="base" x="195" y="283" width="11" height="11" transform="rotate(45 200 288)"/>';
+  h+='<rect class="base" x="103" y="195" width="11" height="11" transform="rotate(45 108 200)"/>';
+  h+='<rect class="base" x="195" y="107" width="11" height="11" transform="rotate(45 200 112)"/>';
+  h+='<rect class="base" x="287" y="195" width="11" height="11" transform="rotate(45 292 200)"/>';
+
+  FIELD_SLOTS.forEach(function(s){
+    var p = rosters[team].find(function(x){
+      return String(x.pos).toLowerCase()===s.pos && x.pos!=='';
+    });
+    h+='<g>';
+    h+='<rect class="slot" id="slot-'+s.pos+'" data-pos="'+s.pos+'" '
+      +'x="'+(s.x-44)+'" y="'+(s.y-19)+'" width="88" height="38" rx="8"/>';
+    h+='<text class="p-pos" x="'+(s.x-38)+'" y="'+(s.y-5)+'">'+s.label+'</text>';
+    if(p){
+      h+='<text class="p-num" x="'+(s.x+38)+'" y="'+(s.y-5)+'" text-anchor="end">'+(p.num?'#'+esc(p.num):'')+'</text>';
+      h+='<text class="p-nm"  x="'+s.x+'" y="'+(s.y+13)+'" text-anchor="middle">'+esc(_short(p.name))+'</text>';
+    }else{
+      h+='<text class="p-nm" x="'+s.x+'" y="'+(s.y+13)+'" text-anchor="middle" fill="#555">―</text>';
+    }
+    h+='</g>';
+  });
+  svg.innerHTML=h;
+  _bindFieldDrop(team);
+}
+
+function _short(n){
+  var s=String(n||'').trim();
+  return s.length>6 ? s.slice(0,6)+'…' : s;
+}
+
+function renderBench(team){
+  var el=document.getElementById('fp-bench-list');
+  if(!el) return;
+  var bench=rosters[team].filter(function(p){ return !p.pos; });
+  if(!bench.length){
+    el.innerHTML='<div style="color:#555;font-size:12px;padding:6px 2px">控えなし</div>';
+    return;
+  }
+  el.innerHTML=bench.map(function(p){
+    return '<div class="fp-bp" draggable="true" data-id="'+p.id+'">'
+      +'<span class="fp-bp-num">'+(p.num?'#'+esc(p.num):'')+'</span>'
+      +'<span class="fp-bp-nm">'+esc(p.name)+'</span>'
+    +'</div>';
+  }).join('');
+  _bindBenchDrag(team);
+}
+
+// ── ドラッグ＆ドロップで守備交代 ──
+var _fpDragId=null, _fpDragTeam=null;
+
+function _bindBenchDrag(team){
+  document.querySelectorAll('#fp-bench-list .fp-bp').forEach(function(el){
+    el.addEventListener('dragstart', function(e){
+      _fpDragId=Number(el.dataset.id); _fpDragTeam=team;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      try{ e.dataTransfer.setData('text/plain', String(_fpDragId)); }catch(x){}
+    });
+    el.addEventListener('dragend', function(){
+      el.classList.remove('dragging');
+      _fpDragId=null; _fpDragTeam=null;
+      document.querySelectorAll('#fp-field .slot').forEach(function(s){ s.classList.remove('over'); });
+    });
+  });
+}
+
+function _bindFieldDrop(team){
+  document.querySelectorAll('#fp-field .slot').forEach(function(slot){
+    slot.addEventListener('dragover', function(e){
+      if(_fpDragTeam!==team) return;
+      e.preventDefault();
+      slot.classList.add('over');
+    });
+    slot.addEventListener('dragleave', function(){ slot.classList.remove('over'); });
+    slot.addEventListener('drop', function(e){
+      e.preventDefault();
+      slot.classList.remove('over');
+      if(_fpDragTeam!==team || !_fpDragId) return;
+      assignPosition(team, _fpDragId, slot.dataset.pos);
+    });
+    // フィールド上の選手同士を入れ替えるためのドラッグ元
+    slot.setAttribute('draggable','true');
+    slot.addEventListener('dragstart', function(e){
+      var cur = rosters[team].find(function(x){ return String(x.pos).toLowerCase()===slot.dataset.pos; });
+      if(!cur){ e.preventDefault(); return; }
+      _fpDragId=cur.id; _fpDragTeam=team;
+      e.dataTransfer.effectAllowed='move';
+      try{ e.dataTransfer.setData('text/plain', String(cur.id)); }catch(x){}
+    });
+  });
+}
+
+// 選手を指定ポジションに就かせる（元からいた選手とは入れ替え）
+function assignPosition(team, playerId, pos){
+  var moving = rosters[team].find(function(x){ return x.id===playerId; });
+  if(!moving) return;
+  var prevPos = moving.pos || '';
+  var occupant = rosters[team].find(function(x){
+    return x.id!==playerId && String(x.pos).toLowerCase()===String(pos).toLowerCase();
+  });
+
+  if(occupant){
+    if(prevPos){
+      // 守備位置の交換
+      occupant.pos = prevPos;
+      toast(occupant.name+' ⇄ '+moving.name);
+    }else{
+      // ベンチから入る：元の選手はベンチへ、打順を引き継ぐ
+      if(occupant.order){ moving.order = occupant.order; occupant.order=''; }
+      occupant.pos = '';
+      toast('守備交代：'+occupant.name+' → '+moving.name);
+    }
+  }else{
+    toast(moving.name+' を '+(posLabel(pos)||pos)+' へ');
+  }
+  moving.pos = pos;
+
+  renderAll();
+  renderFieldPane();
+  push();
+}
+
 // ── 場内アナウンス（Azure TTS） ────────────────────────────────────────────
 var _annOn=false, _annRate=0.95;
 var _ttsReady=false, _ttsVoice='ja-JP-NanamiNeural', _ttsStyle='';
@@ -911,6 +1175,7 @@ function _initTTS(){
     var r=localStorage.getItem('bb_ann_rate'); if(r!=null) _annRate=Number(r);
     var v=localStorage.getItem('bb_tts_voice'); if(v) _ttsVoice=v;
     var s=localStorage.getItem('bb_tts_style'); if(s!==null) _ttsStyle=s;
+    var cv=localStorage.getItem('bb_cmt_voice'); if(cv) _cmtVoice=cv;
   }catch(e){}
   _refreshAnnBtn();
   _loadVoiceCache();
@@ -924,6 +1189,7 @@ function openSettings(){
 function _refreshSettingsUI(){
   var v=document.getElementById('set-voice');   if(v) v.value=_ttsVoice;
   var s=document.getElementById('set-style');   if(s) s.value=_ttsStyle;
+  var cv=document.getElementById('set-cmt-voice'); if(cv) cv.value=_cmtVoice;
   var r=document.getElementById('set-rate-val');if(r) r.textContent=_annRate.toFixed(2);
   var b=document.getElementById('set-ann-toggle');
   if(b){
@@ -1209,6 +1475,89 @@ function announceCurrentInning(){
   _speak(innNo+'回'+(isTop?'表':'裏')+'、'+team+'の攻撃');
 }
 
+// ── 解説アナウンス（状況説明・別の声） ─────────────────────────────────────
+var _cmtVoice = 'ja-JP-KeitaNeural';   // 解説用の声（コールとは別）
+var _cmtStyle = '';
+
+function setCmtVoice(v){
+  _cmtVoice=v;
+  try{ localStorage.setItem('bb_cmt_voice',v); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function _speakAs(text, voice, style){
+  if(!_annOn || !text) return;
+  if(!_ttsReady){ _speakLocal(text); return; }
+  var k = voice+'|'+(style||'')+'|'+_annRate+'|'+text;
+  if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
+  _dbGet(k).then(function(saved){
+    if(saved){ _ttsCache[k]=saved; _play(saved); return; }
+    return fetch('/api/tts',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ text:text, voice:voice, rate:_annRate, style:style||'' })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.audio) throw new Error(d.error||'no audio');
+      var url='data:audio/mp3;base64,'+d.audio;
+      _ttsCache[k]=url; _dbPut(k,url); _play(url);
+    });
+  }).catch(function(){ _speakLocal(text); });
+}
+
+// 現在の状況をまとめて読み上げる
+function announceSituation(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  var s = lastRemote || {};
+  var isTop = s.top!==false;
+  var innNo = s.inn || 1;
+  var atk = isTop ? (s.aab||teamNames.away||'先攻') : (s.hnm||teamNames.home||'後攻');
+
+  var asc = s.asc||[], hsc = s.hsc||[];
+  var sum = function(a){ return a.filter(function(v){ return typeof v==='number'; })
+    .reduce(function(x,y){ return x+y; },0); };
+  var at = sum(asc), ht = sum(hsc);
+  var an = s.aab||teamNames.away||'先攻';
+  var hn = s.hnm||teamNames.home||'後攻';
+
+  var parts = [];
+  parts.push(innNo+'回'+(isTop?'表':'裏')+'、'+atk+'の攻撃。');
+
+  // 得点差
+  if(at===ht){
+    parts.push('試合は'+at+'対'+ht+'の同点です。');
+  }else{
+    var lead = at>ht ? an : hn;
+    var hi = Math.max(at,ht), lo = Math.min(at,ht);
+    parts.push(lead+'が'+hi+'対'+lo+'でリードしています。');
+  }
+
+  // カウント
+  parts.push('カウント、'+(s.o||0)+'アウト、'+(s.b||0)+'ボール'+(s.s||0)+'ストライク。');
+
+  // ランナー
+  var r = s.r || {};
+  var on = [];
+  if(r[1]) on.push('1塁');
+  if(r[2]) on.push('2塁');
+  if(r[3]) on.push('3塁');
+  if(!on.length){
+    parts.push('ランナーはありません。');
+  }else if(on.length===3){
+    parts.push('満塁のチャンスです。');
+  }else{
+    parts.push('ランナー'+on.join('、')+'。');
+  }
+
+  // 打者
+  if(s.batter){
+    var nm = String(s.batter).replace(/^#\d+\s*/,'');
+    parts.push('バッターは'+nm+'くんです。');
+  }
+
+  _speakAs(parts.join(' '), _cmtVoice, _cmtStyle);
+}
+
 // ── 操作ロック ────────────────────────────────────────────────────────────
 let locked=false;
 function toggleLock(){
@@ -1326,6 +1675,7 @@ initBattery();
   document.getElementById('new-'+t+'-pos').innerHTML=posOptions('');
 });
 renderAll();
+renderFieldPane();
 _initTTS();
 connectWS();
 setWsUI(false);
