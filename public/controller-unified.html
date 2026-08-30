@@ -213,12 +213,12 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .bso-line{
   display:flex;align-items:center;gap:10px;flex:0 0 auto;
-  cursor:pointer;border-radius:8px;padding:0 6px;
+  border-radius:8px;padding:0 6px;
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
 .bso-line:active{background:rgba(255,255,255,.05)}
 .bso-lbl{font-size:clamp(48px,14vw,72px);font-weight:700;color:#ccc;width:70px;flex-shrink:0;pointer-events:none}
-.bso-dots{display:flex;gap:16px;pointer-events:none}
+.bso-dots{display:flex;align-items:center;gap:16px}
 .ab-info{
   font-size:clamp(22px,5.5vw,32px);font-weight:800;color:#c8a02e;
   min-width:70px;font-variant-numeric:tabular-nums;
@@ -235,6 +235,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .pdot.hit{border-color:#5a3a2a;color:#a87858}
 .pdot.hit:active{background:#4a2a1a}
 .pdot.hit.flash{background:#6a3a12;color:#fff;border-color:#e08a2e}
+.tapdot{cursor:pointer}
 .bdot{border-radius:50%;background:#333;border:2px solid #555;width:clamp(80px,22vw,120px);height:clamp(80px,22vw,120px);flex-shrink:0}
 .bdot.on-b{background:#43a047;border-color:#1b5e20}
 .bdot.on-s{background:#f5c518;border-color:#b8860b}
@@ -326,32 +327,47 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <!-- 左: BSO -->
   <div class="bso-block">
     <div class="bso-lines">
-    <div class="bso-line"
-      ontouchstart="bsoLongStart('b',this)" ontouchend="event.preventDefault();bsoLongEnd('b')" ontouchcancel="bsoLongEnd(null)"
-      onclick="bsoClick('b')">
+    <div class="bso-line">
       <span class="bso-lbl">B</span>
       <div class="bso-dots">
-        <div class="bdot" id="bd1"></div><div class="bdot" id="bd2"></div><div class="bdot" id="bd3"></div>
+        <div class="bdot tapdot" id="bd1"
+          ontouchstart="dotStart('b',event)" ontouchend="dotEnd('b',event)" ontouchcancel="dotCancel()"
+          onmousedown="dotStart('b',event)" onmouseup="dotEnd('b',event)" onmouseleave="dotCancel()"></div>
+        <div class="bdot tapdot" id="bd2"
+          ontouchstart="dotStart('b',event)" ontouchend="dotEnd('b',event)" ontouchcancel="dotCancel()"
+          onmousedown="dotStart('b',event)" onmouseup="dotEnd('b',event)" onmouseleave="dotCancel()"></div>
+        <div class="bdot tapdot" id="bd3"
+          ontouchstart="dotStart('b',event)" ontouchend="dotEnd('b',event)" ontouchcancel="dotCancel()"
+          onmousedown="dotStart('b',event)" onmouseup="dotEnd('b',event)" onmouseleave="dotCancel()"></div>
       </div>
     </div>
-    <div class="bso-line"
-      ontouchstart="bsoLongStart('s',this)" ontouchend="event.preventDefault();bsoLongEnd('s')" ontouchcancel="bsoLongEnd(null)"
-      onclick="bsoClick('s')">
+    <div class="bso-line">
       <span class="bso-lbl">S</span>
       <div class="bso-dots">
-        <div class="bdot" id="sd1"></div><div class="bdot" id="sd2"></div>
-        <div class="pdot" id="foul-btn" onclick="event.stopPropagation();tapFoul()">F</div>
+        <div class="bdot tapdot" id="sd1"
+          ontouchstart="dotStart('s',event)" ontouchend="dotEnd('s',event)" ontouchcancel="dotCancel()"
+          onmousedown="dotStart('s',event)" onmouseup="dotEnd('s',event)" onmouseleave="dotCancel()"></div>
+        <div class="bdot tapdot" id="sd2"
+          ontouchstart="dotStart('s',event)" ontouchend="dotEnd('s',event)" ontouchcancel="dotCancel()"
+          onmousedown="dotStart('s',event)" onmouseup="dotEnd('s',event)" onmouseleave="dotCancel()"></div>
+        <div class="pdot" id="foul-btn"
+          ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation();event.preventDefault();tapFoul()"
+          onclick="event.stopPropagation();">F</div>
         <span class="ab-info" id="ab-foul"></span>
       </div>
     </div>
-    <div class="bso-line"
-      ontouchstart="bsoLongStart('o',this)" ontouchend="event.preventDefault();bsoLongEnd('o')" ontouchcancel="bsoLongEnd(null)"
-      onclick="bsoClick('o')">
+    <div class="bso-line">
       <span class="bso-lbl">O</span>
       <div class="bso-dots">
-        <div class="bdot out" id="od1"></div>
-        <div class="bdot out" id="od2"></div>
-        <div class="pdot hit" id="hit-btn" onclick="event.stopPropagation();tapInPlay()">H</div>
+        <div class="bdot out tapdot" id="od1"
+          ontouchstart="dotStart('o',event)" ontouchend="dotEnd('o',event)" ontouchcancel="dotCancel()"
+          onmousedown="dotStart('o',event)" onmouseup="dotEnd('o',event)" onmouseleave="dotCancel()"></div>
+        <div class="bdot out tapdot" id="od2"
+          ontouchstart="dotStart('o',event)" ontouchend="dotEnd('o',event)" ontouchcancel="dotCancel()"
+          onmousedown="dotStart('o',event)" onmouseup="dotEnd('o',event)" onmouseleave="dotCancel()"></div>
+        <div class="pdot hit" id="hit-btn"
+          ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation();event.preventDefault();tapInPlay()"
+          onclick="event.stopPropagation();">H</div>
         <span class="ab-info" id="ab-total"></span>
       </div>
     </div>
@@ -1010,6 +1026,33 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   </div>
 </div>
 
+<!-- 打席結果 選択（1段目：アウト／セーフ） -->
+<div id="res1-mask" style="display:none;position:fixed;left:0;right:0;top:0;height:52vh;background:rgba(0,0,0,.93);z-index:750;align-items:center;justify-content:center;padding:10px 14px;border-bottom:3px solid #333">
+  <div style="width:100%;max-width:760px;display:flex;flex-direction:column;gap:10px">
+    <div id="res1-ctx" style="font-size:22px;color:#999;text-align:center;line-height:1.3"></div>
+    <button onclick="pickOutSafe('out')"
+      style="width:100%;background:#8a1226;border:4px solid #c8102e;border-radius:20px;color:#fff;
+             font-size:64px;font-weight:900;padding:34px 10px;cursor:pointer;letter-spacing:6px">アウト</button>
+    <button onclick="pickOutSafe('safe')"
+      style="width:100%;background:#1a5a8a;border:4px solid #2a8ac8;border-radius:20px;color:#fff;
+             font-size:64px;font-weight:900;padding:34px 10px;cursor:pointer;letter-spacing:6px">セーフ</button>
+    <button onclick="closeRes()"
+      style="width:100%;background:#2c2c2e;border:3px solid #444;border-radius:16px;color:#bbb;
+             font-size:28px;font-weight:700;padding:14px 10px;cursor:pointer">キャンセル</button>
+  </div>
+</div>
+
+<!-- 打席結果 選択（2段目：内訳） -->
+<div id="res2-mask" style="display:none;position:fixed;left:0;right:0;top:0;height:52vh;background:rgba(0,0,0,.93);z-index:751;align-items:center;justify-content:center;padding:10px 14px;border-bottom:3px solid #333">
+  <div style="width:100%;max-width:760px;display:flex;flex-direction:column;gap:9px">
+    <div id="res2-title" style="font-size:28px;font-weight:900;color:#fff;text-align:center"></div>
+    <div id="res2-btns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px"></div>
+    <button onclick="backToRes1()"
+      style="width:100%;background:#2c2c2e;border:3px solid #444;border-radius:16px;color:#bbb;
+             font-size:26px;font-weight:700;padding:13px 10px;cursor:pointer">← 戻る</button>
+  </div>
+</div>
+
 <!-- SCAN PANEL -->
 <div id="scan-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;overflow-y:auto;padding:20px">
   <div style="background:#1c1c1e;border-radius:16px;padding:24px;max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:16px">
@@ -1283,61 +1326,59 @@ function _countPhrase(b, s, o){
   return 'カウント、' + parts.join('、') + '。';
 }
 
-// ── 投球数カウント ────────────────────────────────────────────────────────
-// { 投手ID: { total:累計, inning:今回の分 } }
-var _pitchCount = {};
+// ── 投球数カウント（投球ログから都度集計する） ────────────────────────────
+// _pitchLog: [{ pid:投手ID, inn:回, top:表裏 }]
+var _pitchLog = [];
 
 function _curPitcherId(){
   var sel=document.getElementById('sel-pitcher');
   return sel && sel.value ? Number(sel.value) : 0;
 }
 
-// ファウル：投球数のみ加算（ストライクは動かさない）
-function tapFoul(){
-  _pitchAdd(1);
-  _abCount('f');
-  _flash('foul-btn');
-  if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
-  broadcast();
-}
-
-// インプレー打球：投球数のみ加算
-function tapInPlay(){
-  _pitchAdd(1);
-  _abCount('h');
-  _flash('hit-btn');
-  if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
-  broadcast();
-}
-
-function _flash(id){
-  var el=document.getElementById(id);
-  if(!el) return;
-  el.classList.add('flash');
-  setTimeout(function(){ el.classList.remove('flash'); },160);
-}
-
+// 1球記録する
 function _pitchAdd(n){
   var id=_curPitcherId();
   if(!id) return;
-  if(!_pitchCount[id]) _pitchCount[id]={ total:0, inning:0 };
-  _pitchCount[id].total  = Math.max(0, _pitchCount[id].total + n);
-  _pitchCount[id].inning = Math.max(0, _pitchCount[id].inning + n);
+  if(n>0){
+    _pitchLog.push({ pid:id, inn:st.inn, top:st.top });
+  }else{
+    // 直近のその投手の1球を取り消す
+    for(var i=_pitchLog.length-1;i>=0;i--){
+      if(_pitchLog[i].pid===id){ _pitchLog.splice(i,1); break; }
+    }
+  }
   _updatePitchDisp();
+}
+
+// 累計（都度計算）
+function _pitchTotal(id){
+  return _pitchLog.filter(function(r){ return r.pid===id; }).length;
+}
+
+// 今の回の分（都度計算）
+function _pitchThisInning(id){
+  return _pitchLog.filter(function(r){
+    return r.pid===id && r.inn===st.inn && r.top===st.top;
+  }).length;
+}
+
+// 指定の回の分
+function _pitchAtInning(id, inn, top){
+  return _pitchLog.filter(function(r){
+    return r.pid===id && r.inn===inn && r.top===top;
+  }).length;
 }
 
 function _updatePitchDisp(){
   var el=document.getElementById('pitch-disp');
   if(!el) return;
   var id=_curPitcherId();
-  var d=_pitchCount[id];
-  el.textContent = d ? (d.inning + ' / ' + d.total) : '0 / 0';
+  if(!id){ el.textContent='0 / 0'; return; }
+  el.textContent = _pitchThisInning(id) + ' / ' + _pitchTotal(id);
 }
 
-// イニング交代時：その回の投球数をリセットし、アナウンス文を用意
 var _lastPitchReport = null;
-
-var _pitchAutoCall = false;   // イニング交代時に自動で球数をアナウンス
+var _pitchAutoCall = false;
 
 function togglePitchAuto(){
   _pitchAutoCall = !_pitchAutoCall;
@@ -1353,21 +1394,20 @@ function _refreshPitchAutoBtn(){
   b.style.color       = _pitchAutoCall ? '#86c867' : '#999';
 }
 
+// イニング交代時：締めた回の球数でアナウンス文を用意
 function _pitchInningEnd(){
   var id=_curPitcherId();
   if(!id) return;
-  var d=_pitchCount[id];
-  if(!d || d.inning<=0) return;
-  var team = st.top ? 'home' : 'away';   // 守備側
+  var thisInn=_pitchAtInning(id, st.inn, st.top);
+  if(thisInn<=0) return;
+  var team = st.top ? 'home' : 'away';
   var p = rosters[team].find(function(x){ return x.id===id; });
   var nm = p ? (p.yomi||p.name) : '';
   _lastPitchReport = {
-    text: (nm ? nm+'くん、' : '') + 'この回の投球数は'+d.inning+'球、'
-          + '合計'+d.total+'球です。'
+    text: (nm ? nm+'くん、' : '') + 'この回の投球数は'+thisInn+'球、'
+          + '合計'+_pitchTotal(id)+'球です。'
   };
-  d.inning = 0;
   _updatePitchDisp();
-  // 自動アナウンス（確認画面なしで即読み上げ）
   if(_pitchAutoCall && _annOn && _lastPitchReport){
     setTimeout(function(){
       _speakAs(_lastPitchReport.text, _cmtVoice, _cmtStyle, _cmtRate);
@@ -1378,19 +1418,20 @@ function _pitchInningEnd(){
 function announcePitchCount(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var id=_curPitcherId();
-  var d=_pitchCount[id];
-  if(!d){ alert('投球数が記録されていません'); return; }
+  if(!id){ alert('投手が選択されていません'); return; }
+  var tot=_pitchTotal(id);
+  if(tot<=0){ alert('投球数が記録されていません'); return; }
   var team = st.top ? 'home' : 'away';
   var p = rosters[team].find(function(x){ return x.id===id; });
   var nm = p ? (p.yomi||p.name) : '';
   confirmSpeak('⚾ 投球数',
-    (nm ? nm+'くん、' : '') + 'この回'+d.inning+'球、合計'+d.total+'球です。',
+    (nm ? nm+'くん、' : '') + 'この回'+_pitchThisInning(id)+'球、合計'+tot+'球です。',
     _cmtVoice, _cmtStyle, _cmtRate);
 }
 
 function resetPitchCount(){
   if(!confirm('投球数の記録をすべてリセットしますか？')) return;
-  _pitchCount = {};
+  _pitchLog = [];
   _lastPitchReport = null;
   _updatePitchDisp();
 }
@@ -1722,28 +1763,206 @@ _requestWakeLock();
 const bso = {b:0, s:0, o:0};
 const BSO_MAX = {b:4, s:3, o:3};
 
-// ── 打席内の投球管理（ボールの球順・ファウル数・打席球数） ────────────────
-var _abPitch = 0;          // この打席の投球数
-var _abFoul  = 0;          // この打席のファウル数
-var _abBallSeq = [];       // ボールが何球目だったか（最大3つ）
-
-function _abReset(){
-  _abPitch = 0; _abFoul = 0; _abBallSeq = [];
+function toastMsg(m){
+  var t=document.getElementById('ctl-toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='ctl-toast';
+    t.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);'
+      +'background:rgba(30,30,32,.96);border:1px solid #555;border-radius:12px;color:#fff;'
+      +'font-size:32px;font-weight:700;padding:18px 30px;z-index:900;opacity:0;'
+      +'transition:opacity .2s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent=m;
+  t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm=setTimeout(function(){ t.style.opacity='0'; },1600);
 }
 
-// 1球投じられた（種別: 'b' ボール / 's' ストライク / 'f' ファウル / 'h' インプレー）
-function _abCount(kind){
-  _abPitch++;
-  if(kind==='b') _abBallSeq.push(_abPitch);
-  if(kind==='f') _abFoul++;
+// ── 打席結果の選択（アウト／セーフ → 内訳） ──────────────────────────────
+var RES_OUT = [
+  { label:'ゴロアウト',  outs:1 },
+  { label:'フライアウト', outs:1 },
+  { label:'ライナーアウト', outs:1 },
+  { label:'併殺',       outs:2 },
+  { label:'犠打',       outs:1 },
+  { label:'犠飛',       outs:1 }
+];
+var RES_SAFE = [
+  { label:'ヒット',    outs:0 },
+  { label:'二塁打',    outs:0 },
+  { label:'三塁打',    outs:0 },
+  { label:'ホームラン', outs:0 },
+  { label:'失策',      outs:0 },
+  { label:'野選',      outs:0 }
+];
+
+function openResultPanel(){
+  var ctx=document.getElementById('res1-ctx');
+  if(ctx){
+    var sel=document.getElementById('sel-batter');
+    var team=st.top?'away':'home';
+    var p=sel&&sel.value ? rosters[team].find(function(x){ return x.id===Number(sel.value); }) : null;
+    ctx.textContent = st.inn+'回'+(st.top?'表':'裏')+' ／ '+bso.o+'アウト'
+      + (p ? ' ／ '+(p.order?p.order+'番 ':'')+p.name : '');
+  }
+  document.getElementById('res1-mask').style.display='flex';
+}
+
+function closeRes(){
+  document.getElementById('res1-mask').style.display='none';
+  document.getElementById('res2-mask').style.display='none';
+}
+
+function backToRes1(){
+  document.getElementById('res2-mask').style.display='none';
+  document.getElementById('res1-mask').style.display='flex';
+}
+
+function pickOutSafe(kind){
+  document.getElementById('res1-mask').style.display='none';
+  var list = (kind==='out') ? RES_OUT : RES_SAFE;
+  var t=document.getElementById('res2-title');
+  if(t){
+    t.textContent = (kind==='out') ? 'アウトの内訳' : 'セーフの内訳';
+    t.style.color = (kind==='out') ? '#ff8890' : '#8ac8ff';
+  }
+  var box=document.getElementById('res2-btns');
+  var bg = (kind==='out') ? '#3a1218' : '#12263a';
+  var bd = (kind==='out') ? '#8a3a48' : '#3a6a9a';
+  var fg = (kind==='out') ? '#ff9098' : '#9acdff';
+  box.innerHTML = list.map(function(r){
+    return '<button onclick="pickResult(\''+r.label+'\','+r.outs+')" '
+      +'style="background:'+bg+';border:3px solid '+bd+';border-radius:16px;color:'+fg+';'
+      +'font-size:26px;font-weight:900;padding:30px 4px;cursor:pointer;line-height:1.2">'
+      +r.label+'</button>';
+  }).join('');
+  document.getElementById('res2-mask').style.display='flex';
+}
+
+var _lastResult = null;
+
+function pickResult(label, outs){
+  closeRes();
+  _lastResult = { label:label, outs:outs, ts:Date.now() };
+  // アウトを加算
+  if(outs>0){
+    bso.o = Math.min(3, bso.o + outs);
+  }
+  bso.b=0; bso.s=0;
+  _abReset(); _updateAbDisp();
+  renderBSO();
+  if(bso.o>=3){
+    nextInn();
+  }else{
+    goNextBatter();
+    broadcast();
+  }
+  if(typeof toastMsg==='function') toastMsg(label);
+}
+
+// ── ファウル／インプレー ──────────────────────────────────────────────────
+function _flash(id){
+  var el=document.getElementById(id);
+  if(!el) return;
+  el.classList.add('flash');
+  setTimeout(function(){ el.classList.remove('flash'); },160);
+}
+
+// ファウル：投球数のみ加算（ストライクは動かさない）
+function tapFoul(){
+  _pitchAdd(1);
+  _abPush('f');
+  _flash('foul-btn');
+  if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
+  broadcast();
+}
+
+// インプレー打球：投球数を数えて打席結果パネルを開く
+function tapInPlay(){
+  _pitchAdd(1);
+  _abPush('h');
+  _flash('hit-btn');
+  if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
+  broadcast();
+  openResultPanel();
+}
+
+// ── ドット単体のタップ／長押し ────────────────────────────────────────────
+var _dotTimer=null, _dotFired=false;
+
+function dotStart(k, e){
+  if(e && e.stopPropagation) e.stopPropagation();
+  _dotFired=false;
+  if(_dotTimer) clearTimeout(_dotTimer);
+  _dotTimer=setTimeout(function(){
+    _dotTimer=null; _dotFired=true;
+    bso[k]=0;
+    if(k!=='o') _abClearKind(k);
+    renderBSO(); _updateAbDisp(); broadcast();
+    if(navigator.vibrate) try{ navigator.vibrate(25); }catch(x){}
+  }, 600);
+}
+
+function dotEnd(k, e){
+  if(e){ if(e.stopPropagation) e.stopPropagation(); if(e.preventDefault) e.preventDefault(); }
+  if(_dotTimer){ clearTimeout(_dotTimer); _dotTimer=null; }
+  if(_dotFired){ _dotFired=false; return; }
+  if(k==='b'||k==='s') _abPush(k);
+  adjBSO(k,1);
+}
+
+function dotCancel(){
+  if(_dotTimer){ clearTimeout(_dotTimer); _dotTimer=null; }
+  _dotFired=false;
+}
+
+// ── 打席内の投球管理（配列に積み、表示は都度集計する） ────────────────────
+// _abLog の中身: 'b'ボール / 's'ストライク / 'f'ファウル / 'h'インプレー
+var _abLog = [];
+
+function _abReset(){ _abLog = []; }
+
+// 1球積む
+function _abPush(kind){
+  _abLog.push(kind);
   _updateAbDisp();
+}
+
+// 直近の1球を取り消す
+function _abPop(){
+  _abLog.pop();
+  _updateAbDisp();
+}
+
+// 特定種別の球を取り除く（その項目をクリアしたとき）
+function _abClearKind(kind){
+  _abLog = _abLog.filter(function(x){ return x!==kind; });
+  _updateAbDisp();
+}
+
+// 打席の球数（都度計算）
+function _abPitchCount(){ return _abLog.length; }
+
+// ファウル数（都度計算）
+function _abFoulCount(){
+  return _abLog.filter(function(x){ return x==='f'; }).length;
+}
+
+// ボールが何球目だったか（都度計算）
+function _abBallSeqCalc(){
+  var seq=[];
+  _abLog.forEach(function(x,i){ if(x==='b') seq.push(i+1); });
+  return seq;
 }
 
 function _updateAbDisp(){
   var f=document.getElementById('ab-foul');
   var t=document.getElementById('ab-total');
-  if(f) f.textContent = _abFoul>0 ? ('F'+_abFoul) : '';
-  if(t) t.textContent = _abPitch>0 ? (_abPitch+'球') : '';
+  var nf=_abFoulCount(), np=_abPitchCount();
+  if(f) f.textContent = nf>0 ? ('F'+nf) : '';
+  if(t) t.textContent = np>0 ? (np+'球') : '';
 }
 
 function adjBSO(k, d){
@@ -1808,7 +2027,7 @@ function bsoLongStart(k, el){
 function bsoLongEnd(k){
   if(_bsoTimer){clearTimeout(_bsoTimer);_bsoTimer=null;}
   if(!_bsoFired && k){
-    if(k==='b'||k==='s'){ _pitchAdd(1); _abCount(k); }
+    if(k==='b'||k==='s'){ _pitchAdd(1); _abPush(k); }
     adjBSO(k,1);
   }
   _bsoFired=false;
@@ -3363,7 +3582,8 @@ function _doBroadcast(){
     autoHideSec:_autoHideSec,
     _ctl:true,
     gameTitle:_getGameTitle(),
-    abPitch:_abPitch, abFoul:_abFoul, abBallSeq:_abBallSeq.slice(),
+    abPitch:_abPitchCount(), abFoul:_abFoulCount(), abBallSeq:_abBallSeqCalc(),
+    lastResult:_lastResult,
     rostersAll:{away:rosters.away,home:rosters.home},
     selIds:{
       batter:batSel?Number(batSel.value)||0:0,
