@@ -105,7 +105,7 @@ body.locked .row{cursor:default}
 .fp-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;flex-shrink:0}
 .fp-badge.atk{background:rgba(200,16,46,.2);color:#ff8090;border:1px solid rgba(200,16,46,.45)}
 .fp-badge.def{background:rgba(26,86,160,.24);color:#8ab4ff;border:1px solid rgba(26,86,160,.55)}
-.fp-hint{margin-left:auto;font-size:11px;color:#666;font-weight:400}
+.fp-hint{font-size:11px;color:#666;font-weight:400}
 
 .fp-order{padding:5px 8px}
 .fp-ord-row{display:grid;grid-template-columns:30px 42px 1fr 44px;gap:7px;align-items:center;
@@ -126,19 +126,19 @@ body.locked .row{cursor:default}
 #fp-field .slot{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.18);stroke-width:1.5;
   cursor:pointer;transition:.12s}
 #fp-field .slot:hover{fill:rgba(255,255,255,.12)}
-#fp-field .slot.over{fill:rgba(200,160,46,.4);stroke:#e8c33d;stroke-width:2.5}
+#fp-field .slot.sel{fill:rgba(200,160,46,.42);stroke:#e8c33d;stroke-width:2.5}
 #fp-field text{pointer-events:none;font-family:inherit}
-#fp-field .p-pos{font-size:11px;font-weight:800;fill:#8ab4ff}
-#fp-field .p-num{font-size:12px;font-weight:700;fill:#aaa}
-#fp-field .p-nm{font-size:14px;font-weight:700;fill:#fff}
+#fp-field .p-pos{font-size:9px;font-weight:800;fill:#8ab4ff}
+#fp-field .p-num{font-size:10px;font-weight:700;fill:#aaa}
+#fp-field .p-nm{font-size:12px;font-weight:700;fill:#fff}
 
-.fp-bench{background:#161618;border:1px solid #262628;border-radius:9px;padding:9px;
-  max-height:300px;overflow-y:auto}
+.fp-bench{background:#161618;border:1px solid #262628;border-radius:9px;padding:8px;
+  max-height:210px;overflow-y:auto}
 .fp-bench-t{font-size:11px;color:var(--sub);margin-bottom:7px;letter-spacing:.5px}
-.fp-bp{display:flex;align-items:center;gap:7px;padding:8px 9px;margin-bottom:5px;
-  background:#242426;border:1px solid #313133;border-radius:7px;cursor:grab;font-size:14px}
-.fp-bp:active{cursor:grabbing}
-.fp-bp.dragging{opacity:.4}
+.fp-bp{display:flex;align-items:center;gap:7px;padding:7px 9px;margin-bottom:4px;
+  background:#242426;border:1px solid #313133;border-radius:7px;cursor:pointer;font-size:13px}
+
+.fp-bp.sel{background:#5a4a12;border-color:#c8a02e;color:#fff}
 .fp-bp-num{font-size:12px;color:#888;min-width:26px}
 .fp-bp-nm{color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -309,10 +309,15 @@ body.locked .row{cursor:default}
   </div>
   <div class="fp-right">
     <div class="fp-hd"><span class="fp-badge def">守備</span><span id="fp-def-team">後攻</span>
-      <span class="fp-hint">ベンチの選手をポジションへドラッグすると交代できます</span>
+      <button id="fp-sub-call" onclick="announceLastSub()"
+        style="display:none;margin-left:auto;align-items:center;background:#2a3a1a;border:2px solid #5a8a3a;
+               border-radius:8px;color:#b8e878;font-size:13px;font-weight:800;padding:8px 14px;cursor:pointer">
+        🔁 交代をアナウンス
+      </button>
+      <span class="fp-hint">選手を選んでから移動先を押すと交代できます</span>
     </div>
     <div class="fp-body">
-      <svg id="fp-field" viewBox="0 0 400 330" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="fp-field" viewBox="0 0 420 210" xmlns="http://www.w3.org/2000/svg"></svg>
       <div class="fp-bench">
         <div class="fp-bench-t">ベンチ</div>
         <div id="fp-bench-list"></div>
@@ -464,17 +469,6 @@ body.locked .row{cursor:default}
     </div>
 
     <div class="set-sec">
-      <div class="set-lbl">解説の声（状況アナウンス用）</div>
-      <select class="set-sel" id="set-cmt-voice" onchange="setCmtVoice(this.value)">
-        <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
-        <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
-        <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
-        <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
-        <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
-      </select>
-    </div>
-
-    <div class="set-sec">
       <div class="set-lbl">話し方</div>
       <select class="set-sel" id="set-style" onchange="setTtsStyle(this.value)">
         <option value="">標準</option>
@@ -488,9 +482,35 @@ body.locked .row{cursor:default}
       <div class="set-lbl">読み上げ速度</div>
       <div style="display:flex;align-items:center;gap:14px">
         <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjAnnRate(-0.05)">－</button>
-        <span id="set-rate-val" style="flex:1;text-align:center;font-size:26px;font-weight:700">0.95</span>
+        <span id="set-rate-val" style="flex:1;text-align:center;font-size:26px;font-weight:700">0.75</span>
         <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjAnnRate(0.05)">＋</button>
       </div>
+    </div>
+
+    <div class="set-sec" style="border-top:2px solid #333;padding-top:16px">
+      <div class="set-lbl" style="font-size:15px;color:#c8a8ff;font-weight:700">🎙 解説の声（状況アナウンス）</div>
+      <select class="set-sel" id="set-cmt-voice" onchange="setCmtVoice(this.value)" style="margin-bottom:10px">
+        <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
+        <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
+        <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
+        <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
+        <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
+      </select>
+      <div class="set-lbl">話し方</div>
+      <select class="set-sel" id="set-cmt-style" onchange="setCmtStyle(this.value)">
+        <option value="">標準</option>
+        <option value="chat">やわらかい会話調</option>
+        <option value="cheerful">明るい</option>
+        <option value="customerservice">案内調</option>
+      </select>
+      <div class="set-lbl" style="margin-top:12px">読み上げ速度</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjCmtRate(-0.05)">－</button>
+        <span id="set-cmt-rate-val" style="flex:1;text-align:center;font-size:26px;font-weight:700">1.10</span>
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjCmtRate(0.05)">＋</button>
+      </div>
+      <button class="btn" style="width:100%;font-size:15px;padding:13px;margin-top:12px;background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff"
+        onclick="testCommentary()">▶ 解説の声をテスト</button>
     </div>
 
     <div class="set-sec">
@@ -504,6 +524,21 @@ body.locked .row{cursor:default}
 
     <div class="modal-acts">
       <button class="btn" style="flex:1" onclick="closeModal('settings-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 読み上げ確認モーダル -->
+<div class="mask" id="speak-mask">
+  <div class="modal" style="max-width:600px">
+    <h3 id="speak-title">読み上げ内容</h3>
+    <div class="note">内容を確認・修正してから読み上げてください</div>
+    <textarea id="speak-text" rows="4"
+      style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;
+             font-size:17px;line-height:1.6;padding:14px;outline:none;resize:vertical"></textarea>
+    <div class="modal-acts">
+      <button class="btn btn-save" style="flex:1;font-size:16px;padding:14px" onclick="doSpeakConfirmed()">🔊 読み上げる</button>
+      <button class="btn" style="flex:1" onclick="closeModal('speak-mask')">キャンセル</button>
     </div>
   </div>
 </div>
@@ -978,15 +1013,15 @@ function doPush(){
 // ── 攻撃打順 ／ 守備位置図 ────────────────────────────────────────────────
 // 守備位置の座標（viewBox 400x330）
 var FIELD_SLOTS = [
-  { pos:'8', x:200, y:66,  label:'CF' },
-  { pos:'7', x:78,  y:110, label:'LF' },
-  { pos:'9', x:322, y:110, label:'RF' },
-  { pos:'6', x:142, y:158, label:'SS' },
-  { pos:'4', x:258, y:158, label:'2B' },
-  { pos:'5', x:88,  y:210, label:'3B' },
-  { pos:'3', x:312, y:210, label:'1B' },
-  { pos:'1', x:200, y:212, label:'P'  },
-  { pos:'2', x:200, y:290, label:'C'  }
+  { pos:'7', x:62,  y:46,  label:'LF' },
+  { pos:'8', x:210, y:30,  label:'CF' },
+  { pos:'9', x:358, y:46,  label:'RF' },
+  { pos:'5', x:74,  y:118, label:'3B' },
+  { pos:'6', x:150, y:96,  label:'SS' },
+  { pos:'4', x:270, y:96,  label:'2B' },
+  { pos:'3', x:346, y:118, label:'1B' },
+  { pos:'1', x:210, y:126, label:'P'  },
+  { pos:'2', x:210, y:182, label:'C'  }
 ];
 
 function _atkTeam(){ return (lastRemote && lastRemote.top===false) ? 'home' : 'away'; }
@@ -1028,28 +1063,27 @@ function renderField(team){
   var svg=document.getElementById('fp-field');
   if(!svg) return;
   var h='';
-  // 外野・内野
-  h+='<path class="fld" d="M200 300 L18 132 A250 250 0 0 1 382 132 Z"/>';
-  h+='<path class="inf" d="M200 288 L108 200 L200 112 L292 200 Z"/>';
-  // ベース
-  h+='<rect class="base" x="195" y="283" width="11" height="11" transform="rotate(45 200 288)"/>';
-  h+='<rect class="base" x="103" y="195" width="11" height="11" transform="rotate(45 108 200)"/>';
-  h+='<rect class="base" x="195" y="107" width="11" height="11" transform="rotate(45 200 112)"/>';
-  h+='<rect class="base" x="287" y="195" width="11" height="11" transform="rotate(45 292 200)"/>';
+  // 外野・内野（横長）
+  h+='<path class="fld" d="M210 196 L14 92 A230 230 0 0 1 406 92 Z"/>';
+  h+='<path class="inf" d="M210 190 L128 140 L210 92 L292 140 Z"/>';
+  h+='<rect class="base" x="205" y="185" width="9" height="9" transform="rotate(45 210 190)"/>';
+  h+='<rect class="base" x="123" y="135" width="9" height="9" transform="rotate(45 128 140)"/>';
+  h+='<rect class="base" x="205" y="87"  width="9" height="9" transform="rotate(45 210 92)"/>';
+  h+='<rect class="base" x="287" y="135" width="9" height="9" transform="rotate(45 292 140)"/>';
 
   FIELD_SLOTS.forEach(function(s){
     var p = rosters[team].find(function(x){
-      return String(x.pos).toLowerCase()===s.pos && x.pos!=='';
+      return x.pos && String(x.pos).toLowerCase()===s.pos;
     });
     h+='<g>';
-    h+='<rect class="slot" id="slot-'+s.pos+'" data-pos="'+s.pos+'" '
-      +'x="'+(s.x-44)+'" y="'+(s.y-19)+'" width="88" height="38" rx="8"/>';
-    h+='<text class="p-pos" x="'+(s.x-38)+'" y="'+(s.y-5)+'">'+s.label+'</text>';
+    h+='<rect class="slot" data-pos="'+s.pos+'" '
+      +'x="'+(s.x-40)+'" y="'+(s.y-15)+'" width="80" height="30" rx="6"/>';
+    h+='<text class="p-pos" x="'+(s.x-34)+'" y="'+(s.y-3)+'">'+s.label+'</text>';
     if(p){
-      h+='<text class="p-num" x="'+(s.x+38)+'" y="'+(s.y-5)+'" text-anchor="end">'+(p.num?'#'+esc(p.num):'')+'</text>';
-      h+='<text class="p-nm"  x="'+s.x+'" y="'+(s.y+13)+'" text-anchor="middle">'+esc(_short(p.name))+'</text>';
+      h+='<text class="p-num" x="'+(s.x+34)+'" y="'+(s.y-3)+'" text-anchor="end">'+(p.num?'#'+esc(p.num):'')+'</text>';
+      h+='<text class="p-nm"  x="'+s.x+'" y="'+(s.y+11)+'" text-anchor="middle">'+esc(_short(p.name))+'</text>';
     }else{
-      h+='<text class="p-nm" x="'+s.x+'" y="'+(s.y+13)+'" text-anchor="middle" fill="#555">―</text>';
+      h+='<text class="p-nm" x="'+s.x+'" y="'+(s.y+11)+'" text-anchor="middle" fill="#555">―</text>';
     }
     h+='</g>';
   });
@@ -1059,7 +1093,7 @@ function renderField(team){
 
 function _short(n){
   var s=String(n||'').trim();
-  return s.length>6 ? s.slice(0,6)+'…' : s;
+  return s.length>5 ? s.slice(0,5)+'…' : s;
 }
 
 function renderBench(team){
@@ -1071,7 +1105,7 @@ function renderBench(team){
     return;
   }
   el.innerHTML=bench.map(function(p){
-    return '<div class="fp-bp" draggable="true" data-id="'+p.id+'">'
+    return '<div class="fp-bp" data-id="'+p.id+'">'
       +'<span class="fp-bp-num">'+(p.num?'#'+esc(p.num):'')+'</span>'
       +'<span class="fp-bp-nm">'+esc(p.name)+'</span>'
     +'</div>';
@@ -1079,52 +1113,60 @@ function renderBench(team){
   _bindBenchDrag(team);
 }
 
-// ── ドラッグ＆ドロップで守備交代 ──
-var _fpDragId=null, _fpDragTeam=null;
+// ── クリックで守備交代（2回タップ方式） ──
+// 1回目：選手またはポジションを選ぶ　2回目：移動先を選ぶ
+var _fpSel = null;   // { team, id }
+
+function _fpClear(){
+  _fpSel = null;
+  document.querySelectorAll('#fp-field .slot').forEach(function(s){ s.classList.remove('sel'); });
+  document.querySelectorAll('#fp-bench-list .fp-bp').forEach(function(b){ b.classList.remove('sel'); });
+}
 
 function _bindBenchDrag(team){
   document.querySelectorAll('#fp-bench-list .fp-bp').forEach(function(el){
-    el.addEventListener('dragstart', function(e){
-      _fpDragId=Number(el.dataset.id); _fpDragTeam=team;
-      el.classList.add('dragging');
-      e.dataTransfer.effectAllowed='move';
-      try{ e.dataTransfer.setData('text/plain', String(_fpDragId)); }catch(x){}
-    });
-    el.addEventListener('dragend', function(){
-      el.classList.remove('dragging');
-      _fpDragId=null; _fpDragTeam=null;
-      document.querySelectorAll('#fp-field .slot').forEach(function(s){ s.classList.remove('over'); });
-    });
+    el.onclick = function(){
+      var id = Number(el.dataset.id);
+      if(_fpSel && _fpSel.id===id){ _fpClear(); return; }
+      _fpClear();
+      _fpSel = { team:team, id:id };
+      el.classList.add('sel');
+      var p = rosters[team].find(function(x){ return x.id===id; });
+      toast((p?p.name:'選手')+' → 守備位置を選んでください');
+    };
   });
 }
 
 function _bindFieldDrop(team){
   document.querySelectorAll('#fp-field .slot').forEach(function(slot){
-    slot.addEventListener('dragover', function(e){
-      if(_fpDragTeam!==team) return;
-      e.preventDefault();
-      slot.classList.add('over');
-    });
-    slot.addEventListener('dragleave', function(){ slot.classList.remove('over'); });
-    slot.addEventListener('drop', function(e){
-      e.preventDefault();
-      slot.classList.remove('over');
-      if(_fpDragTeam!==team || !_fpDragId) return;
-      assignPosition(team, _fpDragId, slot.dataset.pos);
-    });
-    // フィールド上の選手同士を入れ替えるためのドラッグ元
-    slot.setAttribute('draggable','true');
-    slot.addEventListener('dragstart', function(e){
-      var cur = rosters[team].find(function(x){ return String(x.pos).toLowerCase()===slot.dataset.pos; });
-      if(!cur){ e.preventDefault(); return; }
-      _fpDragId=cur.id; _fpDragTeam=team;
-      e.dataTransfer.effectAllowed='move';
-      try{ e.dataTransfer.setData('text/plain', String(cur.id)); }catch(x){}
-    });
+    slot.onclick = function(){
+      var pos = slot.dataset.pos;
+      var here = rosters[team].find(function(x){
+        return x.pos && String(x.pos).toLowerCase()===pos;
+      });
+
+      if(_fpSel){
+        // 移動先として確定
+        assignPosition(team, _fpSel.id, pos);
+        _fpClear();
+        return;
+      }
+      // 選択開始（守っている選手がいる場合）
+      if(here){
+        _fpClear();
+        _fpSel = { team:team, id:here.id };
+        slot.classList.add('sel');
+        toast(here.name+' → 移動先を選んでください');
+      }else{
+        toast('ベンチの選手を選んでから、この位置を押してください');
+      }
+    };
   });
 }
 
 // 選手を指定ポジションに就かせる（元からいた選手とは入れ替え）
+var _lastSubInfo = null;   // 直近の守備変更（アナウンス用）
+
 function assignPosition(team, playerId, pos){
   var moving = rosters[team].find(function(x){ return x.id===playerId; });
   if(!moving) return;
@@ -1133,29 +1175,63 @@ function assignPosition(team, playerId, pos){
     return x.id!==playerId && String(x.pos).toLowerCase()===String(pos).toLowerCase();
   });
 
+  var posName = POS_YOMI[String(pos)] || posLabel(pos) || pos;
+
   if(occupant){
     if(prevPos){
-      // 守備位置の交換
+      var prevName = POS_YOMI[String(prevPos)] || posLabel(prevPos) || prevPos;
       occupant.pos = prevPos;
+      _lastSubInfo = {
+        kind:'swap',
+        text:'守備の変更をお知らせします。'
+             + (moving.yomi||moving.name) + 'くんが' + posName + '、'
+             + (occupant.yomi||occupant.name) + 'くんが' + prevName + 'に入ります。'
+      };
       toast(occupant.name+' ⇄ '+moving.name);
     }else{
-      // ベンチから入る：元の選手はベンチへ、打順を引き継ぐ
       if(occupant.order){ moving.order = occupant.order; occupant.order=''; }
       occupant.pos = '';
+      _lastSubInfo = {
+        kind:'sub',
+        text:'選手の交代をお知らせします。' + posName + '、'
+             + (occupant.yomi||occupant.name) + 'くんに代わりまして '
+             + (moving.yomi||moving.name) + 'くん。'
+             + (moving.num ? '背番号' + moving.num + '。' : '')
+             + posName + '、' + (moving.yomi||moving.name) + 'くん。'
+      };
       toast('守備交代：'+occupant.name+' → '+moving.name);
     }
   }else{
+    _lastSubInfo = {
+      kind:'move',
+      text:'守備の変更をお知らせします。'
+           + (moving.yomi||moving.name) + 'くんが' + posName + 'に入ります。'
+    };
     toast(moving.name+' を '+(posLabel(pos)||pos)+' へ');
   }
   moving.pos = pos;
 
   renderAll();
   renderFieldPane();
+  _refreshSubBtn();
   push();
 }
 
+// 直近の守備変更をアナウンスする
+function announceLastSub(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  if(!_lastSubInfo){ toast('直近の守備変更がありません'); return; }
+  confirmSpeak('🔁 交代のお知らせ', _lastSubInfo.text, _ttsVoice, _ttsStyle, _annRate);
+}
+
+function _refreshSubBtn(){
+  var b=document.getElementById('fp-sub-call');
+  if(!b) return;
+  b.style.display = _lastSubInfo ? 'inline-flex' : 'none';
+}
+
 // ── 場内アナウンス（Azure TTS） ────────────────────────────────────────────
-var _annOn=false, _annRate=0.95;
+var _annOn=false, _annRate=0.75;
 var _ttsReady=false, _ttsVoice='ja-JP-NanamiNeural', _ttsStyle='';
 var _ttsCache={}, _audioEl=null;
 
@@ -1176,6 +1252,8 @@ function _initTTS(){
     var v=localStorage.getItem('bb_tts_voice'); if(v) _ttsVoice=v;
     var s=localStorage.getItem('bb_tts_style'); if(s!==null) _ttsStyle=s;
     var cv=localStorage.getItem('bb_cmt_voice'); if(cv) _cmtVoice=cv;
+    var cs=localStorage.getItem('bb_cmt_style'); if(cs!==null) _cmtStyle=cs;
+    var cr=localStorage.getItem('bb_cmt_rate'); if(cr!=null) _cmtRate=Number(cr);
   }catch(e){}
   _refreshAnnBtn();
   _loadVoiceCache();
@@ -1190,6 +1268,8 @@ function _refreshSettingsUI(){
   var v=document.getElementById('set-voice');   if(v) v.value=_ttsVoice;
   var s=document.getElementById('set-style');   if(s) s.value=_ttsStyle;
   var cv=document.getElementById('set-cmt-voice'); if(cv) cv.value=_cmtVoice;
+  var cs=document.getElementById('set-cmt-style'); if(cs) cs.value=_cmtStyle;
+  var cr=document.getElementById('set-cmt-rate-val'); if(cr) cr.textContent=_cmtRate.toFixed(2);
   var r=document.getElementById('set-rate-val');if(r) r.textContent=_annRate.toFixed(2);
   var b=document.getElementById('set-ann-toggle');
   if(b){
@@ -1439,6 +1519,30 @@ function _batterPhrase(p){
   return parts.join('、');
 }
 
+// 読み上げ前に内容を確認・編集する
+var _pendingSpeak = null;   // { text, voice, style, rate }
+
+function confirmSpeak(title, text, voice, style, rate){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  _pendingSpeak = { voice:voice, style:style, rate:rate };
+  document.getElementById('speak-title').textContent = title;
+  document.getElementById('speak-text').value = text;
+  document.getElementById('speak-mask').classList.add('open');
+  setTimeout(function(){
+    var ta=document.getElementById('speak-text');
+    if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  },50);
+}
+
+function doSpeakConfirmed(){
+  if(!_pendingSpeak) return;
+  var t = document.getElementById('speak-text').value.trim();
+  closeModal('speak-mask');
+  if(!t) return;
+  _speakAs(t, _pendingSpeak.voice, _pendingSpeak.style, _pendingSpeak.rate);
+  _pendingSpeak = null;
+}
+
 function announceCurrentBatter(){
   if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
   if(!lastRemote){ toast('コントローラーと未接続です'); return; }
@@ -1447,13 +1551,12 @@ function announceCurrentBatter(){
   var id = s.selIds ? s.selIds.batter : 0;
   var p = rosters[team].find(function(x){ return x.id===id; });
   if(!p){
-    // ID で見つからない場合は表示名から探す
     var nm=(s.batter||'').replace(/^#\d+\s*/,'').trim();
     p = rosters[team].find(function(x){ return x.name && nm.indexOf(x.name)>=0; });
   }
   if(!p){ toast('打者が特定できません'); return; }
   var t=_batterPhrase(p);
-  if(t) _speak(t);
+  if(t) confirmSpeak('🔊 打者コール', t, _ttsVoice, _ttsStyle, _annRate);
 }
 
 // 「1回表、綾羽高校の攻撃」
@@ -1472,29 +1575,46 @@ function announceCurrentInning(){
   }
   var team = isTop ? (s.aab||teamNames.away||'先攻')
                    : (s.hnm||teamNames.home||'後攻');
-  _speak(innNo+'回'+(isTop?'表':'裏')+'、'+team+'の攻撃');
+  confirmSpeak('🔊 回コール', innNo+'回'+(isTop?'表':'裏')+'、'+team+'の攻撃',
+               _ttsVoice, _ttsStyle, _annRate);
 }
 
 // ── 解説アナウンス（状況説明・別の声） ─────────────────────────────────────
 var _cmtVoice = 'ja-JP-KeitaNeural';   // 解説用の声（コールとは別）
 var _cmtStyle = '';
+var _cmtRate  = 1.10;
 
 function setCmtVoice(v){
   _cmtVoice=v;
   try{ localStorage.setItem('bb_cmt_voice',v); }catch(e){}
   _refreshSettingsUI();
 }
+function setCmtStyle(v){
+  _cmtStyle=v;
+  try{ localStorage.setItem('bb_cmt_style',v); }catch(e){}
+  _refreshSettingsUI();
+}
+function adjCmtRate(d){
+  _cmtRate=Math.max(0.5, Math.min(1.5, Math.round((_cmtRate+d)*100)/100));
+  try{ localStorage.setItem('bb_cmt_rate',_cmtRate); }catch(e){}
+  _refreshSettingsUI();
+}
+function testCommentary(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  _speakAs('カウント、1アウト、2ボール1ストライク。ランナー1塁、2塁。', _cmtVoice, _cmtStyle, _cmtRate);
+}
 
-function _speakAs(text, voice, style){
+function _speakAs(text, voice, style, rate){
   if(!_annOn || !text) return;
+  var rt = (typeof rate==='number') ? rate : _annRate;
   if(!_ttsReady){ _speakLocal(text); return; }
-  var k = voice+'|'+(style||'')+'|'+_annRate+'|'+text;
+  var k = voice+'|'+(style||'')+'|'+rt+'|'+text;
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
   _dbGet(k).then(function(saved){
     if(saved){ _ttsCache[k]=saved; _play(saved); return; }
     return fetch('/api/tts',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ text:text, voice:voice, rate:_annRate, style:style||'' })
+      body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'' })
     })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -1555,7 +1675,7 @@ function announceSituation(){
     parts.push('バッターは'+nm+'くんです。');
   }
 
-  _speakAs(parts.join(' '), _cmtVoice, _cmtStyle);
+  confirmSpeak('🎙 解説', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
 }
 
 // ── 操作ロック ────────────────────────────────────────────────────────────
