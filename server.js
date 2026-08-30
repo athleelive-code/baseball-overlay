@@ -154,6 +154,58 @@ app.get('/api/tts/status', (req, res) => {
   res.json({ enabled: !!process.env.AZURE_SPEECH_KEY, provider: 'azure' });
 });
 
+// ── AI 一言コメント（Claude） ──────────────────────────────────────────────
+app.post('/api/comment', async (req, res) => {
+  try {
+    const { context } = req.body || {};
+    if (!context || typeof context !== 'string') {
+      return res.status(400).json({ error: 'context is required' });
+    }
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+    }
+
+    const system =
+      'あなたは高校野球のライブ配信で話す実況解説者です。' +
+      '与えられた試合状況だけを根拠に、その場面にふさわしい一言を日本語で述べてください。\n' +
+      '厳守事項：\n' +
+      '・50〜90文字程度の短い文章にする\n' +
+      '・与えられた情報にないことは絶対に書かない（過去の対戦、選手の特徴、心情の断定などは禁止）\n' +
+      '・数字は与えられたものだけを使い、勝手に足したり推測したりしない\n' +
+      '・落ち着いた丁寧語で話す。過度に煽らない\n' +
+      '・音声で読み上げるため、記号や箇条書きは使わず、文章だけを返す\n' +
+      '・前置きや説明は書かず、読み上げる文章のみを返す';
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 300,
+        system,
+        messages: [{ role: 'user', content: context }]
+      })
+    });
+
+    const data = await r.json();
+    if (!r.ok) {
+      const msg = (data.error && data.error.message) || 'comment failed';
+      return res.status(r.status).json({ error: msg });
+    }
+    const text = (data.content && data.content[0] && data.content[0].text || '').trim();
+    if (!text) return res.status(500).json({ error: 'empty response' });
+
+    res.json({ text });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 let lastState = null;
 
 wss.on('connection', (ws, req) => {
