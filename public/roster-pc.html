@@ -96,9 +96,25 @@ body.locked .team label{pointer-events:none;opacity:.5}
 body.locked .row{cursor:default}
 
 /* 攻撃打順・守備位置図 */
-.fieldpane{display:grid;grid-template-columns:1fr 420px;gap:16px;
+.fieldpane{display:grid;grid-template-columns:1fr 10px 420px;gap:6px;
   padding:14px 16px;background:#0e0e10;border-bottom:1px solid var(--line)}
-@media(max-width:1000px){.fieldpane{grid-template-columns:1fr}}
+@media(max-width:1000px){
+  .fieldpane{grid-template-columns:1fr;gap:14px}
+  .fp-split{display:none}
+}
+/* ドラッグで幅を変える仕切り */
+.fp-split{
+  position:relative;cursor:col-resize;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s;
+}
+.fp-split::before{
+  content:'';width:4px;height:56px;border-radius:2px;
+  background:#3a3a3c;transition:background .12s;
+}
+.fp-split:hover::before,.fp-split.dragging::before{background:#c8a02e}
+.fp-split.dragging{background:rgba(200,160,46,.08)}
+body.fp-resizing{cursor:col-resize;user-select:none}
 .fp-left,.fp-right{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .fp-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);
   font-size:19px;font-weight:700;color:#fff}
@@ -121,7 +137,7 @@ body.locked .row{cursor:default}
 .fp-ord-row.cur .fp-ord-nm{color:#fff;font-weight:700}
 .fp-ord-pos{font-size:16px;color:#888;text-align:center}
 
-.fp-body{display:grid;grid-template-columns:1fr 130px;gap:8px;padding:8px 10px 10px}
+.fp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,26%);gap:8px;padding:8px 10px 10px}
 #fp-field{width:100%;height:auto;display:block}
 #fp-field .fld{fill:#16301a;stroke:#2a4a2e;stroke-width:2}
 #fp-field .inf{fill:#3a2a1c;stroke:#54402c;stroke-width:2}
@@ -360,6 +376,8 @@ body.locked .row{cursor:default}
     </div>
     <div id="fp-order" class="fp-order"></div>
   </div>
+  <div class="fp-split" id="fp-split" title="ドラッグで幅を調整"></div>
+
   <div class="fp-right">
     <div class="fp-hd"><span class="fp-badge def">守備</span><span id="fp-def-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px">後攻</span>
       <button id="fp-sub-call" onclick="announceLastSub()"
@@ -1314,6 +1332,74 @@ function exportLog(){
   URL.revokeObjectURL(a.href);
 }
 
+// ── 攻撃／守備パネルの幅調整（仕切りをドラッグ） ──────────────────────────
+var FP_MIN = 260, FP_MAX = 900, FP_DEF = 420;
+var _fpWidth = FP_DEF;
+
+function _applyFpWidth(w){
+  _fpWidth = Math.max(FP_MIN, Math.min(FP_MAX, Math.round(w)));
+  var pane = document.querySelector('.fieldpane');
+  if(pane) pane.style.gridTemplateColumns = '1fr 10px ' + _fpWidth + 'px';
+  // 図の再描画は不要（SVGは幅に追従）
+}
+
+function _initFpSplit(){
+  try{
+    var v = localStorage.getItem('bb_fp_width');
+    if(v) _fpWidth = Number(v) || FP_DEF;
+  }catch(e){}
+  _applyFpWidth(_fpWidth);
+
+  var sp = document.getElementById('fp-split');
+  if(!sp) return;
+  var pane = document.querySelector('.fieldpane');
+
+  var startX = 0, startW = 0, dragging = false;
+
+  var onMove = function(e){
+    if(!dragging) return;
+    var x = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    // 右パネルなので、左へ動かすほど広くなる
+    _applyFpWidth(startW + (startX - x));
+    if(e.cancelable) e.preventDefault();
+  };
+
+  var onUp = function(){
+    if(!dragging) return;
+    dragging = false;
+    sp.classList.remove('dragging');
+    document.body.classList.remove('fp-resizing');
+    try{ localStorage.setItem('bb_fp_width', _fpWidth); }catch(e){}
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend', onUp);
+  };
+
+  var onDown = function(e){
+    dragging = true;
+    startX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    startW = _fpWidth;
+    sp.classList.add('dragging');
+    document.body.classList.add('fp-resizing');
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive:false });
+    window.addEventListener('touchend', onUp);
+    if(e.cancelable) e.preventDefault();
+  };
+
+  sp.addEventListener('mousedown', onDown);
+  sp.addEventListener('touchstart', onDown, { passive:false });
+
+  // ダブルクリックで初期幅に戻す
+  sp.addEventListener('dblclick', function(){
+    _applyFpWidth(FP_DEF);
+    try{ localStorage.setItem('bb_fp_width', FP_DEF); }catch(e){}
+    toast('幅を初期値に戻しました');
+  });
+}
+
 // ── 攻撃打順 ／ 守備位置図 ────────────────────────────────────────────────
 // 守備位置の座標（viewBox 400x330）
 var FIELD_SLOTS = [
@@ -2114,6 +2200,7 @@ initBattery();
   document.getElementById('new-'+t+'-pos').innerHTML=posOptions('');
 });
 renderAll();
+_initFpSplit();
 renderFieldPane();
 _loadLog();
 _initTTS();
