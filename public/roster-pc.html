@@ -53,7 +53,18 @@ body{padding-bottom:40px}
 .gb-score th.tot{border-left:1px solid #333}
 
 .gb-bso{display:flex;flex-direction:column;gap:5px}
-.gb-bso-line{display:flex;align-items:center;gap:6px}
+.gb-bso-line{display:flex;align-items:center;gap:6px;cursor:pointer;
+  padding:3px 6px;border-radius:6px;user-select:none;transition:background .1s}
+.gb-bso-line:hover{background:#232325}
+.gb-bso-line:active{background:#2c2c2e}
+.gb-pb{width:22px;height:22px;border-radius:50%;border:2px solid #5a5a5c;
+  background:#242426;color:#999;font-size:11px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;margin-left:3px}
+.gb-pb:hover{background:#3a3a3c;color:#fff}
+.gb-pb.f{border-color:#6a5a2a;color:#d0b070}
+.gb-pb.h{border-color:#5a3a2a;color:#a87858}
+.gb-abinfo{font-size:12px;font-weight:800;color:#c8a02e;min-width:34px;
+  font-variant-numeric:tabular-nums}
 .gb-bso-lbl{font-size:15px;font-weight:800;color:#888;width:15px}
 .gb-dots{display:flex;gap:4px}
 .gb-dot{width:16px;height:16px;border-radius:50%;background:#333}
@@ -276,6 +287,15 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 .scan-row{display:grid;grid-template-columns:56px 62px 1fr 96px 40px;gap:8px;align-items:center;
   padding:7px 0;border-bottom:1px solid #262628}
 .modal-acts{display:flex;gap:10px;margin-top:16px}
+.rs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:6px}
+.rb{border:2px solid #3a3a3c;border-radius:10px;background:#242426;color:#ddd;
+  font-size:17px;font-weight:800;padding:20px 8px;cursor:pointer;transition:.1s}
+.rb:active{transform:scale(.97)}
+.rb.hit{border-color:#2a4a6a;color:#8ab4dd}
+.rb.hr{border-color:#8a3a3a;color:#ff9090;background:#3a1a1a}
+.rb.out{border-color:#4a4a4c;color:#aaa}
+.rb.err{border-color:#5a3a5a;color:#c890c8}
+.rb.note{border-color:#5a4a2a;color:#d8b878}
 .set-sec{padding:14px 0;border-top:1px solid #262628}
 .set-lbl{font-size:13px;color:var(--sub);margin-bottom:8px;letter-spacing:.5px}
 .set-sel{width:100%;background:#2c2c2e;border:1px solid #444;border-radius:8px;
@@ -328,9 +348,22 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </table>
 
   <div class="gb-bso">
-    <div class="gb-bso-line"><span class="gb-bso-lbl">B</span><span class="gb-dots" id="gb-b"></span></div>
-    <div class="gb-bso-line"><span class="gb-bso-lbl">S</span><span class="gb-dots" id="gb-s"></span></div>
-    <div class="gb-bso-line"><span class="gb-bso-lbl">O</span><span class="gb-dots" id="gb-o"></span></div>
+    <div class="gb-bso-line" onclick="pcBSO('b')" title="クリックで加算／長押しでクリア"
+      onmousedown="pcHoldStart('b')" onmouseup="pcHoldEnd()" onmouseleave="pcHoldEnd()">
+      <span class="gb-bso-lbl">B</span><span class="gb-dots" id="gb-b"></span>
+    </div>
+    <div class="gb-bso-line" onclick="pcBSO('s')"
+      onmousedown="pcHoldStart('s')" onmouseup="pcHoldEnd()" onmouseleave="pcHoldEnd()">
+      <span class="gb-bso-lbl">S</span><span class="gb-dots" id="gb-s"></span>
+      <button class="gb-pb f" onclick="event.stopPropagation();pcFoul()">F</button>
+      <span class="gb-abinfo" id="gb-foul"></span>
+    </div>
+    <div class="gb-bso-line" onclick="pcBSO('o')"
+      onmousedown="pcHoldStart('o')" onmouseup="pcHoldEnd()" onmouseleave="pcHoldEnd()">
+      <span class="gb-bso-lbl">O</span><span class="gb-dots" id="gb-o"></span>
+      <button class="gb-pb h" onclick="event.stopPropagation();pcInPlay()">H</button>
+      <span class="gb-abinfo" id="gb-total"></span>
+    </div>
   </div>
 
   <svg class="gb-dia" viewBox="0 0 74 74">
@@ -647,6 +680,29 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 
     <div class="modal-acts">
       <button class="btn" style="flex:1" onclick="closeModal('settings-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 打席結果 選択モーダル -->
+<div class="mask" id="result-mask">
+  <div class="modal" style="max-width:560px">
+    <h3>打席結果</h3>
+    <div class="note" id="result-ctx">—</div>
+    <div class="rs-grid">
+      <button class="rb hit" onclick="pickResult('ヒット')">ヒット</button>
+      <button class="rb hit" onclick="pickResult('二塁打')">二塁打</button>
+      <button class="rb hit" onclick="pickResult('三塁打')">三塁打</button>
+      <button class="rb hr"  onclick="pickResult('ホームラン')">本塁打</button>
+      <button class="rb out" onclick="pickResult('凡退')">凡退</button>
+      <button class="rb out" onclick="pickResult('犠打')">犠打</button>
+      <button class="rb out" onclick="pickResult('併殺')">併殺</button>
+      <button class="rb err" onclick="pickResult('失策')">失策</button>
+      <button class="rb note" onclick="pickResult('野選')">野選</button>
+      <button class="rb note" onclick="pickResult('打撃妨害')">打撃妨害</button>
+    </div>
+    <div class="modal-acts">
+      <button class="btn" style="flex:1" onclick="closeModal('result-mask')">キャンセル</button>
     </div>
   </div>
 </div>
@@ -1123,6 +1179,8 @@ function applyRemote(s){
     renderGame(s);
     renderFieldPane();
     renderLog();
+    if(typeof s.abPitch==='number'){ _abPitch=s.abPitch; _abFoul=s.abFoul||0; _abBallSeq=s.abBallSeq||[]; }
+    _updateAbDispPC();
   }catch(e){}
   applyingRemote=false;
 }
@@ -1193,6 +1251,137 @@ function aiComment(){
     toast('生成に失敗しました');
     console.warn('[AI]', e && e.message);
   });
+}
+
+// ── プレビューからの BSO 操作 ─────────────────────────────────────────────
+var _pcHoldTimer=null, _pcHeld=false;
+
+function pcHoldStart(k){
+  _pcHeld=false;
+  _pcHoldTimer=setTimeout(function(){
+    _pcHoldTimer=null; _pcHeld=true;
+    if(!lastRemote) return;
+    lastRemote[k]=0;
+    if(k!=='o'){ _abBallSeq=[]; }
+    renderGame(lastRemote);
+    pushState();
+    toast(k.toUpperCase()+' クリア');
+  },600);
+}
+function pcHoldEnd(){
+  if(_pcHoldTimer){ clearTimeout(_pcHoldTimer); _pcHoldTimer=null; }
+}
+
+// 打席内の投球情報（PC側で保持し、送信に載せる）
+var _abPitch=0, _abFoul=0, _abBallSeq=[];
+
+function _abResetPC(){ _abPitch=0; _abFoul=0; _abBallSeq=[]; }
+
+function _pcSyncAb(){
+  if(!lastRemote) return;
+  lastRemote.abPitch=_abPitch;
+  lastRemote.abFoul=_abFoul;
+  lastRemote.abBallSeq=_abBallSeq.slice();
+}
+
+function pcBSO(k){
+  if(_pcHeld){ _pcHeld=false; return; }   // 長押し後のクリックは無視
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  var MAX={b:4,s:3,o:3};
+  var cur=lastRemote[k]||0;
+  var next=Math.min(MAX[k], cur+1);
+  if(next===cur) return;
+  lastRemote[k]=next;
+
+  if(k==='b'||k==='s'){
+    _abPitch++;
+    if(k==='b') _abBallSeq.push(_abPitch);
+    addLog('pitch', k==='b'?'ボール':'ストライク');
+  }
+
+  // 四球・三振の処理
+  if(k==='b' && lastRemote.b>=4){
+    lastRemote.b=0; lastRemote.s=0; _abResetPC();
+    addLog('result','四球');
+    _advanceRunnersWalk();
+    goNextBatterPC();
+  }
+  if(k==='s' && lastRemote.s>=3){
+    lastRemote.o=Math.min(3,(lastRemote.o||0)+1);
+    lastRemote.b=0; lastRemote.s=0; _abResetPC();
+    addLog('result','三振');
+    goNextBatterPC();
+  }
+  if(k==='o'){
+    _abResetPC();
+  }
+
+  _pcSyncAb();
+  renderGame(lastRemote);
+  _updateAbDispPC();
+  pushState();
+}
+
+function _advanceRunnersWalk(){
+  var r=lastRemote.r||{};
+  if(!r[1]) r[1]=true;
+  else if(!r[2]){ r[2]=true; r[1]=true; }
+  else if(!r[3]){ r[3]=true; r[2]=true; r[1]=true; }
+  lastRemote.r=r;
+}
+
+function pcFoul(){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  _abPitch++; _abFoul++;
+  addLog('pitch','ファウル');
+  _pcSyncAb();
+  _updateAbDispPC();
+  pushState();
+}
+
+function _updateAbDispPC(){
+  var f=document.getElementById('gb-foul');
+  var t=document.getElementById('gb-total');
+  if(f) f.textContent=_abFoul>0?('F'+_abFoul):'';
+  if(t) t.textContent=_abPitch>0?(_abPitch+'球'):'';
+}
+
+// H を押したら打席結果を選ぶ
+function pcInPlay(){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  _abPitch++;
+  _pcSyncAb();
+  _updateAbDispPC();
+  var ctx=document.getElementById('result-ctx');
+  if(ctx){
+    var sn=_snapshot();
+    ctx.textContent = sn.inn+'回'+(sn.top?'表':'裏')+' ／ '+sn.o+'アウト'
+      +(sn.bases?' ／ 走者'+sn.bases.split('').join('・')+'塁':' ／ 走者なし')
+      +(sn.batter?' ／ '+sn.batter:'');
+  }
+  document.getElementById('result-mask').classList.add('open');
+}
+
+// 選んだ打席結果を確定する
+var OUT_RESULTS = ['凡退','犠打','併殺'];
+
+function pickResult(label){
+  closeModal('result-mask');
+  addLog('result', label);
+
+  if(lastRemote){
+    if(OUT_RESULTS.indexOf(label)>=0){
+      lastRemote.o = Math.min(3, (lastRemote.o||0)+1);
+      if(label==='併殺') lastRemote.o = Math.min(3, lastRemote.o+1);
+    }
+    lastRemote.b=0; lastRemote.s=0;
+    _abResetPC(); _pcSyncAb();
+    renderGame(lastRemote);
+    _updateAbDispPC();
+    pushState();
+  }
+  goNextBatterPC();
+  toast(label);
 }
 
 // ── 一球記録 ──────────────────────────────────────────────────────────────
