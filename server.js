@@ -47,6 +47,113 @@ app.post('/api/scan-roster', async (req, res) => {
   }
 });
 
+// ── Azure Speech（Text-to-Speech）プロキシ ──────────────────────────────────
+// 生成済み音声はメモリにキャッシュし、同じ文言は再生成しない
+const ttsCache = new Map();
+const TTS_CACHE_MAX = 400;
+
+// アクセストークンは10分間有効。9分でとり直す
+let azureToken = null;
+let azureTokenAt = 0;
+
+async function getAzureToken(key, region) {
+  const now = Date.now();
+  if (azureToken && (now - azureTokenAt) < 9 * 60 * 1000) return azureToken;
+  const r = await fetch(
+    `https://${region}.api.cognitive.microsoft.com/sts/v1.0/issueToken`,
+    { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': key } }
+  );
+  if (!r.ok) throw new Error('token failed: ' + r.status);
+  azureToken = await r.text();
+  azureTokenAt = now;
+  return azureToken;
+}
+
+function escapeXml(s) {
+  return String(s).replace(/[&<>"']/g, (m) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[m]
+  ));
+}
+
+app.post('/api/tts', async (req, res) => {
+  try {
+    const { text, voice, rate, style } = req.body || {};
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'text is required' });
+    }
+    if (text.length > 200) {
+      return res.status(400).json({ error: 'text too long' });
+    }
+
+    const key = process.env.AZURE_SPEECH_KEY;
+    const region = process.env.AZURE_SPEECH_REGION || 'japaneast';
+    if (!key) {
+      return res.status(500).json({ error: 'AZURE_SPEECH_KEY not configured' });
+    }
+
+    const voiceName = voice || 'ja-JP-NanamiNeural';
+    const spd = Math.max(0.5, Math.min(1.5, Number(rate) || 1.0));
+    // SSML の rate は百分率で指定する
+    const ratePct = Math.round((spd - 1) * 100);
+    const rateStr = (ratePct >= 0 ? '+' : '') + ratePct + '%';
+    const styleName = style || '';
+
+    const cacheKey = `${voiceName}|${styleName}|${rateStr}|${text}`;
+    if (ttsCache.has(cacheKey)) {
+      return res.json({ audio: ttsCache.get(cacheKey), cached: true });
+    }
+
+    const inner = styleName
+      ? `<mstts:express-as style="${escapeXml(styleName)}"><prosody rate="${rateStr}">${escapeXml(text)}</prosody></mstts:express-as>`
+      : `<prosody rate="${rateStr}">${escapeXml(text)}</prosody>`;
+
+    const ssml =
+      `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" ` +
+      `xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="ja-JP">` +
+      `<voice name="${escapeXml(voiceName)}">${inner}</voice></speak>`;
+
+    const token = await getAzureToken(key, region);
+
+    const r = await fetch(
+      `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/ssml+xml',
+          'X-Microsoft-OutputFormat': 'audio-24khz-96kbitrate-mono-mp3',
+          'User-Agent': 'AthleeLive'
+        },
+        body: ssml
+      }
+    );
+
+    if (!r.ok) {
+      const msg = await r.text().catch(() => '');
+      // トークン切れの可能性があるので次回は取り直す
+      azureToken = null;
+      return res.status(r.status).json({ error: 'TTS failed: ' + r.status + ' ' + msg.slice(0, 200) });
+    }
+
+    const buf = Buffer.from(await r.arrayBuffer());
+    const b64 = buf.toString('base64');
+
+    if (ttsCache.size >= TTS_CACHE_MAX) {
+      ttsCache.delete(ttsCache.keys().next().value);
+    }
+    ttsCache.set(cacheKey, b64);
+
+    res.json({ audio: b64, cached: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// TTS が使える状態かをクライアントに知らせる
+app.get('/api/tts/status', (req, res) => {
+  res.json({ enabled: !!process.env.AZURE_SPEECH_KEY, provider: 'azure' });
+});
+
 let lastState = null;
 
 wss.on('connection', (ws, req) => {
