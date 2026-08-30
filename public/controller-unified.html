@@ -668,6 +668,50 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <div style="font-size:18px;color:#555;margin-top:6px;text-align:center" id="auto-hide-note">無効（手動のみ）</div>
     </div>
     <div class="drawer-sec">
+      <div class="drawer-sec-t">場内アナウンス</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">打者交代・イニング交代を読み上げます。イヤホン端子から配信機材へ出力してください</div>
+      <button id="btn-announce" onclick="toggleAnnounce()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:26px;font-weight:700;padding:14px;cursor:pointer;margin-bottom:10px">
+        🔈 アナウンス OFF
+      </button>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="drawer-btn" style="flex:1;font-size:40px;font-weight:700" onclick="adjAnnRate(-0.05)">－</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:100px">
+          <span style="font-size:44px;font-weight:700;color:#fff" id="ann-rate-val">0.95</span>
+          <span style="font-size:18px;color:#666">読み上げ速度</span>
+        </div>
+        <button class="drawer-btn" style="flex:1;font-size:40px;font-weight:700" onclick="adjAnnRate(0.05)">＋</button>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:20px;color:#666;margin-bottom:6px">声の種類</div>
+        <select id="tts-voice" onchange="setTtsVoice(this.value)"
+          style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:26px;padding:14px;outline:none">
+          <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
+          <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
+          <option value="ja-JP-AoiNeural">女性・明るめ（あおい）</option>
+          <option value="ja-JP-MayuNeural">女性・やわらかい（まゆ）</option>
+          <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
+          <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
+          <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
+        </select>
+        <div style="font-size:20px;color:#666;margin:10px 0 6px">話し方</div>
+        <select id="tts-style" onchange="setTtsStyle(this.value)"
+          style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:26px;padding:14px;outline:none">
+          <option value="">標準</option>
+          <option value="chat">やわらかい会話調</option>
+          <option value="cheerful">明るい</option>
+          <option value="customerservice">案内調</option>
+        </select>
+        <div id="tts-status" style="font-size:18px;color:#888;margin-top:6px">確認中…</div>
+      </div>
+      <button onclick="testAnnounce()" style="width:100%;background:#2a2a4a;border:1px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:24px;font-weight:600;padding:12px;cursor:pointer;margin-top:10px">
+        ▶ テスト再生
+      </button>
+      <button id="btn-prebuild" onclick="prebuildVoices()" style="width:100%;background:#3a2a1a;border:1px solid #8a6a3a;border-radius:10px;color:#ffaa66;font-size:24px;font-weight:600;padding:12px;cursor:pointer;margin-top:8px">
+        🎙 音声を事前生成
+      </button>
+      <div style="font-size:18px;color:#666;margin-top:6px">試合前に押しておくと、登録選手とイニングコールの音声を作りためて、試合中の待ち時間がなくなります</div>
+    </div>
+    <div class="drawer-sec">
       <div class="drawer-sec-t">オーバーレイ表示</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">球場のカウント表示が映る画角ではBSOを消せます</div>
       <button id="btn-bso-visible" onclick="toggleBSOVisible()" style="width:100%;background:#2a3a2a;border:1px solid #4a6a4a;border-radius:10px;color:#aaffaa;font-size:26px;font-weight:700;padding:14px;cursor:pointer">
@@ -912,6 +956,256 @@ function _getGameTitle(){
   var el=document.getElementById('game-title');
   return el ? el.value : '';
 }
+
+// ── 場内アナウンス（読み上げ） ─────────────────────────────────────────────
+var _annOn = false;          // 読み上げ ON/OFF
+var _annRate = 0.95;         // 読み上げ速度
+var _annVoice = null;        // 使用する音声
+
+var POS_YOMI = {
+  '1':'ピッチャー','2':'キャッチャー','3':'ファースト','4':'セカンド','5':'サード',
+  '6':'ショート','7':'レフト','8':'センター','9':'ライト','dh':'指名打者','10':'指名打者',
+  'P':'ピッチャー','C':'キャッチャー','1B':'ファースト','2B':'セカンド','3B':'サード',
+  'SS':'ショート','LF':'レフト','CF':'センター','RF':'ライト','DH':'指名打者'
+};
+
+function _pickVoice(){
+  if(!window.speechSynthesis) return;
+  var vs = speechSynthesis.getVoices() || [];
+  var ja = vs.filter(function(v){ return /ja[-_]?JP|Japanese/i.test(v.lang + ' ' + v.name); });
+  // 端末内蔵の日本語音声を優先（Kyoko / O-ren など）
+  _annVoice = ja.find(function(v){ return /Kyoko|Otoya|O-ren|Hattori/i.test(v.name); }) || ja[0] || null;
+}
+if(window.speechSynthesis){
+  _pickVoice();
+  speechSynthesis.onvoiceschanged = _pickVoice;
+}
+
+// Google TTS 利用可否・設定
+var _ttsReady = false;                       // サーバーにキーがあるか
+var _ttsVoice = 'ja-JP-NanamiNeural';        // 使用する音声
+var _ttsStyle = '';                          // 話し方スタイル
+var _ttsCache = {};                          // 文言 -> data URL
+var _audioEl = null;                          // 再生用 audio 要素
+
+function _initTTS(){
+  fetch('/api/tts/status')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ _ttsReady = !!d.enabled; _refreshTtsLabel(); })
+    .catch(function(){ _ttsReady = false; _refreshTtsLabel(); });
+  try{
+    var v = localStorage.getItem('bb_tts_voice');
+    if(v) _ttsVoice = v;
+    var s = localStorage.getItem('bb_tts_style');
+    if(s !== null) _ttsStyle = s;
+  }catch(e){}
+}
+
+function _ttsKey(text){ return _ttsVoice + '|' + _ttsStyle + '|' + _annRate + '|' + text; }
+
+// 音声を取得してキャッシュに入れる（再生はしない）
+function _fetchVoice(text){
+  var key = _ttsKey(text);
+  if(_ttsCache[key]) return Promise.resolve(_ttsCache[key]);
+  return fetch('/api/tts', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ text: text, voice: _ttsVoice, rate: _annRate, style: _ttsStyle })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(!d.audio) throw new Error(d.error || 'no audio');
+    var url = 'data:audio/mp3;base64,' + d.audio;
+    _ttsCache[key] = url;
+    return url;
+  });
+}
+
+// 端末内蔵音声（Google TTS が使えないときの代替）
+function _speakLocal(text){
+  if(!window.speechSynthesis) return;
+  try{
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang='ja-JP'; u.rate=_annRate; u.pitch=1.0; u.volume=1.0;
+    if(_annVoice) u.voice=_annVoice;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function _speak(text){
+  if(!_annOn || !text) return;
+
+  if(!_ttsReady){ _speakLocal(text); return; }
+
+  var key = _ttsKey(text);
+  // 事前生成済みなら即再生
+  if(_ttsCache[key]){ _play(_ttsCache[key]); return; }
+
+  _fetchVoice(text)
+    .then(function(url){ _play(url); })
+    .catch(function(){ _speakLocal(text); });   // 失敗時は端末音声に切替
+}
+
+function _play(url){
+  try{
+    if(!_audioEl){
+      _audioEl = new Audio();
+      _audioEl.preload = 'auto';
+    }
+    _audioEl.pause();
+    _audioEl.src = url;
+    _audioEl.currentTime = 0;
+    var pr = _audioEl.play();
+    if(pr && pr.catch) pr.catch(function(){});
+  }catch(e){}
+}
+
+// 「3番、ショート、山田くん」
+function announceBatter(player){
+  if(!_annOn || !player) return;
+  var parts = [];
+  if(player.order) parts.push(player.order + '番');
+  var pl = POS_YOMI[String(player.pos)] || POS_YOMI[posLabel(player.pos)] || '';
+  if(pl) parts.push(pl);
+  var nm = String(player.name || '').trim();
+  if(!nm) return;
+  parts.push(nm + 'くん');
+  _speak(parts.join('、'));
+}
+
+// 「1回表、綾羽高校の攻撃」
+function announceInning(){
+  if(!_annOn) return;
+  var teamEl = st.top ? document.getElementById('name-away') : document.getElementById('name-home');
+  var team = teamEl ? teamEl.textContent : (st.top ? '先攻' : '後攻');
+  _speak(st.inn + '回' + (st.top ? '表' : '裏') + '、' + team + 'の攻撃');
+}
+
+function toggleAnnounce(){
+  _annOn = !_annOn;
+  try{ localStorage.setItem('bb_announce', _annOn ? '1' : '0'); }catch(e){}
+  _refreshAnnBtn();
+  if(_annOn) _speak('アナウンスを開始します');
+}
+
+function _refreshAnnBtn(){
+  var b = document.getElementById('btn-announce');
+  if(!b) return;
+  b.textContent = _annOn ? '🔊 アナウンス ON' : '🔈 アナウンス OFF';
+  b.style.background   = _annOn ? '#1a3a1a' : '#2c2c2e';
+  b.style.borderColor  = _annOn ? '#3a6a2a' : '#444';
+  b.style.color        = _annOn ? '#86c867' : '#999';
+}
+
+function adjAnnRate(d){
+  _annRate = Math.max(0.5, Math.min(1.5, Math.round((_annRate + d) * 100) / 100));
+  _ttsCache = {};                 // 速度が変わると音声も変わるので作り直し
+  try{ localStorage.setItem('bb_ann_rate', _annRate); }catch(e){}
+  var el=document.getElementById('ann-rate-val');
+  if(el) el.textContent=_annRate.toFixed(2);
+}
+
+function testAnnounce(){
+  var saved=_annOn; _annOn=true;
+  _speak('あの瞬間をいつでも。アスリーライブが配信をお送りいたします。');
+  _annOn=saved;
+}
+
+// 打者アナウンスの文言を組み立てる
+function _batterPhrase(player){
+  if(!player) return '';
+  var parts=[];
+  if(player.order) parts.push(player.order+'番');
+  var pl = POS_YOMI[String(player.pos)] || POS_YOMI[posLabel(player.pos)] || '';
+  if(pl) parts.push(pl);
+  var nm = String(player.name||'').trim();
+  if(!nm) return '';
+  parts.push(nm+'くん');
+  return parts.join('、');
+}
+
+// 登録選手＋イニングコールをまとめて事前生成
+function prebuildVoices(){
+  if(!_ttsReady){ alert('音声合成が利用できません（サーバー未設定）'); return; }
+  var texts=[];
+  ['away','home'].forEach(function(t){
+    rosters[t].forEach(function(p){
+      var s=_batterPhrase(p);
+      if(s) texts.push(s);
+    });
+  });
+  var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
+  var an=na?na.textContent:'先攻', hn=nh?nh.textContent:'後攻';
+  for(var i=1;i<=Math.max(st.maxInn||7,9);i++){
+    texts.push(i+'回表、'+an+'の攻撃');
+    texts.push(i+'回裏、'+hn+'の攻撃');
+  }
+  texts = texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
+
+  var btn=document.getElementById('btn-prebuild');
+  var total=texts.length, done=0, ng=0;
+  if(btn){ btn.disabled=true; btn.textContent='生成中… 0/'+total; }
+
+  var step=function(){
+    if(!texts.length){
+      if(btn){
+        btn.disabled=false;
+        btn.textContent = ng ? ('完了（'+ng+'件失敗）') : '✅ 事前生成 完了';
+        setTimeout(function(){ btn.textContent='🎙 音声を事前生成'; },3000);
+      }
+      return;
+    }
+    var t=texts.shift();
+    _fetchVoice(t)
+      .catch(function(){ ng++; })
+      .then(function(){
+        done++;
+        if(btn && !btn.disabled===false) btn.textContent='生成中… '+done+'/'+total;
+        setTimeout(step, 60);   // 連続リクエストを少し間引く
+      });
+  };
+  step();
+}
+
+function setTtsVoice(v){
+  _ttsVoice=v;
+  _ttsCache={};                    // 声が変わったらキャッシュを破棄
+  try{ localStorage.setItem('bb_tts_voice',v); }catch(e){}
+  _refreshTtsLabel();
+}
+
+function setTtsStyle(v){
+  _ttsStyle=v;
+  _ttsCache={};
+  try{ localStorage.setItem('bb_tts_style',v); }catch(e){}
+  _refreshTtsLabel();
+}
+
+function _refreshTtsLabel(){
+  var sel=document.getElementById('tts-voice');
+  if(sel) sel.value=_ttsVoice;
+  var stl=document.getElementById('tts-style');
+  if(stl) stl.value=_ttsStyle;
+  var st_=document.getElementById('tts-status');
+  if(st_){
+    st_.textContent = _ttsReady ? '高品質音声（Azure）を使用中' : '端末内蔵の音声を使用中';
+    st_.style.color = _ttsReady ? '#86c867' : '#888';
+  }
+}
+
+function _initAnnounce(){
+  try{
+    _annOn = localStorage.getItem('bb_announce') === '1';
+    var r = localStorage.getItem('bb_ann_rate');
+    if(r != null) _annRate = Number(r);
+  }catch(e){}
+  _refreshAnnBtn();
+  var el=document.getElementById('ann-rate-val');
+  if(el) el.textContent=_annRate.toFixed(2);
+  _initTTS();
+}
+_initAnnounce();
 
 // ── ヘッダー時計 ───────────────────────────────────────────────────────────
 function _tickClock(){
@@ -1215,6 +1509,8 @@ function nextInn(){
   _defTeam = _newDefNameEl ? _newDefNameEl.textContent : (_newDefTeam==='away'?'先攻':'後攻');
   // セレクトを更新（投手・捕手が守備側に、打者が攻撃側に）
   updateSelects();
+  // 場内アナウンス
+  if(typeof announceInning==='function') announceInning();
   if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; _refreshScoreBtn(); _armScoreAutoHide(); }
   broadcast();
 }
@@ -1679,6 +1975,12 @@ function openSettingsDrawer(){
   if(e) e.textContent=st.maxInn;
   _updateAutoHideDisp();
   _updateScoreDispSecUI();
+  if(typeof _refreshAnnBtn==='function'){
+    _refreshAnnBtn();
+    var _ar=document.getElementById('ann-rate-val');
+    if(_ar) _ar.textContent=_annRate.toFixed(2);
+    if(typeof _refreshTtsLabel==='function') _refreshTtsLabel();
+  }
   // カラーラベルをチーム名に更新
   var _na=document.getElementById('name-away');
   var _nh=document.getElementById('name-home');
@@ -2185,8 +2487,14 @@ function onBatterChange(){
     :(document.getElementById('name-home')?.textContent||'後攻');
   _defRoster=rosters[team].map(p=>({...p,pos:posLabel(p.pos)||p.pos}));
   _defTeam=defTeamName;
+  // 場内アナウンス（打者が実際に変わったときだけ）
+  if(typeof announceBatter==='function' && selId && selId!==_lastAnnouncedBatter){
+    _lastAnnouncedBatter = selId;
+    announceBatter(rosters[team].find(p=>p.id===selId));
+  }
   broadcast();
 }
+var _lastAnnouncedBatter = null;
 
 // ── 打順変更パネル ──────────────────────────────────────────────────────────
 let _batOrderTeam=null,_batOrderChanging=null;
