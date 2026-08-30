@@ -172,51 +172,6 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 .fp-bp-num{font-size:11px;color:#888;min-width:22px}
 .fp-bp-nm{color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* 一球記録 */
-.logpane{background:#0e0e10;border-bottom:1px solid var(--line);padding:12px 16px}
-.lp-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.lp-title{font-size:16px;font-weight:800;color:#fff}
-.lp-ctx{font-size:13px;color:#8a8a8c;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lp-mini{background:#2c2c2e;border:1px solid #3a3a3c;border-radius:7px;color:#bbb;
-  font-size:12px;font-weight:700;padding:7px 12px;cursor:pointer;white-space:nowrap}
-.lp-mini:hover{background:#3a3a3c;color:#fff}
-.lp-mini.danger{color:#ff8888;border-color:#5a2a2a}
-
-.lp-body{display:grid;grid-template-columns:1fr 340px;gap:14px}
-@media(max-width:1100px){.lp-body{grid-template-columns:1fr}}
-.lp-grp{margin-bottom:10px}
-.lp-grp-t{font-size:11px;color:var(--sub);margin-bottom:6px;letter-spacing:.5px}
-.lp-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:7px}
-.lb{border:2px solid #3a3a3c;border-radius:10px;background:#242426;color:#ddd;
-  font-size:15px;font-weight:800;padding:16px 6px;cursor:pointer;transition:.1s}
-.lb:active{transform:scale(.96)}
-.lb.b{border-color:#2a5a2a;color:#8ad48a}
-.lb.s{border-color:#6a5a1a;color:#e0c86a}
-.lb.f{border-color:#5a4a2a;color:#d0b070}
-.lb.sw{border-color:#6a3a1a;color:#e0a070}
-.lb.hit{border-color:#2a4a6a;color:#8ab4dd}
-.lb.hr{border-color:#8a3a3a;color:#ff9090;background:#3a1a1a}
-.lb.walk{border-color:#3a3a6a;color:#9a9ade}
-.lb.out{border-color:#4a4a4c;color:#aaa}
-.lb.err{border-color:#5a3a5a;color:#c890c8}
-.lb.note{border-color:#5a4a2a;color:#d8b878}
-
-.lp-list-wrap{background:#161618;border:1px solid #262628;border-radius:10px;
-  display:flex;flex-direction:column;overflow:hidden}
-.lp-list-t{display:flex;justify-content:space-between;padding:9px 12px;
-  border-bottom:1px solid #262628;font-size:11px;color:var(--sub);letter-spacing:.5px}
-.lp-list{flex:1;overflow-y:auto;max-height:280px;padding:6px 8px}
-.lp-item{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:7px 5px;
-  border-bottom:1px solid #212123;font-size:13px}
-.lp-item:last-child{border-bottom:none}
-.lp-when{color:#666;font-size:11px;font-variant-numeric:tabular-nums;padding-top:2px}
-.lp-what{color:#ddd}
-.lp-what b{color:#fff}
-.lp-what .tag{display:inline-block;font-size:10px;font-weight:800;padding:2px 6px;
-  border-radius:10px;margin-right:6px;background:#2c2c2e;color:#999}
-.lp-what .tag.r{background:rgba(200,16,46,.2);color:#ff9098}
-.lp-what .tag.e{background:rgba(200,160,46,.2);color:#e8c33d}
-.lp-sub{color:#777;font-size:11px;margin-top:2px}
 
 /* レイアウト */
 .wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;max-width:1600px;margin:0 auto}
@@ -287,15 +242,27 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 .scan-row{display:grid;grid-template-columns:56px 62px 1fr 96px 40px;gap:8px;align-items:center;
   padding:7px 0;border-bottom:1px solid #262628}
 .modal-acts{display:flex;gap:10px;margin-top:16px}
-.rs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:6px}
-.rb{border:2px solid #3a3a3c;border-radius:10px;background:#242426;color:#ddd;
-  font-size:17px;font-weight:800;padding:20px 8px;cursor:pointer;transition:.1s}
-.rb:active{transform:scale(.97)}
-.rb.hit{border-color:#2a4a6a;color:#8ab4dd}
-.rb.hr{border-color:#8a3a3a;color:#ff9090;background:#3a1a1a}
-.rb.out{border-color:#4a4a4c;color:#aaa}
-.rb.err{border-color:#5a3a5a;color:#c890c8}
-.rb.note{border-color:#5a4a2a;color:#d8b878}
+.respop{
+  display:none;position:fixed;z-index:760;width:440px;
+  background:#1a1a1c;border:2px solid #444;border-radius:14px;
+  box-shadow:0 12px 40px rgba(0,0,0,.7);padding:14px;
+}
+.respop.open{display:block}
+.respop-ctx{font-size:13px;color:#888;text-align:center;margin-bottom:10px;line-height:1.35}
+.respop-t{font-size:16px;font-weight:900;text-align:center;margin-bottom:9px}
+.respop-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.respop-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.rp-big{border-radius:12px;font-size:30px;font-weight:900;padding:30px 6px;
+  cursor:pointer;letter-spacing:3px;color:#fff;transition:.1s}
+.rp-big:active{transform:scale(.97)}
+.rp-big.out{background:#8a1226;border:3px solid #c8102e}
+.rp-big.safe{background:#1a5a8a;border:3px solid #2a8ac8}
+.rp-item{border-radius:10px;font-size:15px;font-weight:800;padding:22px 4px;
+  cursor:pointer;line-height:1.2;transition:.1s}
+.rp-item:active{transform:scale(.97)}
+.rp-cancel{width:100%;margin-top:10px;background:#2c2c2e;border:2px solid #444;
+  border-radius:10px;color:#bbb;font-size:14px;font-weight:700;padding:12px;cursor:pointer}
+.rp-cancel:hover{background:#3a3a3c}
 .set-sec{padding:14px 0;border-top:1px solid #262628}
 .set-lbl{font-size:13px;color:var(--sub);margin-bottom:8px;letter-spacing:.5px}
 .set-sel{width:100%;background:#2c2c2e;border:1px solid #444;border-radius:8px;
@@ -354,14 +321,14 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     </div>
     <div class="gb-bso-line" onclick="pcBSO('s')"
       onmousedown="pcHoldStart('s')" onmouseup="pcHoldEnd()" onmouseleave="pcHoldEnd()">
-      <span class="gb-bso-lbl">S</span><span class="gb-dots" id="gb-s"></span>
+      <span class="gb-bso-lbl" id="gb-s-lbl">S</span><span class="gb-dots" id="gb-s"></span>
       <button class="gb-pb f" onclick="event.stopPropagation();pcFoul()">F</button>
       <span class="gb-abinfo" id="gb-foul"></span>
     </div>
     <div class="gb-bso-line" onclick="pcBSO('o')"
       onmousedown="pcHoldStart('o')" onmouseup="pcHoldEnd()" onmouseleave="pcHoldEnd()">
       <span class="gb-bso-lbl">O</span><span class="gb-dots" id="gb-o"></span>
-      <button class="gb-pb h" onclick="event.stopPropagation();pcInPlay()">H</button>
+      <button class="gb-pb h" id="gb-hit-btn" onclick="event.stopPropagation();pcInPlay()">H</button>
       <span class="gb-abinfo" id="gb-total"></span>
     </div>
   </div>
@@ -396,6 +363,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <button class="ann-btn call" onclick="announceCurrentBatter()">🔊 打者<br>コール</button>
     <button class="ann-btn call" onclick="announceCurrentInning()">🔊 回<br>コール</button>
     <button class="ann-btn play" onclick="announceSituation()">🎙 解説</button>
+    <button class="ann-btn play" onclick="aiComment()" id="lp-ai">💬 ここで<br>一言</button>
   </div>
 </div>
 
@@ -425,59 +393,6 @@ body.fp-resizing{cursor:col-resize;user-select:none}
         <div class="fp-bench-t">ベンチ</div>
         <div id="fp-bench-list"></div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- 一球記録 -->
-<div class="logpane">
-  <div class="lp-hd">
-    <span class="lp-title">一球記録</span>
-    <span class="lp-ctx" id="lp-ctx">—</span>
-    <button class="lp-mini" id="lp-ai" onclick="aiComment()"
-      style="background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff;font-size:13px;padding:8px 14px">💬 ここで一言</button>
-    <button class="lp-mini" onclick="undoLog()">↩ 取消</button>
-    <button class="lp-mini" onclick="exportLog()">⬇ 書出</button>
-    <button class="lp-mini danger" onclick="clearLog()">全消去</button>
-  </div>
-
-  <div class="lp-body">
-    <div class="lp-btns">
-      <div class="lp-grp">
-        <div class="lp-grp-t">投球</div>
-        <div class="lp-row">
-          <button class="lb pitch b"  onclick="addLog('pitch','ボール')">ボール</button>
-          <button class="lb pitch s"  onclick="addLog('pitch','ストライク')">ストライク</button>
-          <button class="lb pitch f"  onclick="addLog('pitch','ファウル')">ファウル</button>
-          <button class="lb pitch sw" onclick="addLog('pitch','空振り')">空振り</button>
-        </div>
-      </div>
-      <div class="lp-grp">
-        <div class="lp-grp-t">打席結果</div>
-        <div class="lp-row">
-          <button class="lb hit" onclick="addLog('result','ヒット')">ヒット</button>
-          <button class="lb hit" onclick="addLog('result','二塁打')">二塁打</button>
-          <button class="lb hit" onclick="addLog('result','三塁打')">三塁打</button>
-          <button class="lb hr"  onclick="addLog('result','ホームラン')">本塁打</button>
-        </div>
-        <div class="lp-row">
-          <button class="lb walk" onclick="addLog('result','四球')">四球</button>
-          <button class="lb walk" onclick="addLog('result','死球')">死球</button>
-          <button class="lb out"  onclick="addLog('result','三振')">三振</button>
-          <button class="lb out"  onclick="addLog('result','凡退')">凡退</button>
-        </div>
-        <div class="lp-row">
-          <button class="lb out"  onclick="addLog('result','犠打')">犠打</button>
-          <button class="lb err"  onclick="addLog('result','失策')">失策</button>
-          <button class="lb note" onclick="addLog('event','得点')">得点</button>
-          <button class="lb note" onclick="addLog('event','選手交代')">交代</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="lp-list-wrap">
-      <div class="lp-list-t"><span>記録</span><span id="lp-count">0件</span></div>
-      <div id="lp-list" class="lp-list"></div>
     </div>
   </div>
 </div>
@@ -684,26 +599,33 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
 </div>
 
-<!-- 打席結果 選択モーダル -->
-<div class="mask" id="result-mask">
-  <div class="modal" style="max-width:560px">
-    <h3>打席結果</h3>
-    <div class="note" id="result-ctx">—</div>
-    <div class="rs-grid">
-      <button class="rb hit" onclick="pickResult('ヒット')">ヒット</button>
-      <button class="rb hit" onclick="pickResult('二塁打')">二塁打</button>
-      <button class="rb hit" onclick="pickResult('三塁打')">三塁打</button>
-      <button class="rb hr"  onclick="pickResult('ホームラン')">本塁打</button>
-      <button class="rb out" onclick="pickResult('凡退')">凡退</button>
-      <button class="rb out" onclick="pickResult('犠打')">犠打</button>
-      <button class="rb out" onclick="pickResult('併殺')">併殺</button>
-      <button class="rb err" onclick="pickResult('失策')">失策</button>
-      <button class="rb note" onclick="pickResult('野選')">野選</button>
-      <button class="rb note" onclick="pickResult('打撃妨害')">打撃妨害</button>
+<!-- 三振の種類（Sボタンの近くに開く） -->
+<div id="k-pop" class="respop" style="width:340px">
+  <div class="respop-t" style="color:#e8c33d">三振</div>
+  <div class="respop-2col">
+    <button class="rp-big" style="background:#5a4a12;border:3px solid #c8a02e;font-size:26px;padding:26px 6px;letter-spacing:2px"
+      onclick="pickStrikeout('空振り三振')">空振り</button>
+    <button class="rp-big" style="background:#3a3a1a;border:3px solid #8a8a3a;font-size:26px;padding:26px 6px;letter-spacing:2px"
+      onclick="pickStrikeout('見逃し三振')">見逃し</button>
+  </div>
+</div>
+
+<!-- 打席結果 ポップオーバー（Hボタンの近くに開く） -->
+<div id="res-pop" class="respop">
+  <div class="respop-ctx" id="respop-ctx"></div>
+
+  <div id="respop-1">
+    <div class="respop-2col">
+      <button class="rp-big out"  onclick="rpPick('out')">アウト</button>
+      <button class="rp-big safe" onclick="rpPick('safe')">セーフ</button>
     </div>
-    <div class="modal-acts">
-      <button class="btn" style="flex:1" onclick="closeModal('result-mask')">キャンセル</button>
-    </div>
+    <button class="rp-cancel" onclick="closeResPop()">キャンセル</button>
+  </div>
+
+  <div id="respop-2" style="display:none">
+    <div class="respop-t" id="respop-t"></div>
+    <div class="respop-3col" id="respop-btns"></div>
+    <button class="rp-cancel" onclick="rpBack()">← 戻る</button>
   </div>
 </div>
 
@@ -1134,6 +1056,19 @@ function applySub(){
 }
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('mousedown', function(e){
+  var pop=document.getElementById('res-pop');
+  if(pop && pop.classList.contains('open')
+     && !pop.contains(e.target)
+     && !(e.target.closest && e.target.closest('#gb-hit-btn'))){
+    closeResPop();
+  }
+  var kp=document.getElementById('k-pop');
+  if(kp && kp.classList.contains('open') && !kp.contains(e.target)){
+    closeKPop();
+  }
+});
+
 document.querySelectorAll('.mask').forEach(function(m){
   m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('open'); });
 });
@@ -1181,6 +1116,11 @@ function applyRemote(s){
     renderLog();
     if(typeof s.abPitch==='number'){ _abPitch=s.abPitch; _abFoul=s.abFoul||0; _abBallSeq=s.abBallSeq||[]; }
     _updateAbDispPC();
+    // コントローラーで確定した打席結果を記録に取り込む
+    if(s.lastResult && s.lastResult.ts && s.lastResult.ts !== _seenResultTs){
+      _seenResultTs = s.lastResult.ts;
+      addLog('result', s.lastResult.label);
+    }
   }catch(e){}
   applyingRemote=false;
 }
@@ -1307,10 +1247,13 @@ function pcBSO(k){
     goNextBatterPC();
   }
   if(k==='s' && lastRemote.s>=3){
-    lastRemote.o=Math.min(3,(lastRemote.o||0)+1);
-    lastRemote.b=0; lastRemote.s=0; _abResetPC();
-    addLog('result','三振');
-    goNextBatterPC();
+    // 種類（空振り／見逃し）を選んでから確定する
+    _pcSyncAb();
+    renderGame(lastRemote);
+    _updateAbDispPC();
+    pushState();
+    openKPop();
+    return;
   }
   if(k==='o'){
     _abResetPC();
@@ -1346,34 +1289,139 @@ function _updateAbDispPC(){
   if(t) t.textContent=_abPitch>0?(_abPitch+'球'):'';
 }
 
-// H を押したら打席結果を選ぶ
+// ── 三振の種類を選ぶ ──────────────────────────────────────────────────────
+function openKPop(){
+  var pop=document.getElementById('k-pop');
+  var anchor=document.getElementById('gb-s-lbl') || document.getElementById('gb-s');
+  if(!pop) return;
+  pop.classList.add('open');
+  if(anchor){
+    var r=anchor.getBoundingClientRect();
+    var w=pop.offsetWidth, h=pop.offsetHeight;
+    var left=r.left + r.width/2 - w/2;
+    var top =r.top  + r.height/2 - h/2;
+    left=Math.max(10, Math.min(window.innerWidth  - w - 10, left));
+    top =Math.max(10, Math.min(window.innerHeight - h - 10, top));
+    pop.style.left=left+'px';
+    pop.style.top =top+'px';
+  }
+}
+
+function closeKPop(){
+  var pop=document.getElementById('k-pop');
+  if(pop) pop.classList.remove('open');
+}
+
+function pickStrikeout(label){
+  closeKPop();
+  addLog('result', label);
+  if(lastRemote){
+    lastRemote.o = Math.min(3, (lastRemote.o||0)+1);
+    lastRemote.b=0; lastRemote.s=0;
+    _abResetPC(); _pcSyncAb();
+    renderGame(lastRemote);
+    _updateAbDispPC();
+    pushState();
+  }
+  goNextBatterPC();
+  toast(label);
+}
+
+// ── 打席結果ポップオーバー（Hボタンの位置に開く） ────────────────────────
+var RP_OUT = [
+  { label:'ゴロアウト',   outs:1 },
+  { label:'フライアウト', outs:1 },
+  { label:'ライナーアウト', outs:1 },
+  { label:'併殺',        outs:2 },
+  { label:'犠打',        outs:1 },
+  { label:'犠飛',        outs:1 }
+];
+var RP_SAFE = [
+  { label:'ヒット',     outs:0 },
+  { label:'二塁打',     outs:0 },
+  { label:'三塁打',     outs:0 },
+  { label:'ホームラン', outs:0 },
+  { label:'失策',       outs:0 },
+  { label:'野選',       outs:0 }
+];
+
+// H を押したら投球数を数えてポップオーバーを開く
 function pcInPlay(){
   if(!lastRemote){ toast('コントローラーと未接続です'); return; }
   _abPitch++;
   _pcSyncAb();
   _updateAbDispPC();
-  var ctx=document.getElementById('result-ctx');
+  openResPop();
+}
+
+function openResPop(){
+  var pop=document.getElementById('res-pop');
+  var btn=document.getElementById('gb-hit-btn') || document.querySelector('.gb-pb.h');
+  if(!pop) return;
+
+  // 1段目を表示状態に戻す
+  document.getElementById('respop-1').style.display='';
+  document.getElementById('respop-2').style.display='none';
+
+  var ctx=document.getElementById('respop-ctx');
   if(ctx){
     var sn=_snapshot();
     ctx.textContent = sn.inn+'回'+(sn.top?'表':'裏')+' ／ '+sn.o+'アウト'
       +(sn.bases?' ／ 走者'+sn.bases.split('').join('・')+'塁':' ／ 走者なし')
       +(sn.batter?' ／ '+sn.batter:'');
   }
-  document.getElementById('result-mask').classList.add('open');
+
+  pop.classList.add('open');
+
+  // Hボタンを中心に配置（画面外にはみ出さないよう補正）
+  if(btn){
+    var r=btn.getBoundingClientRect();
+    var w=pop.offsetWidth, h=pop.offsetHeight;
+    var left=r.left + r.width/2 - w/2;
+    var top =r.top  + r.height/2 - h/2;
+    left=Math.max(10, Math.min(window.innerWidth  - w - 10, left));
+    top =Math.max(10, Math.min(window.innerHeight - h - 10, top));
+    pop.style.left=left+'px';
+    pop.style.top =top+'px';
+  }else{
+    pop.style.left=Math.max(10,(window.innerWidth-pop.offsetWidth)/2)+'px';
+    pop.style.top ='90px';
+  }
 }
 
-// 選んだ打席結果を確定する
-var OUT_RESULTS = ['凡退','犠打','併殺'];
+function closeResPop(){
+  var pop=document.getElementById('res-pop');
+  if(pop) pop.classList.remove('open');
+}
 
-function pickResult(label){
-  closeModal('result-mask');
+function rpBack(){
+  document.getElementById('respop-2').style.display='none';
+  document.getElementById('respop-1').style.display='';
+}
+
+function rpPick(kind){
+  document.getElementById('respop-1').style.display='none';
+  var list = (kind==='out') ? RP_OUT : RP_SAFE;
+  var t=document.getElementById('respop-t');
+  if(t){
+    t.textContent = (kind==='out') ? 'アウトの内訳' : 'セーフの内訳';
+    t.style.color = (kind==='out') ? '#ff8890' : '#8ac8ff';
+  }
+  var bg = (kind==='out') ? '#3a1218' : '#12263a';
+  var bd = (kind==='out') ? '#8a3a48' : '#3a6a9a';
+  var fg = (kind==='out') ? '#ff9098' : '#9acdff';
+  document.getElementById('respop-btns').innerHTML = list.map(function(r){
+    return '<button class="rp-item" onclick="rpResult(\''+r.label+'\','+r.outs+')" '
+      +'style="background:'+bg+';border:2px solid '+bd+';color:'+fg+'">'+r.label+'</button>';
+  }).join('');
+  document.getElementById('respop-2').style.display='';
+}
+
+function rpResult(label, outs){
+  closeResPop();
   addLog('result', label);
-
   if(lastRemote){
-    if(OUT_RESULTS.indexOf(label)>=0){
-      lastRemote.o = Math.min(3, (lastRemote.o||0)+1);
-      if(label==='併殺') lastRemote.o = Math.min(3, lastRemote.o+1);
-    }
+    if(outs>0) lastRemote.o = Math.min(3, (lastRemote.o||0)+outs);
     lastRemote.b=0; lastRemote.s=0;
     _abResetPC(); _pcSyncAb();
     renderGame(lastRemote);
@@ -1385,6 +1433,7 @@ function pickResult(label){
 }
 
 // ── 一球記録 ──────────────────────────────────────────────────────────────
+var _seenResultTs = 0;
 var _gameLog = [];          // [{ t, kind, label, inn, top, b,s,o, bases, batter, pitcher, score }]
 var LOG_KEY = 'bb_game_log';
 
@@ -1422,7 +1471,6 @@ function addLog(kind, label){
   }, snap));
   _saveLog();
   renderLog();
-  toast(label);
 }
 
 function undoLog(){
@@ -1453,25 +1501,15 @@ function _loadLog(){
 }
 
 function renderLog(){
+  // 記録パネルは廃止したため、表示先があるときだけ更新する
   var el=document.getElementById('lp-list');
   var cnt=document.getElementById('lp-count');
-  var ctx=document.getElementById('lp-ctx');
-
-  if(ctx){
-    var s=_snapshot();
-    ctx.textContent = s.inn+'回'+(s.top?'表':'裏')
-      +' ／ '+s.o+'アウト '+s.b+'-'+s.s
-      +(s.bases?' ／ ランナー'+s.bases.split('').join('・')+'塁':' ／ ランナーなし')
-      +(s.batter?' ／ 打者 '+s.batter:'');
-  }
   if(cnt) cnt.textContent=_gameLog.length+'件';
   if(!el) return;
-
   if(!_gameLog.length){
     el.innerHTML='<div style="padding:22px 6px;text-align:center;color:#555;font-size:12px">まだ記録がありません</div>';
     return;
   }
-  // 新しいものを上に
   var list=_gameLog.slice().reverse();
   el.innerHTML=list.map(function(g){
     var tagCls = g.kind==='result' ? ' r' : (g.kind==='event' ? ' e' : '');
@@ -1480,11 +1518,6 @@ function renderLog(){
       +'<span class="lp-when">'+esc(g.t)+'</span>'
       +'<span class="lp-what">'
         +'<span class="tag'+tagCls+'">'+tagTxt+'</span><b>'+esc(g.label)+'</b>'
-        +'<div class="lp-sub">'+g.inn+'回'+(g.top?'表':'裏')
-        +' '+g.o+'アウト '+g.b+'-'+g.s
-        +(g.bases?' 走者'+g.bases.split('').join('・'):'')
-        +(g.batter?' ／ '+esc(g.batter):'')
-        +'</div>'
       +'</span>'
     +'</div>';
   }).join('');
