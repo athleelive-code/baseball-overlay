@@ -146,7 +146,6 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .field-row{
   display:flex;align-items:stretch;
   background:#0a0a0a;border-bottom:1px solid #1a1a1a;
-  min-height:50vh;
 }
 .diamond-block{
   flex:1 1 50%;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;
@@ -159,12 +158,12 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .diamond-block svg polygon{pointer-events:all}
 #minus-btn{pointer-events:all}
 .bso-block{
-  flex:1 1 50%;display:flex;flex-direction:column;justify-content:center;
-  padding:4px 12px;gap:4px;border-right:1px solid #1a1a1a;
+  flex:1 1 50%;display:flex;flex-direction:column;justify-content:flex-start;
+  padding:2px 12px 4px;gap:2px;border-right:1px solid #1a1a1a;
 }
 .bso-line{
   display:flex;align-items:center;gap:10px;flex:0 0 auto;
-  cursor:pointer;border-radius:8px;padding:2px 6px;
+  cursor:pointer;border-radius:8px;padding:0 6px;
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
 .bso-line:active{background:rgba(255,255,255,.05)}
@@ -280,10 +279,10 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     </div>
 
     <!-- ACボタン（BSOブロック下・長押しでBSO全リセット） -->
-    <div style="padding:6px 10px 4px;border-top:1px solid #1a1a1a"
+    <div style="padding:4px 10px 2px;border-top:1px solid #1a1a1a"
       ontouchstart="acLongStart()" ontouchend="event.preventDefault();acLongEnd()" ontouchcancel="acLongEnd()"
       onmousedown="acLongStart()" onmouseup="acLongEnd()" onmouseleave="acLongEnd()">
-      <div id="ac-btn-wrap" style="background:#00bcd4;border:3px solid #006080;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none">
+      <div id="ac-btn-wrap" style="background:#00bcd4;border:3px solid #006080;border-radius:8px;padding:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none">
         <span style="font-size:clamp(28px,8vw,44px);font-weight:900;color:#fff;letter-spacing:2px;pointer-events:none">AC</span>
       </div>
     </div>
@@ -292,7 +291,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
   <!-- 右: ダイヤモンド -->
   <div class="diamond-block" style="border-left:1px solid #1a1a1a;border-right:none;flex-direction:column">
-    <svg id="diamond-svg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+    <svg id="diamond-svg" viewBox="0 0 100 104" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;flex:1;min-height:0;display:block">
       <!-- ランナーアイコン -->
       <circle id="runner1" cx="84" cy="52" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
         ontouchstart="dragStart(1,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
@@ -328,12 +327,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <rect class="tap-area" x="64" y="28" width="36" height="48" fill="transparent"
         onclick="tapBase(1)" style="cursor:pointer"/>
     </svg>
-    <div style="padding:6px 8px;flex-shrink:0">
+    <div style="padding:4px 8px 6px;flex-shrink:0">
       <button onclick="showScoreOverlay()" style="width:100%;background:#2a2a4a;border:1px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:24px;font-weight:700;padding:12px 6px;cursor:pointer">
         📊 スコア表示
-      </button>
-      <button id="btn-bso-visible" onclick="toggleBSOVisible()" style="width:100%;background:#2a3a2a;border:1px solid #4a6a4a;border-radius:10px;color:#aaffaa;font-size:24px;font-weight:700;padding:12px 6px;cursor:pointer;margin-top:6px">
-        BSO 非表示
       </button>
     </div>
   </div>
@@ -609,6 +605,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         <button class="drawer-btn" style="flex:1;font-size:44px;font-weight:700" onclick="adjAutoHide(5)">＋</button>
       </div>
       <div style="font-size:18px;color:#555;margin-top:6px;text-align:center" id="auto-hide-note">無効（手動のみ）</div>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">オーバーレイ表示</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">球場のカウント表示が映る画角ではBSOを消せます</div>
+      <button id="btn-bso-visible" onclick="toggleBSOVisible()" style="width:100%;background:#2a3a2a;border:1px solid #4a6a4a;border-radius:10px;color:#aaffaa;font-size:26px;font-weight:700;padding:14px;cursor:pointer">
+        BSO 非表示
+      </button>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">スコア拡大表示</div>
