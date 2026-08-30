@@ -37,41 +37,41 @@ body{padding-bottom:40px}
 .btn-lock.locked{background:#fde8e8;border-color:#e0a0a0;color:#a02a2a}
 
 /* 試合状況バー */
-.gamebar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;
-  background:var(--panel);border-bottom:1px solid var(--line);padding:10px 20px}
+.gamebar{display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+  background:var(--panel);border-bottom:1px solid var(--line);padding:14px 22px}
 .gb-inn{display:flex;align-items:baseline;gap:4px}
-.gb-inn-num{font-size:30px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
-.gb-inn-tb{font-size:16px;font-weight:700;color:var(--red)}
+.gb-inn-num{font-size:46px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.gb-inn-tb{font-size:22px;font-weight:700;color:var(--red)}
 
 .gb-score{border-collapse:collapse;font-variant-numeric:tabular-nums}
-.gb-score th{font-size:10px;color:#666;font-weight:600;padding:1px 6px;border-bottom:1px solid #333}
-.gb-score td{font-size:14px;font-weight:700;color:#bbb;padding:2px 6px;text-align:center;min-width:22px}
-.gb-score td.tname{color:#fff;text-align:left;font-size:12px;max-width:110px;overflow:hidden;
-  white-space:nowrap;text-overflow:ellipsis;padding-right:10px;border-right:1px solid #333}
+.gb-score th{font-size:14px;color:#888;font-weight:700;padding:2px 9px;border-bottom:1px solid #333}
+.gb-score td{font-size:20px;font-weight:700;color:#bbb;padding:4px 9px;text-align:center;min-width:30px}
+.gb-score td.tname{color:#fff;text-align:left;font-size:18px;max-width:180px;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis;padding-right:14px;border-right:1px solid #333}
 .gb-score td.cur{color:#fff}
-.gb-score td.tot{color:#fff;font-size:17px;border-left:1px solid #333;padding-left:9px}
+.gb-score td.tot{color:#fff;font-size:26px;border-left:1px solid #333;padding-left:13px}
 .gb-score th.tot{border-left:1px solid #333}
 
-.gb-bso{display:flex;flex-direction:column;gap:3px}
+.gb-bso{display:flex;flex-direction:column;gap:5px}
 .gb-bso-line{display:flex;align-items:center;gap:6px}
-.gb-bso-lbl{font-size:11px;font-weight:800;color:#777;width:11px}
+.gb-bso-lbl{font-size:15px;font-weight:800;color:#888;width:15px}
 .gb-dots{display:flex;gap:4px}
-.gb-dot{width:11px;height:11px;border-radius:50%;background:#333}
+.gb-dot{width:16px;height:16px;border-radius:50%;background:#333}
 .gb-dot.on-b{background:#3ac13a}
 .gb-dot.on-s{background:#e8c33d}
 .gb-dot.on-o{background:var(--red)}
 
-.gb-dia{width:56px;height:56px;flex-shrink:0}
-.gb-dia rect{fill:#2a2a2c;stroke:#444;stroke-width:1.5}
+.gb-dia{width:80px;height:80px;flex-shrink:0}
+.gb-dia rect{fill:#2a2a2c;stroke:#555;stroke-width:2}
 .gb-dia rect.on{fill:#e8c33d;stroke:#e8c33d}
 .gb-dia #gb-hp{fill:#3a3a3c}
 
 .gb-people{display:flex;gap:22px}
-.gb-col{display:flex;flex-direction:column;gap:3px;font-size:13px;min-width:150px}
+.gb-col{display:flex;flex-direction:column;gap:5px;font-size:17px;min-width:190px}
 .gb-bt-line{display:flex;align-items:center;gap:7px;color:#eee;white-space:nowrap}
-.gb-bt-line.sub{font-size:11px;color:#8a8a8a}
-.gb-bt-tag{font-size:10px;font-weight:800;color:#666;background:#2a2a2c;
-  border-radius:3px;padding:2px 5px;flex-shrink:0;min-width:26px;text-align:center}
+.gb-bt-line.sub{font-size:14px;color:#8a8a8a}
+.gb-bt-tag{font-size:13px;font-weight:800;color:#777;background:#2a2a2c;
+  border-radius:4px;padding:3px 7px;flex-shrink:0;min-width:32px;text-align:center}
 .gb-bt-tag.bat{background:rgba(200,16,46,.22);color:#ff8090}
 .gb-bt-tag.def{background:rgba(26,86,160,.25);color:#8ab4ff}
 
@@ -83,7 +83,7 @@ body{padding-bottom:40px}
 .ann-btn.on{background:#1a3a1a;border-color:#3a6a2a;color:#86c867}
 .ann-btn.call{background:#22301a;border-color:#4a6a2a;color:#b8e878}
 .ann-btn.call:hover{background:#2e4022}
-.gb-flag{font-size:10px;font-weight:700;padding:3px 7px;border-radius:11px;
+.gb-flag{font-size:12px;font-weight:700;padding:4px 9px;border-radius:12px;
   background:#242426;color:#5a5a5c;border:1px solid #303032}
 .gb-flag.on{background:rgba(58,193,58,.16);color:#7fd47f;border-color:rgba(58,193,58,.45)}
 
@@ -137,6 +137,10 @@ body.locked .row{cursor:default}
   padding:6px 7px;cursor:pointer;white-space:nowrap}
 .mini:hover{background:#3a3a3c;color:#fff}
 .mini.del{color:#ff7777;border-color:#5a2a2a}
+.mini.bat{color:#ffd27f;border-color:#6a5a2a;font-weight:800}
+.mini.bat.on{background:#5a4a12;color:#fff;border-color:#c8a02e}
+.row.current{background:rgba(200,160,46,.12);box-shadow:inset 3px 0 0 #c8a02e}
+.cur-mark{color:#e8c33d;font-size:15px;font-weight:900}
 
 /* 追加行 */
 .addrow{display:grid;grid-template-columns:34px 52px 62px 1fr 92px 84px;gap:6px;align-items:center;
@@ -409,7 +413,9 @@ body.locked .row{cursor:default}
       <button class="btn btn-load" style="width:100%;font-size:15px;padding:13px" onclick="testAnnounce()">▶ テスト再生</button>
       <button class="btn" style="width:100%;font-size:15px;padding:13px;margin-top:8px;background:#3a2a1a;border-color:#8a6a3a;color:#ffaa66"
         id="set-prebuild" onclick="prebuildVoices()">🎙 音声を事前生成</button>
-      <div class="note" style="margin-top:8px">試合前に押しておくと、登録選手とイニングコールの音声を作りためて、試合中の待ち時間がなくなります</div>
+      <div class="note" style="margin-top:8px">試合前に押しておくと、登録選手とイニングコールの音声を作りためて、試合中の待ち時間がなくなります。保存した音声は次回も残ります</div>
+      <button class="btn" style="width:100%;font-size:14px;padding:11px;margin-top:8px"
+        onclick="if(confirm('保存済みの音声をすべて削除しますか？'))clearVoiceCache().then(function(){toast('削除しました');})">🗑 保存音声を削除</button>
     </div>
 
     <div class="modal-acts">
@@ -457,6 +463,12 @@ function sorted(team){
 function render(team){
   const el=document.getElementById('list-'+team);
   const list=sorted(team);
+  // 現在の打者（攻撃側チームのみ印をつける）
+  let curBatterId = 0;
+  if(lastRemote && lastRemote.selIds){
+    const atkTeam = (lastRemote.top!==false) ? 'away' : 'home';
+    if(atkTeam===team) curBatterId = lastRemote.selIds.batter || 0;
+  }
   if(!list.length){
     el.innerHTML='<div style="padding:22px 8px;text-align:center;color:#555;font-size:14px">'
       +'選手が未登録です。下の行から追加するか、写真スキャンを使ってください。</div>';
@@ -464,15 +476,17 @@ function render(team){
   }
   el.innerHTML=list.map(function(p){
     const bench = p.order ? '' : ' bench';
-    return '<div class="row'+bench+'" draggable="true" data-id="'+p.id+'" data-team="'+team+'">'
-      +'<div class="grip">⠿</div>'
+    const isCur = (curBatterId && p.id===curBatterId) ? ' current' : '';
+    return '<div class="row'+bench+isCur+'" draggable="true" data-id="'+p.id+'" data-team="'+team+'">'
+      +'<div class="grip">'+(isCur?'<span class="cur-mark">▶</span>':'⠿')+'</div>'
       +'<input class="cell-inp" value="'+esc(p.order)+'" placeholder="―" onchange="edit(\''+team+'\','+p.id+',\'order\',this.value)">'
       +'<input class="cell-inp" value="'+esc(p.num)+'" placeholder="―" onchange="edit(\''+team+'\','+p.id+',\'num\',this.value)">'
       +'<input class="cell-inp name" value="'+esc(p.name)+'" onchange="edit(\''+team+'\','+p.id+',\'name\',this.value)">'
       +'<select class="cell-sel" onchange="edit(\''+team+'\','+p.id+',\'pos\',this.value)">'+posOptions(p.pos)+'</select>'
       +'<div class="row-acts">'
-        +'<button class="mini" onclick="toggleBench(\''+team+'\','+p.id+')">'+(p.order?'控え':'出場')+'</button>'
-        +'<button class="mini del" onclick="delPlayer(\''+team+'\','+p.id+')">削除</button>'
+        +'<button class="mini bat'+(isCur?' on':'')+'" onclick="setBatter(\''+team+'\','+p.id+')" title="この選手を打者にする">打</button>'
+        +'<button class="mini" onclick="toggleBench(\''+team+'\','+p.id+')">'+(p.order?'控':'出')+'</button>'
+        +'<button class="mini del" onclick="delPlayer(\''+team+'\','+p.id+')">✕</button>'
       +'</div>'
     +'</div>';
   }).join('');
@@ -494,15 +508,58 @@ function addPlayer(team){
   const o=document.getElementById('new-'+team+'-order').value.trim();
   const n=document.getElementById('new-'+team+'-num').value.trim();
   const nm=document.getElementById('new-'+team+'-name').value.trim();
+  const ym=document.getElementById('new-'+team+'-yomi').value.trim();
   const ps=document.getElementById('new-'+team+'-pos').value;
   if(!nm){ toast('選手名を入力してください'); return; }
-  rosters[team].push({ id:Date.now()+Math.floor(Math.random()*1000), order:o, num:n, name:nm, pos:ps });
+  rosters[team].push({ id:Date.now()+Math.floor(Math.random()*1000), order:o, num:n, name:nm, yomi:ym, pos:ps });
   document.getElementById('new-'+team+'-order').value='';
   document.getElementById('new-'+team+'-num').value='';
   document.getElementById('new-'+team+'-name').value='';
+  document.getElementById('new-'+team+'-yomi').value='';
   document.getElementById('new-'+team+'-pos').value='';
   render(team); push();
   document.getElementById('new-'+team+'-name').focus();
+}
+
+// この選手を打者にする（コントローラー・overlay に反映）
+function setBatter(team, id){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  const atkTeam = (lastRemote.top!==false) ? 'away' : 'home';
+  if(team!==atkTeam){
+    toast('攻撃中のチームではありません');
+    return;
+  }
+  const p = rosters[team].find(function(x){ return x.id===id; });
+  if(!p) return;
+
+  lastRemote.selIds = lastRemote.selIds || {};
+  lastRemote.selIds.batter = id;
+  lastRemote.batter = (p.num ? '#'+p.num+' ' : '') + p.name;
+
+  // 次打者・次々打者も打順から求め直す
+  const ordered = rosters[team].filter(function(x){ return x.order; })
+    .sort(function(a,b){ return Number(a.order)-Number(b.order); });
+  const idx = ordered.findIndex(function(x){ return x.id===id; });
+  const fmt = function(q){ return q ? ((q.num?'#'+q.num+' ':'')+q.name) : ''; };
+  if(idx>=0 && ordered.length){
+    lastRemote.batterNext  = fmt(ordered[(idx+1)%ordered.length]);
+    lastRemote.batterNext2 = fmt(ordered[(idx+2)%ordered.length]);
+  }
+
+  renderAll();
+  renderGame(lastRemote);
+  pushState();
+  toast('打者：'+p.name);
+}
+
+// lastRemote の内容をそのまま送り返す（ロスター以外も維持）
+function pushState(){
+  if(!ws || ws.readyState!==1 || !lastRemote) return;
+  const base = JSON.parse(JSON.stringify(lastRemote));
+  base._ctl = true;
+  base.rostersAll = { away:rosters.away, home:rosters.home };
+  base.showScoreOverlay = null;
+  ws.send(JSON.stringify(base));
 }
 
 function delPlayer(team,id){
@@ -781,7 +838,10 @@ function connectWS(){
   if(wsTimer){ clearTimeout(wsTimer); wsTimer=null; }
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
-    ws.onopen=function(){ setWsUI(true); };
+    ws.onopen=function(){
+      setWsUI(true);
+      try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
+    };
     ws.onclose=function(){ ws=null; setWsUI(false); wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=function(){ try{ ws.close(); }catch(e){} };
     ws.onmessage=function(ev){
@@ -853,6 +913,7 @@ function _initTTS(){
     var s=localStorage.getItem('bb_tts_style'); if(s!==null) _ttsStyle=s;
   }catch(e){}
   _refreshAnnBtn();
+  _loadVoiceCache();
 }
 
 function openSettings(){
@@ -914,8 +975,7 @@ function prebuildVoices(){
     });
   });
   var an=teamNames.away||'先攻', hn=teamNames.home||'後攻';
-  var maxI = (lastRemote && lastRemote.maxInn) ? Math.max(lastRemote.maxInn,9) : 9;
-  for(var i=1;i<=maxI;i++){
+  for(var i=1;i<=10;i++){
     texts.push(i+'回表、'+an+'の攻撃');
     texts.push(i+'回裏、'+hn+'の攻撃');
   }
@@ -969,20 +1029,106 @@ function toggleAnnounce(){
   if(_annOn) _speak('アナウンスを開始します');
 }
 
+
+// ── 音声の永続保存（IndexedDB） ───────────────────────────────────────────
+// 生成した音声をブラウザに保存し、再読み込み後もすぐ鳴るようにする
+var _voiceDB = null;
+
+function _openVoiceDB(){
+  return new Promise(function(resolve){
+    if(_voiceDB){ resolve(_voiceDB); return; }
+    if(!window.indexedDB){ resolve(null); return; }
+    try{
+      var rq = indexedDB.open('athleelive_voice', 1);
+      rq.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if(!db.objectStoreNames.contains('clips')) db.createObjectStore('clips');
+      };
+      rq.onsuccess = function(e){ _voiceDB = e.target.result; resolve(_voiceDB); };
+      rq.onerror   = function(){ resolve(null); };
+    }catch(e){ resolve(null); }
+  });
+}
+
+function _dbGet(key){
+  return _openVoiceDB().then(function(db){
+    if(!db) return null;
+    return new Promise(function(resolve){
+      try{
+        var tx = db.transaction('clips','readonly');
+        var rq = tx.objectStore('clips').get(key);
+        rq.onsuccess = function(){ resolve(rq.result || null); };
+        rq.onerror   = function(){ resolve(null); };
+      }catch(e){ resolve(null); }
+    });
+  });
+}
+
+function _dbPut(key, val){
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    try{
+      var tx = db.transaction('clips','readwrite');
+      tx.objectStore('clips').put(val, key);
+    }catch(e){}
+  });
+}
+
+// 保存済み音声をまとめてメモリに読み込む
+function _loadVoiceCache(){
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    return new Promise(function(resolve){
+      try{
+        var tx = db.transaction('clips','readonly');
+        var store = tx.objectStore('clips');
+        var kq = store.getAllKeys(), vq = store.getAll();
+        var keys=null, vals=null;
+        var done=function(){
+          if(keys && vals){
+            for(var i=0;i<keys.length;i++) _ttsCache[keys[i]] = vals[i];
+          }
+          resolve();
+        };
+        kq.onsuccess=function(){ keys=kq.result; if(vals) done(); };
+        vq.onsuccess=function(){ vals=vq.result; if(keys) done(); };
+        kq.onerror=vq.onerror=function(){ resolve(); };
+      }catch(e){ resolve(); }
+    });
+  });
+}
+
+// 保存済み音声をすべて削除
+function clearVoiceCache(){
+  _ttsCache = {};
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    try{
+      var tx = db.transaction('clips','readwrite');
+      tx.objectStore('clips').clear();
+    }catch(e){}
+  });
+}
+
 function _ttsKey(t){ return _ttsVoice+'|'+_ttsStyle+'|'+_annRate+'|'+t; }
 
 function _fetchVoice(text){
   var k=_ttsKey(text);
   if(_ttsCache[k]) return Promise.resolve(_ttsCache[k]);
-  return fetch('/api/tts',{
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ text:text, voice:_ttsVoice, rate:_annRate, style:_ttsStyle })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    if(!d.audio) throw new Error(d.error||'no audio');
-    var url='data:audio/mp3;base64,'+d.audio;
-    _ttsCache[k]=url; return url;
+  return _dbGet(k).then(function(saved){
+    if(saved){ _ttsCache[k]=saved; return saved; }
+    return fetch('/api/tts',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ text:text, voice:_ttsVoice, rate:_annRate, style:_ttsStyle })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.audio) throw new Error(d.error||'no audio');
+      var url='data:audio/mp3;base64,'+d.audio;
+      _ttsCache[k]=url;
+      _dbPut(k, url);
+      return url;
+    });
   });
 }
 
@@ -1017,11 +1163,13 @@ function _batterPhrase(p){
   if(!p) return '';
   var parts=[];
   if(p.order) parts.push(p.order+'番');
-  var pl=POS_YOMI[String(p.pos)]||POS_YOMI[posLabel(p.pos)]||'';
+  var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
   if(pl) parts.push(pl);
-  var nm=String(p.name||'').trim();
+  // 読み仮名があれば読み上げに使う
+  var nm = String(p.yomi || p.name || '').trim();
   if(!nm) return '';
   parts.push(nm+'くん');
+  if(p.num) parts.push('背番号'+p.num);
   return parts.join('、');
 }
 
@@ -1045,11 +1193,20 @@ function announceCurrentBatter(){
 // 「1回表、綾羽高校の攻撃」
 function announceCurrentInning(){
   if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
-  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
-  var s=lastRemote;
-  var isTop = s.top!==false;
-  var team = isTop ? (s.aab||'先攻') : (s.hnm||'後攻');
-  _speak((s.inn||1)+'回'+(isTop?'表':'裏')+'、'+team+'の攻撃');
+  var s = lastRemote || {};
+  var isTop, innNo;
+  if(lastRemote){
+    isTop = s.top!==false;
+    innNo = s.inn||1;
+  }else{
+    var tb=document.getElementById('gb-tb');
+    var iv=document.getElementById('gb-inn');
+    isTop = !tb || tb.textContent.indexOf('表')>=0;
+    innNo = iv ? (Number(iv.textContent)||1) : 1;
+  }
+  var team = isTop ? (s.aab||teamNames.away||'先攻')
+                   : (s.hnm||teamNames.home||'後攻');
+  _speak(innNo+'回'+(isTop?'表':'裏')+'、'+team+'の攻撃');
 }
 
 // ── 操作ロック ────────────────────────────────────────────────────────────
