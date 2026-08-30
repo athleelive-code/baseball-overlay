@@ -308,6 +308,96 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 </div>
 
 <!-- BATTERY ROW -->
+<div class="field-row">
+
+  <!-- 左: BSO -->
+  <div class="bso-block">
+    <div class="bso-line"
+      ontouchstart="bsoLongStart('b',this)" ontouchend="event.preventDefault();bsoLongEnd('b')" ontouchcancel="bsoLongEnd(null)"
+      onclick="bsoClick('b')">
+      <span class="bso-lbl">B</span>
+      <div class="bso-dots">
+        <div class="bdot" id="bd1"></div><div class="bdot" id="bd2"></div><div class="bdot" id="bd3"></div>
+      </div>
+    </div>
+    <div class="bso-line"
+      ontouchstart="bsoLongStart('s',this)" ontouchend="event.preventDefault();bsoLongEnd('s')" ontouchcancel="bsoLongEnd(null)"
+      onclick="bsoClick('s')">
+      <span class="bso-lbl">S</span>
+      <div class="bso-dots">
+        <div class="bdot" id="sd1"></div><div class="bdot" id="sd2"></div>
+      </div>
+    </div>
+    <div class="bso-line"
+      ontouchstart="bsoLongStart('o',this)" ontouchend="event.preventDefault();bsoLongEnd('o')" ontouchcancel="bsoLongEnd(null)"
+      onclick="bsoClick('o')">
+      <span class="bso-lbl">O</span>
+      <div class="bso-dots">
+        <div class="bdot out" id="od1"></div>
+        <div class="bdot out" id="od2"></div>
+      </div>
+    </div>
+
+    <!-- ACボタン（BSOブロック下・長押しでBSO全リセット） -->
+    <div style="padding:6px 10px 4px;border-top:1px solid #1a1a1a"
+      ontouchstart="acLongStart()" ontouchend="event.preventDefault();acLongEnd()" ontouchcancel="acLongEnd()"
+      onmousedown="acLongStart()" onmouseup="acLongEnd()" onmouseleave="acLongEnd()">
+      <div id="ac-btn-wrap" style="background:#00bcd4;border:3px solid #006080;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none">
+        <span style="font-size:clamp(28px,8vw,44px);font-weight:900;color:#fff;letter-spacing:2px;pointer-events:none">AC</span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 右: ダイヤモンド -->
+  <div class="diamond-block" style="border-left:1px solid #1a1a1a;border-right:none;flex-direction:column">
+    <svg id="diamond-svg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+      <!-- ランナーアイコン -->
+      <circle id="runner1" cx="84" cy="52" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
+        ontouchstart="dragStart(1,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
+        onmousedown="dragStart(1,event)"/>
+      <circle id="runner2" cx="50" cy="16" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
+        ontouchstart="dragStart(2,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
+        onmousedown="dragStart(2,event)"/>
+      <circle id="runner3" cx="16" cy="52" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
+        ontouchstart="dragStart(3,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
+        onmousedown="dragStart(3,event)"/>
+      <circle id="runner-drag" cx="0" cy="0" r="7" fill="#fff" stroke="#aaa" stroke-width="1.5" style="display:none;pointer-events:none"/>
+
+      <!-- 中央 -1点ボタン -->
+      <rect x="38" y="48" width="24" height="14" rx="3" fill="#1a1a1a" stroke="#444" stroke-width="1"
+        id="minus-btn" style="cursor:pointer"/>
+      <text x="50" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#888" pointer-events="none">－</text>
+
+      <!-- ベース -->
+      <rect x="38" y="10"  width="24" height="24" transform="rotate(45 50 22)" fill="#2a2a2a" stroke="#555" stroke-width="1.5" id="sv-b2"/>
+      <rect x="4"  y="40" width="24" height="24" transform="rotate(45 16 52)" fill="#2a2a2a" stroke="#555" stroke-width="1.5" id="sv-b3"/>
+      <rect x="72" y="40" width="24" height="24" transform="rotate(45 84 52)" fill="#2a2a2a" stroke="#555" stroke-width="1.5" id="sv-b1"/>
+
+      <!-- ホームベース(＋)加点 -->
+      <polygon points="50,95 64,86 64,73 36,73 36,86" fill="#555" stroke="#888" stroke-width="1.5"
+        onclick="addRun()" style="cursor:pointer" id="home-plus"/>
+      <text x="50" y="89" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" pointer-events="none">＋</text>
+
+      <!-- ベースタップエリア -->
+      <rect class="tap-area" x="26" y="0"  width="48" height="36" fill="transparent"
+        onclick="tapBase(2)" style="cursor:pointer"/>
+      <rect class="tap-area" x="0"  y="28" width="36" height="48" fill="transparent"
+        onclick="tapBase(3)" style="cursor:pointer"/>
+      <rect class="tap-area" x="64" y="28" width="36" height="48" fill="transparent"
+        onclick="tapBase(1)" style="cursor:pointer"/>
+    </svg>
+    <div style="padding:6px 8px;flex-shrink:0">
+      <button onclick="showScoreOverlay()" style="width:100%;background:#2a2a4a;border:1px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:24px;font-weight:700;padding:12px 6px;cursor:pointer">
+        📊 スコア表示
+      </button>
+      <button id="btn-bso-visible" onclick="toggleBSOVisible()" style="width:100%;background:#2a3a2a;border:1px solid #4a6a4a;border-radius:10px;color:#aaffaa;font-size:24px;font-weight:700;padding:12px 6px;cursor:pointer;margin-top:6px">
+        BSO 非表示
+      </button>
+    </div>
+  </div>
+
+</div>
 <div class="battery-row">
   <!-- 左：打者エリア -->
   <div class="battery-cell" style="flex-direction:column;align-items:flex-start;gap:6px">
@@ -741,96 +831,6 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     </div>
     <button class="sc-done" onclick="closeSC()">閉じる</button>
   </div>
-</div>
-<div class="field-row">
-
-  <!-- 左: BSO -->
-  <div class="bso-block">
-    <div class="bso-line"
-      ontouchstart="bsoLongStart('b',this)" ontouchend="event.preventDefault();bsoLongEnd('b')" ontouchcancel="bsoLongEnd(null)"
-      onclick="bsoClick('b')">
-      <span class="bso-lbl">B</span>
-      <div class="bso-dots">
-        <div class="bdot" id="bd1"></div><div class="bdot" id="bd2"></div><div class="bdot" id="bd3"></div>
-      </div>
-    </div>
-    <div class="bso-line"
-      ontouchstart="bsoLongStart('s',this)" ontouchend="event.preventDefault();bsoLongEnd('s')" ontouchcancel="bsoLongEnd(null)"
-      onclick="bsoClick('s')">
-      <span class="bso-lbl">S</span>
-      <div class="bso-dots">
-        <div class="bdot" id="sd1"></div><div class="bdot" id="sd2"></div>
-      </div>
-    </div>
-    <div class="bso-line"
-      ontouchstart="bsoLongStart('o',this)" ontouchend="event.preventDefault();bsoLongEnd('o')" ontouchcancel="bsoLongEnd(null)"
-      onclick="bsoClick('o')">
-      <span class="bso-lbl">O</span>
-      <div class="bso-dots">
-        <div class="bdot out" id="od1"></div>
-        <div class="bdot out" id="od2"></div>
-      </div>
-    </div>
-
-    <!-- ACボタン（BSOブロック下・長押しでBSO全リセット） -->
-    <div style="padding:6px 10px 4px;border-top:1px solid #1a1a1a"
-      ontouchstart="acLongStart()" ontouchend="event.preventDefault();acLongEnd()" ontouchcancel="acLongEnd()"
-      onmousedown="acLongStart()" onmouseup="acLongEnd()" onmouseleave="acLongEnd()">
-      <div id="ac-btn-wrap" style="background:#00bcd4;border:3px solid #006080;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none">
-        <span style="font-size:clamp(28px,8vw,44px);font-weight:900;color:#fff;letter-spacing:2px;pointer-events:none">AC</span>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- 右: ダイヤモンド -->
-  <div class="diamond-block" style="border-left:1px solid #1a1a1a;border-right:none;flex-direction:column">
-    <svg id="diamond-svg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
-      <!-- ランナーアイコン -->
-      <circle id="runner1" cx="84" cy="52" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
-        ontouchstart="dragStart(1,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
-        onmousedown="dragStart(1,event)"/>
-      <circle id="runner2" cx="50" cy="16" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
-        ontouchstart="dragStart(2,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
-        onmousedown="dragStart(2,event)"/>
-      <circle id="runner3" cx="16" cy="52" r="7" fill="#f5c518" stroke="#b8860b" stroke-width="1.5" style="display:none;cursor:grab"
-        ontouchstart="dragStart(3,event)" ontouchend="dragEnd(event)" ontouchcancel="dragEnd(event)"
-        onmousedown="dragStart(3,event)"/>
-      <circle id="runner-drag" cx="0" cy="0" r="7" fill="#fff" stroke="#aaa" stroke-width="1.5" style="display:none;pointer-events:none"/>
-
-      <!-- 中央 -1点ボタン -->
-      <rect x="38" y="48" width="24" height="14" rx="3" fill="#1a1a1a" stroke="#444" stroke-width="1"
-        id="minus-btn" style="cursor:pointer"/>
-      <text x="50" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#888" pointer-events="none">－</text>
-
-      <!-- ベース -->
-      <rect x="38" y="10"  width="24" height="24" transform="rotate(45 50 22)" fill="#2a2a2a" stroke="#555" stroke-width="1.5" id="sv-b2"/>
-      <rect x="4"  y="40" width="24" height="24" transform="rotate(45 16 52)" fill="#2a2a2a" stroke="#555" stroke-width="1.5" id="sv-b3"/>
-      <rect x="72" y="40" width="24" height="24" transform="rotate(45 84 52)" fill="#2a2a2a" stroke="#555" stroke-width="1.5" id="sv-b1"/>
-
-      <!-- ホームベース(＋)加点 -->
-      <polygon points="50,95 64,86 64,73 36,73 36,86" fill="#555" stroke="#888" stroke-width="1.5"
-        onclick="addRun()" style="cursor:pointer" id="home-plus"/>
-      <text x="50" y="89" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" pointer-events="none">＋</text>
-
-      <!-- ベースタップエリア -->
-      <rect class="tap-area" x="26" y="0"  width="48" height="36" fill="transparent"
-        onclick="tapBase(2)" style="cursor:pointer"/>
-      <rect class="tap-area" x="0"  y="28" width="36" height="48" fill="transparent"
-        onclick="tapBase(3)" style="cursor:pointer"/>
-      <rect class="tap-area" x="64" y="28" width="36" height="48" fill="transparent"
-        onclick="tapBase(1)" style="cursor:pointer"/>
-    </svg>
-    <div style="padding:6px 8px;flex-shrink:0">
-      <button onclick="showScoreOverlay()" style="width:100%;background:#2a2a4a;border:1px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:24px;font-weight:700;padding:12px 6px;cursor:pointer">
-        📊 スコア表示
-      </button>
-      <button id="btn-bso-visible" onclick="toggleBSOVisible()" style="width:100%;background:#2a3a2a;border:1px solid #4a6a4a;border-radius:10px;color:#aaffaa;font-size:24px;font-weight:700;padding:12px 6px;cursor:pointer;margin-top:6px">
-        BSO 非表示
-      </button>
-    </div>
-  </div>
-
 </div>
 <script>
 var _autoHideSec = 0;
@@ -1645,7 +1645,7 @@ function saveTeamRoster(side){
   var store=_getRosterStore();
   store[teamName]=roster;
   _setRosterStore(store);
-  alert('"'+teamName+'" のロスター（'+roster.length+'名）を保存しました');
+  alert('"'+teamName+'" のメンバー（'+roster.length+'名）を保存しました');
 }
 function loadTeamRosterUI(side){
   var store=_getRosterStore();
@@ -1685,7 +1685,7 @@ function applyTeamRoster(side,encodedName){
   var teamName=decodeURIComponent(encodedName);
   var store=_getRosterStore();
   var roster=store[teamName];
-  if(!roster||!roster.length){ alert('ロスターが見つかりません'); return; }
+  if(!roster||!roster.length){ alert('メンバーが見つかりません'); return; }
   if(!confirm('"'+teamName+'"（'+roster.length+'名）を'+(side==='away'?'先攻':'後攻')+'に読み込みますか？現在の選手データは上書きされます。')){ return; }
   rosters[side]=JSON.parse(JSON.stringify(roster));
   var nameEl=document.getElementById('name-'+side);
@@ -1981,6 +1981,9 @@ function applyRemoteState(s){
     if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
     if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
 
+    // 試合中モードからの「次打者」要求
+    var _wantNext = (s._goNextBatter===true);
+
     // 再描画（セレクトの選択は updateSelects の前に入れる）
     updateSelects();
     if(s.selIds){
@@ -2015,6 +2018,11 @@ function applyRemoteState(s){
     console.log('applyRemoteState error', e);
   }
   _applyingRemote=false;
+
+  // 打者送りは適用解除後に実行（通常操作と同じ経路で反映・再送する）
+  if(_wantNext){
+    try{ goNextBatter(); }catch(e){}
+  }
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
