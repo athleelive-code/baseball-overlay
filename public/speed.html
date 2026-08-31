@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="球速">
+<title>AthleeLive 球速入力</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent}
+:root{--red:#c8102e;--grn:#7dff5a}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
+  touch-action:manipulation;overscroll-behavior:none}
+
+.app{display:flex;flex-direction:column;height:100%;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+
+/* ヘッダー */
+.hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  background:#fff;padding:6px 14px;min-height:48px}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.qrbtn{background:none;border:none;color:#888;cursor:pointer;padding:4px;
+  font-size:22px;line-height:0;flex-shrink:0}
+.qrbtn:active{color:#111}
+.hdr-t{font-size:19px;font-weight:800;color:#111;letter-spacing:.5px}
+.wsdot{width:11px;height:11px;border-radius:50%;background:#c00;transition:background .3s}
+.wsdot.on{background:#3ac13a}
+.clock{font-size:21px;font-weight:800;color:#111;font-variant-numeric:tabular-nums}
+
+/* 試合情報 */
+.ctx{flex-shrink:0;background:#131315;border-bottom:1px solid #242426;padding:9px 14px;text-align:center}
+.ctx-t{font-size:19px;font-weight:800;color:#eee;line-height:1.25;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctx-s{font-size:14px;color:#888;margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* BSO・走者 */
+.ctx-bso{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:9px}
+.cb-line{display:flex;align-items:center;gap:6px}
+.cb-l{font-size:15px;font-weight:800;color:#777;width:14px}
+.cb-d{display:flex;gap:5px}
+.cb-dot{width:16px;height:16px;border-radius:50%;background:#2a2a2c;border:2px solid #3a3a3c}
+.cb-dot.b{background:#3ac13a;border-color:#3ac13a}
+.cb-dot.s{background:#e8c33d;border-color:#e8c33d}
+.cb-dot.o{background:#c8102e;border-color:#c8102e}
+.cb-dia{width:52px;height:52px;flex-shrink:0}
+.cb-dia rect{fill:#2a2a2c;stroke:#4a4a4c;stroke-width:2}
+.cb-dia rect.on{fill:#f5c518;stroke:#c8a02e}
+.cb-dia rect.hp{fill:#3a3a3c}
+.cb-bat{font-size:14px;color:#ccc;max-width:150px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb-ab{display:flex;flex-direction:column;align-items:flex-start;gap:1px;flex-shrink:0}
+.cb-ab .f{font-size:13px;font-weight:800;color:#e8a33d;line-height:1.15;
+  font-variant-numeric:tabular-nums}
+.cb-ab .t{font-size:12px;font-weight:700;color:#888;line-height:1.15;
+  font-variant-numeric:tabular-nums}
+
+/* 直近の球速 */
+.last{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:#040804;border-bottom:1px solid #163016;padding:14px 10px}
+.last-n{font-size:64px;font-weight:900;color:var(--grn);line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:2px;
+  text-shadow:0 0 12px rgba(125,255,90,.8),0 0 28px rgba(80,255,60,.45)}
+.last-u{font-size:20px;font-weight:800;color:rgba(125,255,90,.7)}
+.last.empty .last-n{color:#1e3a1e;text-shadow:none}
+.last.empty .last-u{color:#1e3a1e}
+.last-live{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:12px;font-weight:800;color:#7dff5a;border:1px solid rgba(125,255,90,.5);
+  border-radius:20px;padding:4px 10px;opacity:0;transition:opacity .2s}
+.last-live.on{opacity:1}
+.last{position:relative}
+
+/* 履歴 */
+.hist{flex-shrink:0;display:flex;align-items:center;gap:9px;
+  background:#0d0d0f;border-bottom:1px solid #1e1e20;padding:8px 12px;min-height:52px}
+.hist-t{font-size:11px;color:#555;letter-spacing:1px;flex-shrink:0}
+.hist-list{flex:1;display:flex;gap:6px;overflow-x:auto;min-width:0}
+.hist-b{flex-shrink:0;border:2px solid #3a3a3c;background:#242426;color:#bbb;
+  border-radius:8px;font-size:16px;font-weight:800;padding:8px 12px;cursor:pointer;
+  font-variant-numeric:tabular-nums}
+.hist-b:active{transform:scale(.94)}
+.hist-b.cur{border-color:#7dff5a;background:#1d3a1d;color:#adffa0}
+.hist-empty{font-size:12px;color:#444}
+
+/* 入力ブロック */
+.body{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px;min-height:0;overflow-y:auto}
+.blk{background:#141416;border:1px solid #262628;border-radius:14px;padding:10px 8px}
+.blk-t{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:9px}
+.blk-name{font-size:17px;font-weight:800;letter-spacing:2px}
+.blk.fast .blk-name{color:#ff9a5a}
+.blk.slow .blk-name{color:#7aaaff}
+.blk-c{font-size:14px;color:#777;font-variant-numeric:tabular-nums}
+
+.row{display:flex;align-items:stretch;gap:6px}
+.arrow{flex:0 0 46px;border:2px solid #3a3a3c;background:#242426;color:#bbb;
+  border-radius:10px;font-size:24px;font-weight:900;cursor:pointer;padding:0}
+.arrow:active{background:#3a3a3c;transform:scale(.95)}
+.nums{flex:1;display:grid;grid-template-columns:repeat(11,1fr);gap:4px;min-width:0}
+.n{border:2px solid #3a3a3c;background:#242426;color:#ddd;border-radius:9px;
+  font-size:clamp(13px,3.4vw,19px);font-weight:800;padding:22px 0;cursor:pointer;
+  font-variant-numeric:tabular-nums;transition:transform .06s,background .1s}
+.n:active{transform:scale(.94)}
+.blk.fast .n.mid{border-color:#8a5a2a;background:#3a2618;color:#ffb87a}
+.blk.slow .n.mid{border-color:#2a4a8a;background:#18243a;color:#9ac0ff}
+.n.hit{background:#1d5a1d;border-color:var(--grn);color:#fff}
+
+/* 下部 */
+.foot{flex-shrink:0;display:flex;gap:8px;padding:0 10px 10px}
+.fbtn{flex:1;border:2px solid #3a3a3c;background:#242426;color:#bbb;border-radius:12px;
+  font-size:17px;font-weight:800;padding:18px 6px;cursor:pointer}
+.fbtn:active{background:#3a3a3c}
+.fbtn.clear{color:#ff8888;border-color:#5a2a2a}
+.fbtn.undo{color:#e8c33d;border-color:#5a4a1a}
+
+.toast{position:fixed;left:50%;bottom:13%;transform:translateX(-50%);
+  background:rgba(30,30,32,.96);border:1px solid #555;border-radius:12px;color:#fff;
+  font-size:18px;font-weight:700;padding:14px 26px;z-index:99;opacity:0;
+  pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+</style>
+<script src="qrcode.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div class="hdr-l">
+      <span class="wsdot" id="wsdot"></span>
+      <span class="hdr-t">球速入力</span>
+      <button class="qrbtn" onclick="openQR('controller.html')" title="コントローラーを共有"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
+    </div>
+    <span class="clock" id="clock">--:--</span>
+  </div>
+
+  <div class="ctx" id="ctx">
+    <div class="ctx-t" id="ctx-title">—</div>
+    <div class="ctx-s" id="ctx-sub">接続待ち</div>
+    <div class="ctx-bso" id="ctx-bso">
+      <div class="cb-line"><span class="cb-l">B</span><span class="cb-d" id="cb-b"></span></div>
+      <div class="cb-line"><span class="cb-l">S</span><span class="cb-d" id="cb-s"></span></div>
+      <div class="cb-line"><span class="cb-l">O</span><span class="cb-d" id="cb-o"></span></div>
+      <svg class="cb-dia" viewBox="0 0 60 60">
+        <rect id="cb-b2" x="22" y="3"  width="16" height="16" transform="rotate(45 30 11)"/>
+        <rect id="cb-b3" x="6"  y="19" width="16" height="16" transform="rotate(45 14 27)"/>
+        <rect id="cb-b1" x="38" y="19" width="16" height="16" transform="rotate(45 46 27)"/>
+        <rect id="cb-hp" x="22" y="35" width="16" height="16" transform="rotate(45 30 43)" class="hp"/>
+      </svg>
+      <div class="cb-bat" id="cb-bat"></div>
+      <div class="cb-ab" id="cb-ab"></div>
+    </div>
+  </div>
+
+  <div class="last empty" id="last">
+    <span class="last-n" id="last-n">---</span><span class="last-u">km/h</span>
+    <span class="last-live" id="last-live">表示中</span>
+  </div>
+
+  <div class="hist" id="hist">
+    <span class="hist-t">履歴</span>
+    <div class="hist-list" id="hist-list"></div>
+  </div>
+
+  <div class="body">
+    <!-- 高速 -->
+    <div class="blk fast">
+      <div class="blk-t">
+        <span class="blk-name">高速</span>
+        <span class="blk-c">中心 <b id="c-fast">135</b> km/h</span>
+      </div>
+      <div class="row">
+        <button class="arrow" onclick="slide('fast',-1)">◀</button>
+        <div class="nums" id="nums-fast"></div>
+        <button class="arrow" onclick="slide('fast',1)">▶</button>
+      </div>
+    </div>
+
+    <!-- 低速 -->
+    <div class="blk slow">
+      <div class="blk-t">
+        <span class="blk-name">低速</span>
+        <span class="blk-c">中心 <b id="c-slow">95</b> km/h</span>
+      </div>
+      <div class="row">
+        <button class="arrow" onclick="slide('slow',-1)">◀</button>
+        <div class="nums" id="nums-slow"></div>
+        <button class="arrow" onclick="slide('slow',1)">▶</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button class="fbtn" onclick="resend()">↻ 再表示</button>
+    <button class="fbtn undo" onclick="undoSpeed()">↩ 取り消し</button>
+    <button class="fbtn clear" onclick="clearSpeed()">✕ 消す</button>
+  </div>
+</div>
+
+
+<!-- QRコード表示 -->
+<div id="qr-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:900;align-items:center;justify-content:center;padding:16px"
+  onclick="if(event.target===this)closeQR()">
+  <div style="background:#1c1c1e;border:2px solid #444;border-radius:18px;padding:24px;width:100%;max-width:400px;text-align:center">
+    <div id="qr-name" style="font-size:26px;font-weight:800;color:#fff;margin-bottom:4px"></div>
+    <div id="qr-desc" style="font-size:15px;color:#888;margin-bottom:18px"></div>
+    <div id="qr-img" style="background:#fff;padding:12px;border-radius:12px;display:inline-block;line-height:0"></div>
+    <div id="qr-url" style="font-size:12px;color:#666;word-break:break-all;line-height:1.5;margin-top:14px"></div>
+    <button onclick="closeQR()"
+      style="width:100%;margin-top:18px;background:#2c2c2e;border:2px solid #444;border-radius:12px;color:#ccc;font-size:19px;font-weight:700;padding:16px;cursor:pointer">閉じる</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var MINV = 10, MAXV = 200;
+var center = { fast: 135, slow: 95 };
+var lastVal = null;
+
+function g(id){ return document.getElementById(id); }
+
+function toast(m){
+  var t=g('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(t._tm); t._tm=setTimeout(function(){ t.classList.remove('show'); },1300);
+}
+function buzz(ms){ if(navigator.vibrate) try{ navigator.vibrate(ms||14); }catch(e){} }
+
+// ── ボタンを描く ──────────────────────────────────────────────────────────
+function renderNums(kind){
+  var box=g('nums-'+kind);
+  var mid=center[kind];
+  var html='';
+  for(var v=mid-5; v<=mid+5; v++){
+    if(v<MINV || v>MAXV){
+      html+='<button class="n" style="opacity:.25" disabled>—</button>';
+      continue;
+    }
+    html+='<button class="n'+(v===mid?' mid':'')+'" onclick="sendSpeed('+v+',this)">'+v+'</button>';
+  }
+  box.innerHTML=html;
+  g('c-'+kind).textContent=mid;
+}
+
+function slide(kind, dir){
+  var next = center[kind] + dir;
+  if(next-5 < MINV) next = MINV+5;
+  if(next+5 > MAXV) next = MAXV-5;
+  center[kind]=next;
+  try{ localStorage.setItem('bb_spd_'+kind, next); }catch(e){}
+  renderNums(kind);
+}
+
+// 長押しで連続スライド
+['fast','slow'].forEach(function(kind){
+  // ボタンは renderNums の後に付くので、矢印だけここで拾う
+});
+(function bindHold(){
+  document.querySelectorAll('.arrow').forEach(function(btn){
+    var tm=null, iv=null;
+    var m=btn.getAttribute('onclick')||'';
+    var kind = m.indexOf("'fast'")>=0 ? 'fast' : 'slow';
+    var dir  = m.indexOf('-1')>=0 ? -1 : 1;
+    var start=function(e){
+      tm=setTimeout(function(){
+        iv=setInterval(function(){ slide(kind,dir); },90);
+      },420);
+    };
+    var end=function(){
+      if(tm){ clearTimeout(tm); tm=null; }
+      if(iv){ clearInterval(iv); iv=null; }
+    };
+    btn.addEventListener('touchstart',start,{passive:true});
+    btn.addEventListener('touchend',end);
+    btn.addEventListener('touchcancel',end);
+    btn.addEventListener('mousedown',start);
+    btn.addEventListener('mouseup',end);
+    btn.addEventListener('mouseleave',end);
+  });
+})();
+
+// ── 送信 ──────────────────────────────────────────────────────────────────
+var hist = [];        // 入力した球速の履歴（新しいものが末尾）
+var shownVal = null;  // 今オーバーレイに出している値
+var HIST_MAX = 12;
+
+function _renderLast(){
+  var L=g('last');
+  if(shownVal==null){
+    g('last-n').textContent='---';
+    L.classList.add('empty');
+    g('last-live').classList.remove('on');
+  }else{
+    g('last-n').textContent=shownVal;
+    L.classList.remove('empty');
+    g('last-live').classList.add('on');
+  }
+}
+
+function _renderHist(){
+  var box=g('hist-list');
+  if(!box) return;
+  if(!hist.length){
+    box.innerHTML='<span class="hist-empty">まだ入力がありません</span>';
+    return;
+  }
+  // 新しいものを左に
+  var list=hist.slice().reverse();
+  box.innerHTML=list.map(function(v,i){
+    var cur = (i===0 && shownVal===v) ? ' cur' : '';
+    return '<button class="hist-b'+cur+'" onclick="reshow('+v+')">'+v+'</button>';
+  }).join('');
+}
+
+// 球速を入力して表示する
+function sendSpeed(v, el){
+  hist.push(v);
+  if(hist.length>HIST_MAX) hist.shift();
+  shownVal=v;
+  lastVal=v;
+  buzz(18);
+  if(el){
+    el.classList.add('hit');
+    setTimeout(function(){ el.classList.remove('hit'); },220);
+  }
+  _renderLast(); _renderHist();
+  push({ v:v, ts:Date.now() });
+}
+
+// 履歴から選んでもう一度表示する
+function reshow(v){
+  shownVal=v; lastVal=v;
+  buzz(14);
+  _renderLast(); _renderHist();
+  push({ v:v, ts:Date.now() });
+  toast(v+' km/h を表示');
+}
+
+// 同じ値をもう8秒表示する
+function resend(){
+  if(shownVal==null){
+    if(!hist.length){ toast('まだ入力がありません'); return; }
+    shownVal=hist[hist.length-1];
+  }
+  buzz(14);
+  _renderLast(); _renderHist();
+  push({ v:shownVal, ts:Date.now() });
+  toast(shownVal+' km/h を再表示');
+}
+
+// 直前の入力を取り消す（履歴からも消す）
+function undoSpeed(){
+  if(!hist.length){ toast('取り消す入力がありません'); return; }
+  var removed=hist.pop();
+  buzz(20);
+  if(hist.length){
+    shownVal=hist[hist.length-1];
+    push({ v:shownVal, ts:Date.now() });
+    toast(removed+' を取り消し → '+shownVal+' を表示');
+  }else{
+    shownVal=null;
+    push({ v:null, ts:Date.now(), clear:true });
+    toast(removed+' を取り消しました');
+  }
+  _renderLast(); _renderHist();
+}
+
+// 表示だけ消す（履歴は残す）
+function clearSpeed(){
+  shownVal=null;
+  _renderLast(); _renderHist();
+  push({ v:null, ts:Date.now(), clear:true });
+  toast('表示を消しました');
+}
+
+// ── 通信 ──────────────────────────────────────────────────────────────────
+var ws=null, wsTimer=null, state=null;
+
+function setDot(on){ g('wsdot').className='wsdot'+(on?' on':''); }
+
+function connect(){
+  if(wsTimer){ clearTimeout(wsTimer); wsTimer=null; }
+  try{
+    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+    ws.onopen=function(){
+      setDot(true);
+      try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
+    };
+    ws.onclose=function(){ ws=null; setDot(false); wsTimer=setTimeout(connect,3000); };
+    ws.onerror=function(){ try{ ws.close(); }catch(e){} };
+    ws.onmessage=function(ev){
+      var s=null;
+      try{ s=JSON.parse(ev.data); }catch(e){ return; }
+      if(!s || s._ctl!==true) return;
+      state=s;   // 他の状態は保持したまま送り返す
+      renderCtx(s);
+    };
+  }catch(e){ wsTimer=setTimeout(connect,3000); }
+}
+
+function push(speed){
+  if(!ws || ws.readyState!==1){ toast('未接続です'); return; }
+  var base = state ? JSON.parse(JSON.stringify(state)) : {};
+  base._ctl=true;
+  base.speed=speed;
+  base.showScoreOverlay=null;
+  ws.send(JSON.stringify(base));
+}
+
+
+// ── QRコード表示（1画面ぶん） ─────────────────────────────────────────────
+var QR_INFO = {
+  'controller.html': { name:'コントローラー', desc:'スコア・BSO・走者の操作' },
+  'speed.html':      { name:'球速入力',      desc:'球速の入力専用' },
+  'roster-pc.html':  { name:'メンバー管理',  desc:'選手登録・打順・守備' },
+  'overlay.html':    { name:'オーバーレイ',  desc:'配信に重ねる画面' }
+};
+
+function openQR(file){
+  var info = QR_INFO[file] || { name:file, desc:'' };
+  var url  = location.origin + '/' + file;
+
+  var m = document.getElementById('qr-mask');
+  if(!m) return;
+  document.getElementById('qr-name').textContent = info.name;
+  document.getElementById('qr-desc').textContent = info.desc;
+  document.getElementById('qr-url').textContent  = url;
+
+  var qbox = document.getElementById('qr-img');
+  qbox.innerHTML = '';
+  try{
+    var q = qrcode(0,'M');
+    q.addData(url);
+    q.make();
+    qbox.innerHTML = q.createSvgTag({ cellSize:4, margin:0 });
+    var svg = qbox.querySelector('svg');
+    if(svg){ svg.style.display='block'; svg.style.width='200px'; svg.style.height='200px'; }
+  }catch(e){
+    qbox.innerHTML = '<div style="width:200px;height:200px;display:flex;align-items:center;'
+      + 'justify-content:center;color:#c00;font-size:13px">生成に失敗しました</div>';
+  }
+  m.style.display = 'flex';
+}
+
+function closeQR(){
+  var m = document.getElementById('qr-mask');
+  if(m) m.style.display = 'none';
+}
+
+// ── 試合情報を表示 ────────────────────────────────────────────────────────
+function renderCtx(s){
+  var t=g('ctx-title'), sub=g('ctx-sub');
+  if(!t||!sub) return;
+  t.textContent = (s.gameTitle && s.gameTitle.trim()) ? s.gameTitle : '—';
+
+  var isTop = s.top!==false;
+  var an=s.aab||'先攻', hn=s.hnm||'後攻';
+  var asum=function(a){ return (a||[]).filter(function(v){ return typeof v==='number'; })
+    .reduce(function(x,y){ return x+y; },0); };
+  var at=asum(s.asc), ht=asum(s.hsc);
+  var pit=(s.pitcher||'').replace(/^#\d+\s*/,'');
+  var cat=(s.catcher||'').replace(/^#\d+\s*/,'');
+
+  sub.textContent = (s.inn||1)+'回'+(isTop?'表':'ウラ')
+    + ' ／ ' + an + ' ' + at + ' - ' + ht + ' ' + hn
+    + (pit ? ' ／ 投 '+pit : '')
+    + (cat ? ' ・ 捕 '+cat : '');
+
+  // BSO
+  var dots=function(id,n,max,cls){
+    var el=g(id); if(!el) return;
+    var h='';
+    for(var i=0;i<max;i++) h+='<span class="cb-dot'+(i<n?' '+cls:'')+'"></span>';
+    el.innerHTML=h;
+  };
+  dots('cb-b', s.b||0, 3, 'b');
+  dots('cb-s', s.s||0, 2, 's');
+  dots('cb-o', s.o||0, 2, 'o');
+
+  // 走者
+  var r=s.r||{};
+  [['cb-b1',1],['cb-b2',2],['cb-b3',3]].forEach(function(pair){
+    var el=g(pair[0]);
+    if(el) el.setAttribute('class', r[pair[1]] ? 'on' : '');
+  });
+
+  // 打者
+  var bat=g('cb-bat');
+  if(bat) bat.textContent = s.batter ? ('打 '+String(s.batter).replace(/^#\d+\s*/,'')) : '';
+
+  // 打席の球数・ファウル
+  var ab=g('cb-ab');
+  if(ab){
+    var np=s.abPitch||0, nf=s.abFoul||0;
+    ab.innerHTML = (nf>0 ? '<span class="f">F'+nf+'</span>' : '')
+      + (np>0 ? '<span class="t">'+np+'球</span>' : '');
+  }
+}
+
+// ── 時計 ──────────────────────────────────────────────────────────────────
+function tick(){
+  var d=new Date(), p=function(n){ return String(n).padStart(2,'0'); };
+  g('clock').textContent=p(d.getHours())+':'+p(d.getMinutes());
+}
+
+// ── 起動 ──────────────────────────────────────────────────────────────────
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+var wakeLock=null;
+function reqWake(){
+  if(!('wakeLock' in navigator)) return;
+  navigator.wakeLock.request('screen').then(function(l){
+    wakeLock=l;
+    l.addEventListener('release', function(){ setTimeout(reqWake,1000); });
+  }).catch(function(){});
+}
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible') reqWake();
+});
+reqWake();
+
+try{
+  var f=localStorage.getItem('bb_spd_fast'); if(f) center.fast=Number(f);
+  var s2=localStorage.getItem('bb_spd_slow'); if(s2) center.slow=Number(s2);
+}catch(e){}
+
+renderNums('fast');
+renderNums('slow');
+_renderLast(); _renderHist();
+tick(); setInterval(tick,1000);
+setDot(false);
+connect();
+</script>
+</body>
+</html>
