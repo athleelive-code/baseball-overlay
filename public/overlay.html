@@ -64,6 +64,18 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-ist-slide.open{max-width:600px;opacity:1}
 .ov-ad-slide{flex:0 1 auto;max-width:0;overflow:hidden;opacity:0;transition:max-width .5s ease,opacity .4s ease;display:flex;align-items:center}
 .ov-ad-slide.open{max-width:300px;opacity:1;margin-left:auto}
+.ov-ad-slide{position:relative}
+.ov-hr{display:none;position:absolute;inset:0;background:linear-gradient(135deg,#c8102e,#8a0e20);
+  border-radius:6px;flex-direction:column;align-items:center;justify-content:center;
+  padding:4px 12px;white-space:nowrap}
+.ov-hr.show{display:flex;animation:hrPop .5s ease both}
+.ov-hr-t{font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;line-height:1.1}
+.ov-hr-n{font-size:14px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.2}
+@keyframes hrPop{
+  0%{transform:scale(.7);opacity:0}
+  55%{transform:scale(1.06);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
 .ov-ist-table td.ov-ist-num{font-size:13px;color:rgba(255,255,255,.45);padding:1px 4px;border-bottom:1px solid rgba(255,255,255,.15)}
 .ov-ist-table td.ov-ist-num.cur{color:#fff;font-weight:700}
 .ov-ist-table{border-collapse:collapse;width:100%;table-layout:fixed}
@@ -91,7 +103,29 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-bso-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
 .ov-bso-lbl{display:none}
 .ov-dia-sep{width:1px;height:22px;background:rgba(255,255,255,.1);flex-shrink:0}
-.ov-dia{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-start;min-width:0}
+.ov-dia{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-start;min-width:0;position:relative}
+/* 電光掲示板ふうの球速表示 */
+.ov-speed{
+  display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  align-items:baseline;gap:3px;padding:4px 12px;border-radius:5px;
+  background:rgba(4,8,4,.92);border:1px solid rgba(120,255,120,.35);
+  box-shadow:0 0 14px rgba(60,255,60,.28),inset 0 0 10px rgba(0,60,0,.6);
+  z-index:3;white-space:nowrap;
+}
+.ov-speed.show{display:flex;animation:spdIn .25s ease both}
+.ov-speed-n{
+  font-size:30px;font-weight:900;color:#7dff5a;line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:1px;
+  text-shadow:0 0 8px rgba(125,255,90,.85),0 0 18px rgba(80,255,60,.5);
+}
+.ov-speed-u{
+  font-size:12px;font-weight:800;color:rgba(125,255,90,.75);line-height:1;
+  text-shadow:0 0 6px rgba(125,255,90,.6);
+}
+@keyframes spdIn{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
 
 /* ── 右上：P/C ＋ 守備配置スライドダウン ── */
 .ov-pc-wrap{
@@ -228,6 +262,9 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     </div>
     <div class="ov-dia-sep"></div>
     <div class="ov-dia">
+      <div class="ov-speed" id="ov-speed">
+        <span class="ov-speed-n" id="ov-speed-n">---</span><span class="ov-speed-u">km/h</span>
+      </div>
       <svg viewBox="-12 -8 190 72" style="width:170px;height:auto;display:block;flex-shrink:0">
         <line x1="80" y1="5" x2="25" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
         <line x1="80" y1="5" x2="135" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
@@ -241,6 +278,10 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     <!-- 広告エリア（スライド展開時に表示） -->
     <div class="ov-ad-slide" id="ov-ad-area">
       <img id="ov-ad-img" src="" alt="" style="height:100%;width:auto;max-height:60px;object-fit:contain;display:block;border-radius:4px"/>
+      <div class="ov-hr" id="ov-hr">
+        <div class="ov-hr-t" id="ov-hr-t">HOME RUN</div>
+        <div class="ov-hr-n" id="ov-hr-n"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -577,6 +618,40 @@ function applyState(s){
   if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
   // showScoreOverlay: 'show'/'hide' コマンドのみで制御
   if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
+  // 球速表示（8秒で消える）
+  (function(){
+    var el=g('ov-speed');
+    if(!el) return;
+    if(s.speed && s.speed.ts && s.speed.ts!==_seenSpdTs){
+      _seenSpdTs=s.speed.ts;
+      if(_spdTimer){ clearTimeout(_spdTimer); _spdTimer=null; }
+      if(s.speed.clear || s.speed.v==null){
+        el.classList.remove('show');       // 取り消し・消去
+      }else{
+        var n=g('ov-speed-n');
+        if(n) n.textContent=String(s.speed.v);
+        el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+        _spdTimer=setTimeout(function(){ el.classList.remove('show'); }, 8000);
+      }
+    }
+  })();
+
+  // ホームラン表示
+  (function(){
+    var hr=g('ov-hr');
+    if(!hr) return;
+    if(s.hrInfo && s.hrInfo.ts && s.hrInfo.ts!==_seenHrTs){
+      _seenHrTs=s.hrInfo.ts;
+      var n=s.hrInfo.runs||1;
+      var t=g('ov-hr-t'), nm=g('ov-hr-n');
+      if(t) t.textContent = n===4 ? 'GRAND SLAM' : 'HOME RUN';
+      if(nm) nm.textContent = (s.hrInfo.batter||'') + (n>1 ? ('　'+n+'点') : '');
+      hr.classList.remove('show'); void hr.offsetWidth; hr.classList.add('show');
+      if(_hrTimer) clearTimeout(_hrTimer);
+      _hrTimer=setTimeout(function(){ hr.classList.remove('show'); }, 12000);
+    }
+  })();
+
   if(s.showScoreOverlay==='show'){
     var _sec=(typeof s.scoreDispSec==='number')?s.scoreDispSec:_scoreDispSec;
     showScoreBig(s,_sec);
@@ -621,6 +696,8 @@ var _autoHideSec=0;
 
 // ── スコア拡大表示 ─────────────────────────────────────────────────────────
 var _scoreDispTimer=null;
+var _seenHrTs=0, _hrTimer=null;
+var _seenSpdTs=0, _spdTimer=null;
 var _scoreDispSec=0;
 
 // ── 広告ローテーション ─────────────────────────────
