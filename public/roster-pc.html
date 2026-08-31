@@ -15,7 +15,7 @@ body{padding-bottom:40px}
   background:#fff;border-bottom:1px solid rgba(0,0,0,.1);padding:8px 18px;min-height:56px}
 .hdr-left{display:flex;align-items:center;gap:10px}
 .hdr-logo{height:26px;width:auto;display:block}
-.hdr-sub{font-size:15px;font-weight:700;color:#444;letter-spacing:.5px}
+.hdr-sub{font-size:15px;font-weight:700;color:#444;letter-spacing:.5px;flex-shrink:0}
 .hdr-right{display:flex;align-items:center;gap:12px}
 .hdr-div{width:1px;height:22px;background:rgba(0,0,0,.15)}
 .clock{font-size:20px;font-weight:700;color:#222;font-variant-numeric:tabular-nums;letter-spacing:.5px}
@@ -38,8 +38,25 @@ body{padding-bottom:40px}
 
 /* 試合状況バー */
 .gamebar{display:flex;align-items:center;gap:26px;flex-wrap:wrap;
-  background:var(--panel);border-bottom:1px solid var(--line);padding:14px 22px}
-.gb-inn{display:flex;align-items:baseline;gap:4px}
+  background:var(--panel);border-bottom:1px solid var(--line);padding:12px 22px 14px}
+#hdr-game-title{
+  flex:0 0 100%;order:-1;margin-bottom:2px;
+  background:transparent;border:none;border-bottom:1px solid #2e2e30;
+  color:#eee;font-size:20px;font-weight:800;padding:6px 2px;outline:none;
+}
+#hdr-game-title:focus{border-bottom-color:#666}
+#hdr-game-title::placeholder{color:#4a4a4c;font-weight:500}
+.gb-inn{display:flex;flex-direction:column;align-items:center;gap:5px}
+.gb-inn-adj{display:flex;align-items:center;gap:7px}
+.gb-ib{width:32px;height:32px;border-radius:8px;border:2px solid #444;background:#2c2c2e;
+  color:#ccc;font-size:19px;font-weight:900;cursor:pointer;line-height:1;padding:0}
+.gb-ib:hover{background:#3a3a3c;color:#fff}
+.gb-tb-sel{display:flex;gap:4px}
+.gb-tbb{border:2px solid #3a3a3c;background:#242426;color:#777;border-radius:7px;
+  font-size:15px;font-weight:800;padding:5px 14px;cursor:pointer}
+.gb-tbb.on{background:rgba(200,16,46,.25);border-color:var(--red);color:#ff9098}
+.gb-base{cursor:pointer}
+.gb-base:hover{stroke:#e8c33d;stroke-width:2.5}
 .gb-inn-num{font-size:46px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
 .gb-inn-tb{font-size:22px;font-weight:700;color:var(--red)}
 
@@ -49,31 +66,33 @@ body{padding-bottom:40px}
 .gb-score td.tname{color:#fff;text-align:left;font-size:18px;max-width:180px;overflow:hidden;
   white-space:nowrap;text-overflow:ellipsis;padding-right:14px;border-right:1px solid #333}
 .gb-score td.cur{color:#fff}
+.gb-score td.editable{cursor:pointer;border-radius:4px;transition:background .12s}
+.gb-score td.editable:hover{background:rgba(255,255,255,.1)}
 .gb-score td.tot{color:#fff;font-size:26px;border-left:1px solid #333;padding-left:13px}
 .gb-score th.tot{border-left:1px solid #333}
 
-.gb-bso{display:flex;flex-direction:column;gap:5px}
+.gb-bso{display:flex;flex-direction:column;gap:7px}
 .gb-bso-line{display:flex;align-items:center;gap:6px;cursor:pointer;
   padding:3px 6px;border-radius:6px;user-select:none;transition:background .1s}
 .gb-bso-line:hover{background:#232325}
 .gb-bso-line:active{background:#2c2c2e}
-.gb-pb{width:22px;height:22px;border-radius:50%;border:2px solid #5a5a5c;
-  background:#242426;color:#999;font-size:11px;font-weight:900;cursor:pointer;
+.gb-pb{width:32px;height:32px;border-radius:50%;border:2px solid #5a5a5c;
+  background:#242426;color:#999;font-size:15px;font-weight:900;cursor:pointer;
   display:flex;align-items:center;justify-content:center;padding:0;margin-left:3px}
 .gb-pb:hover{background:#3a3a3c;color:#fff}
 .gb-pb.f{border-color:#6a5a2a;color:#d0b070}
 .gb-pb.h{border-color:#5a3a2a;color:#a87858}
-.gb-abinfo{font-size:12px;font-weight:800;color:#c8a02e;min-width:34px;
+.gb-abinfo{font-size:16px;font-weight:800;color:#c8a02e;min-width:44px;
   font-variant-numeric:tabular-nums}
-.gb-bso-lbl{font-size:15px;font-weight:800;color:#888;width:15px}
-.gb-dots{display:flex;gap:4px}
-.gb-dot{width:16px;height:16px;border-radius:50%;background:#333}
+.gb-bso-lbl{font-size:20px;font-weight:800;color:#999;width:20px}
+.gb-dots{display:flex;gap:7px}
+.gb-dot{width:26px;height:26px;border-radius:50%;background:#333;border:2px solid #444}
 .gb-dot.on-b{background:#3ac13a}
 .gb-dot.on-s{background:#e8c33d}
 .gb-dot.on-o{background:var(--red)}
 
 .gb-dia{width:80px;height:80px;flex-shrink:0}
-.gb-dia rect{fill:#2a2a2c;stroke:#555;stroke-width:2}
+.gb-dia rect{fill:#2a2a2c;stroke:#555;stroke-width:2;transition:fill .12s}
 .gb-dia rect.on{fill:#e8c33d;stroke:#e8c33d}
 .gb-dia #gb-hp{fill:#3a3a3c}
 
@@ -86,8 +105,35 @@ body{padding-bottom:40px}
 .gb-bt-tag.bat{background:rgba(200,16,46,.22);color:#ff8090}
 .gb-bt-tag.def{background:rgba(26,86,160,.25);color:#8ab4ff}
 
-.gb-flags{display:flex;flex-wrap:wrap;gap:5px;align-content:center;max-width:190px}
-.gb-ann{display:flex;flex-direction:row;align-items:center;gap:8px;margin-left:auto}
+.gb-flags{display:none}
+.gb-disp{display:flex;flex-wrap:wrap;gap:6px;align-content:center;max-width:230px}
+.disp-btn{background:#242426;border:2px solid #303032;border-radius:8px;color:#666;
+  font-size:13px;font-weight:800;padding:9px 12px;cursor:pointer;white-space:nowrap;transition:.12s}
+.disp-btn:hover{background:#2e2e30;color:#aaa}
+.disp-btn.on{background:rgba(58,193,58,.18);color:#7fd47f;border-color:rgba(58,193,58,.5)}
+.disp-btn.score{color:#aaaaff;border-color:#3a3a6a}
+.disp-btn.score.on{background:rgba(90,90,200,.22);color:#c8c8ff;border-color:#5a5aaa}
+.qrbtn{background:none;border:none;color:#666;cursor:pointer;padding:4px;
+  font-size:20px;line-height:0;flex-shrink:0;transition:color .12s}
+.qrbtn:hover{color:#ccc}
+.gb-spd{display:flex;flex-direction:column;gap:4px;margin-left:auto}
+.spd-last{font-size:26px;font-weight:900;color:#7dff5a;text-align:center;line-height:1;
+  font-variant-numeric:tabular-nums;text-shadow:0 0 10px rgba(125,255,90,.6)}
+.spd-last.empty{color:#1e3a1e;text-shadow:none}
+.spd-last span{font-size:12px;font-weight:700;opacity:.7}
+.spd-row{display:flex;align-items:center;gap:3px}
+.spd-a{width:22px;height:26px;border:1px solid #3a3a3c;background:#242426;color:#aaa;
+  border-radius:5px;font-size:11px;font-weight:900;cursor:pointer;padding:0}
+.spd-a:hover{background:#3a3a3c;color:#fff}
+.spd-n{display:grid;grid-template-columns:repeat(11,1fr);gap:2px}
+.spd-b{border:1px solid #3a3a3c;background:#242426;color:#ccc;border-radius:5px;
+  font-size:11px;font-weight:800;padding:7px 0;cursor:pointer;min-width:26px;
+  font-variant-numeric:tabular-nums}
+.spd-b:hover{background:#3a3a3c;color:#fff}
+.spd-b.mid{border-color:#8a6a2a;background:#2e2418;color:#e0b070}
+.spd-b.hit{background:#1d5a1d;border-color:#7dff5a;color:#fff}
+
+.gb-ann{display:flex;flex-direction:row;align-items:center;gap:8px}
 .ann-btn{background:#2c2c2e;border:2px solid #3a3a3c;border-radius:10px;color:#aaa;
   font-size:16px;font-weight:800;padding:18px 20px;cursor:pointer;white-space:nowrap;transition:.15s;
   line-height:1.25;min-height:62px}
@@ -133,7 +179,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 .fp-badge.atk{background:rgba(200,16,46,.2);color:#ff8090;border:1px solid rgba(200,16,46,.45)}
 .fp-badge.def{background:rgba(26,86,160,.24);color:#8ab4ff;border:1px solid rgba(26,86,160,.55)}
 .fp-hint{font-size:11px;color:#666;font-weight:400}
-.fp-next{margin-left:auto;background:#c8102e;border:none;border-radius:9px;color:#fff;
+.fp-next{background:#c8102e;border:none;border-radius:9px;color:#fff;
   font-size:17px;font-weight:800;padding:11px 22px;cursor:pointer;white-space:nowrap;transition:.12s}
 .fp-next:hover{background:#e0203e}
 .fp-next:active{transform:scale(.96)}
@@ -148,7 +194,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 .fp-ord-row.cur .fp-ord-nm{color:#fff;font-weight:700}
 .fp-ord-pos{font-size:16px;color:#888;text-align:center}
 
-.fp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,26%);gap:8px;padding:8px 10px 10px}
+.fp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,28%);gap:8px;padding:8px 10px 10px;align-items:start}
 #fp-field{width:100%;height:auto;display:block}
 #fp-field .fld{fill:#16301a;stroke:#2a4a2e;stroke-width:2}
 #fp-field .inf{fill:#3a2a1c;stroke:#54402c;stroke-width:2}
@@ -163,7 +209,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 #fp-field .p-nm{font-size:14px;font-weight:700;fill:#fff}
 
 .fp-bench{background:#161618;border:1px solid #262628;border-radius:9px;padding:7px;
-  max-height:200px;overflow-y:auto}
+  max-height:none;overflow-y:auto}
 .fp-bench-t{font-size:11px;color:var(--sub);margin-bottom:7px;letter-spacing:.5px}
 .fp-bp{display:flex;align-items:center;gap:5px;padding:6px 7px;margin-bottom:4px;
   background:#242426;border:1px solid #313133;border-radius:6px;cursor:pointer;font-size:12px}
@@ -272,6 +318,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
 .toast.show{opacity:1}
 </style>
+<script src="qrcode.js"></script>
 </head>
 <body>
 
@@ -301,9 +348,19 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 
 <!-- 試合状況（読み取り専用・コントローラーと同期） -->
 <div class="gamebar">
+  <input id="hdr-game-title" type="text" placeholder="試合名を入力"
+    oninput="onGameTitlePC()" autocomplete="off">
   <div class="gb-inn">
-    <span class="gb-inn-num" id="gb-inn">1</span>
-    <span class="gb-inn-tb" id="gb-tb">▲</span>
+    <div class="gb-inn-adj">
+      <button class="gb-ib" onclick="pcAdjInn(-1)">−</button>
+      <span class="gb-inn-num" id="gb-inn">1</span>
+      <button class="gb-ib" onclick="pcAdjInn(1)">＋</button>
+    </div>
+    <div class="gb-tb-sel">
+      <button class="gb-tbb" id="gb-tb-t" onclick="pcSetTop(true)">表</button>
+      <button class="gb-tbb" id="gb-tb-b" onclick="pcSetTop(false)">ウラ</button>
+    </div>
+    <span class="gb-inn-tb" id="gb-tb" style="display:none"></span>
   </div>
 
   <table class="gb-score">
@@ -334,9 +391,9 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
 
   <svg class="gb-dia" viewBox="0 0 74 74">
-    <rect id="gb-b2" x="27" y="4"  width="20" height="20" transform="rotate(45 37 14)" />
-    <rect id="gb-b3" x="7"  y="24" width="20" height="20" transform="rotate(45 17 34)" />
-    <rect id="gb-b1" x="47" y="24" width="20" height="20" transform="rotate(45 57 34)" />
+    <rect id="gb-b2" class="gb-base" x="27" y="4"  width="20" height="20" transform="rotate(45 37 14)" onclick="pcToggleBase(2)" />
+    <rect id="gb-b3" class="gb-base" x="7"  y="24" width="20" height="20" transform="rotate(45 17 34)" onclick="pcToggleBase(3)" />
+    <rect id="gb-b1" class="gb-base" x="47" y="24" width="20" height="20" transform="rotate(45 57 34)" onclick="pcToggleBase(1)" />
     <rect id="gb-hp" x="27" y="44" width="20" height="20" transform="rotate(45 37 54)" />
   </svg>
 
@@ -354,6 +411,32 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
 
   <div class="gb-flags" id="gb-flags"></div>
+  <div class="gb-disp">
+    <button class="disp-btn" data-k="showBatter" onclick="pcToggleDisp('showBatter')">打者</button>
+    <button class="disp-btn" data-k="showBat"    onclick="pcToggleDisp('showBat')">打順</button>
+    <button class="disp-btn" data-k="showPC"     onclick="pcToggleDisp('showPC')">投捕</button>
+    <button class="disp-btn" data-k="showDef"    onclick="pcToggleDisp('showDef')">守備配置</button>
+    <button class="disp-btn" data-k="showBSO"    onclick="pcToggleDisp('showBSO')">BSO</button>
+    <button class="disp-btn score" onclick="pcToggleScoreOverlay()">📊 スコア</button>
+    <button class="disp-btn" onclick="openQR('overlay.html')" title="オーバーレイを共有" style="display:flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg> 画面</button>
+  </div>
+
+  <div class="gb-spd">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+      <div class="spd-last" id="spd-last">--- <span>km/h</span></div>
+      <button class="qrbtn" onclick="openQR('speed.html')" title="球速入力を共有"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
+    </div>
+    <div class="spd-row">
+      <button class="spd-a" onclick="spdSlide('fast',-1)">◀</button>
+      <div class="spd-n" id="spd-fast"></div>
+      <button class="spd-a" onclick="spdSlide('fast',1)">▶</button>
+    </div>
+    <div class="spd-row">
+      <button class="spd-a" onclick="spdSlide('slow',-1)">◀</button>
+      <div class="spd-n" id="spd-slow"></div>
+      <button class="spd-a" onclick="spdSlide('slow',1)">▶</button>
+    </div>
+  </div>
 
   <div class="gb-ann">
     <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
@@ -373,6 +456,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <div class="fp-hd">
       <span class="fp-badge atk">攻撃</span>
       <span id="fp-atk-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px">先攻</span>
+      <button class="qrbtn" onclick="openQR('controller.html')" title="コントローラーを共有" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
       <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
     </div>
     <div id="fp-order" class="fp-order"></div>
@@ -599,6 +683,21 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
 </div>
 
+<!-- 各回スコアの編集 -->
+<div id="sc-pop" class="respop" style="width:250px">
+  <div class="respop-t" id="sc-pop-t" style="color:#ddd;font-size:14px"></div>
+  <div id="sc-pop-v" style="font-size:44px;font-weight:900;color:#fff;text-align:center;margin:6px 0 12px">—</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    <button class="rp-item" style="background:#3a1a1a;border:2px solid #6a3a3a;color:#ff9090"
+      onclick="pcScoreAdj(-1)">−</button>
+    <button class="rp-item" style="background:#1a3a1a;border:2px solid #3a6a2a;color:#8ad48a"
+      onclick="pcScoreAdj(1)">＋</button>
+    <button class="rp-item" style="background:#2c2c2e;border:2px solid #444;color:#ccc"
+      onclick="pcScoreX()">×</button>
+  </div>
+  <button class="rp-cancel" onclick="closeScPop()">閉じる</button>
+</div>
+
 <!-- 三振の種類（Sボタンの近くに開く） -->
 <div id="k-pop" class="respop" style="width:340px">
   <div class="respop-t" style="color:#e8c33d">三振</div>
@@ -641,6 +740,20 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <button class="btn btn-save" style="flex:1;font-size:16px;padding:14px" onclick="doSpeakConfirmed()">🔊 読み上げる</button>
       <button class="btn" style="flex:1" onclick="closeModal('speak-mask')">キャンセル</button>
     </div>
+  </div>
+</div>
+
+
+<!-- QRコード表示 -->
+<div id="qr-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:900;align-items:center;justify-content:center;padding:16px"
+  onclick="if(event.target===this)closeQR()">
+  <div style="background:#1c1c1e;border:2px solid #444;border-radius:18px;padding:24px;width:100%;max-width:400px;text-align:center">
+    <div id="qr-name" style="font-size:26px;font-weight:800;color:#fff;margin-bottom:4px"></div>
+    <div id="qr-desc" style="font-size:15px;color:#888;margin-bottom:18px"></div>
+    <div id="qr-img" style="background:#fff;padding:12px;border-radius:12px;display:inline-block;line-height:0"></div>
+    <div id="qr-url" style="font-size:12px;color:#666;word-break:break-all;line-height:1.5;margin-top:14px"></div>
+    <button onclick="closeQR()"
+      style="width:100%;margin-top:18px;background:#2c2c2e;border:2px solid #444;border-radius:12px;color:#ccc;font-size:19px;font-weight:700;padding:16px;cursor:pointer">閉じる</button>
   </div>
 </div>
 
@@ -794,6 +907,7 @@ function pushState(){
   base._ctl = true;
   base.rostersAll = { away:rosters.away, home:rosters.home };
   base.showScoreOverlay = null;
+  base.hrInfo = _lastHR;
   ws.send(JSON.stringify(base));
 }
 
@@ -1068,6 +1182,11 @@ document.addEventListener('mousedown', function(e){
   if(kp && kp.classList.contains('open') && !kp.contains(e.target)){
     closeKPop();
   }
+  var sp=document.getElementById('sc-pop');
+  if(sp && sp.classList.contains('open') && !sp.contains(e.target)
+     && !(e.target.closest && e.target.closest('.gb-score td.editable'))){
+    closeScPop();
+  }
 });
 
 document.querySelectorAll('.mask').forEach(function(m){
@@ -1108,6 +1227,10 @@ function applyRemote(s){
     if(s.rostersAll){
       if(Array.isArray(s.rostersAll.away)) rosters.away=JSON.parse(JSON.stringify(s.rostersAll.away));
       if(Array.isArray(s.rostersAll.home)) rosters.home=JSON.parse(JSON.stringify(s.rostersAll.home));
+    }
+    var _gt=document.getElementById('hdr-game-title');
+    if(_gt && typeof s.gameTitle==='string' && document.activeElement!==_gt){
+      _gt.value=s.gameTitle;
     }
     if(s.aab){ teamNames.away=s.aab; document.getElementById('tname-away').value=(s.aab==='先攻'?'':s.aab); }
     if(s.hnm){ teamNames.home=s.hnm; document.getElementById('tname-home').value=(s.hnm==='後攻'?'':s.hnm); }
@@ -1258,6 +1381,7 @@ function pcBSO(k){
   }
   if(k==='o'){
     _abResetPC();
+    if(lastRemote.o>=3){ _pcSyncAb(); pcNextInning(); return; }
   }
 
   _pcSyncAb();
@@ -1290,6 +1414,215 @@ function _updateAbDispPC(){
   if(t) t.textContent=_abPitch>0?(_abPitch+'球'):'';
 }
 
+// ── 試合名 ────────────────────────────────────────────────────────────────
+function onGameTitlePC(){
+  if(!lastRemote) return;
+  lastRemote.gameTitle = document.getElementById('hdr-game-title').value;
+  pushState();
+}
+
+// ── 球速入力 ──────────────────────────────────────────────────────────────
+var SPD_MIN=10, SPD_MAX=200;
+var spdCenter={ fast:135, slow:95 };
+var spdLast=null;
+
+function spdRender(kind){
+  var box=document.getElementById('spd-'+kind);
+  if(!box) return;
+  var mid=spdCenter[kind], h='';
+  for(var v=mid-5; v<=mid+5; v++){
+    if(v<SPD_MIN||v>SPD_MAX){ h+='<button class="spd-b" style="opacity:.25" disabled>—</button>'; continue; }
+    h+='<button class="spd-b'+(v===mid?' mid':'')+'" onclick="spdSend('+v+',this)">'+v+'</button>';
+  }
+  box.innerHTML=h;
+}
+
+function spdSlide(kind, dir){
+  var next=spdCenter[kind]+dir;
+  if(next-5<SPD_MIN) next=SPD_MIN+5;
+  if(next+5>SPD_MAX) next=SPD_MAX-5;
+  spdCenter[kind]=next;
+  try{ localStorage.setItem('bb_spd_'+kind, next); }catch(e){}
+  spdRender(kind);
+}
+
+function spdSend(v, el){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  spdLast=v;
+  var L=document.getElementById('spd-last');
+  if(L){ L.innerHTML=v+' <span>km/h</span>'; L.classList.remove('empty'); }
+  if(el){ el.classList.add('hit'); setTimeout(function(){ el.classList.remove('hit'); },200); }
+  lastRemote.speed={ v:v, ts:Date.now() };
+  pushState();
+}
+
+function _spdInit(){
+  try{
+    var f=localStorage.getItem('bb_spd_fast'); if(f) spdCenter.fast=Number(f);
+    var s=localStorage.getItem('bb_spd_slow'); if(s) spdCenter.slow=Number(s);
+  }catch(e){}
+  spdRender('fast'); spdRender('slow');
+}
+
+// ── overlay の表示切替（PC側から） ────────────────────────────────────────
+function pcToggleDisp(key){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  lastRemote[key] = !lastRemote[key];
+  renderGame(lastRemote);
+  pushState();
+}
+
+function pcToggleScoreOverlay(){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  _scoreShown = !_scoreShown;
+  lastRemote.showScoreOverlay = _scoreShown ? 'show' : 'hide';
+  var b=document.querySelector('.disp-btn.score');
+  if(b) b.classList.toggle('on', _scoreShown);
+  if(ws && ws.readyState===1){
+    var base=JSON.parse(JSON.stringify(lastRemote));
+    base._ctl=true;
+    base.rostersAll={ away:rosters.away, home:rosters.home };
+    ws.send(JSON.stringify(base));
+  }
+  lastRemote.showScoreOverlay=null;
+}
+var _scoreShown=false;
+
+// ── イニング・表裏・走者・各回スコアの編集 ────────────────────────────────
+function pcAdjInn(d){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  lastRemote.inn = Math.max(1, Math.min(20, (lastRemote.inn||1) + d));
+  renderGame(lastRemote); renderFieldPane(); pushState();
+}
+
+function pcSetTop(isTop){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  lastRemote.top = isTop;
+  renderGame(lastRemote); renderFieldPane(); renderAll(); pushState();
+}
+
+function pcToggleBase(n){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  lastRemote.r = lastRemote.r || {};
+  lastRemote.r[n] = !lastRemote.r[n];
+  renderGame(lastRemote); pushState();
+}
+
+// スコア表のセルを編集
+var _scEdit = null;   // { side, idx }
+
+function pcEditScore(side, idx){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  _scEdit = { side:side, idx:idx };
+  var arr = side==='away' ? (lastRemote.asc||[]) : (lastRemote.hsc||[]);
+  var v = arr[idx];
+  var box=document.getElementById('sc-pop');
+  document.getElementById('sc-pop-t').textContent =
+    (idx+1)+'回 ' + (side==='away' ? (teamNames.away||'先攻') : (teamNames.home||'後攻'));
+  document.getElementById('sc-pop-v').textContent =
+    (v===null||v===undefined) ? '—' : (v==='x' ? '×' : String(v));
+  box.classList.add('open');
+
+  var cell=document.getElementById('sc-'+side+'-'+idx);
+  if(cell){
+    var r=cell.getBoundingClientRect();
+    var w=box.offsetWidth, h=box.offsetHeight;
+    var left=Math.max(10, Math.min(window.innerWidth-w-10, r.left + r.width/2 - w/2));
+    var top =Math.max(10, Math.min(window.innerHeight-h-10, r.bottom + 8));
+    box.style.left=left+'px';
+    box.style.top =top+'px';
+  }
+}
+
+function pcScoreAdj(d){
+  if(!_scEdit || !lastRemote) return;
+  var side=_scEdit.side, i=_scEdit.idx;
+  var arr = side==='away' ? (lastRemote.asc=lastRemote.asc||[]) : (lastRemote.hsc=lastRemote.hsc||[]);
+  while(arr.length<=i) arr.push(null);
+  var cur=arr[i];
+  if(cur===null||cur===undefined||cur==='x'){
+    arr[i] = d>0 ? d : null;
+  }else{
+    var v=cur+d;
+    arr[i] = v<0 ? null : Math.min(99, v);
+  }
+  document.getElementById('sc-pop-v').textContent =
+    (arr[i]===null||arr[i]===undefined) ? '—' : String(arr[i]);
+  renderGame(lastRemote);
+  pushState();
+}
+
+function pcScoreX(){
+  if(!_scEdit || !lastRemote) return;
+  var side=_scEdit.side, i=_scEdit.idx;
+  var arr = side==='away' ? (lastRemote.asc=lastRemote.asc||[]) : (lastRemote.hsc=lastRemote.hsc||[]);
+  while(arr.length<=i) arr.push(null);
+  arr[i] = (arr[i]==='x') ? null : 'x';
+  document.getElementById('sc-pop-v').textContent = arr[i]==='x' ? '×' : '—';
+  renderGame(lastRemote);
+  pushState();
+}
+
+function closeScPop(){
+  var b=document.getElementById('sc-pop');
+  if(b) b.classList.remove('open');
+  _scEdit=null;
+}
+
+// ── ホームラン：走者を還して加点する ──────────────────────────────────────
+function _applyHomeRun(){
+  if(!lastRemote) return;
+  var s=lastRemote;
+  var r=s.r||{};
+  // 走者の数 + 打者本人
+  var runs = (r[1]?1:0) + (r[2]?1:0) + (r[3]?1:0) + 1;
+  s.r = {1:false,2:false,3:false};
+
+  var isTop = s.top!==false;
+  var arr = isTop ? (s.asc=s.asc||[]) : (s.hsc=s.hsc||[]);
+  var i = (s.inn||1)-1;
+  while(arr.length<=i) arr.push(null);
+  var cur = arr[i];
+  arr[i] = (cur===null||cur===undefined||cur==='x') ? runs : Math.min(99, cur+runs);
+
+  _lastHR = {
+    runs: runs,
+    batter: (s.batter||'').replace(/^#\d+\s*/,''),
+    team: isTop ? (s.aab||teamNames.away||'先攻') : (s.hnm||teamNames.home||'後攻'),
+    ts: Date.now()
+  };
+  toast(runs===4 ? '満塁ホームラン！' : (runs>1 ? runs+'ランホームラン！' : 'ソロホームラン！'));
+}
+var _lastHR = null;
+
+// ── イニング交代（PC側） ──────────────────────────────────────────────────
+function pcNextInning(){
+  if(!lastRemote) return;
+  var s=lastRemote;
+  var isTop = s.top!==false;
+
+  // その回の得点欄を確定（未入力なら0）
+  var arr = isTop ? (s.asc=s.asc||[]) : (s.hsc=s.hsc||[]);
+  var i = (s.inn||1)-1;
+  while(arr.length<=i) arr.push(null);
+  if(arr[i]===null || arr[i]===undefined) arr[i]=0;
+
+  // カウント・走者をリセット
+  s.b=0; s.s=0; s.o=0;
+  s.r={1:false,2:false,3:false};
+  _abResetPC(); _pcSyncAb();
+
+  // 表裏を進める
+  if(isTop){ s.top=false; } else { s.top=true; s.inn=(s.inn||1)+1; }
+
+  renderGame(s);
+  renderFieldPane();
+  renderAll();
+  _updateAbDispPC();
+  pushState();
+  toast(s.inn+'回'+(s.top?'表':'裏'));
+}
+
 // ── 三振の種類を選ぶ ──────────────────────────────────────────────────────
 function openKPop(){
   var pop=document.getElementById('k-pop');
@@ -1316,13 +1649,17 @@ function closeKPop(){
 function pickStrikeout(label){
   closeKPop();
   addLog('result', label);
-  if(lastRemote){
-    lastRemote.o = Math.min(3, (lastRemote.o||0)+1);
-    lastRemote.b=0; lastRemote.s=0;
-    _abResetPC(); _pcSyncAb();
-    renderGame(lastRemote);
-    _updateAbDispPC();
+  if(!lastRemote) return;
+  lastRemote.o = Math.min(3, (lastRemote.o||0)+1);
+  lastRemote.b=0; lastRemote.s=0;
+  _abResetPC(); _pcSyncAb();
+  if(lastRemote.o>=3){
+    pcNextInning();
+    toast(label);
+    return;
   }
+  renderGame(lastRemote);
+  _updateAbDispPC();
   goNextBatterPC();
   toast(label);
 }
@@ -1420,13 +1757,31 @@ function rpPick(kind){
 function rpResult(label, outs){
   closeResPop();
   addLog('result', label);
-  if(lastRemote){
-    if(outs>0) lastRemote.o = Math.min(3, (lastRemote.o||0)+outs);
-    lastRemote.b=0; lastRemote.s=0;
-    _abResetPC(); _pcSyncAb();
-    renderGame(lastRemote);
-    _updateAbDispPC();
+  if(!lastRemote) return;
+
+  if(label==='ホームラン'){
+    _applyHomeRun();
+    // スコア表を開いてホームラン表示を出す
+    setTimeout(function(){
+      if(!ws || ws.readyState!==1 || !lastRemote) return;
+      var b=JSON.parse(JSON.stringify(lastRemote));
+      b._ctl=true; b.showScoreOverlay='show'; b.hrInfo=_lastHR;
+      b.rostersAll={ away:rosters.away, home:rosters.home };
+      ws.send(JSON.stringify(b));
+    }, 300);
   }
+
+  if(outs>0) lastRemote.o = Math.min(3, (lastRemote.o||0)+outs);
+  lastRemote.b=0; lastRemote.s=0;
+  _abResetPC(); _pcSyncAb();
+
+  if(lastRemote.o>=3){
+    pcNextInning();
+    toast(label);
+    return;
+  }
+  renderGame(lastRemote);
+  _updateAbDispPC();
   goNextBatterPC();
   toast(label);
 }
@@ -1554,11 +1909,13 @@ function exportLog(){
 }
 
 // ── 攻撃／守備パネルの幅調整（仕切りをドラッグ） ──────────────────────────
-var FP_MIN = 260, FP_MAX = 900, FP_DEF = 420;
+var FP_MIN = 240, FP_MAX = 1400, FP_DEF = 420;
 var _fpWidth = FP_DEF;
 
 function _applyFpWidth(w){
-  _fpWidth = Math.max(FP_MIN, Math.min(FP_MAX, Math.round(w)));
+  // 画面幅の8割まで広げられる
+  var lim = Math.min(FP_MAX, Math.round(window.innerWidth * 0.8));
+  _fpWidth = Math.max(FP_MIN, Math.min(lim, Math.round(w)));
   var pane = document.querySelector('.fieldpane');
   if(pane) pane.style.gridTemplateColumns = '1fr 10px ' + _fpWidth + 'px';
   // 図の再描画は不要（SVGは幅に追従）
@@ -2323,7 +2680,9 @@ function renderGame(s){
   const asc=s.asc||[], hsc=s.hsc||[];
 
   document.getElementById('gb-inn').textContent=inn;
-  document.getElementById('gb-tb').textContent=isTop?'▲ 表':'▼ 裏';
+  var _tt=document.getElementById('gb-tb-t'), _tb=document.getElementById('gb-tb-b');
+  if(_tt) _tt.className='gb-tbb'+(isTop?' on':'');
+  if(_tb) _tb.className='gb-tbb'+(!isTop?' on':'');
 
   const sum=function(a){ return a.filter(function(v){ return typeof v==='number'; })
     .reduce(function(x,y){ return x+y; },0); };
@@ -2334,17 +2693,18 @@ function renderGame(s){
   head+='<th class="tot">R</th>';
   document.getElementById('gb-sc-head').innerHTML=head;
 
-  const rowHtml=function(name,sc,tot){
+  const rowHtml=function(name,sc,tot,side){
     let h='<td class="tname">'+esc(name)+'</td>';
     for(let i=0;i<n;i++){
       const v=sc[i];
       const disp=(v===null||v===undefined)?'':(v==='x'?'×':String(v));
-      h+='<td class="'+((i+1)===inn?'cur':'')+'">'+disp+'</td>';
+      h+='<td id="sc-'+side+'-'+i+'" class="editable '+((i+1)===inn?'cur':'')+'"'
+        +' onclick="pcEditScore(\''+side+'\','+i+')">'+disp+'</td>';
     }
     return h+'<td class="tot">'+tot+'</td>';
   };
-  document.getElementById('gb-sc-away').innerHTML=rowHtml(s.aab||'先攻',asc,at);
-  document.getElementById('gb-sc-home').innerHTML=rowHtml(s.hnm||'後攻',hsc,ht);
+  document.getElementById('gb-sc-away').innerHTML=rowHtml(s.aab||'先攻',asc,at,'away');
+  document.getElementById('gb-sc-home').innerHTML=rowHtml(s.hnm||'後攻',hsc,ht,'home');
 
   const dots=function(id,count,max,cls){
     let h='';
@@ -2380,9 +2740,51 @@ function renderGame(s){
     ['守備配置', s.showDef],
     ['BSO',    s.showBSO]
   ];
-  document.getElementById('gb-flags').innerHTML=flags.map(function(f){
-    return '<span class="gb-flag'+(f[1]?' on':'')+'">'+f[0]+'</span>';
-  }).join('');
+  // 表示ボタンの状態を反映
+  document.querySelectorAll('.disp-btn[data-k]').forEach(function(b){
+    var on = !!s[b.dataset.k];
+    b.classList.toggle('on', on);
+  });
+}
+
+
+// ── QRコード表示（1画面ぶん） ─────────────────────────────────────────────
+var QR_INFO = {
+  'controller.html': { name:'コントローラー', desc:'スコア・BSO・走者の操作' },
+  'speed.html':      { name:'球速入力',      desc:'球速の入力専用' },
+  'roster-pc.html':  { name:'メンバー管理',  desc:'選手登録・打順・守備' },
+  'overlay.html':    { name:'オーバーレイ',  desc:'配信に重ねる画面' }
+};
+
+function openQR(file){
+  var info = QR_INFO[file] || { name:file, desc:'' };
+  var url  = location.origin + '/' + file;
+
+  var m = document.getElementById('qr-mask');
+  if(!m) return;
+  document.getElementById('qr-name').textContent = info.name;
+  document.getElementById('qr-desc').textContent = info.desc;
+  document.getElementById('qr-url').textContent  = url;
+
+  var qbox = document.getElementById('qr-img');
+  qbox.innerHTML = '';
+  try{
+    var q = qrcode(0,'M');
+    q.addData(url);
+    q.make();
+    qbox.innerHTML = q.createSvgTag({ cellSize:4, margin:0 });
+    var svg = qbox.querySelector('svg');
+    if(svg){ svg.style.display='block'; svg.style.width='200px'; svg.style.height='200px'; }
+  }catch(e){
+    qbox.innerHTML = '<div style="width:200px;height:200px;display:flex;align-items:center;'
+      + 'justify-content:center;color:#c00;font-size:13px">生成に失敗しました</div>';
+  }
+  m.style.display = 'flex';
+}
+
+function closeQR(){
+  var m = document.getElementById('qr-mask');
+  if(m) m.style.display = 'none';
 }
 
 // ── 時計 ──────────────────────────────────────────────────────────────────
@@ -2421,6 +2823,7 @@ initBattery();
   document.getElementById('new-'+t+'-pos').innerHTML=posOptions('');
 });
 renderAll();
+_spdInit();
 _initFpSplit();
 renderFieldPane();
 _loadLog();
