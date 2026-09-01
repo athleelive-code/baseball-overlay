@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest-roster.json">
 <title>AthleeLive メンバー管理（PC）</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;-webkit-touch-callout:none}
@@ -86,7 +87,9 @@ body{padding-bottom:40px}
   font-variant-numeric:tabular-nums}
 .gb-bso-lbl{font-size:20px;font-weight:800;color:#999;width:20px}
 .gb-dots{display:flex;gap:7px}
-.gb-dot{width:26px;height:26px;border-radius:50%;background:#333;border:2px solid #444}
+.gb-dot{width:26px;height:26px;border-radius:50%;background:#333;border:2px solid #444;
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;
+  color:rgba(0,0,0,.6);line-height:1}
 .gb-dot.on-b{background:#3ac13a}
 .gb-dot.on-s{background:#e8c33d}
 .gb-dot.on-o{background:var(--red)}
@@ -116,22 +119,34 @@ body{padding-bottom:40px}
 .qrbtn{background:none;border:none;color:#666;cursor:pointer;padding:4px;
   font-size:20px;line-height:0;flex-shrink:0;transition:color .12s}
 .qrbtn:hover{color:#ccc}
-.gb-spd{display:flex;flex-direction:column;gap:4px;margin-left:auto}
-.spd-last{font-size:26px;font-weight:900;color:#7dff5a;text-align:center;line-height:1;
-  font-variant-numeric:tabular-nums;text-shadow:0 0 10px rgba(125,255,90,.6)}
-.spd-last.empty{color:#1e3a1e;text-shadow:none}
-.spd-last span{font-size:12px;font-weight:700;opacity:.7}
-.spd-row{display:flex;align-items:center;gap:3px}
-.spd-a{width:22px;height:26px;border:1px solid #3a3a3c;background:#242426;color:#aaa;
-  border-radius:5px;font-size:11px;font-weight:900;cursor:pointer;padding:0}
+.gb-spd{display:flex;flex-direction:column;gap:6px;margin-left:auto}
+.spd-last{margin-top:3px;background:#040804;border:2px solid #163016;border-radius:8px;
+  padding:6px 4px;font-size:24px;font-weight:900;color:#7dff5a;text-align:center;
+  line-height:1.1;font-variant-numeric:tabular-nums;text-shadow:0 0 9px rgba(125,255,90,.6)}
+.spd-last.empty{color:#1e3a1e;text-shadow:none;border-color:#151515}
+.spd-last span{font-size:11px;font-weight:700;opacity:.7}
+.spd-row{display:flex;align-items:stretch;gap:4px}
+.spd-a{width:26px;height:auto;align-self:stretch;border:2px solid #3a3a3c;background:#242426;color:#bbb;
+  border-radius:8px;font-size:15px;font-weight:900;cursor:pointer;padding:0}
 .spd-a:hover{background:#3a3a3c;color:#fff}
-.spd-n{display:grid;grid-template-columns:repeat(11,1fr);gap:2px}
-.spd-b{border:1px solid #3a3a3c;background:#242426;color:#ccc;border-radius:5px;
-  font-size:11px;font-weight:800;padding:7px 0;cursor:pointer;min-width:26px;
-  font-variant-numeric:tabular-nums}
+.spd-n{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.spd-b{border:2px solid #3a3a3c;background:#242426;color:#ddd;border-radius:6px;
+  font-size:13px;font-weight:800;padding:7px 0;cursor:pointer;min-width:30px;
+  font-variant-numeric:tabular-nums;transition:.1s}
+.spd-b:active{transform:scale(.94)}
 .spd-b:hover{background:#3a3a3c;color:#fff}
-.spd-b.mid{border-color:#8a6a2a;background:#2e2418;color:#e0b070}
+.spd-b.sel{background:#1d5a1d;border-color:#7dff5a;color:#fff;box-shadow:0 0 8px rgba(125,255,90,.3)}
 .spd-b.hit{background:#1d5a1d;border-color:#7dff5a;color:#fff}
+.spd-cols{display:flex;align-items:flex-start;gap:12px}
+.spd-col{display:flex;flex-direction:column;gap:3px}
+.spd-col.types{flex-shrink:0}
+.spd-cap{font-size:10px;color:#666;letter-spacing:1px;padding-left:2px}
+.spd-types{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}
+.spd-t{border:2px solid #3a3a3c;background:#242426;color:#ccc;border-radius:6px;
+  font-size:11px;font-weight:800;padding:9px 6px;cursor:pointer;white-space:nowrap;
+  min-width:62px;overflow:hidden;text-overflow:ellipsis;transition:.1s}
+.spd-t:hover{background:#2e2e30}
+.spd-t.on{background:#3a2a5a;border-color:#8a6ac8;color:#d8c0ff}
 
 .gb-ann{display:flex;flex-direction:row;align-items:center;gap:8px}
 .ann-btn{background:#2c2c2e;border:2px solid #3a3a3c;border-radius:10px;color:#aaa;
@@ -185,8 +200,13 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 .fp-next:active{transform:scale(.96)}
 
 .fp-order{padding:5px 8px}
-.fp-ord-row{display:grid;grid-template-columns:44px 58px 1fr 62px;gap:10px;align-items:center;
-  padding:11px 8px;border-bottom:1px solid #232325;font-size:20px}
+.fp-ord-row{display:grid;grid-template-columns:40px 52px minmax(0,1fr) 54px minmax(0,1.3fr);
+  gap:9px;align-items:center;padding:10px 8px;border-bottom:1px solid #232325;font-size:19px}
+.fp-ord-res{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
+.fp-res{font-size:12px;font-weight:700;padding:3px 7px;border-radius:5px;
+  background:#242426;color:#8a8a8c;border:1px solid #303032;white-space:nowrap}
+.fp-res.ok{background:rgba(58,140,220,.18);color:#8ac0ff;border-color:rgba(58,140,220,.45)}
+.fp-res.none{background:none;border:none;color:#3a3a3c}
 .fp-ord-row.cur{background:rgba(200,160,46,.14);box-shadow:inset 3px 0 0 #c8a02e;border-radius:5px}
 .fp-ord-no{font-size:24px;font-weight:800;color:#c8a02e;text-align:center}
 .fp-ord-num{font-size:18px;color:#8a8a8a;text-align:right}
@@ -422,19 +442,31 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
 
   <div class="gb-spd">
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px">
-      <div class="spd-last" id="spd-last">--- <span>km/h</span></div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
       <button class="qrbtn" onclick="openQR('speed.html')" title="球速入力を共有"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
     </div>
-    <div class="spd-row">
-      <button class="spd-a" onclick="spdSlide('fast',-1)">◀</button>
-      <div class="spd-n" id="spd-fast"></div>
-      <button class="spd-a" onclick="spdSlide('fast',1)">▶</button>
-    </div>
-    <div class="spd-row">
-      <button class="spd-a" onclick="spdSlide('slow',-1)">◀</button>
-      <div class="spd-n" id="spd-slow"></div>
-      <button class="spd-a" onclick="spdSlide('slow',1)">▶</button>
+    <div class="spd-cols">
+      <div class="spd-col">
+        <div class="spd-cap">高速</div>
+        <div class="spd-row">
+          <button class="spd-a" onclick="spdSlide('fast',-1)">◀</button>
+          <div class="spd-n" id="spd-fast"></div>
+          <button class="spd-a" onclick="spdSlide('fast',1)">▶</button>
+        </div>
+      </div>
+      <div class="spd-col types">
+        <div class="spd-cap">球種</div>
+        <div class="spd-types" id="spd-types"></div>
+        <div class="spd-last empty" id="spd-last">--- <span>km/h</span></div>
+      </div>
+      <div class="spd-col">
+        <div class="spd-cap">低速</div>
+        <div class="spd-row">
+          <button class="spd-a" onclick="spdSlide('slow',-1)">◀</button>
+          <div class="spd-n" id="spd-slow"></div>
+          <button class="spd-a" onclick="spdSlide('slow',1)">▶</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -445,7 +477,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     </div>
     <button class="ann-btn call" onclick="announceCurrentBatter()">🔊 打者<br>コール</button>
     <button class="ann-btn call" onclick="announceCurrentInning()">🔊 回<br>コール</button>
-    <button class="ann-btn play" onclick="announceSituation()">🎙 解説</button>
+    <button class="ann-btn play" onclick="announceSituation()">🎙 実況</button>
     <button class="ann-btn play" onclick="aiComment()" id="lp-ai">💬 ここで<br>一言</button>
   </div>
 </div>
@@ -642,8 +674,37 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       </div>
     </div>
 
+    <div class="set-sec">
+      <div class="set-lbl">打席記録</div>
+      <div class="note" style="margin-bottom:8px">打順表に各選手の打席結果が並びます。新しい試合を始めるときは消去してください</div>
+      <button class="btn btn-red" style="width:100%;font-size:15px;padding:13px" onclick="clearLog()">🗑 打席記録を消去</button>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">読み方の調整</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:13px;color:#888;width:80px">声の高さ</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPitch(-2)">－</button>
+        <span id="set-pitch-val" style="flex:1;text-align:center;font-size:18px;font-weight:700">0%</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPitch(2)">＋</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:13px;color:#888;width:80px">読点の間</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPause(-50)">－</button>
+        <span id="set-pause-val" style="flex:1;text-align:center;font-size:18px;font-weight:700">250</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPause(50)">＋</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;color:#888;width:80px">抑揚の強さ</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnDeg(-0.1)">－</button>
+        <span id="set-deg-val" style="flex:1;text-align:center;font-size:18px;font-weight:700">1.0</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnDeg(0.1)">＋</button>
+      </div>
+      <div class="note" style="margin-top:7px">抑揚は「話し方」を標準以外にしたときに効きます</div>
+    </div>
+
     <div class="set-sec" style="border-top:2px solid #333;padding-top:16px">
-      <div class="set-lbl" style="font-size:15px;color:#c8a8ff;font-weight:700">🎙 解説の声（状況アナウンス）</div>
+      <div class="set-lbl" style="font-size:15px;color:#c8a8ff;font-weight:700">🎙 実況の声（状況アナウンス）</div>
       <select class="set-sel" id="set-cmt-voice" onchange="setCmtVoice(this.value)" style="margin-bottom:10px">
         <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
         <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
@@ -665,7 +726,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
         <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjCmtRate(0.05)">＋</button>
       </div>
       <button class="btn" style="width:100%;font-size:15px;padding:13px;margin-top:12px;background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff"
-        onclick="testCommentary()">▶ 解説の声をテスト</button>
+        onclick="testCommentary()">▶ 実況の声をテスト</button>
     </div>
 
     <div class="set-sec">
@@ -707,6 +768,9 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <button class="rp-big" style="background:#3a3a1a;border:3px solid #8a8a3a;font-size:26px;padding:26px 6px;letter-spacing:2px"
       onclick="pickStrikeout('見逃し三振')">見逃し</button>
   </div>
+  <button style="width:100%;margin-top:9px;background:#3a2a1a;border:2px solid #8a6a3a;border-radius:10px;
+                 color:#e8b878;font-size:15px;font-weight:800;padding:13px 6px;cursor:pointer;letter-spacing:1px"
+    onclick="pickStrikeout('スリーバント失敗')">スリーバント失敗</button>
 </div>
 
 <!-- 打席結果 ポップオーバー（Hボタンの近くに開く） -->
@@ -1239,11 +1303,26 @@ function applyRemote(s){
     renderGame(s);
     renderLog();
     if(typeof s.abPitch==='number'){ _abPitch=s.abPitch; _abFoul=s.abFoul||0; _abBallSeq=s.abBallSeq||[]; }
+    if(Array.isArray(s.strikeKind)) _strikeKind=s.strikeKind.slice();
     _updateAbDispPC();
     // コントローラーで確定した打席結果を記録に取り込む
     if(s.lastResult && s.lastResult.ts && s.lastResult.ts !== _seenResultTs){
       _seenResultTs = s.lastResult.ts;
-      addLog('result', s.lastResult.label);
+      var lr = s.lastResult;
+      var now=new Date();
+      _gameLog.push({
+        t: String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+        ts: now.getTime(),
+        kind: 'result',
+        label: lr.label,
+        inn: lr.inn || (s.inn||1),
+        top: (lr.top!==undefined) ? lr.top : (s.top!==false),
+        batterId: lr.batterId || 0,
+        atkTeam: lr.atkTeam || ((s.top!==false) ? 'away' : 'home'),
+        b:0, s:0, o:s.o||0, bases:'', batter:'', pitcher:'', score:''
+      });
+      _saveLog();
+      renderFieldPane();
     }
   }catch(e){}
   applyingRemote=false;
@@ -1326,6 +1405,7 @@ function pcHoldStart(k){
     _pcHoldTimer=null; _pcHeld=true;
     if(!lastRemote) return;
     lastRemote[k]=0;
+    if(k==='s'){ _strikeKind=[]; lastRemote.strikeKind=[]; }
     if(k!=='o'){ _abBallSeq=[]; }
     renderGame(lastRemote);
     pushState();
@@ -1337,9 +1417,10 @@ function pcHoldEnd(){
 }
 
 // 打席内の投球情報（PC側で保持し、送信に載せる）
-var _abPitch=0, _abFoul=0, _abBallSeq=[];
+var _abPitch=0, _abFoul=0, _abBallSeq=[], _strikeKind=[];
 
-function _abResetPC(){ _abPitch=0; _abFoul=0; _abBallSeq=[]; }
+function _abResetPC(){ _abPitch=0; _abFoul=0; _abBallSeq=[]; _strikeKind=[];
+  if(lastRemote) lastRemote.strikeKind=[]; }
 
 function _pcSyncAb(){
   if(!lastRemote) return;
@@ -1360,6 +1441,7 @@ function pcBSO(k){
   if(k==='b'||k==='s'){
     _abPitch++;
     if(k==='b') _abBallSeq.push(_abPitch);
+    if(k==='s'){ _strikeKind.push('s'); lastRemote.strikeKind=_strikeKind.slice(); }
     addLog('pitch', k==='b'?'ボール':'ストライク');
   }
 
@@ -1402,6 +1484,13 @@ function pcFoul(){
   if(!lastRemote){ toast('コントローラーと未接続です'); return; }
   _abPitch++; _abFoul++;
   addLog('pitch','ファウル');
+  // 2ストライクまではファウルもストライク
+  if((lastRemote.s||0) < 2){
+    _strikeKind.push('f');
+    lastRemote.s = (lastRemote.s||0) + 1;
+    lastRemote.strikeKind = _strikeKind.slice();
+    renderGame(lastRemote);
+  }
   _pcSyncAb();
   _updateAbDispPC();
   pushState();
@@ -1430,20 +1519,57 @@ function spdRender(kind){
   var box=document.getElementById('spd-'+kind);
   if(!box) return;
   var mid=spdCenter[kind], h='';
-  for(var v=mid-5; v<=mid+5; v++){
+  for(var v=mid-7; v<=mid+7; v++){
     if(v<SPD_MIN||v>SPD_MAX){ h+='<button class="spd-b" style="opacity:.25" disabled>—</button>'; continue; }
-    h+='<button class="spd-b'+(v===mid?' mid':'')+'" onclick="spdSend('+v+',this)">'+v+'</button>';
+    h+='<button class="spd-b'+(spdLast===v?' sel':'')+'" onclick="spdSend('+v+',this)">'+v+'</button>';
   }
   box.innerHTML=h;
 }
 
 function spdSlide(kind, dir){
   var next=spdCenter[kind]+dir;
-  if(next-5<SPD_MIN) next=SPD_MIN+5;
-  if(next+5>SPD_MAX) next=SPD_MAX-5;
+  if(next-7<SPD_MIN) next=SPD_MIN+7;
+  if(next+7>SPD_MAX) next=SPD_MAX-7;
   spdCenter[kind]=next;
   try{ localStorage.setItem('bb_spd_'+kind, next); }catch(e){}
   spdRender(kind);
+}
+
+// 球種
+var SPD_TYPES = ['ストレート','カーブ','スライダー',
+                 'チェンジアップ','フォーク','シュート'];
+var spdType = null;
+var _spdClearTimer = null;
+
+function spdRenderTypes(){
+  var box=document.getElementById('spd-types');
+  if(!box) return;
+  box.innerHTML = SPD_TYPES.map(function(t){
+    return '<button class="spd-t'+(spdType===t?' on':'')+'" onclick="spdPickType(\''+t+'\')">'+t+'</button>';
+  }).join('');
+}
+
+// 球種を選ぶ（もう一度押すと解除）
+function spdPickType(t){
+  spdType = (spdType===t) ? null : t;
+  spdRenderTypes();
+  if(spdLast!=null && ws && ws.readyState===1){
+    ws.send(JSON.stringify({ _spd:true, speed:{ v:spdLast, type:spdType, ts:Date.now() } }));
+    _spdArmClear();
+  }
+}
+
+// 8秒後に表示と選択をリセット
+function _spdArmClear(){
+  if(_spdClearTimer) clearTimeout(_spdClearTimer);
+  _spdClearTimer=setTimeout(function(){
+    _spdClearTimer=null;
+    spdLast=null; spdType=null;
+    var L=document.getElementById('spd-last');
+    if(L){ L.innerHTML='--- <span>km/h</span>'; L.classList.add('empty'); }
+    spdRenderTypes();
+    spdRender('fast'); spdRender('slow');
+  }, 8000);
 }
 
 function spdSend(v, el){
@@ -1451,9 +1577,12 @@ function spdSend(v, el){
   spdLast=v;
   var L=document.getElementById('spd-last');
   if(L){ L.innerHTML=v+' <span>km/h</span>'; L.classList.remove('empty'); }
+  spdRender('fast'); spdRender('slow');
   if(el){ el.classList.add('hit'); setTimeout(function(){ el.classList.remove('hit'); },200); }
-  lastRemote.speed={ v:v, ts:Date.now() };
-  pushState();
+  if(ws && ws.readyState===1){
+    ws.send(JSON.stringify({ _spd:true, speed:{ v:v, type:spdType, ts:Date.now() } }));
+  }
+  _spdArmClear();
 }
 
 function _spdInit(){
@@ -1461,7 +1590,7 @@ function _spdInit(){
     var f=localStorage.getItem('bb_spd_fast'); if(f) spdCenter.fast=Number(f);
     var s=localStorage.getItem('bb_spd_slow'); if(s) spdCenter.slow=Number(s);
   }catch(e){}
-  spdRender('fast'); spdRender('slow');
+  spdRender('fast'); spdRender('slow'); spdRenderTypes();
 }
 
 // ── overlay の表示切替（PC側から） ────────────────────────────────────────
@@ -1807,6 +1936,8 @@ function _snapshot(){
     b: s.b||0, s: s.s||0, o: s.o||0,
     bases: bs.join(''),
     batter: (s.batter||'').replace(/^#\d+\s*/,''),
+    batterId: (s.selIds && s.selIds.batter) || 0,
+    atkTeam: (s.top!==false) ? 'away' : 'home',
     pitcher:(s.pitcher||'').replace(/^#\d+\s*/,''),
     score: sum(asc)+'-'+sum(hsc)
   };
@@ -1825,6 +1956,7 @@ function addLog(kind, label){
   }, snap));
   _saveLog();
   renderLog();
+  if(kind==='result' && typeof renderFieldPane==='function') renderFieldPane();
 }
 
 function undoLog(){
@@ -1841,6 +1973,7 @@ function clearLog(){
   _gameLog=[];
   _saveLog();
   renderLog();
+  if(kind==='result' && typeof renderFieldPane==='function') renderFieldPane();
 }
 
 function _saveLog(){
@@ -1978,6 +2111,35 @@ function _initFpSplit(){
   });
 }
 
+// ── 打者ごとの打席結果 ────────────────────────────────────────────────────
+// 表示用の短縮表記
+var RESULT_SHORT = {
+  'ヒット':'安打', '二塁打':'二塁打', '三塁打':'三塁打', 'ホームラン':'本塁打',
+  'ゴロアウト':'ゴロ', 'フライアウト':'フライ', 'ライナーアウト':'ライナー',
+  '併殺':'併殺', '犠打':'犠打', '犠飛':'犠飛',
+  '失策':'失策', '野選':'野選', '打撃妨害':'妨害',
+  '四球':'四球', '死球':'死球',
+  '三振':'三振', '空振り三振':'空三振', '見逃し三振':'見三振',
+  'スリーバント失敗':'バント失'
+};
+
+// 出塁したかどうかで色分けする
+var REACHED = ['ヒット','二塁打','三塁打','ホームラン','失策','野選','四球','死球','打撃妨害'];
+
+// 指定選手の打席結果を古い順に返す
+function _batterResults(team, id){
+  if(!id) return [];
+  return _gameLog.filter(function(g){
+    return g.kind==='result' && g.batterId===id && g.atkTeam===team;
+  }).map(function(g){
+    return {
+      label: RESULT_SHORT[g.label] || g.label,
+      reached: REACHED.indexOf(g.label) >= 0,
+      inn: g.inn
+    };
+  });
+}
+
 // ── 攻撃打順 ／ 守備位置図 ────────────────────────────────────────────────
 // 守備位置の座標（viewBox 400x330）
 var FIELD_SLOTS = [
@@ -2013,11 +2175,18 @@ function renderFieldPane(){
     }else{
       el.innerHTML=ordered.map(function(p){
         var cur = (p.id===curId) ? ' cur' : '';
+        var res = _batterResults(atk, p.id);
+        var hist = res.length
+          ? res.map(function(r){
+              return '<span class="fp-res'+(r.reached?' ok':'')+'" title="'+r.inn+'回">'+esc(r.label)+'</span>';
+            }).join('')
+          : '<span class="fp-res none">—</span>';
         return '<div class="fp-ord-row'+cur+'" onclick="setBatter(\''+atk+'\','+p.id+')" style="cursor:pointer">'
           +'<span class="fp-ord-no">'+esc(p.order)+'</span>'
           +'<span class="fp-ord-num">'+(p.num?'#'+esc(p.num):'')+'</span>'
           +'<span class="fp-ord-nm">'+esc(p.name)+'</span>'
           +'<span class="fp-ord-pos">'+esc(posLabel(p.pos)||'')+'</span>'
+          +'<span class="fp-ord-res">'+hist+'</span>'
         +'</div>';
       }).join('');
     }
@@ -2200,6 +2369,7 @@ function _refreshSubBtn(){
 
 // ── 場内アナウンス（Azure TTS） ────────────────────────────────────────────
 var _annOn=false, _annRate=0.75;
+var _annPitch=0, _annStyleDeg=1.0, _annPause=250;
 var _ttsReady=false, _ttsVoice='ja-JP-NanamiNeural', _ttsStyle='';
 var _ttsCache={}, _audioEl=null;
 
@@ -2222,6 +2392,9 @@ function _initTTS(){
     var cv=localStorage.getItem('bb_cmt_voice'); if(cv) _cmtVoice=cv;
     var cs=localStorage.getItem('bb_cmt_style'); if(cs!==null) _cmtStyle=cs;
     var cr=localStorage.getItem('bb_cmt_rate'); if(cr!=null) _cmtRate=Number(cr);
+    var ap=localStorage.getItem('bb_ann_pitch'); if(ap!=null) _annPitch=Number(ap);
+    var au=localStorage.getItem('bb_ann_pause'); if(au!=null) _annPause=Number(au);
+    var ad=localStorage.getItem('bb_ann_deg');   if(ad!=null) _annStyleDeg=Number(ad);
   }catch(e){}
   _refreshAnnBtn();
   _loadVoiceCache();
@@ -2238,6 +2411,9 @@ function _refreshSettingsUI(){
   var cv=document.getElementById('set-cmt-voice'); if(cv) cv.value=_cmtVoice;
   var cs=document.getElementById('set-cmt-style'); if(cs) cs.value=_cmtStyle;
   var cr=document.getElementById('set-cmt-rate-val'); if(cr) cr.textContent=_cmtRate.toFixed(2);
+  var pv=document.getElementById('set-pitch-val'); if(pv) pv.textContent=(_annPitch>0?'+':'')+_annPitch+'%';
+  var uv=document.getElementById('set-pause-val'); if(uv) uv.textContent=_annPause;
+  var dv=document.getElementById('set-deg-val');   if(dv) dv.textContent=_annStyleDeg.toFixed(1);
   var r=document.getElementById('set-rate-val');if(r) r.textContent=_annRate.toFixed(2);
   var b=document.getElementById('set-ann-toggle');
   if(b){
@@ -2269,6 +2445,25 @@ function adjAnnRate(d){
   _annRate=Math.max(0.5, Math.min(1.5, Math.round((_annRate+d)*100)/100));
   _ttsCache={};
   try{ localStorage.setItem('bb_ann_rate',_annRate); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function adjAnnPitch(d){
+  _annPitch=Math.max(-30, Math.min(30, _annPitch+d));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_pitch',_annPitch); }catch(e){}
+  _refreshSettingsUI();
+}
+function adjAnnPause(d){
+  _annPause=Math.max(0, Math.min(1000, _annPause+d));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_pause',_annPause); }catch(e){}
+  _refreshSettingsUI();
+}
+function adjAnnDeg(d){
+  _annStyleDeg=Math.max(0.1, Math.min(2, Math.round((_annStyleDeg+d)*10)/10));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_deg',_annStyleDeg); }catch(e){}
   _refreshSettingsUI();
 }
 
@@ -2424,7 +2619,7 @@ function clearVoiceCache(){
   });
 }
 
-function _ttsKey(t){ return _ttsVoice+'|'+_ttsStyle+'|'+_annRate+'|'+t; }
+function _ttsKey(t){ return _ttsVoice+'|'+_ttsStyle+'|'+_annStyleDeg+'|'+_annRate+'|'+_annPitch+'|'+_annPause+'|'+t; }
 
 function _fetchVoice(text){
   var k=_ttsKey(text);
@@ -2433,7 +2628,8 @@ function _fetchVoice(text){
     if(saved){ _ttsCache[k]=saved; return saved; }
     return fetch('/api/tts',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ text:text, voice:_ttsVoice, rate:_annRate, style:_ttsStyle })
+      body:JSON.stringify({ text:text, voice:_ttsVoice, rate:_annRate, style:_ttsStyle,
+                          pitch:_annPitch, styleDegree:_annStyleDeg, pause:_annPause })
     })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -2562,8 +2758,8 @@ function _countPhrase(b, s, o){
   return 'カウント、' + parts.join('、') + '。';
 }
 
-// ── 解説アナウンス（状況説明・別の声） ─────────────────────────────────────
-var _cmtVoice = 'ja-JP-KeitaNeural';   // 解説用の声（コールとは別）
+// ── 実況アナウンス（状況説明・別の声） ─────────────────────────────────────
+var _cmtVoice = 'ja-JP-KeitaNeural';   // 実況用の声（コールとは別）
 var _cmtStyle = '';
 var _cmtRate  = 1.10;
 
@@ -2591,13 +2787,14 @@ function _speakAs(text, voice, style, rate){
   if(!_annOn || !text) return;
   var rt = (typeof rate==='number') ? rate : _annRate;
   if(!_ttsReady){ _speakLocal(text); return; }
-  var k = voice+'|'+(style||'')+'|'+rt+'|'+text;
+  var k = voice+'|'+(style||'')+'|'+_annStyleDeg+'|'+rt+'|'+_annPitch+'|'+_annPause+'|'+text;
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
   _dbGet(k).then(function(saved){
     if(saved){ _ttsCache[k]=saved; _play(saved); return; }
     return fetch('/api/tts',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'' })
+      body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'',
+                            pitch:_annPitch, styleDegree:_annStyleDeg, pause:_annPause })
     })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -2658,7 +2855,7 @@ function announceSituation(){
     parts.push('バッターは'+nm+'くんです。');
   }
 
-  confirmSpeak('🎙 解説', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
+  confirmSpeak('🎙 実況', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
 }
 
 // ── 操作ロック ────────────────────────────────────────────────────────────
@@ -2712,8 +2909,19 @@ function renderGame(s){
     document.getElementById(id).innerHTML=h;
   };
   dots('gb-b',s.b||0,3,'on-b');
-  dots('gb-s',s.s||0,2,'on-s');
   dots('gb-o',s.o||0,2,'on-o');
+  // ストライクはファウル分に F を出す
+  (function(){
+    var el=document.getElementById('gb-s');
+    if(!el) return;
+    var sk=Array.isArray(s.strikeKind)?s.strikeKind:[];
+    var h='';
+    for(var i=0;i<2;i++){
+      var on=i<(s.s||0);
+      h+='<span class="gb-dot'+(on?' on-s':'')+'">'+((on&&sk[i]==='f')?'F':'')+'</span>';
+    }
+    el.innerHTML=h;
+  })();
 
   const r=s.r||{};
   [['gb-b1',1],['gb-b2',2],['gb-b3',3]].forEach(function(pair){
