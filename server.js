@@ -98,14 +98,34 @@ app.post('/api/tts', async (req, res) => {
     const rateStr = (ratePct >= 0 ? '+' : '') + ratePct + '%';
     const styleName = style || '';
 
-    const cacheKey = `${voiceName}|${styleName}|${rateStr}|${text}`;
+    // 追加の調整値
+    const styleDeg = Math.max(0.01, Math.min(2, Number(req.body.styleDegree) || 1));
+    const pitchNum = Math.max(-30, Math.min(30, Number(req.body.pitch) || 0));
+    const pitchStr = (pitchNum >= 0 ? '+' : '') + pitchNum + '%';
+    const volNum   = Math.max(-20, Math.min(20, Number(req.body.volume) || 0));
+    const volStr   = (volNum >= 0 ? '+' : '') + volNum + 'dB';
+    const pauseMs  = Math.max(0, Math.min(1200, Number(req.body.pause) || 0));
+
+    const cacheKey = `${voiceName}|${styleName}|${styleDeg}|${rateStr}|${pitchStr}|${volStr}|${pauseMs}|${text}`;
     if (ttsCache.has(cacheKey)) {
       return res.json({ audio: ttsCache.get(cacheKey), cached: true });
     }
 
+    // 読点・句点を区切りとして、指定の長さの間を挟む
+    function withPauses(t, ms) {
+      const esc = escapeXml(t);
+      if (!ms) return esc;
+      return esc
+        .replace(/、/g, `、<break time="${ms}ms"/>`)
+        .replace(/。/g, `。<break time="${Math.round(ms * 1.6)}ms"/>`);
+    }
+
+    const body = withPauses(text, pauseMs);
+    const prosody =
+      `<prosody rate="${rateStr}" pitch="${pitchStr}" volume="${volStr}">${body}</prosody>`;
     const inner = styleName
-      ? `<mstts:express-as style="${escapeXml(styleName)}"><prosody rate="${rateStr}">${escapeXml(text)}</prosody></mstts:express-as>`
-      : `<prosody rate="${rateStr}">${escapeXml(text)}</prosody>`;
+      ? `<mstts:express-as style="${escapeXml(styleName)}" styledegree="${styleDeg}">${prosody}</mstts:express-as>`
+      : prosody;
 
     const ssml =
       `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" ` +
@@ -121,7 +141,7 @@ app.post('/api/tts', async (req, res) => {
         headers: {
           'Authorization': 'Bearer ' + token,
           'Content-Type': 'application/ssml+xml',
-          'X-Microsoft-OutputFormat': 'audio-24khz-96kbitrate-mono-mp3',
+          'X-Microsoft-OutputFormat': 'audio-48khz-192kbitrate-mono-mp3',
           'User-Agent': 'AthleeLive'
         },
         body: ssml
