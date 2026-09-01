@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="/manifest-speed.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="球速">
+<meta name="apple-mobile-web-app-title" content="AthleeSpeed">
 <title>AthleeLive 球速入力</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;
@@ -31,87 +32,127 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
 .wsdot.on{background:#3ac13a}
 .clock{font-size:21px;font-weight:800;color:#111;font-variant-numeric:tabular-nums}
 
-/* 試合情報 */
-.ctx{flex-shrink:0;background:#131315;border-bottom:1px solid #242426;padding:9px 14px;text-align:center}
-.ctx-t{font-size:19px;font-weight:800;color:#eee;line-height:1.25;
+/* 試合情報＋プレビュー */
+.ctx{flex-shrink:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:10px;background:#131315;border-bottom:1px solid #242426;padding:9px 12px}
+.ctx-side{min-width:0}
+.ctx-side.left{text-align:left}
+.ctx-side.right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ctx-t{font-size:14px;font-weight:800;color:#eee;line-height:1.3;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ctx-s{font-size:14px;color:#888;margin-top:3px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctx-s{font-size:11px;color:#888;margin-top:2px;line-height:1.35}
+
+/* 中央の球速プレビュー */
+.preview{position:relative;display:flex;flex-direction:column;align-items:center;
+  gap:1px;background:#040804;border:2px solid #1a3a1a;border-radius:12px;
+  padding:9px 22px;min-width:180px}
+.pv-main{display:flex;align-items:baseline;gap:4px}
+.pv-n{font-size:60px;font-weight:900;color:var(--grn);line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:1px;
+  text-shadow:0 0 12px rgba(125,255,90,.8),0 0 26px rgba(80,255,60,.4)}
+.pv-u{font-size:18px;font-weight:800;color:rgba(125,255,90,.7)}
+.pv-type{font-size:17px;font-weight:800;color:#b8a0e8;line-height:1.2;min-height:20px}
+.pv-live{position:absolute;top:4px;right:6px;font-size:9px;font-weight:800;color:#7dff5a;
+  border:1px solid rgba(125,255,90,.5);border-radius:20px;padding:2px 6px;
+  opacity:0;transition:opacity .2s}
+.pv-live.on{opacity:1}
+.preview.empty{border-color:#151515}
+.preview.empty .pv-n{color:#1e3a1e;text-shadow:none}
+.preview.empty .pv-u{color:#1e3a1e}
 
 /* BSO・走者 */
-.ctx-bso{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:9px}
-.cb-line{display:flex;align-items:center;gap:6px}
-.cb-l{font-size:15px;font-weight:800;color:#777;width:14px}
-.cb-d{display:flex;gap:5px}
-.cb-dot{width:16px;height:16px;border-radius:50%;background:#2a2a2c;border:2px solid #3a3a3c}
+.cb-row{display:flex;align-items:center;gap:10px}
+.cb-row2{display:flex;align-items:center;gap:8px}
+.cb-info{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.cb-line{display:flex;align-items:center;gap:4px}
+.cb-l{font-size:12px;font-weight:800;color:#777;width:11px}
+.cb-d{display:flex;gap:4px}
+.cb-dot{width:14px;height:14px;border-radius:50%;background:#2a2a2c;border:2px solid #3a3a3c;
+  display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;
+  color:rgba(0,0,0,.65);line-height:1}
 .cb-dot.b{background:#3ac13a;border-color:#3ac13a}
 .cb-dot.s{background:#e8c33d;border-color:#e8c33d}
 .cb-dot.o{background:#c8102e;border-color:#c8102e}
-.cb-dia{width:52px;height:52px;flex-shrink:0}
+.cb-dia{width:42px;height:42px;flex-shrink:0}
 .cb-dia rect{fill:#2a2a2c;stroke:#4a4a4c;stroke-width:2}
 .cb-dia rect.on{fill:#f5c518;stroke:#c8a02e}
 .cb-dia rect.hp{fill:#3a3a3c}
-.cb-bat{font-size:14px;color:#ccc;max-width:150px;
+.cb-bat{font-size:12px;color:#ccc;max-width:110px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cb-ab{display:flex;flex-direction:column;align-items:flex-start;gap:1px;flex-shrink:0}
-.cb-ab .f{font-size:13px;font-weight:800;color:#e8a33d;line-height:1.15;
-  font-variant-numeric:tabular-nums}
-.cb-ab .t{font-size:12px;font-weight:700;color:#888;line-height:1.15;
-  font-variant-numeric:tabular-nums}
+.cb-ab{display:flex;gap:6px}
+.cb-ab .f{font-size:11px;font-weight:800;color:#e8a33d;font-variant-numeric:tabular-nums}
+.cb-ab .t{font-size:11px;font-weight:700;color:#888;font-variant-numeric:tabular-nums}
 
-/* 直近の球速 */
-.last{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;
-  background:#040804;border-bottom:1px solid #163016;padding:14px 10px}
-.last-n{font-size:64px;font-weight:900;color:var(--grn);line-height:1;
-  font-variant-numeric:tabular-nums;letter-spacing:2px;
-  text-shadow:0 0 12px rgba(125,255,90,.8),0 0 28px rgba(80,255,60,.45)}
-.last-u{font-size:20px;font-weight:800;color:rgba(125,255,90,.7)}
-.last.empty .last-n{color:#1e3a1e;text-shadow:none}
-.last.empty .last-u{color:#1e3a1e}
-.last-live{position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  font-size:12px;font-weight:800;color:#7dff5a;border:1px solid rgba(125,255,90,.5);
-  border-radius:20px;padding:4px 10px;opacity:0;transition:opacity .2s}
-.last-live.on{opacity:1}
-.last{position:relative}
 
 /* 履歴 */
 .hist{flex-shrink:0;display:flex;align-items:center;gap:9px;
   background:#0d0d0f;border-bottom:1px solid #1e1e20;padding:8px 12px;min-height:52px}
 .hist-t{font-size:11px;color:#555;letter-spacing:1px;flex-shrink:0}
 .hist-list{flex:1;display:flex;gap:6px;overflow-x:auto;min-width:0}
-.hist-b{flex-shrink:0;border:2px solid #3a3a3c;background:#242426;color:#bbb;
-  border-radius:8px;font-size:16px;font-weight:800;padding:8px 12px;cursor:pointer;
-  font-variant-numeric:tabular-nums}
+.hist-b{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;
+  border:2px solid #3a3a3c;background:#242426;color:#ccc;border-radius:9px;
+  padding:8px 13px;cursor:pointer;line-height:1.15}
+.hb-v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.hb-t{font-size:10px;font-weight:700;color:#a890d8;white-space:nowrap}
 .hist-b:active{transform:scale(.94)}
 .hist-b.cur{border-color:#7dff5a;background:#1d3a1d;color:#adffa0}
 .hist-empty{font-size:12px;color:#444}
 
 /* 入力ブロック */
 .body{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px;min-height:0;overflow-y:auto}
-.blk{background:#141416;border:1px solid #262628;border-radius:14px;padding:10px 8px}
-.blk-t{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:9px}
-.blk-name{font-size:17px;font-weight:800;letter-spacing:2px}
-.blk.fast .blk-name{color:#ff9a5a}
-.blk.slow .blk-name{color:#7aaaff}
-.blk-c{font-size:14px;color:#777;font-variant-numeric:tabular-nums}
+.blk{background:#141416;border:1px solid #262628;border-radius:14px;padding:12px 10px}
+.blk-t{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.blk-name{font-size:20px;font-weight:800;letter-spacing:2px}
+.blk-name em{font-style:normal;font-size:14px;font-weight:700;
+  color:#777;letter-spacing:0;margin-left:6px}
+.blk.pitch .blk-name{color:#b8a0e8}
+.pt{border:2px solid #3a3a3c;background:#242426;color:#ddd;border-radius:10px;
+  font-size:clamp(11px,3vw,15px);font-weight:800;padding:14px 4px;cursor:pointer;
+  transition:transform .06s,background .1s;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;min-width:0;text-align:center}
+.pt:active{transform:scale(.94)}
+.pt.on{background:#3a2a5a;border-color:#8a6ac8;color:#d8c0ff}
 
-.row{display:flex;align-items:stretch;gap:6px}
-.arrow{flex:0 0 46px;border:2px solid #3a3a3c;background:#242426;color:#bbb;
-  border-radius:10px;font-size:24px;font-weight:900;cursor:pointer;padding:0}
-.arrow:active{background:#3a3a3c;transform:scale(.95)}
-.nums{flex:1;display:grid;grid-template-columns:repeat(11,1fr);gap:4px;min-width:0}
-.n{border:2px solid #3a3a3c;background:#242426;color:#ddd;border-radius:9px;
-  font-size:clamp(13px,3.4vw,19px);font-weight:800;padding:22px 0;cursor:pointer;
+/* 十の位（左上から大きい順） */
+.tens{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;justify-items:center}
+.t10{width:100%;aspect-ratio:1/1;max-width:88px;border-radius:50%;
+  border:3px solid #3a3a3c;background:#242426;color:#eee;
+  font-size:clamp(20px,5.5vw,28px);font-weight:900;cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;
   font-variant-numeric:tabular-nums;transition:transform .06s,background .1s}
-.n:active{transform:scale(.94)}
-.blk.fast .n.mid{border-color:#8a5a2a;background:#3a2618;color:#ffb87a}
-.blk.slow .n.mid{border-color:#2a4a8a;background:#18243a;color:#9ac0ff}
-.n.hit{background:#1d5a1d;border-color:var(--grn);color:#fff}
+.t10:active{transform:scale(.92);background:#3a3a3c}
+.t10.kp{background:#1e2a3a;border-color:#3a5a8a;color:#8fc0ff;
+  font-size:clamp(13px,3.4vw,16px);letter-spacing:0}
+
+/* 1の位（押した位置に出る小窓） */
+.ones-pop{
+  display:none;position:fixed;z-index:820;
+  background:#141416;border:2px solid #4a4a4c;border-radius:16px;
+  box-shadow:0 10px 34px rgba(0,0,0,.8);padding:9px;
+}
+.ones-pop.open{display:block;animation:opIn .12s ease both}
+@keyframes opIn{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+.op-head{font-size:15px;font-weight:800;color:#888;text-align:center;margin-bottom:7px;
+  font-variant-numeric:tabular-nums}
+.ones{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.one{width:58px;height:58px;border:3px solid #3a3a3c;background:#242426;color:#fff;
+  border-radius:50%;font-size:26px;font-weight:900;cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums;transition:transform .06s,background .1s}
+.one:active{transform:scale(.94);background:#3a3a3c}
+.one.sel{background:#1d5a1d;border-color:var(--grn)}
+.one:disabled{opacity:.2;pointer-events:none}
+
+/* 手入力パッド */
+.kpb{border:2px solid #3a3a3c;background:#242426;color:#fff;border-radius:12px;
+  font-size:32px;font-weight:900;padding:20px 0;cursor:pointer;
+  font-variant-numeric:tabular-nums}
+.kpb:active{background:#3a3a3c;transform:scale(.96)}
 
 /* 下部 */
 .foot{flex-shrink:0;display:flex;gap:8px;padding:0 10px 10px}
-.fbtn{flex:1;border:2px solid #3a3a3c;background:#242426;color:#bbb;border-radius:12px;
-  font-size:17px;font-weight:800;padding:18px 6px;cursor:pointer}
+.fbtn{flex:1;border:2px solid #3a3a3c;background:#242426;color:#ccc;border-radius:12px;
+  font-size:19px;font-weight:800;padding:20px 6px;cursor:pointer}
 .fbtn:active{background:#3a3a3c}
 .fbtn.clear{color:#ff8888;border-color:#5a2a2a}
 .fbtn.undo{color:#e8c33d;border-color:#5a4a1a}
@@ -137,26 +178,38 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
   </div>
 
   <div class="ctx" id="ctx">
-    <div class="ctx-t" id="ctx-title">—</div>
-    <div class="ctx-s" id="ctx-sub">接続待ち</div>
-    <div class="ctx-bso" id="ctx-bso">
-      <div class="cb-line"><span class="cb-l">B</span><span class="cb-d" id="cb-b"></span></div>
-      <div class="cb-line"><span class="cb-l">S</span><span class="cb-d" id="cb-s"></span></div>
-      <div class="cb-line"><span class="cb-l">O</span><span class="cb-d" id="cb-o"></span></div>
-      <svg class="cb-dia" viewBox="0 0 60 60">
-        <rect id="cb-b2" x="22" y="3"  width="16" height="16" transform="rotate(45 30 11)"/>
-        <rect id="cb-b3" x="6"  y="19" width="16" height="16" transform="rotate(45 14 27)"/>
-        <rect id="cb-b1" x="38" y="19" width="16" height="16" transform="rotate(45 46 27)"/>
-        <rect id="cb-hp" x="22" y="35" width="16" height="16" transform="rotate(45 30 43)" class="hp"/>
-      </svg>
-      <div class="cb-bat" id="cb-bat"></div>
-      <div class="cb-ab" id="cb-ab"></div>
+    <div class="ctx-side left">
+      <div class="ctx-t" id="ctx-title">—</div>
+      <div class="ctx-s" id="ctx-sub">接続待ち</div>
     </div>
-  </div>
 
-  <div class="last empty" id="last">
-    <span class="last-n" id="last-n">---</span><span class="last-u">km/h</span>
-    <span class="last-live" id="last-live">表示中</span>
+    <div class="preview empty" id="last">
+      <div class="pv-main">
+        <span class="pv-n" id="last-n">---</span><span class="pv-u">km/h</span>
+      </div>
+      <div class="pv-type" id="pv-type"></div>
+      <span class="pv-live" id="last-live">表示中</span>
+    </div>
+
+    <div class="ctx-side right">
+      <div class="cb-row">
+        <div class="cb-line"><span class="cb-l">B</span><span class="cb-d" id="cb-b"></span></div>
+        <div class="cb-line"><span class="cb-l">S</span><span class="cb-d" id="cb-s"></span></div>
+        <div class="cb-line"><span class="cb-l">O</span><span class="cb-d" id="cb-o"></span></div>
+      </div>
+      <div class="cb-row2">
+        <svg class="cb-dia" viewBox="0 0 60 60">
+          <rect id="cb-b2" x="22" y="3"  width="16" height="16" transform="rotate(45 30 11)"/>
+          <rect id="cb-b3" x="6"  y="19" width="16" height="16" transform="rotate(45 14 27)"/>
+          <rect id="cb-b1" x="38" y="19" width="16" height="16" transform="rotate(45 46 27)"/>
+          <rect id="cb-hp" x="22" y="35" width="16" height="16" transform="rotate(45 30 43)" class="hp"/>
+        </svg>
+        <div class="cb-info">
+          <div class="cb-bat" id="cb-bat"></div>
+          <div class="cb-ab" id="cb-ab"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="hist" id="hist">
@@ -165,31 +218,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
   </div>
 
   <div class="body">
-    <!-- 高速 -->
-    <div class="blk fast">
-      <div class="blk-t">
-        <span class="blk-name">高速</span>
-        <span class="blk-c">中心 <b id="c-fast">135</b> km/h</span>
-      </div>
-      <div class="row">
-        <button class="arrow" onclick="slide('fast',-1)">◀</button>
-        <div class="nums" id="nums-fast"></div>
-        <button class="arrow" onclick="slide('fast',1)">▶</button>
-      </div>
+    <!-- 十の位 -->
+    <div class="blk">
+      <div class="blk-t"><span class="blk-name">球速 <em>km/h</em></span></div>
+      <div class="tens" id="tens"></div>
     </div>
 
-    <!-- 低速 -->
-    <div class="blk slow">
-      <div class="blk-t">
-        <span class="blk-name">低速</span>
-        <span class="blk-c">中心 <b id="c-slow">95</b> km/h</span>
-      </div>
-      <div class="row">
-        <button class="arrow" onclick="slide('slow',-1)">◀</button>
-        <div class="nums" id="nums-slow"></div>
-        <button class="arrow" onclick="slide('slow',1)">▶</button>
-      </div>
+    <!-- 球種 -->
+    <div class="blk pitch">
+      <div class="blk-t"><span class="blk-name">球種</span></div>
+      <div class="ptypes" id="ptypes"></div>
     </div>
+  </div>
+
+  <!-- 1の位（押した十の位の位置に出る小窓） -->
+  <div id="ones-pop" class="ones-pop">
+    <div class="op-head"><span id="op-base">130</span></div>
+    <div class="ones" id="ones"></div>
   </div>
 
   <div class="foot">
@@ -213,12 +258,33 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
   </div>
 </div>
 
+<!-- 3桁手入力 -->
+<div id="kp-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:800;align-items:center;justify-content:center;padding:16px"
+  onclick="if(event.target===this)closeKeypad()">
+  <div style="width:100%;max-width:420px">
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:16px;color:#888;margin-bottom:6px">球速を入力</div>
+      <div id="kp-val" style="font-size:60px;font-weight:900;color:#7dff5a;line-height:1;
+        font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(125,255,90,.6);min-height:60px">—</div>
+    </div>
+    <div id="kp-pad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px"></div>
+    <div style="display:flex;gap:9px;margin-top:9px">
+      <button onclick="kpBack()" style="flex:1;background:#2c2c2e;border:2px solid #444;border-radius:12px;
+        color:#ccc;font-size:20px;font-weight:800;padding:20px 6px;cursor:pointer">← 1文字消す</button>
+      <button onclick="kpOk()" style="flex:1;background:#1d5a1d;border:2px solid #7dff5a;border-radius:12px;
+        color:#fff;font-size:20px;font-weight:800;padding:20px 6px;cursor:pointer">決定</button>
+    </div>
+    <button onclick="closeKeypad()" style="width:100%;margin-top:9px;background:#242426;border:2px solid #3a3a3c;
+      border-radius:12px;color:#999;font-size:18px;font-weight:700;padding:16px;cursor:pointer">キャンセル</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 var MINV = 10, MAXV = 200;
-var center = { fast: 135, slow: 95 };
 var lastVal = null;
+var baseTens = null;   // 選択中の十の位（例：130）
 
 function g(id){ return document.getElementById(id); }
 
@@ -228,72 +294,140 @@ function toast(m){
 }
 function buzz(ms){ if(navigator.vibrate) try{ navigator.vibrate(ms||14); }catch(e){} }
 
-// ── ボタンを描く ──────────────────────────────────────────────────────────
-function renderNums(kind){
-  var box=g('nums-'+kind);
-  var mid=center[kind];
-  var html='';
-  for(var v=mid-5; v<=mid+5; v++){
-    if(v<MINV || v>MAXV){
-      html+='<button class="n" style="opacity:.25" disabled>—</button>';
-      continue;
-    }
-    html+='<button class="n'+(v===mid?' mid':'')+'" onclick="sendSpeed('+v+',this)">'+v+'</button>';
+// ── 十の位 ────────────────────────────────────────────────────────────────
+var TENS = [150,140,130,120,110,100,90,80,70,60,50];
+
+function renderTens(){
+  var box=g('tens');
+  if(!box) return;
+  var h = TENS.map(function(v){
+    return '<button class="t10" data-v="'+v+'" onclick="pickTens('+v+',this)">'+v+'</button>';
+  }).join('');
+  h += '<button class="t10 kp" onclick="openKeypad()">手入力</button>';
+  box.innerHTML=h;
+}
+
+// 十の位を押す → その位置に1の位の小窓を出す
+function pickTens(v, el){
+  baseTens = v;
+  buzz(12);
+  g('op-base').textContent = v;
+  renderOnes();
+
+  var pop=g('ones-pop');
+  pop.classList.add('open');
+
+  // 押したボタンの中心に重ねる（画面外にはみ出さないよう補正）
+  if(el){
+    var r=el.getBoundingClientRect();
+    var w=pop.offsetWidth, h=pop.offsetHeight;
+    var left = r.left + r.width/2 - w/2;
+    var top  = r.top  + r.height/2 - h/2;
+    left = Math.max(6, Math.min(window.innerWidth  - w - 6, left));
+    top  = Math.max(6, Math.min(window.innerHeight - h - 6, top));
+    pop.style.left = left+'px';
+    pop.style.top  = top+'px';
   }
-  box.innerHTML=html;
-  g('c-'+kind).textContent=mid;
 }
 
-function slide(kind, dir){
-  var next = center[kind] + dir;
-  if(next-5 < MINV) next = MINV+5;
-  if(next+5 > MAXV) next = MAXV-5;
-  center[kind]=next;
-  try{ localStorage.setItem('bb_spd_'+kind, next); }catch(e){}
-  renderNums(kind);
+function backToTens(){
+  baseTens=null;
+  var pop=g('ones-pop');
+  if(pop) pop.classList.remove('open');
 }
 
-// 長押しで連続スライド
-['fast','slow'].forEach(function(kind){
-  // ボタンは renderNums の後に付くので、矢印だけここで拾う
-});
-(function bindHold(){
-  document.querySelectorAll('.arrow').forEach(function(btn){
-    var tm=null, iv=null;
-    var m=btn.getAttribute('onclick')||'';
-    var kind = m.indexOf("'fast'")>=0 ? 'fast' : 'slow';
-    var dir  = m.indexOf('-1')>=0 ? -1 : 1;
-    var start=function(e){
-      tm=setTimeout(function(){
-        iv=setInterval(function(){ slide(kind,dir); },90);
-      },420);
-    };
-    var end=function(){
-      if(tm){ clearTimeout(tm); tm=null; }
-      if(iv){ clearInterval(iv); iv=null; }
-    };
-    btn.addEventListener('touchstart',start,{passive:true});
-    btn.addEventListener('touchend',end);
-    btn.addEventListener('touchcancel',end);
-    btn.addEventListener('mousedown',start);
-    btn.addEventListener('mouseup',end);
-    btn.addEventListener('mouseleave',end);
-  });
-})();
+// ── 1の位（テンキー配列） ─────────────────────────────────────────────────
+var ONES_LAYOUT = [7,8,9,4,5,6,1,2,3,0];
+
+function renderOnes(){
+  var box=g('ones');
+  if(!box) return;
+  box.innerHTML = ONES_LAYOUT.map(function(d,i){
+    var v = baseTens + d;
+    var dis = (v<MINV||v>MAXV) ? ' disabled' : '';
+    var wide = (d===0) ? ' style="grid-column:2"' : '';
+    return '<button class="one'+(shownVal===v?' sel':'')+'"'+wide+dis
+      +' onclick="sendSpeed('+v+',this)">'+d+'</button>';
+  }).join('');
+}
+
+// ── 3桁の手入力 ───────────────────────────────────────────────────────────
+var kpBuf = '';
+
+function openKeypad(){
+  kpBuf='';
+  _kpRender();
+  var pad=g('kp-pad');
+  pad.innerHTML = [7,8,9,4,5,6,1,2,3].map(function(d){
+    return '<button class="kpb" onclick="kpPush('+d+')">'+d+'</button>';
+  }).join('') + '<button class="kpb" style="grid-column:1 / -1" onclick="kpPush(0)">0</button>';
+  g('kp-mask').style.display='flex';
+}
+
+function closeKeypad(){ g('kp-mask').style.display='none'; }
+
+function kpPush(d){
+  if(kpBuf.length>=3) return;
+  kpBuf += String(d);
+  buzz(10);
+  _kpRender();
+}
+function kpBack(){ kpBuf=kpBuf.slice(0,-1); _kpRender(); }
+function _kpRender(){ g('kp-val').textContent = kpBuf || '—'; }
+
+function kpOk(){
+  var v=Number(kpBuf);
+  if(!kpBuf || v<MINV || v>MAXV){
+    toast(MINV+'〜'+MAXV+' の範囲で入力してください');
+    return;
+  }
+  closeKeypad();
+  sendSpeed(v, null);
+}
+
+
+// ── 球種 ──────────────────────────────────────────────────────────────────
+var PITCH_TYPES = ['ストレート','カーブ','スライダー',
+                   'チェンジアップ','フォーク','シュート'];
+var curType = null;
+
+function renderTypes(){
+  var box=g('ptypes');
+  if(!box) return;
+  box.innerHTML = PITCH_TYPES.map(function(t){
+    return '<button class="pt'+(curType===t?' on':'')+'" onclick="pickType(\''+t+'\')">'+t+'</button>';
+  }).join('');
+}
+
+// 球種を選ぶ（もう一度押すと解除）
+function pickType(t){
+  curType = (curType===t) ? null : t;
+  buzz(12);
+  renderTypes();
+  _renderLast();
+  // すでに球速を出しているときは、その表示に球種を足す
+  if(shownVal!=null){
+    push({ v:shownVal, type:curType, ts:Date.now() });
+    _armAutoClear();
+  }
+}
 
 // ── 送信 ──────────────────────────────────────────────────────────────────
-var hist = [];        // 入力した球速の履歴（新しいものが末尾）
+var hist = [];        // 入力履歴 [{v, type}]（新しいものが末尾）
 var shownVal = null;  // 今オーバーレイに出している値
 var HIST_MAX = 12;
 
 function _renderLast(){
   var L=g('last');
+  var t=g('pv-type');
   if(shownVal==null){
     g('last-n').textContent='---';
+    if(t) t.textContent='';
     L.classList.add('empty');
     g('last-live').classList.remove('on');
   }else{
     g('last-n').textContent=shownVal;
+    if(t) t.textContent = curType || '';
     L.classList.remove('empty');
     g('last-live').classList.add('on');
   }
@@ -308,15 +442,31 @@ function _renderHist(){
   }
   // 新しいものを左に
   var list=hist.slice().reverse();
-  box.innerHTML=list.map(function(v,i){
-    var cur = (i===0 && shownVal===v) ? ' cur' : '';
-    return '<button class="hist-b'+cur+'" onclick="reshow('+v+')">'+v+'</button>';
+  box.innerHTML=list.map(function(h,i){
+    var cur = (i===0 && shownVal===h.v) ? ' cur' : '';
+    var tp = h.type ? '<span class="hb-t">'+h.type+'</span>' : '';
+    return '<button class="hist-b'+cur+'" onclick="reshow('+h.v+',\''+(h.type||'')+'\')">'
+      +'<span class="hb-v">'+h.v+'</span>'+tp+'</button>';
   }).join('');
+}
+
+var _autoClearTimer=null;
+
+// 8秒後（表示が消えるとき）に選択をすべてリセットする
+function _armAutoClear(){
+  if(_autoClearTimer) clearTimeout(_autoClearTimer);
+  _autoClearTimer=setTimeout(function(){
+    _autoClearTimer=null;
+    shownVal=null;
+    curType=null;
+    _renderLast(); _renderHist(); renderTypes();
+    renderOnes();
+  }, 8000);
 }
 
 // 球速を入力して表示する
 function sendSpeed(v, el){
-  hist.push(v);
+  hist.push({ v:v, type:curType });
   if(hist.length>HIST_MAX) hist.shift();
   shownVal=v;
   lastVal=v;
@@ -326,15 +476,20 @@ function sendSpeed(v, el){
     setTimeout(function(){ el.classList.remove('hit'); },220);
   }
   _renderLast(); _renderHist();
-  push({ v:v, ts:Date.now() });
+  push({ v:v, type:curType, ts:Date.now() });
+  _armAutoClear();
+  backToTens();      // 次の入力に備えて十の位に戻す
 }
 
 // 履歴から選んでもう一度表示する
-function reshow(v){
+function reshow(v, type){
   shownVal=v; lastVal=v;
+  curType = type || null;
+  renderTypes();
   buzz(14);
   _renderLast(); _renderHist();
-  push({ v:v, ts:Date.now() });
+  push({ v:v, type:curType, ts:Date.now() });
+  _armAutoClear();
   toast(v+' km/h を表示');
 }
 
@@ -342,33 +497,41 @@ function reshow(v){
 function resend(){
   if(shownVal==null){
     if(!hist.length){ toast('まだ入力がありません'); return; }
-    shownVal=hist[hist.length-1];
+    var last=hist[hist.length-1];
+    shownVal=last.v; curType=last.type||null;
+    renderTypes();
   }
   buzz(14);
   _renderLast(); _renderHist();
-  push({ v:shownVal, ts:Date.now() });
+  push({ v:shownVal, type:curType, ts:Date.now() });
+  _armAutoClear();
   toast(shownVal+' km/h を再表示');
 }
 
 // 直前の入力を取り消す（履歴からも消す）
 function undoSpeed(){
+  if(_autoClearTimer){ clearTimeout(_autoClearTimer); _autoClearTimer=null; }
   if(!hist.length){ toast('取り消す入力がありません'); return; }
   var removed=hist.pop();
   buzz(20);
   if(hist.length){
-    shownVal=hist[hist.length-1];
-    push({ v:shownVal, ts:Date.now() });
-    toast(removed+' を取り消し → '+shownVal+' を表示');
+    var prev=hist[hist.length-1];
+    shownVal=prev.v; curType=prev.type||null;
+    renderTypes();
+    push({ v:shownVal, type:curType, ts:Date.now() });
+    toast(removed.v+' を取り消し → '+shownVal+' を表示');
   }else{
     shownVal=null;
     push({ v:null, ts:Date.now(), clear:true });
-    toast(removed+' を取り消しました');
+    toast(removed.v+' を取り消しました');
   }
   _renderLast(); _renderHist();
 }
 
 // 表示だけ消す（履歴は残す）
 function clearSpeed(){
+  if(_autoClearTimer){ clearTimeout(_autoClearTimer); _autoClearTimer=null; }
+  curType=null; renderTypes();
   shownVal=null;
   _renderLast(); _renderHist();
   push({ v:null, ts:Date.now(), clear:true });
@@ -402,11 +565,8 @@ function connect(){
 
 function push(speed){
   if(!ws || ws.readyState!==1){ toast('未接続です'); return; }
-  var base = state ? JSON.parse(JSON.stringify(state)) : {};
-  base._ctl=true;
-  base.speed=speed;
-  base.showScoreOverlay=null;
-  ws.send(JSON.stringify(base));
+  // 球速だけを送る（他の試合状況には触れない）
+  ws.send(JSON.stringify({ _spd:true, speed:speed }));
 }
 
 
@@ -476,8 +636,18 @@ function renderCtx(s){
     el.innerHTML=h;
   };
   dots('cb-b', s.b||0, 3, 'b');
-  dots('cb-s', s.s||0, 2, 's');
   dots('cb-o', s.o||0, 2, 'o');
+  // ストライクはファウル分に F を出す
+  (function(){
+    var el=g('cb-s'); if(!el) return;
+    var sk=Array.isArray(s.strikeKind)?s.strikeKind:[];
+    var h='';
+    for(var i=0;i<2;i++){
+      var on=i<(s.s||0);
+      h+='<span class="cb-dot'+(on?' s':'')+'">'+((on&&sk[i]==='f')?'F':'')+'</span>';
+    }
+    el.innerHTML=h;
+  })();
 
   // 走者
   var r=s.r||{};
@@ -508,6 +678,15 @@ function tick(){
 // ── 起動 ──────────────────────────────────────────────────────────────────
 document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 
+// 小窓の外を触ったら閉じる
+document.addEventListener('pointerdown', function(e){
+  var pop=g('ones-pop');
+  if(!pop || !pop.classList.contains('open')) return;
+  if(pop.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('.t10')) return;
+  backToTens();
+});
+
 var wakeLock=null;
 function reqWake(){
   if(!('wakeLock' in navigator)) return;
@@ -521,13 +700,8 @@ document.addEventListener('visibilitychange', function(){
 });
 reqWake();
 
-try{
-  var f=localStorage.getItem('bb_spd_fast'); if(f) center.fast=Number(f);
-  var s2=localStorage.getItem('bb_spd_slow'); if(s2) center.slow=Number(s2);
-}catch(e){}
-
-renderNums('fast');
-renderNums('slow');
+renderTens();
+renderTypes();
 _renderLast(); _renderHist();
 tick(); setInterval(tick,1000);
 setDot(false);
