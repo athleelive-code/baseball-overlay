@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>AthleeLive Controller</title>
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="/manifest-controller.json">
 <meta name="theme-color" content="#c8102e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -235,7 +235,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .pdot.hit{border-color:#5a3a2a;color:#a87858}
 .pdot.hit:active{background:#4a2a1a}
 .pdot.hit.flash{background:#6a3a12;color:#fff;border-color:#e08a2e}
-.tapdot{cursor:pointer}
+.tapdot{cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(30px,8vw,44px);font-weight:900;color:rgba(0,0,0,.55);line-height:1}
 .bdot{border-radius:50%;background:#333;border:2px solid #555;width:clamp(80px,22vw,120px);height:clamp(80px,22vw,120px);flex-shrink:0}
 .bdot.on-b{background:#43a047;border-color:#1b5e20}
 .bdot.on-s{background:#f5c518;border-color:#b8860b}
@@ -493,7 +494,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     🔊 回<br>コール
   </button>
   <button onclick="announceSituation()" style="flex:0 0 auto;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:24px;font-weight:800;padding:18px 16px;cursor:pointer;line-height:1.2;white-space:nowrap">
-    🎙 解説
+    🎙 実況
   </button>
 </div>
 
@@ -738,7 +739,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       </div>
 
       <div style="border-top:1px solid #333;margin-top:16px;padding-top:14px">
-        <div style="font-size:24px;font-weight:700;color:#aaa;margin-bottom:8px">🎙 解説の声（状況アナウンス）</div>
+        <div style="font-size:24px;font-weight:700;color:#aaa;margin-bottom:8px">🎙 実況の声（状況アナウンス）</div>
         <select id="cmt-voice" onchange="setCmtVoice(this.value)" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:26px;padding:14px;outline:none">
           <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
           <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
@@ -762,7 +763,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
           <button class="drawer-btn" style="flex:1;font-size:40px;font-weight:700" onclick="adjCmtRate(0.05)">＋</button>
         </div>
         <button onclick="testCommentary()" style="width:100%;background:#2a1e3a;border:1px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:24px;font-weight:600;padding:12px;cursor:pointer;margin-top:10px">
-          ▶ 解説の声をテスト
+          ▶ 実況の声をテスト
         </button>
       </div>
       <div style="margin-top:14px">
@@ -787,6 +788,32 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         </select>
         <div id="tts-status" style="font-size:18px;color:#888;margin-top:6px">確認中…</div>
       </div>
+      <div style="border-top:1px solid #333;margin-top:14px;padding-top:12px">
+        <div style="font-size:20px;color:#666;margin-bottom:8px">読み方の調整</div>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:22px;color:#888;width:110px">声の高さ</span>
+          <button class="drawer-btn" style="flex:1;font-size:32px" onclick="adjAnnPitch(-2)">－</button>
+          <span style="font-size:30px;font-weight:700;color:#fff;min-width:80px;text-align:center" id="ann-pitch-val">0%</span>
+          <button class="drawer-btn" style="flex:1;font-size:32px" onclick="adjAnnPitch(2)">＋</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:22px;color:#888;width:110px">読点の間</span>
+          <button class="drawer-btn" style="flex:1;font-size:32px" onclick="adjAnnPause(-50)">－</button>
+          <span style="font-size:30px;font-weight:700;color:#fff;min-width:80px;text-align:center" id="ann-pause-val">250</span>
+          <button class="drawer-btn" style="flex:1;font-size:32px" onclick="adjAnnPause(50)">＋</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px;color:#888;width:110px">抑揚の強さ</span>
+          <button class="drawer-btn" style="flex:1;font-size:32px" onclick="adjAnnDeg(-0.1)">－</button>
+          <span style="font-size:30px;font-weight:700;color:#fff;min-width:80px;text-align:center" id="ann-deg-val">1.0</span>
+          <button class="drawer-btn" style="flex:1;font-size:32px" onclick="adjAnnDeg(0.1)">＋</button>
+        </div>
+        <div style="font-size:17px;color:#666;margin-top:6px">抑揚は「話し方」を標準以外にしたときに効きます</div>
+      </div>
+
       <button onclick="testAnnounce()" style="width:100%;background:#2a2a4a;border:1px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:24px;font-weight:600;padding:12px;cursor:pointer;margin-top:10px">
         ▶ テスト再生
       </button>
@@ -1035,6 +1062,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         style="background:#3a3a1a;border:4px solid #8a8a3a;border-radius:18px;color:#fff;
                font-size:52px;font-weight:900;padding:44px 6px;cursor:pointer;letter-spacing:3px">見逃し</button>
     </div>
+    <button onclick="pickStrikeout('スリーバント失敗')"
+      style="width:100%;background:#3a2a1a;border:3px solid #8a6a3a;border-radius:14px;color:#e8b878;
+             font-size:28px;font-weight:800;padding:18px 6px;cursor:pointer;letter-spacing:2px">スリーバント失敗</button>
   </div>
 </div>
 
@@ -1115,6 +1145,9 @@ function _getGameTitle(){
 // ── 場内アナウンス（読み上げ） ─────────────────────────────────────────────
 var _annOn = false;          // 読み上げ ON/OFF
 var _annRate = 0.75;         // 読み上げ速度
+var _annPitch = 0;           // 声の高さ（%）
+var _annStyleDeg = 1.0;      // 感情の強さ
+var _annPause = 250;         // 読点で挟む間（ms）
 var _annVoice = null;        // 使用する音声
 
 var POS_YOMI = {
@@ -1159,6 +1192,9 @@ function _initTTS(){
     if(cs !== null) _cmtStyle = cs;
     var cr = localStorage.getItem('bb_cmt_rate');
     if(cr != null) _cmtRate = Number(cr);
+    var ap = localStorage.getItem('bb_ann_pitch'); if(ap != null) _annPitch = Number(ap);
+    var au = localStorage.getItem('bb_ann_pause'); if(au != null) _annPause = Number(au);
+    var ad = localStorage.getItem('bb_ann_deg');   if(ad != null) _annStyleDeg = Number(ad);
     _pitchAutoCall = localStorage.getItem('bb_pitch_auto')==='1';
   }catch(e){}
 }
@@ -1244,7 +1280,7 @@ function clearVoiceCache(){
   });
 }
 
-function _ttsKey(text){ return _ttsVoice + '|' + _ttsStyle + '|' + _annRate + '|' + text; }
+function _ttsKey(text){ return _ttsVoice+'|'+_ttsStyle+'|'+_annStyleDeg+'|'+_annRate+'|'+_annPitch+'|'+_annPause+'|'+text; }
 
 // 音声を取得してキャッシュに入れる（再生はしない）
 function _fetchVoice(text){
@@ -1256,7 +1292,8 @@ function _fetchVoice(text){
     return fetch('/api/tts', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ text: text, voice: _ttsVoice, rate: _annRate, style: _ttsStyle })
+      body: JSON.stringify({ text: text, voice: _ttsVoice, rate: _annRate, style: _ttsStyle,
+                             pitch: _annPitch, styleDegree: _annStyleDeg, pause: _annPause })
     })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -1449,10 +1486,10 @@ function resetPitchCount(){
   _updatePitchDisp();
 }
 
-// ── 解説アナウンス（状況説明・別の声） ─────────────────────────────────────
-var _cmtVoice = 'ja-JP-KeitaNeural';   // 解説用の声（コールとは別）
-var _cmtStyle = '';                    // 解説の話し方
-var _cmtRate  = 1.10;                  // 解説の読み上げ速度
+// ── 実況アナウンス（状況説明・別の声） ─────────────────────────────────────
+var _cmtVoice = 'ja-JP-KeitaNeural';   // 実況用の声（コールとは別）
+var _cmtStyle = '';                    // 実況の話し方
+var _cmtRate  = 1.10;                  // 実況の読み上げ速度
 
 function setCmtVoice(v){
   _cmtVoice=v;
@@ -1477,13 +1514,14 @@ function _speakAs(text, voice, style, rate){
   if(!_annOn || !text) return;
   var rt = (typeof rate==='number') ? rate : _annRate;
   if(!_ttsReady){ _speakLocal(text); return; }
-  var k = voice+'|'+(style||'')+'|'+rt+'|'+text;
+  var k = voice+'|'+(style||'')+'|'+_annStyleDeg+'|'+rt+'|'+_annPitch+'|'+_annPause+'|'+text;
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
   _dbGet(k).then(function(saved){
     if(saved){ _ttsCache[k]=saved; _play(saved); return; }
     return fetch('/api/tts',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'' })
+      body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'',
+                            pitch:_annPitch, styleDegree:_annStyleDeg, pause:_annPause })
     })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -1538,7 +1576,7 @@ function announceSituation(){
     }
   }
 
-  confirmSpeak('🎙 解説', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
+  confirmSpeak('🎙 実況', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
 }
 
 // 読み上げ前に内容を確認・編集する
@@ -1609,6 +1647,30 @@ function adjAnnRate(d){
   try{ localStorage.setItem('bb_ann_rate', _annRate); }catch(e){}
   var el=document.getElementById('ann-rate-val');
   if(el) el.textContent=_annRate.toFixed(2);
+}
+
+function adjAnnPitch(d){
+  _annPitch = Math.max(-30, Math.min(30, _annPitch + d));
+  _ttsCache = {};
+  try{ localStorage.setItem('bb_ann_pitch', _annPitch); }catch(e){}
+  var el=document.getElementById('ann-pitch-val');
+  if(el) el.textContent=(_annPitch>0?'+':'')+_annPitch+'%';
+}
+
+function adjAnnPause(d){
+  _annPause = Math.max(0, Math.min(1000, _annPause + d));
+  _ttsCache = {};
+  try{ localStorage.setItem('bb_ann_pause', _annPause); }catch(e){}
+  var el=document.getElementById('ann-pause-val');
+  if(el) el.textContent=_annPause;
+}
+
+function adjAnnDeg(d){
+  _annStyleDeg = Math.max(0.1, Math.min(2, Math.round((_annStyleDeg + d)*10)/10));
+  _ttsCache = {};
+  try{ localStorage.setItem('bb_ann_deg', _annStyleDeg); }catch(e){}
+  var el=document.getElementById('ann-deg-val');
+  if(el) el.textContent=_annStyleDeg.toFixed(1);
 }
 
 function testAnnounce(){
@@ -1786,7 +1848,13 @@ function closeKPanel(){
 }
 function pickStrikeout(label){
   closeKPanel();
-  _lastResult = { label:label, outs:1, ts:Date.now() };
+  var _sel=document.getElementById('sel-batter');
+  _lastResult = {
+    label:label, outs:1, ts:Date.now(),
+    batterId: _sel && _sel.value ? Number(_sel.value) : 0,
+    atkTeam: st.top ? 'away' : 'home',
+    inn: st.inn, top: st.top
+  };
   bso.o = Math.min(3, bso.o+1);
   bso.b=0; bso.s=0;
   _abReset(); _updateAbDisp();
@@ -1815,6 +1883,49 @@ function toastMsg(m){
   t.style.opacity='1';
   clearTimeout(t._tm);
   t._tm=setTimeout(function(){ t.style.opacity='0'; },1600);
+}
+
+// ── ホームラン：走者を還して加点する ──────────────────────────────────────
+var _hrInfo = null;
+
+function _applyHomeRunCtl(){
+  var runs = (bases[1]?1:0) + (bases[2]?1:0) + (bases[3]?1:0) + 1;
+  bases[1]=false; bases[2]=false; bases[3]=false;
+
+  var team = st.top ? 'away' : 'home';
+  var arr = scores[team];
+  var i = st.inn-1;
+  while(arr.length<=i) arr.push(null);
+  var cur = arr[i];
+  arr[i] = (cur===null||cur===undefined||cur==='x') ? runs : Math.min(99, cur+runs);
+
+  var sel=document.getElementById('sel-batter');
+  var p = (sel&&sel.value) ? rosters[team].find(function(x){ return x.id===Number(sel.value); }) : null;
+  var el = st.top ? document.getElementById('name-away') : document.getElementById('name-home');
+
+  _hrInfo = {
+    runs: runs,
+    batter: p ? p.name : '',
+    team: el ? el.textContent : '',
+    ts: Date.now()
+  };
+
+  renderDiamond(); renderSB();
+  // スコア表を開いてホームラン表示を出す
+  _pendingShowScore='show';
+  _scoreOverlayVisible=true;
+  _refreshScoreBtn();
+  // ホームランは12秒表示に合わせる
+  if(_scoreAutoHideTimer){ clearTimeout(_scoreAutoHideTimer); }
+  _scoreAutoHideTimer=setTimeout(function(){
+    _scoreAutoHideTimer=null;
+    _scoreOverlayVisible=false;
+    _refreshScoreBtn();
+  }, 12200);
+
+  if(typeof toastMsg==='function'){
+    toastMsg(runs===4 ? '満塁ホームラン！' : (runs>1 ? runs+'ランホームラン！' : 'ソロホームラン！'));
+  }
 }
 
 // ── 打席結果の選択（アウト／セーフ → 内訳） ──────────────────────────────
@@ -1883,7 +1994,14 @@ var _speed = null;
 
 function pickResult(label, outs){
   closeRes();
-  _lastResult = { label:label, outs:outs, ts:Date.now() };
+  var _sel=document.getElementById('sel-batter');
+  _lastResult = {
+    label:label, outs:outs, ts:Date.now(),
+    batterId: _sel && _sel.value ? Number(_sel.value) : 0,
+    atkTeam: st.top ? 'away' : 'home',
+    inn: st.inn, top: st.top
+  };
+  if(label==='ホームラン') _applyHomeRunCtl();
   // アウトを加算
   if(outs>0){
     bso.o = Math.min(3, bso.o + outs);
@@ -1911,9 +2029,17 @@ function _flash(id){
 // ファウル：投球数のみ加算（ストライクは動かさない）
 function tapFoul(){
   _pitchAdd(1);
+  // 2ストライクまではファウルもストライクとして数える
+  if(bso.s < 2) _strikeKind.push('f');
   _abPush('f');
   _flash('foul-btn');
   if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
+  // 2ストライクまではファウルもストライク。それ以降はカウントを動かさない
+  if(bso.s < 2){
+    bso.s = bso.s + 1;
+    renderBSO();
+  }
+  _updateAbDisp();
   broadcast();
 }
 
@@ -1937,6 +2063,7 @@ function dotStart(k, e){
   _dotTimer=setTimeout(function(){
     _dotTimer=null; _dotFired=true;
     bso[k]=0;
+    if(k==='s') _strikeKind=[];
     if(k!=='o') _abClearKind(k);
     renderBSO(); _updateAbDisp(); broadcast();
     if(navigator.vibrate) try{ navigator.vibrate(25); }catch(x){}
@@ -1959,8 +2086,9 @@ function dotCancel(){
 // ── 打席内の投球管理（配列に積み、表示は都度集計する） ────────────────────
 // _abLog の中身: 'b'ボール / 's'ストライク / 'f'ファウル / 'h'インプレー
 var _abLog = [];
+var _strikeKind = [];   // ストライクの内訳（s=通常 / f=ファウル）
 
-function _abReset(){ _abLog = []; }
+function _abReset(){ _abLog = []; _strikeKind = []; }
 
 // 1球積む
 function _abPush(kind){
@@ -2008,7 +2136,13 @@ function adjBSO(k, d){
   bso[k] = Math.max(0, Math.min(BSO_MAX[k], bso[k]+d));
   if(bso[k]===prev) return;
   if(d>0){
-    if(k==='b' && bso.b>=4){ walk(); bso.b=0; bso.s=0; _abReset(); goNextBatter(); }
+    if(k==='b' && bso.b>=4){
+      var _bs=document.getElementById('sel-batter');
+      _lastResult={ label:'四球', outs:0, ts:Date.now(),
+        batterId:_bs&&_bs.value?Number(_bs.value):0,
+        atkTeam: st.top?'away':'home', inn:st.inn, top:st.top };
+      walk(); bso.b=0; bso.s=0; _abReset(); goNextBatter();
+    }
     if(k==='s' && bso.s>=3){ renderBSO(); broadcast(); openKPanel(); return; }
     if(k==='o' && bso.o>=3){ nextInn(); return; }
   }
@@ -2066,6 +2200,7 @@ function bsoLongEnd(k){
   if(_bsoTimer){clearTimeout(_bsoTimer);_bsoTimer=null;}
   if(!_bsoFired && k){
     if(k==='b'||k==='s'){ _pitchAdd(1); _abPush(k); }
+    if(k==='s') _strikeKind.push('s');
     adjBSO(k,1);
   }
   _bsoFired=false;
@@ -2082,7 +2217,12 @@ function resetBSO(){
 function renderBSO(){
   for(let i=0;i<3;i++){ const d=document.getElementById('bd'+(i+1)); if(d) d.className='bdot'+(i<bso.b?' on-b':''); }
   for(let i=0;i<2;i++){
-    const s=document.getElementById('sd'+(i+1)); if(s) s.className='bdot'+(i<bso.s?' on-s':'');
+    const s=document.getElementById('sd'+(i+1));
+    if(!s) continue;
+    const on = i<bso.s;
+    s.className='bdot tapdot'+(on?' on-s':'');
+    // ファウルで入ったストライクには F を出す
+    s.textContent = (on && _strikeKind[i]==='f') ? 'F' : '';
   }
   for(let i=0;i<2;i++){
     const o=document.getElementById('od'+(i+1)); if(o) o.className='bdot out'+(i<bso.o?' on':'');
@@ -3210,6 +3350,8 @@ function connectWS(){
       try{ s=JSON.parse(ev.data); }catch(e){ return; }
       // 状態要求には現在の状態を返す
       if(s && s._req==='state'){ _doBroadcast(); return; }
+      // 球速だけのメッセージは保持だけして送り返さない
+      if(s && s._spd){ _speed=s.speed; return; }
       if(!s||s._ctl!==true) return;   // 他コントローラーからの状態のみ受け取る
       applyRemoteState(s);
     };
@@ -3597,6 +3739,19 @@ function broadcast(){
 function _doBroadcast(){
   _broadcastTimer=null;
   if(!ws||ws.readyState!==1) return;
+  // 守備配置が未設定なら、守備側チームから自動で組み立てる
+  (function(){
+    var dk = st.top ? 'home' : 'away';
+    if(!_defRoster || !_defRoster.length){
+      _defRoster = rosters[dk].map(function(p){
+        return Object.assign({}, p, { pos: posLabel(p.pos)||String(p.pos||'') });
+      });
+    }
+    if(!_defTeam){
+      var el=document.getElementById('name-'+dk);
+      _defTeam = el ? el.textContent : (dk==='away'?'先攻':'後攻');
+    }
+  })();
   const aab=document.getElementById('name-away')?.textContent||'先攻';
   const hnm=document.getElementById('name-home')?.textContent||'後攻';
   const pitSel=document.getElementById('sel-pitcher');
@@ -3624,8 +3779,10 @@ function _doBroadcast(){
     _ctl:true,
     gameTitle:_getGameTitle(),
     abPitch:_abPitchCount(), abFoul:_abFoulCount(), abBallSeq:_abBallSeqCalc(),
+    strikeKind:_strikeKind.slice(),
     lastResult:_lastResult,
     speed:_speed,
+    hrInfo:_hrInfo,
     rostersAll:{away:rosters.away,home:rosters.home},
     selIds:{
       batter:batSel?Number(batSel.value)||0:0,
