@@ -42,29 +42,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
   cursor:pointer;padding:4px}
 
 /* 試合情報＋プレビュー */
-.ctx{flex-shrink:0;display:grid;grid-template-columns:minmax(0,1.6fr) auto minmax(0,.9fr);align-items:center;
-  gap:10px;background:#131315;border-bottom:1px solid #242426;padding:12px 12px}
-.ctx-side{min-width:0}
-.ctx-side.left{text-align:left}
-.ctx-side.right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.ctx-t{font-size:24px;font-weight:800;color:#eee;line-height:1.3;
+.ctx{position:relative;flex-shrink:0;display:flex;flex-direction:column;gap:8px;
+  background:#131315;border-bottom:1px solid #242426;padding:10px 12px}
+.ctx-row1{display:flex;align-items:center;gap:12px}
+.ctx-info{flex:1;min-width:0}
+.ctx-t{font-size:20px;font-weight:800;color:#eee;line-height:1.25;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ctx-s{font-size:50px;font-weight:800;color:#fff;margin-top:6px;line-height:1.2;
-  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+.ctx-s{font-size:26px;font-weight:800;color:#fff;margin-top:4px;line-height:1.3;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
   word-break:break-word}
+.ctx-bso{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
 
 /* 中央の球速プレビュー */
-.preview{position:relative;display:flex;flex-direction:column;align-items:center;
-  gap:1px;background:#040804;border:2px solid #1a3a1a;border-radius:12px;
-  padding:14px 26px;min-width:0}
-.pv-main{display:flex;align-items:baseline;gap:4px}
-.pv-n{font-size:clamp(84px,25vw,132px);font-weight:900;color:var(--grn);line-height:1;
+.preview{position:relative;display:flex;align-items:baseline;justify-content:center;
+  gap:10px;background:#040804;border:2px solid #1a3a1a;border-radius:12px;padding:8px 16px}
+.pv-main{display:flex;align-items:baseline;gap:5px}
+.pv-n{font-size:clamp(70px,21vw,110px);font-weight:900;color:var(--grn);line-height:1;
   font-variant-numeric:tabular-nums;letter-spacing:1px;
-  text-shadow:0 0 12px rgba(125,255,90,.8),0 0 26px rgba(80,255,60,.4)}
-.pv-u{font-size:30px;font-weight:800;color:rgba(125,255,90,.7)}
-.pv-type{font-size:36px;font-weight:900;color:#c8b0f8;line-height:1.2;min-height:42px}
-.pv-live{position:absolute;top:6px;right:8px;font-size:13px;font-weight:800;color:#7dff5a;
-  border:1px solid rgba(125,255,90,.5);border-radius:20px;padding:2px 6px;
+  text-shadow:0 0 14px rgba(125,255,90,.8),0 0 30px rgba(80,255,60,.45)}
+.pv-u{font-size:26px;font-weight:800;color:rgba(125,255,90,.7)}
+.pv-type{font-size:32px;font-weight:900;color:#c8b0f8;line-height:1.2}
+.pv-live{position:absolute;top:5px;right:8px;font-size:12px;font-weight:800;color:#7dff5a;
+  border:1px solid rgba(125,255,90,.5);border-radius:20px;padding:2px 7px;
   opacity:0;transition:opacity .2s}
 .pv-live.on{opacity:1}
 .preview.empty{border-color:#151515}
@@ -191,9 +190,31 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
 
   <div class="ctx" id="ctx">
     <span class="wsdot" id="wsdot"></span>
-    <div class="ctx-side left">
-      <div class="ctx-t" id="ctx-title">—</div>
-      <div class="ctx-s" id="ctx-sub">接続待ち</div>
+
+    <div class="ctx-row1">
+      <div class="ctx-info">
+        <div class="ctx-t" id="ctx-title">—</div>
+        <div class="ctx-s" id="ctx-sub">接続待ち</div>
+      </div>
+      <div class="ctx-bso">
+        <div class="cb-row">
+          <div class="cb-line"><span class="cb-l">B</span><span class="cb-d" id="cb-b"></span></div>
+          <div class="cb-line"><span class="cb-l">S</span><span class="cb-d" id="cb-s"></span></div>
+          <div class="cb-line"><span class="cb-l">O</span><span class="cb-d" id="cb-o"></span></div>
+        </div>
+        <div class="cb-row2">
+          <svg class="cb-dia" viewBox="0 0 60 60">
+            <rect id="cb-b2" x="22" y="3"  width="16" height="16" transform="rotate(45 30 11)"/>
+            <rect id="cb-b3" x="6"  y="19" width="16" height="16" transform="rotate(45 14 27)"/>
+            <rect id="cb-b1" x="38" y="19" width="16" height="16" transform="rotate(45 46 27)"/>
+            <rect id="cb-hp" x="22" y="35" width="16" height="16" transform="rotate(45 30 43)" class="hp"/>
+          </svg>
+          <div class="cb-info">
+            <div class="cb-bat" id="cb-bat"></div>
+            <div class="cb-ab" id="cb-ab"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="preview empty" id="last">
@@ -202,26 +223,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
       </div>
       <div class="pv-type" id="pv-type"></div>
       <span class="pv-live" id="last-live">表示中</span>
-    </div>
-
-    <div class="ctx-side right">
-      <div class="cb-row">
-        <div class="cb-line"><span class="cb-l">B</span><span class="cb-d" id="cb-b"></span></div>
-        <div class="cb-line"><span class="cb-l">S</span><span class="cb-d" id="cb-s"></span></div>
-        <div class="cb-line"><span class="cb-l">O</span><span class="cb-d" id="cb-o"></span></div>
-      </div>
-      <div class="cb-row2">
-        <svg class="cb-dia" viewBox="0 0 60 60">
-          <rect id="cb-b2" x="22" y="3"  width="16" height="16" transform="rotate(45 30 11)"/>
-          <rect id="cb-b3" x="6"  y="19" width="16" height="16" transform="rotate(45 14 27)"/>
-          <rect id="cb-b1" x="38" y="19" width="16" height="16" transform="rotate(45 46 27)"/>
-          <rect id="cb-hp" x="22" y="35" width="16" height="16" transform="rotate(45 30 43)" class="hp"/>
-        </svg>
-        <div class="cb-info">
-          <div class="cb-bat" id="cb-bat"></div>
-          <div class="cb-ab" id="cb-ab"></div>
-        </div>
-      </div>
     </div>
   </div>
 
