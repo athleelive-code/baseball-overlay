@@ -22,20 +22,10 @@ body{padding-bottom:40px}
 .hdr{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
   background:#fff;border-bottom:1px solid rgba(0,0,0,.1);padding:8px 18px;min-height:56px}
 .hdr-left{display:flex;align-items:center;gap:10px}
-.hdr-logo{height:26px;width:auto;display:block}
-.hdr-sub{font-size:15px;font-weight:700;color:#444;letter-spacing:.5px;flex-shrink:0}
+.hdr-logo{height:38px;width:auto;display:block}
+.hdr-sub{font-size:20px;font-weight:800;color:#333;letter-spacing:1px;flex-shrink:0}
 .hdr-right{display:flex;align-items:center;gap:12px}
 .hdr-div{width:1px;height:22px;background:rgba(0,0,0,.15)}
-.clock{font-size:20px;font-weight:700;color:#222;font-variant-numeric:tabular-nums;letter-spacing:.5px}
-.batt{display:flex;align-items:center;gap:6px}
-.batt-shell{position:relative;width:30px;height:15px;border:2px solid #444;border-radius:4px;padding:1.5px}
-.batt-shell::after{content:'';position:absolute;right:-5px;top:4px;width:3px;height:7px;
-  background:#444;border-radius:0 2px 2px 0}
-.batt-fill{display:block;height:100%;width:0%;background:#3ac13a;border-radius:1px;transition:width .4s,background .4s}
-.batt-fill.mid{background:#e8a33d}
-.batt-fill.low{background:#d33}
-.batt-txt{font-size:13px;font-weight:700;color:#333;font-variant-numeric:tabular-nums;min-width:34px}
-.batt.charging .batt-txt::after{content:' ⚡'}
 .ws-dot{width:10px;height:10px;border-radius:50%;background:#c00;transition:background .3s}
 .ws-dot.on{background:#3ac13a}
 .ws-label{font-size:13px;color:#555}
@@ -384,12 +374,6 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <span class="hdr-sub">メンバー管理</span>
   </div>
   <div class="hdr-right">
-    <span class="clock" id="clock">--:--:--</span>
-    <span class="batt" id="batt" style="display:none">
-      <span class="batt-shell"><span class="batt-fill" id="batt-fill"></span></span>
-      <span class="batt-txt" id="batt-txt">--%</span>
-    </span>
-    <span class="hdr-div"></span>
     <button class="btn btn-lock" id="btn-lock" onclick="toggleLock()">🔓 操作可</button>
     <span class="hdr-div"></span>
     <span class="ws-dot" id="ws-dot"></span>
@@ -3009,36 +2993,7 @@ function pcReqSync(){
   toast('同期しました');
 }
 
-// ── 時計 ──────────────────────────────────────────────────────────────────
-function tickClock(){
-  const d=new Date();
-  const p=function(n){ return String(n).padStart(2,'0'); };
-  document.getElementById('clock').textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
-}
-tickClock();
-setInterval(tickClock,1000);
 
-// ── バッテリー表示（Battery Status API：非対応環境では非表示） ─────────────
-function initBattery(){
-  if(!navigator.getBattery) return;
-  navigator.getBattery().then(function(b){
-    const wrap=document.getElementById('batt');
-    const fill=document.getElementById('batt-fill');
-    const txt=document.getElementById('batt-txt');
-    wrap.style.display='flex';
-    const upd=function(){
-      const pct=Math.round(b.level*100);
-      fill.style.width=pct+'%';
-      fill.className='batt-fill'+(pct<=15?' low':(pct<=40?' mid':''));
-      txt.textContent=pct+'%';
-      wrap.className='batt'+(b.charging?' charging':'');
-    };
-    upd();
-    b.addEventListener('levelchange',upd);
-    b.addEventListener('chargingchange',upd);
-  }).catch(function(){});
-}
-initBattery();
 
 // ── 初期化 ────────────────────────────────────────────────────────────────
 ['away','home'].forEach(function(t){
