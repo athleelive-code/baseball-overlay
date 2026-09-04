@@ -2596,6 +2596,35 @@ function tapInPlay(){
   openResultPanel();
 }
 
+// カウントと投球記録の食い違いを直す
+// （同期のタイミングで記録が欠けても、球順が消えないようにする）
+function _abReconcile(){
+  var nb=_abLog.filter(function(x){ return x==='b'; }).length;
+  var ns=_strikeSlots().length;
+
+  // 記録が足りない → カウントに合わせて先頭に補う
+  var addB = (bso.b||0) - nb;
+  var addS = (bso.s||0) - ns;
+  var head=[];
+  for(var i=0;i<addB;i++) head.push('b');
+  for(var j=0;j<addS;j++) head.push('s');
+  if(head.length) _abLog = head.concat(_abLog);
+
+  // 記録が多い → 古いものから削る
+  if(addB<0){
+    var delB=-addB;
+    for(var k=0;k<_abLog.length && delB>0;k++){
+      if(_abLog[k]==='b'){ _abLog.splice(k,1); k--; delB--; }
+    }
+  }
+  if(addS<0){
+    var delS=-addS;
+    for(var m=0;m<_abLog.length && delS>0;m++){
+      if(_abLog[m]==='s'||_abLog[m]==='f'){ _abLog.splice(m,1); m--; delS--; }
+    }
+  }
+}
+
 // ── ドットのタップ（長押しクリアは廃止：取り消しは「1球戻す」に一本化） ──
 function dotStart(k, e){
   if(e && e.stopPropagation) e.stopPropagation();
@@ -3814,8 +3843,22 @@ function applyRemoteState(s){
     if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
 
     // 投球記録を共有する（2台目以降でも球順が狂わないように）
-    if(Array.isArray(s.abLog)) _abLog = s.abLog.slice();
-    if(Array.isArray(s.pitchLog)) _pitchLog = s.pitchLog.slice();
+    // 打者が変わっていたら記録をいったん空にする
+    var _incomingBatter = (s.selIds && s.selIds.batter) || 0;
+    var _selNow = document.getElementById('sel-batter');
+    var _curBatter = (_selNow && _selNow.value) ? Number(_selNow.value) : 0;
+    if(_incomingBatter && _curBatter && _incomingBatter !== _curBatter){
+      _abLog = [];
+    }
+
+    // 打席の記録は「情報が多い方」を採用する
+    if(Array.isArray(s.abLog)){
+      if(s.abLog.length >= _abLog.length) _abLog = s.abLog.slice();
+    }
+    if(Array.isArray(s.pitchLog)){
+      if(s.pitchLog.length >= _pitchLog.length) _pitchLog = s.pitchLog.slice();
+    }
+    _abReconcile();
 
     // 球速（他デバイスからの入力を中継する）
     if(s.speed) _speed = s.speed;
@@ -4393,8 +4436,22 @@ function restoreState(){
       rosters.home=snap.rosters.home||[];
     }
     // 投球記録を共有する（2台目以降でも球順が狂わないように）
-    if(Array.isArray(s.abLog)) _abLog = s.abLog.slice();
-    if(Array.isArray(s.pitchLog)) _pitchLog = s.pitchLog.slice();
+    // 打者が変わっていたら記録をいったん空にする
+    var _incomingBatter = (s.selIds && s.selIds.batter) || 0;
+    var _selNow = document.getElementById('sel-batter');
+    var _curBatter = (_selNow && _selNow.value) ? Number(_selNow.value) : 0;
+    if(_incomingBatter && _curBatter && _incomingBatter !== _curBatter){
+      _abLog = [];
+    }
+
+    // 打席の記録は「情報が多い方」を採用する
+    if(Array.isArray(s.abLog)){
+      if(s.abLog.length >= _abLog.length) _abLog = s.abLog.slice();
+    }
+    if(Array.isArray(s.pitchLog)){
+      if(s.pitchLog.length >= _pitchLog.length) _pitchLog = s.pitchLog.slice();
+    }
+    _abReconcile();
 
     // 球速（他デバイスからの入力を中継する）
     if(s.speed) _speed = s.speed;
