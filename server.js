@@ -9,7 +9,12 @@ const wss = new WebSocketServer({ server });
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.get('/', (req, res) => { res.redirect('/controller-unified.html'); });
+app.get('/', (req, res) => { res.redirect('/ctrl/'); });
+
+// 旧URLからの転送（ホーム画面に古いアイコンが残っていても開ける）
+app.get('/controller-unified.html', (req, res) => res.redirect(301, '/ctrl/'));
+app.get('/speed.html',              (req, res) => res.redirect(301, '/spd/'));
+app.get('/roster-pc.html',          (req, res) => res.redirect(301, '/roster/'));
 
 // Claude API proxy エンドポイント
 app.post('/api/scan-roster', async (req, res) => {
