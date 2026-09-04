@@ -545,12 +545,13 @@ function applyState(s){
     var _t=g('ov-bn'+(i+1));
     if(_t) _t.textContent = (_on && _bseq[i]) ? String(_bseq[i]) : '';
   }
-  var _sk = Array.isArray(s.strikeKind) ? s.strikeKind : [];
+  var _slots = Array.isArray(s.strikeSlots) ? s.strikeSlots : [];
   for(let i=0;i<2;i++){
     var _son = i<(s.s||0);
+    var _sl = _slots[i];
     setAttr('ov-sd'+(i+1),'fill', _son ? '#f5c518' : '#333');
     var _st=g('ov-sn'+(i+1));
-    if(_st) _st.textContent = (_son && _sk[i]==='f') ? 'F' : '';
+    if(_st) _st.textContent = (_son && _sl) ? (_sl.foul ? 'F' : String(_sl.n)) : '';
     setAttr('ov-od'+(i+1),'fill',i<(s.o||0)?'#c8102e':'#333');
     setAttr('ov-od'+(i+1),'stroke','none');
   }
