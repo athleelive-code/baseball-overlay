@@ -97,11 +97,14 @@ app.post('/api/tts', async (req, res) => {
     }
 
     const voiceName = voice || 'ja-JP-NanamiNeural';
+    // 話し方（style）に対応しているのは一部の声だけ。
+    // 非対応の声に指定するとエラーになるため、ここで落とす。
+    const STYLE_OK = ['ja-JP-NanamiNeural'];
     const spd = Math.max(0.5, Math.min(1.5, Number(rate) || 1.0));
     // SSML の rate は百分率で指定する
     const ratePct = Math.round((spd - 1) * 100);
     const rateStr = (ratePct >= 0 ? '+' : '') + ratePct + '%';
-    const styleName = style || '';
+    const styleName = (STYLE_OK.indexOf(voiceName) >= 0) ? (style || '') : '';
 
     // 追加の調整値
     const styleDeg = Math.max(0.01, Math.min(2, Number(req.body.styleDegree) || 1));
