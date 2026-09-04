@@ -474,7 +474,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <div class="fp-hd">
       <span class="fp-badge atk">攻撃</span>
       <span id="fp-atk-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px">先攻</span>
-      <button class="qrbtn" onclick="openQR('controller.html')" title="コントローラーを共有" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
+      <button class="qrbtn" onclick="openQR('controller-unified.html')" title="コントローラーを共有" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
       <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
     </div>
     <div id="fp-order" class="fp-order"></div>
@@ -958,7 +958,20 @@ function pushState(){
   base._ctl = true;
   base.rostersAll = { away:rosters.away, home:rosters.home };
   base.showScoreOverlay = null;
-  base.hrInfo = _lastHR;
+
+  // オーバーレイ用の打順・守備配置を作り直して載せる
+  const atk = (base.top!==false) ? 'away' : 'home';
+  const def = (atk==='away') ? 'home' : 'away';
+  const conv = function(list){
+    return list.map(function(p){
+      return Object.assign({}, p, { pos: posLabel(p.pos) || String(p.pos||'') });
+    });
+  };
+  base.batRoster = conv(rosters[atk]);
+  base.defRoster = conv(rosters[def]);
+  base.batTeam = (atk==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻');
+  base.defTeam = (def==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻');
+
   ws.send(JSON.stringify(base));
 }
 
@@ -1366,118 +1379,12 @@ function aiComment(){
   });
 }
 
-// 直前の1球を取り消す
-function pcUndoPitch(){
-  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
-  if(!_pcAbLog.length){ toast('戻せる投球がありません'); return; }
-  var last=_pcAbLog.pop();
-  if(last==='b') lastRemote.b=Math.max(0,(lastRemote.b||0)-1);
-  if(last==='s') lastRemote.s=Math.max(0,(lastRemote.s||0)-1);
-  if(last==='f'){
-    var slots=_pcRecalcAb();
-    if(slots.length < (lastRemote.s||0)) lastRemote.s=Math.max(0,(lastRemote.s||0)-1);
-  }
-  // 記録からも1件消す
-  for(var i=_gameLog.length-1;i>=0;i--){
-    if(_gameLog[i].kind==='pitch'){ _gameLog.splice(i,1); break; }
-  }
-  _saveLog();
-  _pcSyncAb();
-  renderGame(lastRemote);
-  _updateAbDispPC();
-  pushState();
-  toast('1球戻しました');
-}
-
 // ── プレビューからの BSO 操作 ─────────────────────────────────────────────
-var _pcHoldTimer=null, _pcHeld=false;
-
-function pcHoldStart(k){
-  _pcHeld=false;
-  _pcHoldTimer=setTimeout(function(){
-    _pcHoldTimer=null; _pcHeld=true;
-    if(!lastRemote) return;
-    lastRemote[k]=0;
-    if(k==='s'){ _pcAbLog=_pcAbLog.filter(function(x){ return x!=='s'&&x!=='f'; }); }
-    if(k==='b'){ _pcAbLog=_pcAbLog.filter(function(x){ return x!=='b'; }); }
-    renderGame(lastRemote);
-    pushState();
-    toast(k.toUpperCase()+' クリア');
-  },600);
-}
-function pcHoldEnd(){
-  if(_pcHoldTimer){ clearTimeout(_pcHoldTimer); _pcHoldTimer=null; }
-}
 
 // 打席内の投球情報（受信した値を表示に使う）
 var _abPitch=0, _abFoul=0, _abBallSeq=[];
 
-function pcBSO(k){
-  if(_pcHeld){ _pcHeld=false; return; }   // 長押し後のクリックは無視
-  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
-  var MAX={b:4,s:3,o:3};
-  var cur=lastRemote[k]||0;
-  var next=Math.min(MAX[k], cur+1);
-  if(next===cur) return;
-  lastRemote[k]=next;
-
-  if(k==='b'||k==='s'){
-    _pcAbLog.push(k);
-    addLog('pitch', k==='b'?'ボール':'ストライク');
-  }
-
-  // 四球・三振の処理
-  if(k==='b' && lastRemote.b>=4){
-    lastRemote.b=0; lastRemote.s=0; _abResetPC();
-    addLog('result','四球');
-    _advanceRunnersWalk();
-    goNextBatterPC();
-  }
-  if(k==='s' && lastRemote.s>=3){
-    // 種類（空振り／見逃し）を選んでから確定する
-    _pcSyncAb();
-    renderGame(lastRemote);
-    _updateAbDispPC();
-    pushState();
-    openKPop();
-    return;
-  }
-  if(k==='o'){
-    _abResetPC();
-    if(lastRemote.o>=3){ _pcSyncAb(); pcNextInning(); return; }
-  }
-
-  _pcSyncAb();
-  renderGame(lastRemote);
-  _updateAbDispPC();
-  pushState();
-}
-
-function _advanceRunnersWalk(){
-  var r=lastRemote.r||{};
-  if(!r[1]) r[1]=true;
-  else if(!r[2]){ r[2]=true; r[1]=true; }
-  else if(!r[3]){ r[3]=true; r[2]=true; r[1]=true; }
-  lastRemote.r=r;
-}
-
-function pcFoul(){
-  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
-  _pcAbLog.push('f');
-  addLog('pitch','ファウル');
-  // 2ストライクまではファウルもストライク
-  if((lastRemote.s||0) < 2){
-    lastRemote.s = (lastRemote.s||0) + 1;
-  }
-  renderGame(lastRemote);
-  _pcSyncAb();
-  _updateAbDispPC();
-  pushState();
-}
-
 function _updateAbDispPC(){
-  var u=document.getElementById('gb-undo');
-  if(u) u.disabled = (_pcAbLog.length===0);
   var f=document.getElementById('gb-foul');
   var t=document.getElementById('gb-total');
   if(f) f.textContent=_abFoul>0?('F'+_abFoul):'';
@@ -2265,8 +2172,8 @@ function prebuildVoices(){
   });
   var an=teamNames.away||'先攻', hn=teamNames.home||'後攻';
   for(var i=1;i<=10;i++){
-    texts.push(i+'回表、'+an+'の攻撃');
-    texts.push(i+'回裏、'+hn+'の攻撃');
+    texts.push(i+'回おもて、'+an+'の攻撃');
+    texts.push(i+'回うら、'+hn+'の攻撃');
   }
   texts=texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
@@ -2519,7 +2426,7 @@ function announceCurrentInning(){
   }
   var team = isTop ? (s.aab||teamNames.away||'先攻')
                    : (s.hnm||teamNames.home||'後攻');
-  confirmSpeak('🔊 回コール', innNo+'回'+(isTop?'表':'裏')+'、'+team+'の攻撃',
+  confirmSpeak('🔊 回コール', innNo+'回'+(isTop?'おもて':'うら')+'、'+team+'の攻撃',
                _ttsVoice, _ttsStyle, _annRate);
 }
 
@@ -2545,16 +2452,20 @@ var _cmtRate  = 1.10;
 
 function setCmtVoice(v){
   _cmtVoice=v;
+  _ttsCache={};
   try{ localStorage.setItem('bb_cmt_voice',v); }catch(e){}
   _refreshSettingsUI();
+  toast('実況の声を変更しました');
 }
 function setCmtStyle(v){
   _cmtStyle=v;
+  _ttsCache={};
   try{ localStorage.setItem('bb_cmt_style',v); }catch(e){}
   _refreshSettingsUI();
 }
 function adjCmtRate(d){
   _cmtRate=Math.max(0.5, Math.min(1.5, Math.round((_cmtRate+d)*100)/100));
+  _ttsCache={};
   try{ localStorage.setItem('bb_cmt_rate',_cmtRate); }catch(e){}
   _refreshSettingsUI();
 }
@@ -2566,6 +2477,7 @@ function testCommentary(){
 function _speakAs(text, voice, style, rate){
   if(!_annOn || !text) return;
   var rt = (typeof rate==='number') ? rate : _annRate;
+  console.log('[TTS] voice=', voice, 'style=', style, 'rate=', rt);
   if(!_ttsReady){ _speakLocal(text); return; }
   var k = voice+'|'+(style||'')+'|'+_annStyleDeg+'|'+rt+'|'+_annPitch+'|'+_annPause+'|'+text;
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
@@ -2601,7 +2513,7 @@ function announceSituation(){
   var hn = s.hnm||teamNames.home||'後攻';
 
   var parts = [];
-  parts.push(innNo+'回'+(isTop?'表':'裏')+'、'+atk+'の攻撃。');
+  parts.push(innNo+'回'+(isTop?'おもて':'うら')+'、'+atk+'の攻撃。');
 
   // 得点差
   if(at===ht){
@@ -2748,7 +2660,7 @@ function renderGame(s){
 
 // ── QRコード表示（1画面ぶん） ─────────────────────────────────────────────
 var QR_INFO = {
-  'controller.html': { name:'コントローラー', desc:'スコア・BSO・走者の操作' },
+  'controller-unified.html': { name:'コントローラー', desc:'スコア・BSO・走者の操作' },
   'speed.html':      { name:'球速入力',      desc:'球速の入力専用' },
   'roster-pc.html':  { name:'メンバー管理',  desc:'選手登録・打順・守備' },
   'overlay.html':    { name:'オーバーレイ',  desc:'配信に重ねる画面' }
