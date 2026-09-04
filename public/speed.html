@@ -17,6 +17,13 @@
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
   touch-action:manipulation;overscroll-behavior:none}
 
+#pull-ind{
+  position:fixed;left:50%;top:0;transform:translateX(-50%) translateY(-100%);
+  z-index:900;background:#1a3a1a;border:2px solid #3a6a2a;border-top:none;
+  border-radius:0 0 12px 12px;color:#86c867;font-size:16px;font-weight:800;
+  padding:10px 22px;transition:transform .2s;pointer-events:none;
+}
+#pull-ind.show{transform:translateX(-50%) translateY(0)}
 .app{display:flex;flex-direction:column;height:100%;
   padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 
@@ -171,6 +178,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
 <script src="qrcode.js"></script>
 </head>
 <body>
+<div id="pull-ind">同期中…</div>
 <div class="app">
 
   <div class="hdr">
@@ -613,6 +621,46 @@ function closeQR(){
   var m = document.getElementById('qr-mask');
   if(m) m.style.display = 'none';
 }
+
+// ── 画面を引っ張って同期を要求する ────────────────────────────────────────
+(function(){
+  var startY=0, pulling=false, fired=false;
+  var TH=90;
+
+  function ind(show){
+    var el=document.getElementById('pull-ind');
+    if(el) el.classList.toggle('show', !!show);
+  }
+
+  function req(){
+    if(!ws || ws.readyState!==1){ return; }
+    try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if(window.scrollY>0){ pulling=false; return; }
+    if(!e.touches || !e.touches.length) return;
+    startY=e.touches[0].clientY;
+    pulling=true; fired=false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    if(!pulling || fired) return;
+    if(window.scrollY>0){ pulling=false; ind(false); return; }
+    var dy=e.touches[0].clientY - startY;
+    if(dy>TH){
+      fired=true;
+      ind(true);
+      req();
+      setTimeout(function(){ ind(false); }, 1200);
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', function(){
+    pulling=false;
+    if(!fired) ind(false);
+  });
+})();
 
 // ── 試合情報を表示 ────────────────────────────────────────────────────────
 function renderCtx(s){
