@@ -1624,14 +1624,18 @@ var _cmtRate  = 1.10;                  // 実況の読み上げ速度
 
 function setCmtVoice(v){
   _cmtVoice=v;
+  _ttsCache={};                 // 声を変えたら作り直す
   try{ localStorage.setItem('bb_cmt_voice',v); }catch(e){}
+  if(typeof toastMsg==='function') toastMsg('実況の声を変更しました');
 }
 function setCmtStyle(v){
   _cmtStyle=v;
+  _ttsCache={};
   try{ localStorage.setItem('bb_cmt_style',v); }catch(e){}
 }
 function adjCmtRate(d){
   _cmtRate=Math.max(0.5, Math.min(1.5, Math.round((_cmtRate+d)*100)/100));
+  _ttsCache={};
   try{ localStorage.setItem('bb_cmt_rate',_cmtRate); }catch(e){}
   var el=document.getElementById('cmt-rate-val');
   if(el) el.textContent=_cmtRate.toFixed(2);
@@ -1644,6 +1648,7 @@ function testCommentary(){
 function _speakAs(text, voice, style, rate){
   if(!_annOn || !text) return;
   var rt = (typeof rate==='number') ? rate : _annRate;
+  console.log('[TTS] voice=', voice, 'style=', style, 'rate=', rt);
   if(!_ttsReady){ _speakLocal(text); return; }
   var k = voice+'|'+(style||'')+'|'+_annStyleDeg+'|'+rt+'|'+_annPitch+'|'+_annPause+'|'+text;
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
@@ -1678,7 +1683,7 @@ function announceSituation(){
   var at=sum(scores.away), ht=sum(scores.home);
 
   var parts=[];
-  parts.push(st.inn+'回'+(isTop?'表':'裏')+'、'+atk+'の攻撃。');
+  parts.push(st.inn+'回'+(isTop?'おもて':'うら')+'、'+atk+'の攻撃。');
 
   if(at===ht){
     parts.push('試合は'+at+'対'+ht+'の同点です。');
@@ -1753,7 +1758,7 @@ function announceCurrentInning(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var teamEl = st.top ? document.getElementById('name-away') : document.getElementById('name-home');
   var team = teamEl ? teamEl.textContent : (st.top ? '先攻' : '後攻');
-  confirmSpeak('🔊 回コール', st.inn+'回'+(st.top?'表':'裏')+'、'+team+'の攻撃',
+  confirmSpeak('🔊 回コール', st.inn+'回'+(st.top?'おもて':'うら')+'、'+team+'の攻撃',
                _ttsVoice, _ttsStyle, _annRate);
 }
 
@@ -1839,8 +1844,8 @@ function prebuildVoices(){
   var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
   var an=na?na.textContent:'先攻', hn=nh?nh.textContent:'後攻';
   for(var i=1;i<=10;i++){
-    texts.push(i+'回表、'+an+'の攻撃');
-    texts.push(i+'回裏、'+hn+'の攻撃');
+    texts.push(i+'回おもて、'+an+'の攻撃');
+    texts.push(i+'回うら、'+hn+'の攻撃');
   }
   texts = texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
