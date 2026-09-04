@@ -257,6 +257,19 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .win-b:active{transform:scale(.97)}
 .win-b.main{font-size:44px;padding:34px 6px;letter-spacing:2px}
 .win-b.sub{font-size:26px;padding:16px 6px;margin-bottom:10px;letter-spacing:1px}
+.def-chain{font-size:24px;font-weight:800;color:#eee;text-align:center;
+  background:#242426;border:1px solid #333;border-radius:10px;padding:10px;min-height:48px;
+  display:flex;align-items:center;justify-content:center}
+.def-chain.empty{color:#666;font-size:20px;font-weight:600}
+#def-field .fld{fill:#16301a;stroke:#2a4a2e;stroke-width:2}
+#def-field .inf{fill:#3a2a1c;stroke:#54402c;stroke-width:2}
+#def-field .base{fill:#d8d8d8}
+#def-field .dslot{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.25);stroke-width:2;cursor:pointer}
+#def-field .dslot:active{fill:rgba(138,180,255,.45)}
+#def-field .dslot.picked{fill:rgba(138,180,255,.5);stroke:#8ab4ff;stroke-width:3}
+#def-field text{pointer-events:none;font-family:inherit}
+#def-field .dpos{font-size:12px;font-weight:800;fill:#8ab4ff}
+#def-field .dnm{font-size:13px;font-weight:700;fill:#fff}
 .win-b.cancel{font-size:24px;padding:15px 6px;background:#2c2c2e;border-color:#555;color:#bbb}
 
 .tapdot{cursor:pointer;display:flex;align-items:center;justify-content:center;
@@ -895,6 +908,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     </div>
 
     <div class="drawer-sec">
+      <div class="drawer-sec-t">打球の記録</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">ONにすると、打席結果のあとに1画面追加されます。アウトなら「処理した選手」、セーフなら「打球の方向」を選びます。ワンオペのときはOFFのままにしてください</div>
+      <button id="btn-def-rec" onclick="toggleDefRec()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:26px;font-weight:700;padding:14px;cursor:pointer">
+        ⚾ 打球の記録 OFF
+      </button>
+    </div>
+    <div class="drawer-sec">
       <div class="drawer-sec-t">投球数</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">B・S・F・H のタップで1球として数えます。イニング交代でその回の分がリセットされます</div>
       <button id="btn-pitch-auto" onclick="togglePitchAuto()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:24px;font-weight:700;padding:14px;cursor:pointer;margin-bottom:8px">
@@ -1135,6 +1155,42 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   </div>
 </div>
 
+<!-- 打球の方向（セーフ時・任意） -->
+<div id="hit-mask" class="win-mask" onclick="winBackdrop(event,'hit-mask')">
+  <div class="win-box" style="max-width:680px">
+    <div class="win-t" style="font-size:26px;color:#8ac0ff" id="hit-win-t">打球の方向</div>
+
+    <div id="hit-dir" class="win-3col"></div>
+    <div id="hit-kind" class="win-3col" style="display:none"></div>
+
+    <div class="win-2col" style="margin-bottom:0">
+      <button class="win-b cancel" style="margin:0" id="hit-back" onclick="hitBack()">← 戻る</button>
+      <button class="win-b cancel" style="margin:0" onclick="hitSkip()">記録しない</button>
+    </div>
+  </div>
+</div>
+
+<!-- 守備の記録（4段目・任意） -->
+<div id="def-mask" class="win-mask" onclick="winBackdrop(event,'def-mask')">
+  <div class="win-box" style="max-width:680px">
+    <div class="win-t" style="font-size:26px;color:#8ab4ff">守備の記録</div>
+    <div id="def-chain" class="def-chain">打球を処理した選手を選んでください</div>
+
+    <svg id="def-field" viewBox="0 0 420 230" style="width:100%;height:auto;display:block;margin:6px 0 10px"></svg>
+
+    <div class="win-2col" style="margin-bottom:10px">
+      <button class="win-b" id="def-ok" style="background:#1a3a1a;border-color:#3a6a2a;color:#86c867;font-size:24px;padding:18px 6px"
+        onclick="defConfirm()">この内容で確定</button>
+      <button class="win-b" style="background:#2a3a4a;border-color:#4a7aaa;color:#9ac0ff;font-size:24px;padding:18px 6px"
+        onclick="defContinue()">続けて選ぶ</button>
+    </div>
+    <div class="win-2col" style="margin-bottom:0">
+      <button class="win-b cancel" style="margin:0" onclick="defUnknown()">不明で記録</button>
+      <button class="win-b cancel" style="margin:0" onclick="defSkip()">記録しない</button>
+    </div>
+  </div>
+</div>
+
 <!-- 打席結果（1段目：アウト／セーフ） -->
 <div id="res1-mask" class="win-mask" onclick="winBackdrop(event,'res1-mask')">
   <div class="win-box">
@@ -1261,6 +1317,7 @@ function _initTTS(){
     var au = localStorage.getItem('bb_ann_pause'); if(au != null) _annPause = Number(au);
     var ad = localStorage.getItem('bb_ann_deg');   if(ad != null) _annStyleDeg = Number(ad);
     _pitchAutoCall = localStorage.getItem('bb_pitch_auto')==='1';
+    _defRecOn = localStorage.getItem('bb_def_rec')==='1';
   }catch(e){}
 }
 
@@ -1499,6 +1556,7 @@ function togglePitchAuto(){
   _pitchAutoCall = !_pitchAutoCall;
   try{ localStorage.setItem('bb_pitch_auto', _pitchAutoCall?'1':'0'); }catch(e){}
   _refreshPitchAutoBtn();
+  _refreshDefRecBtn();
 }
 function _refreshPitchAutoBtn(){
   var b=document.getElementById('btn-pitch-auto');
@@ -1847,6 +1905,7 @@ function _initAnnounce(){
   _initTTS();
   _loadVoiceCache();
   _refreshPitchAutoBtn();
+  _refreshDefRecBtn();
 }
 _initAnnounce();
 
@@ -1922,6 +1981,7 @@ function cancelStrikeout(){
 function pickStrikeout(label){
   if(!winReady()) return;
   closeKPanel();
+  // 三振は守備の記録を挟まない
   var _sel=document.getElementById('sel-batter');
   _lastResult = {
     label:label, outs:1, ts:Date.now(),
@@ -2054,6 +2114,209 @@ function pickWalk(label){
   if(typeof toastMsg==='function') toastMsg(label);
 }
 
+// ── 打球の方向（セーフ時） ────────────────────────────────────────────────
+// 方向 → その方向で実際に使う言い回しを並べる
+var HIT_DIRS = [
+  { key:'lf',  label:'レフト',   opts:['レフト前','レフトオーバー','レフト線','レフト深く'] },
+  { key:'lc',  label:'左中間',   opts:['左中間を破る','左中間深く'] },
+  { key:'cf',  label:'センター', opts:['センター前','センターオーバー','センター深く'] },
+  { key:'rc',  label:'右中間',   opts:['右中間を破る','右中間深く'] },
+  { key:'rf',  label:'ライト',   opts:['ライト前','ライトオーバー','ライト線','ライト深く'] },
+  { key:'ss',  label:'三遊間',   opts:['三遊間を抜ける','三塁線'] },
+  { key:'2b',  label:'一二塁間', opts:['一二塁間を抜ける','一塁線'] },
+  { key:'if',  label:'内野',     opts:['投手前','二遊間','内野安打'] }
+];
+
+// ホームランのときの選択肢
+var HR_DIRS = [
+  { key:'lf', label:'レフト',   opts:['レフトスタンド','左中間スタンド','レフトポール際'] },
+  { key:'cf', label:'センター', opts:['バックスクリーン','センター奥'] },
+  { key:'rf', label:'ライト',   opts:['ライトスタンド','右中間スタンド','ライトポール際'] }
+];
+
+var _hitPendingResult = null;
+var _hitDirSet = HIT_DIRS;
+
+function maybeAskHit(result){
+  _hitPendingResult = result;
+  _hitDirSet = (result.label==='ホームラン') ? HR_DIRS : HIT_DIRS;
+  document.getElementById('hit-win-t').textContent =
+    (result.label==='ホームラン') ? '打球の方向（本塁打）' : '打球の方向';
+  _renderHitDirs();
+  openWin('hit-mask', document.getElementById('hit-btn'), hitSkip);
+}
+
+function _renderHitDirs(){
+  var box=document.getElementById('hit-dir');
+  box.style.display='';
+  document.getElementById('hit-kind').style.display='none';
+  document.getElementById('hit-back').style.display='none';
+  box.innerHTML=_hitDirSet.map(function(d,i){
+    return '<button class="win-b" style="font-size:24px;padding:24px 4px" '
+      +'onclick="hitPickDir('+i+')">'+d.label+'</button>';
+  }).join('');
+}
+
+function hitPickDir(i){
+  if(!winReady()) return;
+  var d=_hitDirSet[i];
+  document.getElementById('hit-dir').style.display='none';
+  document.getElementById('hit-back').style.display='';
+  var box=document.getElementById('hit-kind');
+  box.style.display='';
+  box.innerHTML=d.opts.map(function(o){
+    return '<button class="win-b" style="background:#12263a;border-color:#3a6a9a;color:#9acdff;'
+      +'font-size:21px;padding:24px 4px;line-height:1.25" '
+      +'onclick="hitPickKind(\''+o+'\')">'+o+'</button>';
+  }).join('');
+}
+
+function hitPickKind(text){
+  if(!winReady()) return;
+  closeWin('hit-mask');
+  var r=_hitPendingResult;
+  _hitPendingResult=null;
+  if(r){ r.hit = text; _finishResult(r); }
+}
+
+function hitBack(){
+  if(!winReady()) return;
+  _renderHitDirs();
+}
+
+function hitSkip(){
+  if(!winReady()) return;
+  closeWin('hit-mask');
+  var r=_hitPendingResult;
+  _hitPendingResult=null;
+  if(r) _finishResult(r);
+}
+
+// ── 守備の記録（4段目・設定でON/OFF） ────────────────────────────────────
+var _defRecOn = false;        // 守備を記録するか
+var _defChain = [];           // 選んだ守備位置の順番
+var _defPendingResult = null; // 守備記録の対象となる打席結果
+
+var DEF_SLOTS = [
+  { pos:'7', x:62,  y:52,  label:'LF' },
+  { pos:'8', x:210, y:34,  label:'CF' },
+  { pos:'9', x:358, y:52,  label:'RF' },
+  { pos:'5', x:74,  y:128, label:'3B' },
+  { pos:'6', x:150, y:104, label:'SS' },
+  { pos:'4', x:270, y:104, label:'2B' },
+  { pos:'3', x:346, y:128, label:'1B' },
+  { pos:'1', x:210, y:136, label:'P'  },
+  { pos:'2', x:210, y:196, label:'C'  }
+];
+
+function toggleDefRec(){
+  _defRecOn = !_defRecOn;
+  try{ localStorage.setItem('bb_def_rec', _defRecOn?'1':'0'); }catch(e){}
+  _refreshDefRecBtn();
+}
+function _refreshDefRecBtn(){
+  var b=document.getElementById('btn-def-rec');
+  if(!b) return;
+  b.textContent = _defRecOn ? '⚾ 打球の記録 ON' : '⚾ 打球の記録 OFF';
+  b.style.background  = _defRecOn ? '#1a3a1a' : '#2c2c2e';
+  b.style.borderColor = _defRecOn ? '#3a6a2a' : '#444';
+  b.style.color       = _defRecOn ? '#86c867' : '#999';
+}
+
+// 打席結果のあとに守備を記録するか判断する
+function maybeAskDefense(result){
+  _defPendingResult = result;
+  _defChain = [];
+  _renderDefChain();
+  _renderDefField();
+  openWin('def-mask', document.getElementById('hit-btn'), defSkip);
+}
+
+function _renderDefChain(){
+  var el=document.getElementById('def-chain');
+  if(!el) return;
+  if(!_defChain.length){
+    el.textContent='打球を処理した選手を選んでください';
+    el.className='def-chain empty';
+  }else{
+    el.textContent=_defChain.map(function(d){ return d.label+(d.name?' '+d.name:''); }).join(' → ');
+    el.className='def-chain';
+  }
+}
+
+function _renderDefField(){
+  var svg=document.getElementById('def-field');
+  if(!svg) return;
+  var team = st.top ? 'home' : 'away';   // 守備側
+  var h='';
+  h+='<path class="fld" d="M210 210 L14 102 A230 230 0 0 1 406 102 Z"/>';
+  h+='<path class="inf" d="M210 204 L128 152 L210 102 L292 152 Z"/>';
+  h+='<rect class="base" x="205" y="199" width="9" height="9" transform="rotate(45 210 204)"/>';
+  h+='<rect class="base" x="123" y="147" width="9" height="9" transform="rotate(45 128 152)"/>';
+  h+='<rect class="base" x="205" y="97"  width="9" height="9" transform="rotate(45 210 102)"/>';
+  h+='<rect class="base" x="287" y="147" width="9" height="9" transform="rotate(45 292 152)"/>';
+
+  DEF_SLOTS.forEach(function(s){
+    var p = rosters[team].find(function(x){
+      return x.pos && String(x.pos).toLowerCase()===s.pos;
+    });
+    var picked = _defChain.some(function(d){ return d.pos===s.pos; });
+    h+='<g>';
+    h+='<rect class="dslot'+(picked?' picked':'')+'" x="'+(s.x-42)+'" y="'+(s.y-17)+'" '
+      +'width="84" height="34" rx="7" onclick="defPick(\''+s.pos+'\',\''+s.label+'\')"/>';
+    h+='<text class="dpos" x="'+(s.x-35)+'" y="'+(s.y-3)+'">'+s.label+'</text>';
+    if(p){
+      var nm=String(p.name||'');
+      if(nm.length>5) nm=nm.slice(0,5)+'…';
+      h+='<text class="dnm" x="'+s.x+'" y="'+(s.y+12)+'" text-anchor="middle">'+nm+'</text>';
+    }
+    h+='</g>';
+  });
+  svg.innerHTML=h;
+}
+
+// 守備位置を選ぶ
+function defPick(pos, label){
+  var team = st.top ? 'home' : 'away';
+  var p = rosters[team].find(function(x){
+    return x.pos && String(x.pos).toLowerCase()===pos;
+  });
+  _defChain.push({ pos:pos, label:label, name:p?p.name:'' });
+  if(navigator.vibrate) try{ navigator.vibrate(10); }catch(e){}
+  _renderDefChain();
+  _renderDefField();
+}
+
+// 1人だけで確定する
+function defConfirm(){
+  if(!winReady()) return;
+  if(!_defChain.length){ toastMsg('選手を選んでください'); return; }
+  closeWin('def-mask');
+  _finishResult(_defPendingResult, _defChain.slice());
+}
+
+// 続けて選ぶ（画面はそのまま）
+function defContinue(){
+  if(!winReady()) return;
+  toastMsg('続けて選んでください');
+}
+
+// 分かるところまでで記録する
+function defUnknown(){
+  if(!winReady()) return;
+  closeWin('def-mask');
+  var chain=_defChain.slice();
+  chain.push({ pos:'?', label:'不明', name:'' });
+  _finishResult(_defPendingResult, chain);
+}
+
+// 守備は記録しない
+function defSkip(){
+  if(!winReady()) return;
+  closeWin('def-mask');
+  _finishResult(_defPendingResult, null);
+}
+
 // ── 打席結果の選択（アウト／セーフ → 内訳） ──────────────────────────────
 var RES_OUT = [
   { label:'ゴロアウト',  outs:1 },
@@ -2130,18 +2393,33 @@ var _speed = null;
 function pickResult(label, outs){
   if(!winReady()) return;
   closeRes();
-  var _sel=document.getElementById('sel-batter');
-  _lastResult = {
+  var sel=document.getElementById('sel-batter');
+  var r = {
     label:label, outs:outs, ts:Date.now(),
-    batterId: _sel && _sel.value ? Number(_sel.value) : 0,
+    batterId: sel && sel.value ? Number(sel.value) : 0,
     atkTeam: st.top ? 'away' : 'home',
     inn: st.inn, top: st.top
   };
-  if(label==='ホームラン') _applyHomeRunCtl();
-  // アウトを加算
-  if(outs>0){
-    bso.o = Math.min(3, bso.o + outs);
+  // 4段目：アウトなら守備、セーフなら打球方向
+  if(!_defRecOn){ _finishResult(r); return; }
+  if(outs>0 || label==='犠打' || label==='犠飛'){
+    maybeAskDefense(r);
+  }else{
+    maybeAskHit(r);
   }
+}
+
+// 打席結果を確定してカウントを進める
+function _finishResult(r, defChain){
+  if(!r) return;
+  if(defChain && defChain.length){
+    r.defense = defChain.map(function(d){ return d.label + (d.name?'('+d.name+')':''); }).join('→');
+  }
+  _lastResult = r;
+  _defPendingResult = null;
+
+  if(r.label==='ホームラン') _applyHomeRunCtl();
+  if(r.outs>0) bso.o = Math.min(3, bso.o + r.outs);
   bso.b=0; bso.s=0;
   _abReset(); _updateAbDisp();
   renderBSO();
@@ -2151,7 +2429,7 @@ function pickResult(label, outs){
     goNextBatter();
     broadcast();
   }
-  if(typeof toastMsg==='function') toastMsg(label);
+  toastMsg(r.label + (r.hit ? '（'+r.hit+'）' : (r.defense ? '（'+r.defense+'）' : '')));
 }
 
 // 直前の1球を取り消す
@@ -3113,6 +3391,7 @@ function openSettingsDrawer(){
     if(_ar) _ar.textContent=_annRate.toFixed(2);
     if(typeof _refreshTtsLabel==='function') _refreshTtsLabel();
     if(typeof _refreshPitchAutoBtn==='function') _refreshPitchAutoBtn();
+    if(typeof _refreshDefRecBtn==='function') _refreshDefRecBtn();
     if(typeof _updatePitchDisp==='function') _updatePitchDisp();
   }
   // カラーラベルをチーム名に更新
