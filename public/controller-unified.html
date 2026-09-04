@@ -206,6 +206,14 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   flex:1 1 50%;display:flex;flex-direction:column;
   padding:2px 0 0;border-right:1px solid #1a1a1a;
 }
+/* BSO直上の通知バー（常に1行分の余白を確保） */
+.toast-bar{
+  flex-shrink:0;min-height:42px;display:flex;align-items:center;justify-content:center;
+  padding:0 10px;margin-bottom:2px;
+  font-size:26px;font-weight:800;color:#e8c33d;letter-spacing:.5px;
+  opacity:0;transition:opacity .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.toast-bar.show{opacity:1}
 /* BSO 3行：余白を均等に分けて行間を作る */
 .bso-lines{
   flex:1;display:flex;flex-direction:column;justify-content:space-evenly;
@@ -235,8 +243,24 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .pdot.hit{border-color:#5a3a2a;color:#a87858}
 .pdot.hit:active{background:#4a2a1a}
 .pdot.hit.flash{background:#6a3a12;color:#fff;border-color:#e08a2e}
+.bdot.on-f{background:#f5c518;border-color:#c8a02e;color:#111}
+/* 共通ウインドウ */
+.win-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:760;
+  align-items:center;justify-content:center;padding:14px}
+.win-box{background:#1a1a1c;border:3px solid #4a4a4c;border-radius:18px;
+  box-shadow:0 12px 40px rgba(0,0,0,.8);padding:16px;width:100%;max-width:640px}
+.win-t{font-size:32px;font-weight:900;text-align:center;margin-bottom:12px}
+.win-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+.win-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.win-b{border:3px solid #3a3a3c;background:#242426;color:#fff;border-radius:14px;
+  font-weight:900;cursor:pointer;transition:transform .06s;width:100%}
+.win-b:active{transform:scale(.97)}
+.win-b.main{font-size:44px;padding:34px 6px;letter-spacing:2px}
+.win-b.sub{font-size:26px;padding:16px 6px;margin-bottom:10px;letter-spacing:1px}
+.win-b.cancel{font-size:24px;padding:15px 6px;background:#2c2c2e;border-color:#555;color:#bbb}
+
 .tapdot{cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:clamp(30px,8vw,44px);font-weight:900;color:rgba(0,0,0,.55);line-height:1}
+  font-size:clamp(32px,8.5vw,48px);font-weight:900;color:rgba(0,0,0,.7);line-height:1}
 .bdot{border-radius:50%;background:#333;border:2px solid #555;width:clamp(80px,22vw,120px);height:clamp(80px,22vw,120px);flex-shrink:0}
 .bdot.on-b{background:#43a047;border-color:#1b5e20}
 .bdot.on-s{background:#f5c518;border-color:#b8860b}
@@ -327,6 +351,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
   <!-- 左: BSO -->
   <div class="bso-block">
+    <div class="toast-bar" id="ctl-toast"></div>
     <div class="bso-lines">
     <div class="bso-line">
       <span class="bso-lbl">B</span>
@@ -352,8 +377,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
           ontouchstart="dotStart('s',event)" ontouchend="dotEnd('s',event)" ontouchcancel="dotCancel()"
           onmousedown="dotStart('s',event)" onmouseup="dotEnd('s',event)" onmouseleave="dotCancel()"></div>
         <div class="pdot" id="foul-btn"
-          ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation();event.preventDefault();tapFoul()"
-          onclick="event.stopPropagation();">F</div>
+          ontouchstart="event.stopPropagation()"
+          ontouchend="event.stopPropagation();event.preventDefault();tapFoul()"
+          onclick="event.stopPropagation();tapFoulClick(event)">F</div>
         <span class="ab-info" id="ab-foul"></span>
       </div>
     </div>
@@ -367,11 +393,19 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
           ontouchstart="dotStart('o',event)" ontouchend="dotEnd('o',event)" ontouchcancel="dotCancel()"
           onmousedown="dotStart('o',event)" onmouseup="dotEnd('o',event)" onmouseleave="dotCancel()"></div>
         <div class="pdot hit" id="hit-btn"
-          ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation();event.preventDefault();tapInPlay()"
-          onclick="event.stopPropagation();">H</div>
+          ontouchstart="event.stopPropagation()"
+          ontouchend="event.stopPropagation();event.preventDefault();tapInPlay()"
+          onclick="event.stopPropagation();tapInPlayClick(event)">H</div>
         <span class="ab-info" id="ab-total"></span>
       </div>
     </div>
+    </div>
+    <div style="padding:4px 12px 8px">
+      <button id="btn-undo" onclick="undoPitch()"
+        style="width:100%;background:#3a2a1a;border:2px solid #8a6a3a;border-radius:10px;
+               color:#e8b878;font-size:26px;font-weight:800;padding:14px 6px;cursor:pointer">
+        ↩ 1球戻す
+      </button>
     </div>
 
     
@@ -558,6 +592,10 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
     <div class="battery-cell" style="border-bottom:1px solid #1a1a1a;gap:10px">
       <span class="battery-tag" style="font-size:26px">球数</span>
       <span id="pitch-disp" style="flex:1;font-size:34px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums">0 / 0</span>
+      <button onclick="openIBBPanel()"
+        style="background:#2a3a4a;border:2px solid #4a7aaa;border-radius:8px;color:#9ac0ff;font-size:22px;font-weight:700;padding:12px 12px;cursor:pointer;white-space:nowrap;margin-right:6px">
+        申告敬遠
+      </button>
       <button onclick="announcePitchCount()"
         style="background:#2a1e3a;border:2px solid #5a3a8a;border-radius:8px;color:#c8a8ff;font-size:22px;font-weight:700;padding:12px 14px;cursor:pointer;white-space:nowrap">
         🔊 球数
@@ -1036,65 +1074,92 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 </div>
 
 <!-- 読み上げ確認モーダル -->
-<div id="speak-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#1c1c1e;border:1px solid #333;border-radius:16px;padding:24px;width:100%;max-width:640px">
-    <div id="speak-title" style="font-size:34px;font-weight:700;color:#fff;margin-bottom:6px">読み上げ内容</div>
-    <div style="font-size:22px;color:#666;margin-bottom:14px">内容を確認・修正してから読み上げてください</div>
+<div id="speak-mask" class="win-mask" onclick="winBackdrop(event,'speak-mask')">
+  <div class="win-box">
+    <div id="speak-title" class="win-t" style="font-size:30px">読み上げ内容</div>
+    <div style="font-size:20px;color:#777;text-align:center;margin-bottom:12px">内容を確認・修正してから読み上げてください</div>
     <textarea id="speak-text" rows="4"
-      style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:12px;color:#fff;
-             font-size:30px;line-height:1.6;padding:16px;outline:none;resize:vertical"></textarea>
-    <div style="display:flex;gap:10px;margin-top:16px">
-      <button onclick="doSpeakConfirmed()" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:12px;color:#86c867;font-size:30px;font-weight:700;padding:18px;cursor:pointer">🔊 読み上げる</button>
-      <button onclick="closeSpeakModal()" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:12px;color:#ccc;font-size:30px;font-weight:700;padding:18px;cursor:pointer">キャンセル</button>
+      style="width:100%;background:#2c2c2e;border:2px solid #444;border-radius:12px;color:#fff;
+             font-size:28px;line-height:1.6;padding:14px;outline:none;resize:vertical"></textarea>
+    <div class="win-2col" style="margin-top:14px;margin-bottom:0">
+      <button class="win-b" style="background:#1a3a1a;border-color:#3a6a2a;color:#86c867;font-size:26px;padding:18px 6px"
+        onclick="doSpeakConfirmed()">🔊 読み上げる</button>
+      <button class="win-b cancel" style="margin:0" onclick="closeSpeakModal()">キャンセル</button>
     </div>
   </div>
 </div>
 
-<!-- 三振の種類（画面上半分） -->
-<div id="k-mask" style="display:none;position:fixed;left:0;right:0;top:0;height:52vh;background:rgba(0,0,0,.93);z-index:752;align-items:center;justify-content:center;padding:10px 14px;border-bottom:3px solid #333">
-  <div style="width:100%;max-width:760px;display:flex;flex-direction:column;gap:12px">
-    <div style="font-size:34px;font-weight:900;color:#e8c33d;text-align:center">三振</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      <button onclick="pickStrikeout('空振り三振')"
-        style="background:#5a4a12;border:4px solid #c8a02e;border-radius:18px;color:#fff;
-               font-size:52px;font-weight:900;padding:44px 6px;cursor:pointer;letter-spacing:3px">空振り</button>
-      <button onclick="pickStrikeout('見逃し三振')"
-        style="background:#3a3a1a;border:4px solid #8a8a3a;border-radius:18px;color:#fff;
-               font-size:52px;font-weight:900;padding:44px 6px;cursor:pointer;letter-spacing:3px">見逃し</button>
+<!-- 三振の種類 -->
+<div id="k-mask" class="win-mask" onclick="winBackdrop(event,'k-mask')">
+  <div class="win-box">
+    <div class="win-t" style="color:#e8c33d">三振</div>
+    <div class="win-2col">
+      <button class="win-b main" style="background:#5a4a12;border-color:#c8a02e"
+        onclick="pickStrikeout('空振り三振')">空振り</button>
+      <button class="win-b main" style="background:#3a3a1a;border-color:#8a8a3a"
+        onclick="pickStrikeout('見逃し三振')">見逃し</button>
     </div>
-    <button onclick="pickStrikeout('スリーバント失敗')"
-      style="width:100%;background:#3a2a1a;border:3px solid #8a6a3a;border-radius:14px;color:#e8b878;
-             font-size:28px;font-weight:800;padding:18px 6px;cursor:pointer;letter-spacing:2px">スリーバント失敗</button>
+    <button class="win-b sub" style="background:#3a2a1a;border-color:#8a6a3a;color:#e8b878"
+      onclick="pickStrikeout('スリーバント失敗')">スリーバント失敗</button>
+    <button class="win-b cancel" onclick="cancelStrikeout()">キャンセル</button>
   </div>
 </div>
 
-<!-- 打席結果 選択（1段目：アウト／セーフ） -->
-<div id="res1-mask" style="display:none;position:fixed;left:0;right:0;top:0;height:52vh;background:rgba(0,0,0,.93);z-index:750;align-items:center;justify-content:center;padding:10px 14px;border-bottom:3px solid #333">
-  <div style="width:100%;max-width:760px;display:flex;flex-direction:column;gap:10px">
-    <div id="res1-ctx" style="font-size:22px;color:#999;text-align:center;line-height:1.3"></div>
-    <button onclick="pickOutSafe('out')"
-      style="width:100%;background:#8a1226;border:4px solid #c8102e;border-radius:20px;color:#fff;
-             font-size:64px;font-weight:900;padding:34px 10px;cursor:pointer;letter-spacing:6px">アウト</button>
-    <button onclick="pickOutSafe('safe')"
-      style="width:100%;background:#1a5a8a;border:4px solid #2a8ac8;border-radius:20px;color:#fff;
-             font-size:64px;font-weight:900;padding:34px 10px;cursor:pointer;letter-spacing:6px">セーフ</button>
-    <button onclick="closeRes()"
-      style="width:100%;background:#2c2c2e;border:3px solid #444;border-radius:16px;color:#bbb;
-             font-size:28px;font-weight:700;padding:14px 10px;cursor:pointer">キャンセル</button>
+<!-- 四球の確認 -->
+<div id="bb-mask" class="win-mask" onclick="winBackdrop(event,'bb-mask')">
+  <div class="win-box">
+    <div class="win-t" style="color:#8ad48a">四球</div>
+    <div class="win-2col">
+      <button class="win-b main" style="background:#1d4a1d;border-color:#3ac13a"
+        onclick="pickWalk('四球')">四球</button>
+      <button class="win-b main" style="background:#2a3a4a;border-color:#4a7aaa"
+        onclick="pickWalk('敬遠')">敬遠</button>
+    </div>
+    <button class="win-b cancel" onclick="cancelWalk()">キャンセル</button>
   </div>
 </div>
 
-<!-- 打席結果 選択（2段目：内訳） -->
-<div id="res2-mask" style="display:none;position:fixed;left:0;right:0;top:0;height:52vh;background:rgba(0,0,0,.93);z-index:751;align-items:center;justify-content:center;padding:10px 14px;border-bottom:3px solid #333">
-  <div style="width:100%;max-width:760px;display:flex;flex-direction:column;gap:9px">
-    <div id="res2-title" style="font-size:28px;font-weight:900;color:#fff;text-align:center"></div>
-    <div id="res2-btns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px"></div>
-    <button onclick="backToRes1()"
-      style="width:100%;background:#2c2c2e;border:3px solid #444;border-radius:16px;color:#bbb;
-             font-size:26px;font-weight:700;padding:13px 10px;cursor:pointer">← 戻る</button>
+<!-- 申告敬遠の確認 -->
+<div id="ibb-mask" class="win-mask" onclick="winBackdrop(event,'ibb-mask')">
+  <div class="win-box" style="max-width:520px">
+    <div class="win-t" style="color:#9ac0ff;font-size:28px">申告敬遠</div>
+    <div style="font-size:22px;color:#888;text-align:center;margin-bottom:14px">
+      投球なしで打者を1塁へ進めます
+    </div>
+    <div class="win-2col">
+      <button class="win-b main" style="background:#2a3a4a;border-color:#4a7aaa;font-size:32px;padding:26px 6px"
+        onclick="pickIBB(true)">実行</button>
+      <button class="win-b cancel" style="margin:0;font-size:28px;padding:26px 6px"
+        onclick="pickIBB(false)">キャンセル</button>
+    </div>
   </div>
 </div>
 
+<!-- 打席結果（1段目：アウト／セーフ） -->
+<div id="res1-mask" class="win-mask" onclick="winBackdrop(event,'res1-mask')">
+  <div class="win-box">
+    <div class="win-t" id="res1-ctx" style="font-size:22px;color:#999;font-weight:600"></div>
+    <div class="win-2col">
+      <button class="win-b main" style="background:#8a1226;border-color:#c8102e"
+        onclick="pickOutSafe('out')">アウト</button>
+      <button class="win-b main" style="background:#1a5a8a;border-color:#2a8ac8"
+        onclick="pickOutSafe('safe')">セーフ</button>
+    </div>
+    <button class="win-b cancel" onclick="cancelResult()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 打席結果（2段目：内訳） -->
+<div id="res2-mask" class="win-mask" onclick="winBackdrop(event,'res2-mask')">
+  <div class="win-box">
+    <div class="win-t" id="res2-title"></div>
+    <div class="win-3col" id="res2-btns"></div>
+    <div class="win-2col" style="margin-bottom:0">
+      <button class="win-b cancel" style="margin:0" onclick="backToRes1()">← 戻る</button>
+      <button class="win-b cancel" style="margin:0" onclick="cancelResult()">キャンセル</button>
+    </div>
+  </div>
+</div>
 
 <!-- SCAN PANEL -->
 <div id="scan-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;overflow-y:auto;padding:20px">
@@ -1587,15 +1652,16 @@ function confirmSpeak(title, text, voice, style, rate){
   _pendingSpeak = { voice:voice, style:style, rate:rate };
   document.getElementById('speak-title').textContent = title;
   document.getElementById('speak-text').value = text;
-  document.getElementById('speak-mask').style.display = 'flex';
+  openWin('speak-mask', null, null);
 }
 
 function closeSpeakModal(){
-  document.getElementById('speak-mask').style.display = 'none';
+  closeWin('speak-mask');
   _pendingSpeak = null;
 }
 
 function doSpeakConfirmed(){
+  if(!winReady()) return;
   if(!_pendingSpeak) return;
   var t = document.getElementById('speak-text').value.trim();
   var opt = _pendingSpeak;
@@ -1841,12 +1907,20 @@ const BSO_MAX = {b:4, s:3, o:3};
 
 // ── 三振の種類を選ぶ ──────────────────────────────────────────────────────
 function openKPanel(){
-  document.getElementById('k-mask').style.display='flex';
+  var el=document.getElementById('sd2') || document.getElementById('sd1');
+  openWin('k-mask', el, cancelStrikeout);
 }
-function closeKPanel(){
-  document.getElementById('k-mask').style.display='none';
+function closeKPanel(){ closeWin('k-mask'); }
+// 三振の判定をやめて、3球目を取り消す
+function cancelStrikeout(){
+  if(!winReady()) return;
+  closeKPanel();
+  _abUndo();
+  if(typeof toastMsg==='function') toastMsg('3球目を取り消しました');
 }
+
 function pickStrikeout(label){
+  if(!winReady()) return;
   closeKPanel();
   var _sel=document.getElementById('sel-batter');
   _lastResult = {
@@ -1870,19 +1944,11 @@ function pickStrikeout(label){
 
 function toastMsg(m){
   var t=document.getElementById('ctl-toast');
-  if(!t){
-    t=document.createElement('div');
-    t.id='ctl-toast';
-    t.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);'
-      +'background:rgba(30,30,32,.96);border:1px solid #555;border-radius:12px;color:#fff;'
-      +'font-size:32px;font-weight:700;padding:18px 30px;z-index:900;opacity:0;'
-      +'transition:opacity .2s;pointer-events:none';
-    document.body.appendChild(t);
-  }
+  if(!t) return;
   t.textContent=m;
-  t.style.opacity='1';
+  t.classList.add('show');
   clearTimeout(t._tm);
-  t._tm=setTimeout(function(){ t.style.opacity='0'; },1600);
+  t._tm=setTimeout(function(){ t.classList.remove('show'); },2000);
 }
 
 // ── ホームラン：走者を還して加点する ──────────────────────────────────────
@@ -1928,6 +1994,66 @@ function _applyHomeRunCtl(){
   }
 }
 
+// 申告故意四球（投球なしで成立する）
+function openIBBPanel(){
+  var el=document.getElementById('sel-pitcher');
+  openWin('ibb-mask', el, null);
+}
+
+function pickIBB(ok){
+  if(!winReady()) return;
+  closeWin('ibb-mask');
+  if(!ok) return;
+  var sel=document.getElementById('sel-batter');
+  _lastResult = {
+    label:'申告敬遠', outs:0, ts:Date.now(),
+    batterId: sel && sel.value ? Number(sel.value) : 0,
+    atkTeam: st.top ? 'away' : 'home',
+    inn: st.inn, top: st.top
+  };
+  walk();
+  bso.b=0; bso.s=0;
+  _abReset(); _updateAbDisp();
+  renderBSO();
+  goNextBatter();
+  broadcast();
+  toastMsg('申告敬遠');
+}
+
+// ── 四球 ──────────────────────────────────────────────────────────────────
+function openBBPanel(){
+  var el=document.getElementById('bd3') || document.getElementById('bd1');
+  openWin('bb-mask', el, cancelWalk);
+}
+function closeBBPanel(){ closeWin('bb-mask'); }
+
+// 四球の判定をやめて4球目を取り消す
+function cancelWalk(){
+  if(!winReady()) return;
+  closeBBPanel();
+  _abUndo();
+  if(typeof toastMsg==='function') toastMsg('4球目を取り消しました');
+}
+
+function pickWalk(label){
+  if(!winReady()) return;
+  closeBBPanel();
+  var sel=document.getElementById('sel-batter');
+  _lastResult = {
+    label:label, outs:0, ts:Date.now(),
+    batterId: sel && sel.value ? Number(sel.value) : 0,
+    atkTeam: st.top ? 'away' : 'home',
+    inn: st.inn, top: st.top
+  };
+  walk();
+  bso.b=0; bso.s=0;
+  _abReset(); _updateAbDisp();
+  renderBSO();
+  goNextBatter();
+  broadcast();
+  if(typeof toastMsg==='function') toastMsg(label);
+}
+
 // ── 打席結果の選択（アウト／セーフ → 内訳） ──────────────────────────────
 var RES_OUT = [
   { label:'ゴロアウト',  outs:1 },
@@ -1955,21 +2081,30 @@ function openResultPanel(){
     ctx.textContent = st.inn+'回'+(st.top?'表':'裏')+' ／ '+bso.o+'アウト'
       + (p ? ' ／ '+(p.order?p.order+'番 ':'')+p.name : '');
   }
-  document.getElementById('res1-mask').style.display='flex';
+  openWin('res1-mask', document.getElementById('hit-btn'), cancelResult);
 }
 
 function closeRes(){
-  document.getElementById('res1-mask').style.display='none';
-  document.getElementById('res2-mask').style.display='none';
+  closeWin('res1-mask');
+  closeWin('res2-mask');
+}
+
+// 打席結果の判定をやめてインプレー打球の1球を取り消す
+function cancelResult(){
+  if(!winReady()) return;
+  closeRes();
+  _abUndo();
+  if(typeof toastMsg==='function') toastMsg('取り消しました');
 }
 
 function backToRes1(){
   document.getElementById('res2-mask').style.display='none';
-  document.getElementById('res1-mask').style.display='flex';
+  openWin('res1-mask', document.getElementById('hit-btn'), cancelResult);
 }
 
 function pickOutSafe(kind){
-  document.getElementById('res1-mask').style.display='none';
+  if(!winReady()) return;
+  closeWin('res1-mask');
   var list = (kind==='out') ? RES_OUT : RES_SAFE;
   var t=document.getElementById('res2-title');
   if(t){
@@ -1986,13 +2121,14 @@ function pickOutSafe(kind){
       +'font-size:26px;font-weight:900;padding:30px 4px;cursor:pointer;line-height:1.2">'
       +r.label+'</button>';
   }).join('');
-  document.getElementById('res2-mask').style.display='flex';
+  openWin('res2-mask', document.getElementById('hit-btn'), cancelResult);
 }
 
 var _lastResult = null;
 var _speed = null;
 
 function pickResult(label, outs){
+  if(!winReady()) return;
   closeRes();
   var _sel=document.getElementById('sel-batter');
   _lastResult = {
@@ -2018,6 +2154,68 @@ function pickResult(label, outs){
   if(typeof toastMsg==='function') toastMsg(label);
 }
 
+// 直前の1球を取り消す
+function undoPitch(){
+  if(!_abUndo()){
+    if(typeof toastMsg==='function') toastMsg('戻せる投球がありません');
+    return;
+  }
+  if(navigator.vibrate) try{ navigator.vibrate(20); }catch(e){}
+  if(typeof toastMsg==='function') toastMsg('1球戻しました');
+}
+
+// ── ウインドウの共通処理 ──────────────────────────────────────────────────
+// ・押した位置を中心に出す（画面外は自動補正）
+// ・開いた直後 0.3 秒は反応しない（連打の突き抜け防止）
+// ・外側を押すとキャンセル
+var _winOpenAt = 0;
+var _winCancelFn = null;
+
+function openWin(id, anchorEl, cancelFn){
+  var m=document.getElementById(id);
+  if(!m) return;
+  _winOpenAt = Date.now();
+  _winCancelFn = cancelFn || null;
+  m.style.display='flex';
+
+  // 押した位置に寄せる
+  var box=m.querySelector('.win-box');
+  if(box && anchorEl){
+    box.style.position='absolute';
+    var r=anchorEl.getBoundingClientRect();
+    var w=box.offsetWidth, h=box.offsetHeight;
+    var left=r.left + r.width/2 - w/2;
+    var top =r.top  + r.height/2 - h/2;
+    left=Math.max(8, Math.min(window.innerWidth  - w - 8, left));
+    top =Math.max(8, Math.min(window.innerHeight - h - 8, top));
+    box.style.left=left+'px';
+    box.style.top =top+'px';
+  }else if(box){
+    box.style.position='';
+    box.style.left=''; box.style.top='';
+  }
+}
+
+function closeWin(id){
+  var m=document.getElementById(id);
+  if(m) m.style.display='none';
+  _winCancelFn=null;
+}
+
+// 開いた直後の誤爆を防ぐ
+function winReady(){
+  return (Date.now() - _winOpenAt) > 300;
+}
+
+// 外側を押したらキャンセル扱い
+function winBackdrop(ev, id){
+  if(ev.target !== ev.currentTarget) return;
+  if(!winReady()) return;
+  var fn=_winCancelFn;
+  closeWin(id);
+  if(fn) fn();
+}
+
 // ── ファウル／インプレー ──────────────────────────────────────────────────
 function _flash(id){
   var el=document.getElementById(id);
@@ -2026,11 +2224,22 @@ function _flash(id){
   setTimeout(function(){ el.classList.remove('flash'); },160);
 }
 
+// タッチ後に続けて発火する click は無視する
+var _lastTouchAt = 0;
+function tapFoulClick(e){
+  if(Date.now() - _lastTouchAt < 600) return;
+  tapFoul();
+}
+function tapInPlayClick(e){
+  if(Date.now() - _lastTouchAt < 600) return;
+  tapInPlay();
+}
+
 // ファウル：投球数のみ加算（ストライクは動かさない）
 function tapFoul(){
+  _lastTouchAt = Date.now();
   _pitchAdd(1);
   // 2ストライクまではファウルもストライクとして数える
-  if(bso.s < 2) _strikeKind.push('f');
   _abPush('f');
   _flash('foul-btn');
   if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
@@ -2045,6 +2254,7 @@ function tapFoul(){
 
 // インプレー打球：投球数を数えて打席結果パネルを開く
 function tapInPlay(){
+  _lastTouchAt = Date.now();
   _pitchAdd(1);
   _abPush('h');
   _flash('hit-btn');
@@ -2063,7 +2273,6 @@ function dotStart(k, e){
   _dotTimer=setTimeout(function(){
     _dotTimer=null; _dotFired=true;
     bso[k]=0;
-    if(k==='s') _strikeKind=[];
     if(k!=='o') _abClearKind(k);
     renderBSO(); _updateAbDisp(); broadcast();
     if(navigator.vibrate) try{ navigator.vibrate(25); }catch(x){}
@@ -2086,9 +2295,8 @@ function dotCancel(){
 // ── 打席内の投球管理（配列に積み、表示は都度集計する） ────────────────────
 // _abLog の中身: 'b'ボール / 's'ストライク / 'f'ファウル / 'h'インプレー
 var _abLog = [];
-var _strikeKind = [];   // ストライクの内訳（s=通常 / f=ファウル）
 
-function _abReset(){ _abLog = []; _strikeKind = []; }
+function _abReset(){ _abLog = []; }
 
 // 1球積む
 function _abPush(kind){
@@ -2096,15 +2304,29 @@ function _abPush(kind){
   _updateAbDisp();
 }
 
-// 直近の1球を取り消す
-function _abPop(){
-  _abLog.pop();
-  _updateAbDisp();
+// 直近の1球を取り消して、カウントも戻す
+function _abUndo(){
+  if(!_abLog.length){ return false; }
+  var last=_abLog.pop();
+  if(last==='b') bso.b = Math.max(0, bso.b-1);
+  if(last==='s') bso.s = Math.max(0, bso.s-1);
+  if(last==='f'){
+    // ファウルは2ストライクまでストライクを増やしていた分だけ戻す
+    if(_strikeSlots().length < bso.s) bso.s = Math.max(0, bso.s-1);
+  }
+  _pitchAdd(-1);
+  renderBSO(); _updateAbDisp(); broadcast();
+  return true;
 }
 
 // 特定種別の球を取り除く（その項目をクリアしたとき）
 function _abClearKind(kind){
-  _abLog = _abLog.filter(function(x){ return x!==kind; });
+  if(kind==='b'){
+    _abLog = _abLog.filter(function(x){ return x!=='b'; });
+  }else if(kind==='s'){
+    // ストライクとファウルの両方を取り除く
+    _abLog = _abLog.filter(function(x){ return x!=='s' && x!=='f'; });
+  }
   _updateAbDisp();
 }
 
@@ -2116,11 +2338,22 @@ function _abFoulCount(){
   return _abLog.filter(function(x){ return x==='f'; }).length;
 }
 
-// ボールが何球目だったか（都度計算）
+// ボールの丸に入れる球順（左詰め）
 function _abBallSeqCalc(){
   var seq=[];
   _abLog.forEach(function(x,i){ if(x==='b') seq.push(i+1); });
   return seq;
+}
+
+// ストライクの丸に入れる情報（左詰め）
+// [{ n:球順, foul:true/false }, ...]
+function _strikeSlots(){
+  var out=[];
+  _abLog.forEach(function(x,i){
+    if(x==='s'){ out.push({ n:i+1, foul:false }); }
+    else if(x==='f' && out.length<2){ out.push({ n:i+1, foul:true }); }
+  });
+  return out.slice(0,2);
 }
 
 function _updateAbDisp(){
@@ -2129,6 +2362,8 @@ function _updateAbDisp(){
   var nf=_abFoulCount(), np=_abPitchCount();
   if(f) f.textContent = nf>0 ? ('F'+nf) : '';
   if(t) t.textContent = np>0 ? (np+'球') : '';
+  var u=document.getElementById('btn-undo');
+  if(u) u.disabled = (_abLog.length===0);
 }
 
 function adjBSO(k, d){
@@ -2136,13 +2371,7 @@ function adjBSO(k, d){
   bso[k] = Math.max(0, Math.min(BSO_MAX[k], bso[k]+d));
   if(bso[k]===prev) return;
   if(d>0){
-    if(k==='b' && bso.b>=4){
-      var _bs=document.getElementById('sel-batter');
-      _lastResult={ label:'四球', outs:0, ts:Date.now(),
-        batterId:_bs&&_bs.value?Number(_bs.value):0,
-        atkTeam: st.top?'away':'home', inn:st.inn, top:st.top };
-      walk(); bso.b=0; bso.s=0; _abReset(); goNextBatter();
-    }
+    if(k==='b' && bso.b>=4){ renderBSO(); broadcast(); openBBPanel(); return; }
     if(k==='s' && bso.s>=3){ renderBSO(); broadcast(); openKPanel(); return; }
     if(k==='o' && bso.o>=3){ nextInn(); return; }
   }
@@ -2200,7 +2429,6 @@ function bsoLongEnd(k){
   if(_bsoTimer){clearTimeout(_bsoTimer);_bsoTimer=null;}
   if(!_bsoFired && k){
     if(k==='b'||k==='s'){ _pitchAdd(1); _abPush(k); }
-    if(k==='s') _strikeKind.push('s');
     adjBSO(k,1);
   }
   _bsoFired=false;
@@ -2215,18 +2443,32 @@ function resetBSO(){
 }
 
 function renderBSO(){
-  for(let i=0;i<3;i++){ const d=document.getElementById('bd'+(i+1)); if(d) d.className='bdot'+(i<bso.b?' on-b':''); }
+  // ボール：点灯した丸に球順を入れる（左詰め）
+  var bseq=_abBallSeqCalc();
+  for(let i=0;i<3;i++){
+    const d=document.getElementById('bd'+(i+1));
+    if(!d) continue;
+    const on = i<bso.b;
+    d.className='bdot tapdot'+(on?' on-b':'');
+    d.textContent = (on && bseq[i]) ? String(bseq[i]) : '';
+  }
+
+  // ストライク：通常は球順、ファウルは黄色地に黒で「F」
+  var slots=_strikeSlots();
   for(let i=0;i<2;i++){
     const s=document.getElementById('sd'+(i+1));
     if(!s) continue;
     const on = i<bso.s;
-    s.className='bdot tapdot'+(on?' on-s':'');
-    // ファウルで入ったストライクには F を出す
-    s.textContent = (on && _strikeKind[i]==='f') ? 'F' : '';
+    const sl = slots[i];
+    s.className='bdot tapdot'+(on ? (sl&&sl.foul ? ' on-f' : ' on-s') : '');
+    s.textContent = (on && sl) ? (sl.foul ? 'F' : String(sl.n)) : '';
   }
+
   for(let i=0;i<2;i++){
-    const o=document.getElementById('od'+(i+1)); if(o) o.className='bdot out'+(i<bso.o?' on':'');
+    const o=document.getElementById('od'+(i+1));
+    if(o) o.className='bdot out tapdot'+(i<bso.o?' on':'');
   }
+  _updateAbDisp();
 }
 
 // ── DIAMOND ──────────────────────────────────────────────────────────────────
@@ -3779,7 +4021,7 @@ function _doBroadcast(){
     _ctl:true,
     gameTitle:_getGameTitle(),
     abPitch:_abPitchCount(), abFoul:_abFoulCount(), abBallSeq:_abBallSeqCalc(),
-    strikeKind:_strikeKind.slice(),
+    strikeSlots:_strikeSlots(),
     lastResult:_lastResult,
     speed:_speed,
     hrInfo:_hrInfo,
