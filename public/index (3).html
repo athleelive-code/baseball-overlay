@@ -1,0 +1,3053 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<title>AthleeLive メンバー管理（PC）</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;-webkit-touch-callout:none}
+:root{--red:#c8102e;--bg:#111;--panel:#1c1c1e;--line:#2a2a2c;--txt:#fff;--sub:#888}
+html,body{background:var(--bg);color:var(--txt);min-height:100%}
+body{padding-bottom:40px}
+
+/* ヘッダー */
+#pull-ind{
+  position:fixed;left:50%;top:0;transform:translateX(-50%) translateY(-100%);
+  z-index:900;background:#1a3a1a;border:2px solid #3a6a2a;border-top:none;
+  border-radius:0 0 12px 12px;color:#86c867;font-size:16px;font-weight:800;
+  padding:10px 22px;transition:transform .2s;pointer-events:none;
+}
+#pull-ind.show{transform:translateX(-50%) translateY(0)}
+.hdr{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  background:#fff;border-bottom:1px solid rgba(0,0,0,.1);padding:8px 18px;min-height:56px}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-logo{height:26px;width:auto;display:block}
+.hdr-sub{font-size:15px;font-weight:700;color:#444;letter-spacing:.5px;flex-shrink:0}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.hdr-div{width:1px;height:22px;background:rgba(0,0,0,.15)}
+.clock{font-size:20px;font-weight:700;color:#222;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.batt{display:flex;align-items:center;gap:6px}
+.batt-shell{position:relative;width:30px;height:15px;border:2px solid #444;border-radius:4px;padding:1.5px}
+.batt-shell::after{content:'';position:absolute;right:-5px;top:4px;width:3px;height:7px;
+  background:#444;border-radius:0 2px 2px 0}
+.batt-fill{display:block;height:100%;width:0%;background:#3ac13a;border-radius:1px;transition:width .4s,background .4s}
+.batt-fill.mid{background:#e8a33d}
+.batt-fill.low{background:#d33}
+.batt-txt{font-size:13px;font-weight:700;color:#333;font-variant-numeric:tabular-nums;min-width:34px}
+.batt.charging .batt-txt::after{content:' ⚡'}
+.ws-dot{width:10px;height:10px;border-radius:50%;background:#c00;transition:background .3s}
+.ws-dot.on{background:#3ac13a}
+.ws-label{font-size:13px;color:#555}
+
+/* ロックボタン */
+.btn-lock{background:#e8f3e8;border-color:#8fc98f;color:#2a6a2a}
+.btn-lock.locked{background:#fde8e8;border-color:#e0a0a0;color:#a02a2a}
+
+/* 試合状況バー */
+.gamebar{display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+  background:var(--panel);border-bottom:1px solid var(--line);padding:12px 22px 14px}
+#hdr-game-title{
+  flex:0 0 100%;order:-1;margin-bottom:2px;
+  background:transparent;border:none;border-bottom:1px solid #2e2e30;
+  color:#eee;font-size:20px;font-weight:800;padding:6px 2px;outline:none;
+}
+#hdr-game-title:focus{border-bottom-color:#666}
+#hdr-game-title::placeholder{color:#4a4a4c;font-weight:500}
+.gb-inn{display:flex;flex-direction:column;align-items:center;gap:5px}
+.gb-inn-adj{display:flex;align-items:center;gap:7px}
+.gb-ib{width:32px;height:32px;border-radius:8px;border:2px solid #444;background:#2c2c2e;
+  color:#ccc;font-size:19px;font-weight:900;cursor:pointer;line-height:1;padding:0}
+.gb-ib:hover{background:#3a3a3c;color:#fff}
+.gb-tb-sel{display:flex;gap:4px}
+.gb-tbb{border:2px solid #3a3a3c;background:#242426;color:#777;border-radius:7px;
+  font-size:15px;font-weight:800;padding:5px 14px}
+.gb-tbb.on{background:rgba(200,16,46,.25);border-color:var(--red);color:#ff9098}
+.gb-inn-num{font-size:46px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.gb-inn-tb{font-size:22px;font-weight:700;color:var(--red)}
+
+.gb-score{border-collapse:collapse;font-variant-numeric:tabular-nums}
+.gb-score th{font-size:14px;color:#888;font-weight:700;padding:2px 9px;border-bottom:1px solid #333}
+.gb-score td{font-size:20px;font-weight:700;color:#bbb;padding:4px 9px;text-align:center;min-width:30px}
+.gb-score td.tname{color:#fff;text-align:left;font-size:18px;max-width:180px;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis;padding-right:14px;border-right:1px solid #333}
+.gb-score td.cur{color:#fff}
+.gb-score td.editable{cursor:pointer;border-radius:4px;transition:background .12s}
+.gb-score td.editable:hover{background:rgba(255,255,255,.1)}
+.gb-score td.tot{color:#fff;font-size:26px;border-left:1px solid #333;padding-left:13px}
+.gb-score th.tot{border-left:1px solid #333}
+
+.gb-bso{display:flex;flex-direction:column;gap:7px}
+.gb-bso-line{display:flex;align-items:center;gap:6px;padding:3px 6px}
+.gb-pb{width:32px;height:32px;border-radius:50%;border:2px solid #5a5a5c;
+  background:#242426;color:#999;font-size:15px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;margin-left:3px}
+.gb-pb:hover{background:#3a3a3c;color:#fff}
+.gb-pb.f{border-color:#6a5a2a;color:#d0b070}
+.gb-pb.h{border-color:#5a3a2a;color:#a87858}
+.gb-undo{margin-top:4px;background:#3a2a1a;border:2px solid #8a6a3a;border-radius:8px;
+  color:#e8b878;font-size:13px;font-weight:800;padding:8px 10px;cursor:pointer}
+.gb-undo:hover{background:#4a3524}
+.gb-undo:disabled{opacity:.35;cursor:default}
+.gb-abinfo{font-size:16px;font-weight:800;color:#c8a02e;min-width:44px;
+  font-variant-numeric:tabular-nums}
+.gb-bso-lbl{font-size:20px;font-weight:800;color:#999;width:20px}
+.gb-dots{display:flex;gap:7px}
+.gb-dot{width:26px;height:26px;border-radius:50%;background:#333;border:2px solid #444;
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;
+  color:rgba(0,0,0,.6);line-height:1}
+.gb-dot.on-b{background:#3ac13a}
+.gb-dot.on-s{background:#e8c33d}
+.gb-dot.on-o{background:var(--red)}
+
+.gb-dia{width:80px;height:80px;flex-shrink:0}
+.gb-dia rect{fill:#2a2a2c;stroke:#555;stroke-width:2;transition:fill .12s}
+.gb-dia rect.on{fill:#e8c33d;stroke:#e8c33d}
+.gb-dia #gb-hp{fill:#3a3a3c}
+
+.gb-people{display:flex;gap:22px}
+.gb-col{display:flex;flex-direction:column;gap:5px;font-size:17px;min-width:190px}
+.gb-bt-line{display:flex;align-items:center;gap:7px;color:#eee;white-space:nowrap}
+.gb-bt-line.sub{font-size:14px;color:#8a8a8a}
+.gb-bt-tag{font-size:13px;font-weight:800;color:#777;background:#2a2a2c;
+  border-radius:4px;padding:3px 7px;flex-shrink:0;min-width:32px;text-align:center}
+.gb-bt-tag.bat{background:rgba(200,16,46,.22);color:#ff8090}
+.gb-bt-tag.def{background:rgba(26,86,160,.25);color:#8ab4ff}
+
+.gb-flags{display:none}
+.gb-disp{display:flex;flex-wrap:wrap;gap:6px;align-content:center;max-width:230px}
+.disp-btn{background:#242426;border:2px solid #303032;border-radius:8px;color:#666;
+  font-size:13px;font-weight:800;padding:9px 12px;cursor:pointer;white-space:nowrap;transition:.12s}
+.disp-btn:hover{background:#2e2e30;color:#aaa}
+.disp-btn.on{background:rgba(58,193,58,.18);color:#7fd47f;border-color:rgba(58,193,58,.5)}
+.disp-btn.score{color:#aaaaff;border-color:#3a3a6a}
+.disp-btn.score.on{background:rgba(90,90,200,.22);color:#c8c8ff;border-color:#5a5aaa}
+.qrbtn{background:none;border:none;color:#666;cursor:pointer;padding:4px;
+  font-size:20px;line-height:0;flex-shrink:0;transition:color .12s}
+.qrbtn:hover{color:#ccc}
+.gb-spd{display:flex;flex-direction:column;align-items:center;gap:4px;margin-left:auto}
+.spd-last{background:#040804;border:2px solid #163016;border-radius:9px;
+  padding:6px 16px;font-size:26px;font-weight:900;color:#7dff5a;text-align:center;
+  line-height:1.1;font-variant-numeric:tabular-nums;text-shadow:0 0 9px rgba(125,255,90,.6)}
+.spd-last.empty{color:#1e3a1e;text-shadow:none;border-color:#151515}
+.spd-last span{font-size:11px;font-weight:700;opacity:.7}
+.spd-type{font-size:12px;font-weight:800;color:#b8a0e8;min-height:15px}
+.spd-open{background:#1e2a3a;border:2px solid #3a5a8a;border-radius:9px;color:#8fc0ff;
+  font-size:14px;font-weight:800;padding:10px 16px;cursor:pointer;white-space:nowrap}
+.spd-open:hover{background:#26364a}
+
+/* 入力パネル */
+.spd-tens{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:8px;justify-items:center}
+.spd-t10{width:100%;aspect-ratio:1/1;max-width:82px;border-radius:50%;
+  border:3px solid #3a3a3c;background:#242426;color:#eee;
+  font-size:20px;font-weight:900;cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.spd-t10:hover{background:#3a3a3c}
+.spd-t10.kp{background:#1e2a3a;border-color:#3a5a8a;color:#8fc0ff;font-size:13px}
+
+.spd-ones{display:grid;grid-template-columns:repeat(3,auto);gap:9px;justify-content:center;margin-top:8px}
+.spd-one{width:74px;height:74px;border-radius:50%;border:3px solid #3a3a3c;
+  background:#242426;color:#fff;font-size:30px;font-weight:900;cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.spd-one:hover{background:#3a3a3c}
+.spd-one:disabled{opacity:.2;pointer-events:none}
+
+.spd-types{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:6px}
+.spd-t{border:2px solid #3a3a3c;background:#242426;color:#ccc;border-radius:8px;
+  font-size:13px;font-weight:800;padding:12px 4px;cursor:pointer;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.spd-t:hover{background:#2e2e30}
+.spd-t.on{background:#3a2a5a;border-color:#8a6ac8;color:#d8c0ff}
+
+.gb-ann{display:flex;flex-direction:row;align-items:center;gap:8px}
+.ann-btn{background:#2c2c2e;border:2px solid #3a3a3c;border-radius:10px;color:#aaa;
+  font-size:16px;font-weight:800;padding:18px 20px;cursor:pointer;white-space:nowrap;transition:.15s;
+  line-height:1.25;min-height:62px}
+.ann-btn:hover{background:#3a3a3c}
+.ann-btn.on{background:#1a3a1a;border-color:#3a6a2a;color:#86c867}
+.ann-btn.play{background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff}
+.ann-btn.play:hover{background:#36284a}
+.ann-btn.call{background:#22301a;border-color:#4a6a2a;color:#b8e878}
+.ann-btn.call:hover{background:#2e4022}
+.gb-flag{font-size:12px;font-weight:700;padding:4px 9px;border-radius:12px;
+  background:#242426;color:#5a5a5c;border:1px solid #303032}
+.gb-flag.on{background:rgba(58,193,58,.16);color:#7fd47f;border-color:rgba(58,193,58,.45)}
+
+/* ロック時 */
+body.locked .team input,body.locked .team select,body.locked .team button,
+body.locked .team label{pointer-events:none;opacity:.5}
+body.locked .row{cursor:default}
+
+/* 攻撃打順・守備位置図 */
+.fieldpane{display:grid;grid-template-columns:1fr 10px 420px;gap:6px;
+  padding:14px 16px;background:#0e0e10;border-bottom:1px solid var(--line)}
+@media(max-width:1000px){
+  .fieldpane{grid-template-columns:1fr;gap:14px}
+  .fp-split{display:none}
+}
+/* ドラッグで幅を変える仕切り */
+.fp-split{
+  position:relative;cursor:col-resize;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s;
+}
+.fp-split::before{
+  content:'';width:4px;height:56px;border-radius:2px;
+  background:#3a3a3c;transition:background .12s;
+}
+.fp-split:hover::before,.fp-split.dragging::before{background:#c8a02e}
+.fp-split.dragging{background:rgba(200,160,46,.08)}
+body.fp-resizing{cursor:col-resize;user-select:none}
+.fp-left,.fp-right{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.fp-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);
+  font-size:19px;font-weight:700;color:#fff}
+.fp-badge{font-size:13px;font-weight:800;padding:4px 11px;border-radius:20px;flex-shrink:0}
+.fp-badge.atk{background:rgba(200,16,46,.2);color:#ff8090;border:1px solid rgba(200,16,46,.45)}
+.fp-badge.def{background:rgba(26,86,160,.24);color:#8ab4ff;border:1px solid rgba(26,86,160,.55)}
+.fp-hint{font-size:11px;color:#666;font-weight:400}
+.fp-pit{margin-left:auto;background:#1e2a3a;border:2px solid #3a5a8a;border-radius:8px;
+  color:#8fc0ff;font-size:12px;font-weight:800;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.fp-pit:hover{background:#26364a}
+.fp-next{background:#c8102e;border:none;border-radius:9px;color:#fff;
+  font-size:17px;font-weight:800;padding:11px 22px;cursor:pointer;white-space:nowrap;transition:.12s}
+.fp-next:hover{background:#e0203e}
+.fp-next:active{transform:scale(.96)}
+
+.fp-order{padding:5px 8px}
+.fp-ord-row{display:grid;grid-template-columns:40px 52px minmax(0,1fr) 54px minmax(0,1.3fr);
+  gap:9px;align-items:center;padding:10px 8px;border-bottom:1px solid #232325;font-size:19px}
+.fp-ord-res{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
+.fp-res{font-size:12px;font-weight:700;padding:3px 7px;border-radius:5px;
+  background:#242426;color:#8a8a8c;border:1px solid #303032;white-space:nowrap;cursor:pointer}
+.fp-res:hover{background:#2e2e30;color:#ccc}
+.fp-res em{font-style:normal;font-size:10px;opacity:.7;margin-left:4px}
+.fp-res.ok{background:rgba(58,140,220,.18);color:#8ac0ff;border-color:rgba(58,140,220,.45)}
+.fp-res.none{background:none;border:none;color:#3a3a3c}
+.fp-ord-row.cur{background:rgba(200,160,46,.14);box-shadow:inset 3px 0 0 #c8a02e;border-radius:5px}
+.fp-ord-no{font-size:24px;font-weight:800;color:#c8a02e;text-align:center}
+.fp-ord-num{font-size:18px;color:#8a8a8a;text-align:right}
+.fp-ord-nm{color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fp-ord-row.cur .fp-ord-nm{color:#fff;font-weight:700}
+.fp-ord-pos{font-size:16px;color:#888;text-align:center}
+
+.fp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,28%);gap:8px;padding:8px 10px 10px;align-items:start}
+#fp-field{width:100%;height:auto;display:block}
+#fp-field .fld{fill:#16301a;stroke:#2a4a2e;stroke-width:2}
+#fp-field .inf{fill:#3a2a1c;stroke:#54402c;stroke-width:2}
+#fp-field .base{fill:#d8d8d8}
+#fp-field .slot{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.18);stroke-width:1.5;
+  cursor:pointer;transition:.12s}
+#fp-field .slot:hover{fill:rgba(255,255,255,.12)}
+#fp-field .slot.sel{fill:rgba(200,160,46,.42);stroke:#e8c33d;stroke-width:2.5}
+#fp-field text{pointer-events:none;font-family:inherit}
+#fp-field .p-pos{font-size:11px;font-weight:800;fill:#8ab4ff}
+#fp-field .p-num{font-size:11px;font-weight:700;fill:#aaa}
+#fp-field .p-nm{font-size:14px;font-weight:700;fill:#fff}
+
+.fp-bench{background:#161618;border:1px solid #262628;border-radius:9px;padding:7px;
+  max-height:none;overflow-y:auto}
+.fp-bench-t{font-size:11px;color:var(--sub);margin-bottom:7px;letter-spacing:.5px}
+.fp-bp{display:flex;align-items:center;gap:5px;padding:6px 7px;margin-bottom:4px;
+  background:#242426;border:1px solid #313133;border-radius:6px;cursor:pointer;font-size:12px}
+
+.fp-bp.sel{background:#5a4a12;border-color:#c8a02e;color:#fff}
+.fp-bp-num{font-size:11px;color:#888;min-width:22px}
+.fp-bp-nm{color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+
+/* レイアウト */
+.wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;max-width:1600px;margin:0 auto}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+
+.team{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.team-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.team-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
+.badge-away{background:rgba(200,16,46,.18);color:#ff8090;border:1px solid rgba(200,16,46,.4)}
+.badge-home{background:rgba(26,86,160,.22);color:#8ab4ff;border:1px solid rgba(26,86,160,.5)}
+.team-name-inp{flex:1;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#fff;
+  font-size:18px;font-weight:700;padding:9px 12px;outline:none}
+.team-name-inp:focus{border-color:#555}
+
+/* ツールバー */
+.tools{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.btn{background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#ddd;font-size:13px;
+  font-weight:600;padding:9px 12px;cursor:pointer;white-space:nowrap;transition:.15s}
+.btn:hover{background:#3a3a3c}
+.btn-scan{background:#1a2a3a;border-color:#3a5a8a;color:#8fc0ff}
+.btn-save{background:#1a3a1a;border-color:#3a6a2a;color:#86c867}
+.btn-load{background:#1a1a3a;border-color:#3a3a8a;color:#9a9aff}
+.btn-red{background:#3a1a1a;border-color:#8a3a3a;color:#ff8888}
+
+/* テーブル */
+.tbl-head,.row{display:grid;grid-template-columns:34px 52px 62px 1fr 92px 84px;gap:6px;align-items:center}
+.tbl-head{padding:8px 14px;font-size:11px;color:var(--sub);letter-spacing:.5px;border-bottom:1px solid var(--line)}
+.list{padding:6px 10px;min-height:60px}
+.row{padding:6px 4px;border-bottom:1px solid #232325;border-radius:6px;transition:background .12s}
+.row:hover{background:#232325}
+.row.dragging{opacity:.4}
+.row.over{box-shadow:inset 0 2px 0 var(--red)}
+.row.bench{opacity:.62}
+.grip{cursor:grab;color:#555;font-size:16px;text-align:center;user-select:none}
+.grip:active{cursor:grabbing}
+.cell-inp{width:100%;background:#252527;border:1px solid #333;border-radius:6px;color:#fff;
+  font-size:14px;padding:7px 6px;outline:none;text-align:center}
+.cell-inp.name{text-align:left;font-size:15px;padding-left:10px}
+.cell-inp:focus{border-color:#666;background:#2c2c2e}
+.cell-sel{width:100%;background:#252527;border:1px solid #333;border-radius:6px;color:#fff;
+  font-size:14px;padding:7px 4px;outline:none;-webkit-appearance:none;appearance:none;text-align:center}
+.row-acts{display:flex;gap:4px;justify-content:flex-end}
+.mini{background:#2c2c2e;border:1px solid #3a3a3c;border-radius:6px;color:#aaa;font-size:11px;
+  padding:6px 7px;cursor:pointer;white-space:nowrap}
+.mini:hover{background:#3a3a3c;color:#fff}
+.mini.del{color:#ff7777;border-color:#5a2a2a}
+.mini.bat{color:#ffd27f;border-color:#6a5a2a;font-weight:800}
+.mini.bat.on{background:#5a4a12;color:#fff;border-color:#c8a02e}
+.row.current{background:rgba(200,160,46,.12);box-shadow:inset 3px 0 0 #c8a02e}
+.cur-mark{color:#e8c33d;font-size:15px;font-weight:900}
+
+/* 追加行 */
+.addrow{display:grid;grid-template-columns:34px 52px 62px 1fr 92px 84px;gap:6px;align-items:center;
+  padding:10px 14px;border-top:1px solid var(--line);background:#191919}
+.sec-lbl{padding:10px 14px 4px;font-size:11px;color:var(--sub);letter-spacing:1px;border-top:1px solid var(--line)}
+
+/* 交代パネル */
+.subbar{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+/* モーダル */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;
+  align-items:center;justify-content:center;padding:24px}
+.mask.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;
+  max-width:720px;max-height:86vh;overflow-y:auto;padding:20px}
+.modal h3{font-size:18px;margin-bottom:6px}
+.modal .note{font-size:13px;color:var(--sub);margin-bottom:14px}
+.scan-row{display:grid;grid-template-columns:56px 62px 1fr 96px 40px;gap:8px;align-items:center;
+  padding:7px 0;border-bottom:1px solid #262628}
+.modal-acts{display:flex;gap:10px;margin-top:16px}
+.respop{
+  display:none;position:fixed;z-index:760;width:440px;
+  background:#1a1a1c;border:2px solid #444;border-radius:14px;
+  box-shadow:0 12px 40px rgba(0,0,0,.7);padding:14px;
+}
+.respop.open{display:block}
+.respop-ctx{font-size:13px;color:#888;text-align:center;margin-bottom:10px;line-height:1.35}
+.respop-t{font-size:16px;font-weight:900;text-align:center;margin-bottom:9px}
+.respop-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.respop-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.rp-big{border-radius:12px;font-size:30px;font-weight:900;padding:30px 6px;
+  cursor:pointer;letter-spacing:3px;color:#fff;transition:.1s}
+.rp-big:active{transform:scale(.97)}
+.rp-big.out{background:#8a1226;border:3px solid #c8102e}
+.rp-big.safe{background:#1a5a8a;border:3px solid #2a8ac8}
+.rp-item{border-radius:10px;font-size:15px;font-weight:800;padding:22px 4px;
+  cursor:pointer;line-height:1.2;transition:.1s}
+.rp-item:active{transform:scale(.97)}
+.rp-cancel{width:100%;margin-top:10px;background:#2c2c2e;border:2px solid #444;
+  border-radius:10px;color:#bbb;font-size:14px;font-weight:700;padding:12px;cursor:pointer}
+.rp-cancel:hover{background:#3a3a3c}
+.pit-tbl{width:100%;border-collapse:collapse;margin-top:8px}
+.pit-tbl th{font-size:11px;color:var(--sub);font-weight:600;padding:6px 8px;
+  border-bottom:1px solid #333;text-align:right}
+.pit-tbl th:first-child{text-align:left}
+.pit-tbl td{font-size:15px;color:#ddd;padding:8px;border-bottom:1px solid #232325;
+  text-align:right;font-variant-numeric:tabular-nums}
+.pit-tbl td:first-child{text-align:left;color:#fff;font-weight:700}
+.pit-tbl tr.total td{color:#fff;font-weight:800;border-top:2px solid #3a3a3c;border-bottom:none}
+.pit-tbl td .mx{color:#7dff5a;font-weight:800}
+.pit-list{margin-top:14px;max-height:200px;overflow-y:auto;
+  background:#161618;border:1px solid #262628;border-radius:8px;padding:8px}
+.pit-item{display:grid;grid-template-columns:52px 62px 1fr 30px;gap:8px;align-items:center;
+  padding:6px 4px;border-bottom:1px solid #212123;font-size:13px}
+.pit-item:last-child{border-bottom:none}
+.pit-item .v{font-weight:800;color:#7dff5a;font-variant-numeric:tabular-nums}
+.pit-item .t{color:#b8a0e8;font-size:12px}
+.pit-item .b{color:#888;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pit-del{background:none;border:none;color:#a55;font-size:14px;cursor:pointer;padding:2px}
+.pit-del:hover{color:#f77}
+.set-sec{padding:14px 0;border-top:1px solid #262628}
+.set-lbl{font-size:13px;color:var(--sub);margin-bottom:8px;letter-spacing:.5px}
+.set-sel{width:100%;background:#2c2c2e;border:1px solid #444;border-radius:8px;
+  color:#fff;font-size:15px;padding:12px;outline:none}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#2c2c2e;
+  border:1px solid #444;border-radius:10px;color:#fff;font-size:14px;padding:12px 20px;
+  z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+</style>
+<script src="/qrcode.js"></script>
+</head>
+<body>
+
+<div id="pull-ind">同期中…</div>
+<div class="hdr">
+  <div class="hdr-left">
+    <img class="hdr-logo" src="data:image/jpeg;base64,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n/wS++Glu2648QeKLo+huLdR+kNY/wBjYvsvvPUl4mcPxXxSf/bp+YY4PNSBRJL5cah26bQQTn8Ca/Wvw/8AsCfBnw+ySS+HLjVZU6Nf3kzhvqoZV/SvY/Cfwj8FeB41Gg+FNH0dh/HZ2Ucbn6sFBNdVPI6v2pI+exfixgIe5hKEpPzsv8z8iPAH7KvxT+I0kR0jwbqKWr8fbdQQWkBHqGl27v8AgANfeH7Hf7HOufs/a/qHiLX9as72/vrP7I1lp6M0cI3q+fMbbu5XH3BX1wqgDgAUu0eg/KvbwuV0sNJVFrJH5jnvHuY53RlheWMKUuiV397Cloor2T80CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKQDFFFABjFGAe1FFABgZzjn1owPSiigBaKKKACiiigAooooAKKKKACkwPSiigBaKKKAEIBGCMijAznHNFFAC0UUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABSGiigBgUDnGT06UuR0xRRSTExrBcdMZ54pOnTP4miiiZHM0SiloopmgUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAESq2f4aXaCeetFFTFsbSDODS5PrRRVcqJuyJGG7jP51LRRSkRTk5bj6KKKZoFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAH//Z" alt="AthleeLive">
+    <span class="hdr-sub">メンバー管理</span>
+  </div>
+  <div class="hdr-right">
+    <span class="clock" id="clock">--:--:--</span>
+    <span class="batt" id="batt" style="display:none">
+      <span class="batt-shell"><span class="batt-fill" id="batt-fill"></span></span>
+      <span class="batt-txt" id="batt-txt">--%</span>
+    </span>
+    <span class="hdr-div"></span>
+    <button class="btn btn-lock" id="btn-lock" onclick="toggleLock()">🔓 操作可</button>
+    <span class="hdr-div"></span>
+    <span class="ws-dot" id="ws-dot"></span>
+    <span class="ws-label" id="ws-label">接続中…</span>
+    <button class="btn" onclick="pcReqSync()">↻ 同期</button>
+    <button class="btn" onclick="openSettings()">⚙ 設定</button>
+    <button class="btn btn-save" onclick="exportJSON()">⬇ JSON書出</button>
+    <label class="btn btn-load" style="margin:0">⬆ JSON読込
+      <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+    </label>
+  </div>
+</div>
+
+<!-- 試合状況（読み取り専用・コントローラーと同期） -->
+<div class="gamebar">
+  <input id="hdr-game-title" type="text" placeholder="試合名を入力"
+    oninput="onGameTitlePC()" autocomplete="off">
+  <div class="gb-inn">
+    <span class="gb-inn-num" id="gb-inn">1</span>
+    <div class="gb-tb-sel">
+      <span class="gb-tbb" id="gb-tb-t">表</span>
+      <span class="gb-tbb" id="gb-tb-b">ウラ</span>
+    </div>
+    <span class="gb-inn-tb" id="gb-tb" style="display:none"></span>
+  </div>
+
+  <table class="gb-score">
+    <thead><tr id="gb-sc-head"></tr></thead>
+    <tbody>
+      <tr id="gb-sc-away"></tr>
+      <tr id="gb-sc-home"></tr>
+    </tbody>
+  </table>
+
+  <div class="gb-bso">
+    <div class="gb-bso-line">
+      <span class="gb-bso-lbl">B</span><span class="gb-dots" id="gb-b"></span>
+    </div>
+    <div class="gb-bso-line">
+      <span class="gb-bso-lbl" id="gb-s-lbl">S</span><span class="gb-dots" id="gb-s"></span>
+      <span class="gb-abinfo" id="gb-foul"></span>
+    </div>
+    <div class="gb-bso-line">
+      <span class="gb-bso-lbl">O</span><span class="gb-dots" id="gb-o"></span>
+      <span class="gb-abinfo" id="gb-total"></span>
+    </div>
+  </div>
+
+  <svg class="gb-dia" viewBox="0 0 74 74">
+    <rect id="gb-b2" class="gb-base" x="27" y="4"  width="20" height="20" transform="rotate(45 37 14)" />
+    <rect id="gb-b3" class="gb-base" x="7"  y="24" width="20" height="20" transform="rotate(45 17 34)" />
+    <rect id="gb-b1" class="gb-base" x="47" y="24" width="20" height="20" transform="rotate(45 57 34)" />
+    <rect id="gb-hp" x="27" y="44" width="20" height="20" transform="rotate(45 37 54)" />
+  </svg>
+
+  <div class="gb-people">
+    <div class="gb-col">
+      <div class="gb-bt-line"><span class="gb-bt-tag bat">打</span><span id="gb-batter">-</span></div>
+      <div class="gb-bt-line sub"><span class="gb-bt-tag">次</span><span id="gb-next">-</span></div>
+      <div class="gb-bt-line sub"><span class="gb-bt-tag">次々</span><span id="gb-next2">-</span></div>
+    </div>
+    <div class="gb-col">
+      <div class="gb-bt-line"><span class="gb-bt-tag def">投</span><span id="gb-pitcher">-</span></div>
+      <div class="gb-bt-line"><span class="gb-bt-tag def">捕</span><span id="gb-catcher">-</span></div>
+      <div class="gb-bt-line sub"><span class="gb-bt-tag">守</span><span id="gb-defteam">-</span></div>
+    </div>
+  </div>
+
+  <div class="gb-flags" id="gb-flags"></div>
+  <div class="gb-disp">
+    <button class="disp-btn" data-k="showBatter" onclick="pcToggleDisp('showBatter')">打者</button>
+    <button class="disp-btn" data-k="showBat"    onclick="pcToggleDisp('showBat')">打順</button>
+    <button class="disp-btn" data-k="showPC"     onclick="pcToggleDisp('showPC')">守備位置</button>
+    <button class="disp-btn" data-k="showDef"    onclick="pcToggleDisp('showDef')">配置図</button>
+    <button class="disp-btn" data-k="showBSO"    onclick="pcToggleDisp('showBSO')">BSO</button>
+    <button class="disp-btn score" onclick="pcToggleScoreOverlay()">📊 スコア</button>
+    <button class="disp-btn" onclick="openQR('overlay.html')" title="オーバーレイを共有" style="display:flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg> 画面</button>
+  </div>
+
+  <div class="gb-spd">
+    <div class="spd-last empty" id="spd-last">--- <span>km/h</span></div>
+    <div class="spd-type" id="spd-type-disp"></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="spd-open" onclick="openSpdPanel()">⚾ 球速入力</button>
+      <button class="qrbtn" onclick="openQR('spd/')" title="球速入力を共有"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="gb-ann">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <button class="ann-btn" id="ann-toggle" onclick="toggleAnnounce()" style="padding:14px 16px;min-height:0">🔈 OFF</button>
+      <span id="ann-status" style="font-size:10px;color:#666">確認中…</span>
+    </div>
+    <button class="ann-btn call" onclick="announceCurrentBatter()">🔊 打者<br>コール</button>
+    <button class="ann-btn call" onclick="announceCurrentInning()">🔊 回<br>コール</button>
+    <button class="ann-btn play" onclick="announceSituation()">🎙 実況</button>
+    <button class="ann-btn play" onclick="aiComment()" id="lp-ai">💬 ここで<br>一言</button>
+  </div>
+</div>
+
+<!-- 攻撃側の打順 ／ 守備位置図 -->
+<div class="fieldpane">
+  <div class="fp-left">
+    <div class="fp-hd">
+      <span class="fp-badge atk">攻撃</span>
+      <span id="fp-atk-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px">先攻</span>
+      <button class="qrbtn" onclick="openQR('ctrl/')" title="コントローラーを共有" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
+      <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
+    </div>
+    <div id="fp-order" class="fp-order"></div>
+  </div>
+  <div class="fp-split" id="fp-split" title="ドラッグで幅を調整"></div>
+
+  <div class="fp-right">
+    <div class="fp-hd"><span class="fp-badge def">守備</span><span id="fp-def-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px">後攻</span>
+      <button class="fp-pit" onclick="openPitcherInfo()">📊 投手情報</button>
+      <button id="fp-sub-call" onclick="announceLastSub()"
+        style="display:none;margin-left:auto;align-items:center;background:#2a3a1a;border:2px solid #5a8a3a;
+               border-radius:8px;color:#b8e878;font-size:12px;font-weight:800;padding:7px 11px;cursor:pointer;white-space:nowrap">
+        🔁 交代コール
+      </button>
+    </div>
+    <div class="fp-body">
+      <svg id="fp-field" viewBox="0 0 420 210" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="fp-bench">
+        <div class="fp-bench-t">ベンチ</div>
+        <div id="fp-bench-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- 先攻 -->
+  <div class="team">
+    <div class="team-hd">
+      <span class="team-badge badge-away">先攻 / 1塁側</span>
+      <input class="team-name-inp" id="tname-away" placeholder="チーム名" oninput="onTeamName('away')">
+    </div>
+    <div class="tools">
+      <label class="btn btn-scan" style="margin:0">📷 写真スキャン
+        <input type="file" accept="image/*" style="display:none" onchange="onScan(event,'away')">
+      </label>
+      <button class="btn btn-save" onclick="saveTeam('away')">💾 保存</button>
+      <button class="btn btn-load" onclick="loadTeam('away')">📂 呼出</button>
+      <button class="btn" onclick="renumber('away')">↕ 打順振り直し</button>
+      <button class="btn btn-red" onclick="clearTeam('away')">全消去</button>
+    </div>
+    <div class="tbl-head">
+      <span></span><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span><span></span>
+    </div>
+    <div class="list" id="list-away"></div>
+    <div class="addrow">
+      <span></span>
+      <input class="cell-inp" id="new-away-order" placeholder="―">
+      <input class="cell-inp" id="new-away-num" placeholder="番号">
+      <input class="cell-inp name" id="new-away-name" placeholder="選手名を入力" onkeydown="if(event.key==='Enter')addPlayer('away')">
+      <select class="cell-sel" id="new-away-pos"></select>
+      <button class="mini" onclick="addPlayer('away')">＋ 追加</button>
+    </div>
+    <div class="subbar">
+      <button class="btn" onclick="openSub('away','代打')">代打</button>
+      <button class="btn" onclick="openSub('away','代走')">代走</button>
+      <button class="btn" onclick="openSub('away','守備交代')">守備交代</button>
+    </div>
+  </div>
+
+  <!-- 後攻 -->
+  <div class="team">
+    <div class="team-hd">
+      <span class="team-badge badge-home">後攻 / 3塁側</span>
+      <input class="team-name-inp" id="tname-home" placeholder="チーム名" oninput="onTeamName('home')">
+    </div>
+    <div class="tools">
+      <label class="btn btn-scan" style="margin:0">📷 写真スキャン
+        <input type="file" accept="image/*" style="display:none" onchange="onScan(event,'home')">
+      </label>
+      <button class="btn btn-save" onclick="saveTeam('home')">💾 保存</button>
+      <button class="btn btn-load" onclick="loadTeam('home')">📂 呼出</button>
+      <button class="btn" onclick="renumber('home')">↕ 打順振り直し</button>
+      <button class="btn btn-red" onclick="clearTeam('home')">全消去</button>
+    </div>
+    <div class="tbl-head">
+      <span></span><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span><span></span>
+    </div>
+    <div class="list" id="list-home"></div>
+    <div class="addrow">
+      <span></span>
+      <input class="cell-inp" id="new-home-order" placeholder="―">
+      <input class="cell-inp" id="new-home-num" placeholder="番号">
+      <input class="cell-inp name" id="new-home-name" placeholder="選手名を入力" onkeydown="if(event.key==='Enter')addPlayer('home')">
+      <select class="cell-sel" id="new-home-pos"></select>
+      <button class="mini" onclick="addPlayer('home')">＋ 追加</button>
+    </div>
+    <div class="subbar">
+      <button class="btn" onclick="openSub('home','代打')">代打</button>
+      <button class="btn" onclick="openSub('home','代走')">代走</button>
+      <button class="btn" onclick="openSub('home','守備交代')">守備交代</button>
+    </div>
+  </div>
+</div>
+
+<!-- スキャン結果モーダル -->
+<div class="mask" id="scan-mask">
+  <div class="modal">
+    <h3 id="scan-title">読み取り結果</h3>
+    <div class="note" id="scan-note">読み取り中…</div>
+    <div id="scan-rows"></div>
+    <div class="modal-acts">
+      <button class="btn btn-save" style="flex:1" onclick="applyScan()">この内容で登録</button>
+      <button class="btn" style="flex:1" onclick="closeModal('scan-mask')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 交代モーダル -->
+<div class="mask" id="sub-mask">
+  <div class="modal" style="max-width:520px">
+    <h3 id="sub-title">代打</h3>
+    <div class="note">交代する選手と、入る選手を選んでください。</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <div class="note" style="margin:0 0 5px">出る選手（現在の打順）</div>
+        <select class="cell-sel" id="sub-out" style="text-align:left;padding:10px"></select>
+      </div>
+      <div>
+        <div class="note" style="margin:0 0 5px">入る選手（ベンチ）</div>
+        <select class="cell-sel" id="sub-in" style="text-align:left;padding:10px"></select>
+      </div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn btn-save" style="flex:1" onclick="applySub()">交代する</button>
+      <button class="btn" style="flex:1" onclick="closeModal('sub-mask')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 保存メンバー呼出モーダル -->
+<div class="mask" id="load-mask">
+  <div class="modal" style="max-width:520px">
+    <h3>保存済みチーム</h3>
+    <div class="note">呼び出すチームを選んでください。</div>
+    <div id="load-list"></div>
+    <div class="modal-acts">
+      <button class="btn" style="flex:1" onclick="closeModal('load-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="mask" id="settings-mask">
+  <div class="modal" style="max-width:560px">
+    <h3>⚙ 設定</h3>
+    <div class="note" id="set-tts-status">確認中…</div>
+
+    <div class="set-sec">
+      <div class="set-lbl">場内アナウンス</div>
+      <button class="btn" id="set-ann-toggle" onclick="toggleAnnounce()"
+        style="width:100%;font-size:16px;padding:14px">🔈 アナウンス OFF</button>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">声の種類</div>
+      <select class="set-sel" id="set-voice" onchange="setTtsVoice(this.value)">
+        <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
+        <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
+        <option value="ja-JP-AoiNeural">女性・明るめ（あおい）</option>
+        <option value="ja-JP-MayuNeural">女性・やわらかい（まゆ）</option>
+        <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
+        <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
+        <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
+      </select>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">話し方</div>
+      <select class="set-sel" id="set-style" onchange="setTtsStyle(this.value)">
+        <option value="">標準</option>
+        <option value="chat">やわらかい会話調</option>
+        <option value="cheerful">明るい</option>
+        <option value="customerservice">案内調</option>
+      </select>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">読み上げ速度</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjAnnRate(-0.05)">－</button>
+        <span id="set-rate-val" style="flex:1;text-align:center;font-size:26px;font-weight:700">0.75</span>
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjAnnRate(0.05)">＋</button>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">打席記録</div>
+      <div class="note" style="margin-bottom:8px">打順表に各選手の打席結果が並びます。新しい試合を始めるときは消去してください</div>
+      <button class="btn btn-red" style="width:100%;font-size:15px;padding:13px" onclick="clearLog()">🗑 打席記録を消去</button>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">読み方の調整</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:13px;color:#888;width:80px">声の高さ</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPitch(-2)">－</button>
+        <span id="set-pitch-val" style="flex:1;text-align:center;font-size:18px;font-weight:700">0%</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPitch(2)">＋</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:13px;color:#888;width:80px">読点の間</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPause(-50)">－</button>
+        <span id="set-pause-val" style="flex:1;text-align:center;font-size:18px;font-weight:700">250</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnPause(50)">＋</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;color:#888;width:80px">抑揚の強さ</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnDeg(-0.1)">－</button>
+        <span id="set-deg-val" style="flex:1;text-align:center;font-size:18px;font-weight:700">1.0</span>
+        <button class="btn" style="flex:0 0 50px;padding:9px" onclick="adjAnnDeg(0.1)">＋</button>
+      </div>
+      <div class="note" style="margin-top:7px">抑揚は「話し方」を標準以外にしたときに効きます</div>
+    </div>
+
+    <div class="set-sec" style="border-top:2px solid #333;padding-top:16px">
+      <div class="set-lbl" style="font-size:15px;color:#c8a8ff;font-weight:700">🎙 実況の声（状況アナウンス）</div>
+      <select class="set-sel" id="set-cmt-voice" onchange="setCmtVoice(this.value)" style="margin-bottom:10px">
+        <option value="ja-JP-KeitaNeural">男性・標準（けいた）</option>
+        <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
+        <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
+        <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
+        <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
+      </select>
+      <div class="set-lbl">話し方</div>
+      <select class="set-sel" id="set-cmt-style" onchange="setCmtStyle(this.value)">
+        <option value="">標準</option>
+        <option value="chat">やわらかい会話調</option>
+        <option value="cheerful">明るい</option>
+        <option value="customerservice">案内調</option>
+      </select>
+      <div class="set-lbl" style="margin-top:12px">読み上げ速度</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjCmtRate(-0.05)">－</button>
+        <span id="set-cmt-rate-val" style="flex:1;text-align:center;font-size:26px;font-weight:700">1.10</span>
+        <button class="btn" style="flex:0 0 60px;font-size:22px;padding:10px" onclick="adjCmtRate(0.05)">＋</button>
+      </div>
+      <button class="btn" style="width:100%;font-size:15px;padding:13px;margin-top:12px;background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff"
+        onclick="testCommentary()">▶ 実況の声をテスト</button>
+    </div>
+
+    <div class="set-sec">
+      <button class="btn btn-load" style="width:100%;font-size:15px;padding:13px" onclick="testAnnounce()">▶ テスト再生</button>
+      <button class="btn" style="width:100%;font-size:15px;padding:13px;margin-top:8px;background:#3a2a1a;border-color:#8a6a3a;color:#ffaa66"
+        id="set-prebuild" onclick="prebuildVoices()">🎙 音声を事前生成</button>
+      <div class="note" style="margin-top:8px">試合前に押しておくと、登録選手とイニングコールの音声を作りためて、試合中の待ち時間がなくなります。保存した音声は次回も残ります</div>
+      <button class="btn" style="width:100%;font-size:14px;padding:11px;margin-top:8px"
+        onclick="if(confirm('保存済みの音声をすべて削除しますか？'))clearVoiceCache().then(function(){toast('削除しました');})">🗑 保存音声を削除</button>
+    </div>
+
+    <div class="modal-acts">
+      <button class="btn" style="flex:1" onclick="closeModal('settings-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 球速入力パネル -->
+<div class="mask" id="spd-mask">
+  <div class="modal" style="max-width:520px">
+    <h3>球速入力</h3>
+
+    <div id="spd-stage-tens">
+      <div class="note">十の位を選んでください</div>
+      <div class="spd-tens" id="spd-tens"></div>
+    </div>
+
+    <div id="spd-stage-ones" style="display:none">
+      <div class="note"><span id="spd-base">130</span> + 1の位</div>
+      <div class="spd-ones" id="spd-ones"></div>
+      <button class="btn" style="width:100%;margin-top:10px" onclick="spdBackToTens()">← 戻る</button>
+    </div>
+
+    <div class="set-lbl" style="margin-top:14px">球種</div>
+    <div class="spd-types" id="spd-types"></div>
+
+    <div class="modal-acts">
+      <button class="btn" style="flex:1" onclick="spdClear()">✕ 表示を消す</button>
+      <button class="btn" style="flex:1" onclick="closeModal('spd-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 投手情報 -->
+<div class="mask" id="pit-mask">
+  <div class="modal" style="max-width:640px">
+    <h3 id="pit-title">投手情報</h3>
+    <div class="note" id="pit-sub">—</div>
+    <div id="pit-body"></div>
+    <div class="modal-acts">
+      <button class="btn" style="flex:1;background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff"
+        onclick="announcePitcherStats()">🎙 実況で読む</button>
+      <button class="btn btn-red" style="flex:0 0 110px" onclick="clearSpdLog()">🗑 消去</button>
+      <button class="btn" style="flex:0 0 110px" onclick="closeModal('pit-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 打席結果の編集 -->
+<div class="mask" id="edit-res-mask">
+  <div class="modal" style="max-width:560px">
+    <h3>打席結果の編集</h3>
+    <div class="note" id="edit-res-ctx">—</div>
+
+    <div class="set-lbl" style="margin-top:10px">結果</div>
+    <select class="set-sel" id="edit-res-label"></select>
+
+    <div class="set-lbl" style="margin-top:12px">打球の方向</div>
+    <input class="set-sel" id="edit-res-hit" type="text" placeholder="例）レフト前　※空欄可">
+
+    <div class="set-lbl" style="margin-top:12px">守備（打球を処理した順）</div>
+    <input class="set-sel" id="edit-res-def" type="text" placeholder="例）SS(山田)→1B(佐藤)　※空欄可">
+
+    <div class="modal-acts">
+      <button class="btn btn-save" style="flex:1" onclick="applyEditResult()">保存</button>
+      <button class="btn btn-red" style="flex:0 0 110px" onclick="deleteEditResult()">削除</button>
+      <button class="btn" style="flex:1" onclick="closeModal('edit-res-mask')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 読み上げ確認モーダル -->
+<div class="mask" id="speak-mask">
+  <div class="modal" style="max-width:600px">
+    <h3 id="speak-title">読み上げ内容</h3>
+    <div class="note">内容を確認・修正してから読み上げてください</div>
+    <textarea id="speak-text" rows="4"
+      style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;
+             font-size:17px;line-height:1.6;padding:14px;outline:none;resize:vertical"></textarea>
+    <div class="modal-acts">
+      <button class="btn btn-save" style="flex:1;font-size:16px;padding:14px" onclick="doSpeakConfirmed()">🔊 読み上げる</button>
+      <button class="btn" style="flex:1" onclick="closeModal('speak-mask')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- QRコード表示 -->
+<div id="qr-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:900;align-items:center;justify-content:center;padding:16px"
+  onclick="if(event.target===this)closeQR()">
+  <div style="background:#1c1c1e;border:2px solid #444;border-radius:18px;padding:24px;width:100%;max-width:400px;text-align:center">
+    <div id="qr-name" style="font-size:26px;font-weight:800;color:#fff;margin-bottom:4px"></div>
+    <div id="qr-desc" style="font-size:15px;color:#888;margin-bottom:18px"></div>
+    <div id="qr-img" style="background:#fff;padding:12px;border-radius:12px;display:inline-block;line-height:0"></div>
+    <div id="qr-url" style="font-size:12px;color:#666;word-break:break-all;line-height:1.5;margin-top:14px"></div>
+    <button onclick="closeQR()"
+      style="width:100%;margin-top:18px;background:#2c2c2e;border:2px solid #444;border-radius:12px;color:#ccc;font-size:19px;font-weight:700;padding:16px;cursor:pointer">閉じる</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── データ ────────────────────────────────────────────────────────────────
+const rosters = { away:[], home:[] };
+const teamNames = { away:'', home:'' };
+const POS = [['','―'],['1','P'],['2','C'],['3','1B'],['4','2B'],['5','3B'],
+             ['6','SS'],['7','LF'],['8','CF'],['9','RF'],['dh','DH']];
+
+function posLabel(p){
+  const map={'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF','dh':'DH','10':'DH'};
+  return map[String(p).toLowerCase()]||String(p||'');
+}
+function posOptions(sel){
+  return POS.map(function(o){
+    const s = String(sel||'').toLowerCase()===o[0] ? ' selected' : '';
+    return '<option value="'+o[0]+'"'+s+'>'+o[1]+'</option>';
+  }).join('');
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(m){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm=setTimeout(function(){ t.classList.remove('show'); },1800);
+}
+
+// ── 描画 ──────────────────────────────────────────────────────────────────
+function sorted(team){
+  const on = rosters[team].filter(function(p){ return p.order; })
+    .sort(function(a,b){ return Number(a.order)-Number(b.order); });
+  const off = rosters[team].filter(function(p){ return !p.order; });
+  return on.concat(off);
+}
+
+function render(team){
+  const el=document.getElementById('list-'+team);
+  const list=sorted(team);
+  // 現在の打者（攻撃側チームのみ印をつける）
+  let curBatterId = 0;
+  if(lastRemote && lastRemote.selIds){
+    const atkTeam = (lastRemote.top!==false) ? 'away' : 'home';
+    if(atkTeam===team) curBatterId = lastRemote.selIds.batter || 0;
+  }
+  if(!list.length){
+    el.innerHTML='<div style="padding:22px 8px;text-align:center;color:#555;font-size:14px">'
+      +'選手が未登録です。下の行から追加するか、写真スキャンを使ってください。</div>';
+    return;
+  }
+  el.innerHTML=list.map(function(p){
+    const bench = p.order ? '' : ' bench';
+    const isCur = (curBatterId && p.id===curBatterId) ? ' current' : '';
+    return '<div class="row'+bench+isCur+'" draggable="true" data-id="'+p.id+'" data-team="'+team+'">'
+      +'<div class="grip">'+(isCur?'<span class="cur-mark">▶</span>':'⠿')+'</div>'
+      +'<input class="cell-inp" value="'+esc(p.order)+'" placeholder="―" onchange="edit(\''+team+'\','+p.id+',\'order\',this.value)">'
+      +'<input class="cell-inp" value="'+esc(p.num)+'" placeholder="―" onchange="edit(\''+team+'\','+p.id+',\'num\',this.value)">'
+      +'<input class="cell-inp name" value="'+esc(p.name)+'" onchange="edit(\''+team+'\','+p.id+',\'name\',this.value)">'
+      +'<select class="cell-sel" onchange="edit(\''+team+'\','+p.id+',\'pos\',this.value)">'+posOptions(p.pos)+'</select>'
+      +'<div class="row-acts">'
+        +'<button class="mini bat'+(isCur?' on':'')+'" onclick="setBatter(\''+team+'\','+p.id+')" title="この選手を打者にする">打</button>'
+        +'<button class="mini" onclick="toggleBench(\''+team+'\','+p.id+')">'+(p.order?'控':'出')+'</button>'
+        +'<button class="mini del" onclick="delPlayer(\''+team+'\','+p.id+')">✕</button>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+  bindDrag(team);
+}
+
+function renderAll(){ render('away'); render('home'); }
+
+// ── 編集 ──────────────────────────────────────────────────────────────────
+function edit(team,id,field,val){
+  const p=rosters[team].find(function(x){ return x.id===id; });
+  if(!p) return;
+  p[field]=val.trim();
+  if(field==='order') render(team);
+  push();
+}
+
+function addPlayer(team){
+  const o=document.getElementById('new-'+team+'-order').value.trim();
+  const n=document.getElementById('new-'+team+'-num').value.trim();
+  const nm=document.getElementById('new-'+team+'-name').value.trim();
+  const ym=document.getElementById('new-'+team+'-yomi').value.trim();
+  const ps=document.getElementById('new-'+team+'-pos').value;
+  if(!nm){ toast('選手名を入力してください'); return; }
+  rosters[team].push({ id:Date.now()+Math.floor(Math.random()*1000), order:o, num:n, name:nm, yomi:ym, pos:ps });
+  document.getElementById('new-'+team+'-order').value='';
+  document.getElementById('new-'+team+'-num').value='';
+  document.getElementById('new-'+team+'-name').value='';
+  document.getElementById('new-'+team+'-yomi').value='';
+  document.getElementById('new-'+team+'-pos').value='';
+  render(team); push();
+  document.getElementById('new-'+team+'-name').focus();
+}
+
+// 次の打者へ進める
+function goNextBatterPC(){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  var team = (lastRemote.top!==false) ? 'away' : 'home';
+  var ordered = rosters[team].filter(function(p){ return p.order; })
+    .sort(function(a,b){ return Number(a.order)-Number(b.order); });
+  if(!ordered.length) ordered = rosters[team].slice();
+  if(!ordered.length){ toast('選手が登録されていません'); return; }
+  var curId = (lastRemote.selIds && lastRemote.selIds.batter) || 0;
+  var idx = ordered.findIndex(function(p){ return p.id===curId; });
+  var next = idx>=0 ? ordered[(idx+1)%ordered.length] : ordered[0];
+  if(next) setBatter(team, next.id);
+}
+
+// この選手を打者にする（コントローラー・overlay に反映）
+function setBatter(team, id){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  const atkTeam = (lastRemote.top!==false) ? 'away' : 'home';
+  if(team!==atkTeam){
+    toast('攻撃中のチームではありません');
+    return;
+  }
+  const p = rosters[team].find(function(x){ return x.id===id; });
+  if(!p) return;
+
+  lastRemote.selIds = lastRemote.selIds || {};
+  lastRemote.selIds.batter = id;
+  lastRemote.batter = (p.num ? '#'+p.num+' ' : '') + p.name;
+
+  // 次打者・次々打者も打順から求め直す
+  const ordered = rosters[team].filter(function(x){ return x.order; })
+    .sort(function(a,b){ return Number(a.order)-Number(b.order); });
+  const idx = ordered.findIndex(function(x){ return x.id===id; });
+  const fmt = function(q){ return q ? ((q.num?'#'+q.num+' ':'')+q.name) : ''; };
+  if(idx>=0 && ordered.length){
+    lastRemote.batterNext  = fmt(ordered[(idx+1)%ordered.length]);
+    lastRemote.batterNext2 = fmt(ordered[(idx+2)%ordered.length]);
+  }
+
+  renderAll();
+  renderFieldPane();
+  renderGame(lastRemote);
+  pushState();
+  toast('打者：'+p.name);
+}
+
+// lastRemote の内容をそのまま送り返す（ロスター以外も維持）
+// PC版が担当する項目だけを送る（カウントや走者には触れない）
+function pushState(){
+  if(!ws || ws.readyState!==1 || !lastRemote) return;
+
+  const atk = (lastRemote.top!==false) ? 'away' : 'home';
+  const def = (atk==='away') ? 'home' : 'away';
+  const conv = function(list){
+    return list.map(function(p){
+      return Object.assign({}, p, { pos: posLabel(p.pos) || String(p.pos||'') });
+    });
+  };
+
+  const msg = {
+    _pcEdit: true,                                   // PC版からの部分更新
+    rostersAll: { away:rosters.away, home:rosters.home },
+    batRoster: conv(rosters[atk]),
+    defRoster: conv(rosters[def]),
+    batTeam: (atk==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻'),
+    defTeam: (def==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻'),
+    selIds: lastRemote.selIds || {},
+    batter: lastRemote.batter || '',
+    batterNext: lastRemote.batterNext || '',
+    batterNext2: lastRemote.batterNext2 || '',
+    aab: teamNames.away || lastRemote.aab || '',
+    hnm: teamNames.home || lastRemote.hnm || '',
+    gameTitle: lastRemote.gameTitle || '',
+    showBat: lastRemote.showBat,
+    showDef: lastRemote.showDef,
+    showBatter: lastRemote.showBatter,
+    showPC: lastRemote.showPC,
+    showBSO: lastRemote.showBSO,
+    lastResult: lastRemote.lastResult || null
+  };
+  ws.send(JSON.stringify(msg));
+}
+
+function delPlayer(team,id){
+  const p=rosters[team].find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(!confirm(p.name+' を削除しますか？')) return;
+  rosters[team]=rosters[team].filter(function(x){ return x.id!==id; });
+  render(team); push();
+}
+
+function toggleBench(team,id){
+  const p=rosters[team].find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(p.order){ p._prevOrder=p.order; p.order=''; }
+  else{
+    const used=rosters[team].filter(function(x){ return x.order; }).map(function(x){ return Number(x.order); });
+    let next=Number(p._prevOrder)||0;
+    if(!next||used.indexOf(next)>=0){ next=1; while(used.indexOf(next)>=0) next++; }
+    p.order=String(next);
+  }
+  render(team); push();
+}
+
+function renumber(team){
+  sorted(team).filter(function(p){ return p.order; })
+    .forEach(function(p,i){ p.order=String(i+1); });
+  render(team); push();
+  toast('打順を振り直しました');
+}
+
+function clearTeam(team){
+  if(!confirm('このチームの選手をすべて削除しますか？')) return;
+  rosters[team]=[]; render(team); push();
+}
+
+function onTeamName(team){
+  teamNames[team]=document.getElementById('tname-'+team).value;
+  push();
+}
+
+// ── ドラッグ並べ替え ──────────────────────────────────────────────────────
+let dragId=null, dragTeam=null;
+function bindDrag(team){
+  const rows=document.querySelectorAll('#list-'+team+' .row');
+  rows.forEach(function(row){
+    row.addEventListener('dragstart',function(e){
+      dragId=Number(row.dataset.id); dragTeam=team;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',function(){
+      row.classList.remove('dragging');
+      rows.forEach(function(r){ r.classList.remove('over'); });
+      dragId=null; dragTeam=null;
+    });
+    row.addEventListener('dragover',function(e){
+      if(dragTeam!==team) return;
+      e.preventDefault();
+      rows.forEach(function(r){ r.classList.remove('over'); });
+      row.classList.add('over');
+    });
+    row.addEventListener('drop',function(e){
+      if(dragTeam!==team||dragId==null) return;
+      e.preventDefault();
+      row.classList.remove('over');
+      reorder(team,dragId,Number(row.dataset.id));
+    });
+  });
+}
+
+function reorder(team,fromId,toId){
+  if(fromId===toId) return;
+  const list=sorted(team);
+  const fi=list.findIndex(function(p){ return p.id===fromId; });
+  const ti=list.findIndex(function(p){ return p.id===toId; });
+  if(fi<0||ti<0) return;
+  const moved=list.splice(fi,1)[0];
+  list.splice(ti,0,moved);
+  // 出場選手のみ 1..n を振り直す
+  let n=1;
+  list.forEach(function(p){ if(p.order){ p.order=String(n++); } });
+  render(team); push();
+}
+
+// ── 保存 / 呼出（localStorage） ───────────────────────────────────────────
+const LS_KEY='bb_team_rosters';
+function readStore(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ return {}; } }
+function writeStore(o){ try{ localStorage.setItem(LS_KEY,JSON.stringify(o)); }catch(e){} }
+
+function saveTeam(team){
+  const name=(teamNames[team]||'').trim();
+  if(!name){ toast('先にチーム名を入力してください'); return; }
+  if(!rosters[team].length){ toast('選手が登録されていません'); return; }
+  const store=readStore();
+  store[name]=JSON.parse(JSON.stringify(rosters[team]));
+  writeStore(store);
+  toast('「'+name+'」を保存しました');
+}
+
+let loadTarget=null;
+function loadTeam(team){
+  loadTarget=team;
+  const store=readStore();
+  const keys=Object.keys(store);
+  const el=document.getElementById('load-list');
+  if(!keys.length){
+    el.innerHTML='<div style="padding:18px 0;color:#666;font-size:14px">保存されたチームがありません。</div>';
+  }else{
+    el.innerHTML=keys.map(function(k){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #262628">'
+        +'<span style="flex:1;font-size:15px">'+esc(k)+' <span style="color:#666;font-size:12px">('+store[k].length+'名)</span></span>'
+        +'<button class="mini" onclick="applyLoad(\''+encodeURIComponent(k)+'\')">呼び出す</button>'
+        +'<button class="mini del" onclick="delSaved(\''+encodeURIComponent(k)+'\')">削除</button>'
+      +'</div>';
+    }).join('');
+  }
+  document.getElementById('load-mask').classList.add('open');
+}
+
+function applyLoad(enc){
+  const key=decodeURIComponent(enc);
+  const store=readStore();
+  if(!store[key]||!loadTarget) return;
+  rosters[loadTarget]=JSON.parse(JSON.stringify(store[key]));
+  teamNames[loadTarget]=key;
+  document.getElementById('tname-'+loadTarget).value=key;
+  render(loadTarget); push();
+  closeModal('load-mask');
+  toast('「'+key+'」を読み込みました');
+}
+
+function delSaved(enc){
+  const key=decodeURIComponent(enc);
+  if(!confirm('「'+key+'」を削除しますか？')) return;
+  const store=readStore(); delete store[key]; writeStore(store);
+  loadTeam(loadTarget);
+}
+
+function exportJSON(){
+  const store=readStore();
+  const blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  const d=new Date();
+  const ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  a.href=URL.createObjectURL(blob); a.download='bb_rosters_'+ymd+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function importJSON(e){
+  const f=e.target.files[0]; e.target.value='';
+  if(!f) return;
+  const rd=new FileReader();
+  rd.onload=function(){
+    try{
+      const inc=JSON.parse(rd.result);
+      const store=readStore();
+      Object.keys(inc).forEach(function(k){ store[k]=inc[k]; });
+      writeStore(store);
+      toast(Object.keys(inc).length+'チームを取り込みました');
+    }catch(err){ toast('読み込みに失敗しました'); }
+  };
+  rd.readAsText(f);
+}
+
+// ── 写真スキャン ──────────────────────────────────────────────────────────
+let scanTeam=null, scanPlayers=[];
+function onScan(e,team){
+  const f=e.target.files[0]; e.target.value='';
+  if(!f) return;
+  scanTeam=team; scanPlayers=[];
+  document.getElementById('scan-title').textContent=(team==='away'?'先攻':'後攻')+' 読み取り結果';
+  document.getElementById('scan-note').textContent='読み取り中… 少々お待ちください';
+  document.getElementById('scan-rows').innerHTML='';
+  document.getElementById('scan-mask').classList.add('open');
+
+  const rd=new FileReader();
+  rd.onload=function(){
+    const b64=String(rd.result).split(',')[1];
+    fetch('/api/scan-roster',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ imageBase64:b64, mimeType:f.type })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      const txt=(data.content&&data.content[0]&&data.content[0].text)||'';
+      const clean=txt.replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(clean);
+      scanPlayers=parsed.players||[];
+      renderScan();
+    })
+    .catch(function(){
+      document.getElementById('scan-note').textContent='読み取りに失敗しました。画像を変えてもう一度お試しください。';
+    });
+  };
+  rd.readAsDataURL(f);
+}
+
+function renderScan(){
+  document.getElementById('scan-note').textContent=scanPlayers.length+'名を読み取りました。内容を確認・修正してから登録してください。';
+  document.getElementById('scan-rows').innerHTML=scanPlayers.map(function(p,i){
+    return '<div class="scan-row">'
+      +'<input class="cell-inp" value="'+esc(p.order)+'" onchange="scanEdit('+i+',\'order\',this.value)">'
+      +'<input class="cell-inp" value="'+esc(p.num)+'" onchange="scanEdit('+i+',\'num\',this.value)">'
+      +'<input class="cell-inp name" value="'+esc(p.name)+'" onchange="scanEdit('+i+',\'name\',this.value)">'
+      +'<select class="cell-sel" onchange="scanEdit('+i+',\'pos\',this.value)">'+posOptions(p.pos)+'</select>'
+      +'<button class="mini del" onclick="scanDel('+i+')">✕</button>'
+    +'</div>';
+  }).join('');
+}
+function scanEdit(i,f,v){ scanPlayers[i][f]=v.trim(); }
+function scanDel(i){ scanPlayers.splice(i,1); renderScan(); }
+
+function applyScan(){
+  if(!scanTeam||!scanPlayers.length){ closeModal('scan-mask'); return; }
+  rosters[scanTeam]=scanPlayers.map(function(p,i){
+    return { id:Date.now()+i, order:String(p.order||''), num:String(p.num||''),
+             name:String(p.name||''), pos:String(p.pos||'') };
+  });
+  render(scanTeam); push();
+  closeModal('scan-mask');
+  toast(rosters[scanTeam].length+'名を登録しました');
+}
+
+// ── 交代 ──────────────────────────────────────────────────────────────────
+let subTeam=null, subKind=null;
+function openSub(team,kind){
+  subTeam=team; subKind=kind;
+  document.getElementById('sub-title').textContent=kind;
+  const on=sorted(team).filter(function(p){ return p.order; });
+  const off=sorted(team).filter(function(p){ return !p.order; });
+  if(!on.length||!off.length){
+    toast(!on.length?'出場選手がいません':'ベンチに選手がいません');
+    return;
+  }
+  const fmt=function(p){ return (p.order?p.order+'番 ':'')+(p.num?'#'+p.num+' ':'')+p.name
+    +(posLabel(p.pos)?'（'+posLabel(p.pos)+'）':''); };
+  document.getElementById('sub-out').innerHTML=on.map(function(p){
+    return '<option value="'+p.id+'">'+esc(fmt(p))+'</option>'; }).join('');
+  document.getElementById('sub-in').innerHTML=off.map(function(p){
+    return '<option value="'+p.id+'">'+esc((p.num?'#'+p.num+' ':'')+p.name)+'</option>'; }).join('');
+  document.getElementById('sub-mask').classList.add('open');
+}
+
+function applySub(){
+  const outId=Number(document.getElementById('sub-out').value);
+  const inId=Number(document.getElementById('sub-in').value);
+  const po=rosters[subTeam].find(function(p){ return p.id===outId; });
+  const pi=rosters[subTeam].find(function(p){ return p.id===inId; });
+  if(!po||!pi){ closeModal('sub-mask'); return; }
+  pi.order=po.order;
+  po._prevOrder=po.order;
+  po.order='';
+  // 守備交代・代走は守備位置も引き継ぐ（代打は打席のみなので位置は空のまま）
+  if(subKind==='守備交代'||subKind==='代走'){ pi.pos=po.pos; }
+  po.pos='';
+  render(subTeam); push();
+  closeModal('sub-mask');
+  toast(subKind+'：'+po.name+' → '+pi.name);
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mask').forEach(function(m){
+  m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── WebSocket 同期 ────────────────────────────────────────────────────────
+let ws=null, wsTimer=null, applyingRemote=false, lastRemote=null;
+
+function setWsUI(ok){
+  document.getElementById('ws-dot').className='ws-dot'+(ok?' on':'');
+  document.getElementById('ws-label').textContent=ok?'同期中':'切断（再接続待ち）';
+}
+
+function connectWS(){
+  if(wsTimer){ clearTimeout(wsTimer); wsTimer=null; }
+  try{
+    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+    ws.onopen=function(){
+      setWsUI(true);
+      try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
+    };
+    ws.onclose=function(){ ws=null; setWsUI(false); wsTimer=setTimeout(connectWS,3000); };
+    ws.onerror=function(){ try{ ws.close(); }catch(e){} };
+    ws.onmessage=function(ev){
+      let s=null;
+      try{ s=JSON.parse(ev.data); }catch(e){ return; }
+      if(!s||s._ctl!==true) return;
+      applyRemote(s);
+    };
+  }catch(e){ wsTimer=setTimeout(connectWS,3000); }
+}
+
+function applyRemote(s){
+  applyingRemote=true;
+  try{
+    lastRemote=s;
+    if(s.rostersAll){
+      if(Array.isArray(s.rostersAll.away)) rosters.away=JSON.parse(JSON.stringify(s.rostersAll.away));
+      if(Array.isArray(s.rostersAll.home)) rosters.home=JSON.parse(JSON.stringify(s.rostersAll.home));
+    }
+    var _gt=document.getElementById('hdr-game-title');
+    if(_gt && typeof s.gameTitle==='string' && document.activeElement!==_gt){
+      _gt.value=s.gameTitle;
+    }
+    if(s.aab){ teamNames.away=s.aab; document.getElementById('tname-away').value=(s.aab==='先攻'?'':s.aab); }
+    if(s.hnm){ teamNames.home=s.hnm; document.getElementById('tname-home').value=(s.hnm==='後攻'?'':s.hnm); }
+    renderFieldPane();
+    renderAll();
+    renderGame(s);
+    renderLog();
+    if(typeof s.abPitch==='number'){ _abPitch=s.abPitch; _abFoul=s.abFoul||0; _abBallSeq=s.abBallSeq||[]; }
+    _updateAbDispPC();
+    // コントローラーで確定した打席結果を記録に取り込む
+    if(s.lastResult && s.lastResult.ts && s.lastResult.ts !== _seenResultTs){
+      _seenResultTs = s.lastResult.ts;
+      var lr = s.lastResult;
+      var now=new Date();
+      _gameLog.push({
+        t: String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+        ts: now.getTime(),
+        kind: 'result',
+        label: lr.label,
+        inn: lr.inn || (s.inn||1),
+        top: (lr.top!==undefined) ? lr.top : (s.top!==false),
+        batterId: lr.batterId || 0,
+        atkTeam: lr.atkTeam || ((s.top!==false) ? 'away' : 'home'),
+        defense: lr.defense || '',
+        hit: lr.hit || '',
+        b:0, s:0, o:s.o||0, bases:'', batter:'', pitcher:'', score:''
+      });
+      _saveLog();
+      renderFieldPane();
+    }
+  }catch(e){}
+  applyingRemote=false;
+}
+
+let pushTimer=null;
+function push(){
+  if(applyingRemote) return;
+  if(locked) return;
+  if(pushTimer) clearTimeout(pushTimer);
+  pushTimer=setTimeout(doPush,80);
+}
+
+function doPush(){
+  pushTimer=null;
+  if(!ws||ws.readyState!==1) return;
+  // スコアなど他の状態は最後に受け取った内容を維持したまま、メンバーだけ差し替えて送る
+  const base = lastRemote ? JSON.parse(JSON.stringify(lastRemote)) : {};
+  base._ctl=true;
+  base.rostersAll={ away:rosters.away, home:rosters.home };
+  if(teamNames.away) base.aab=teamNames.away;
+  if(teamNames.home) base.hnm=teamNames.home;
+  base.showScoreOverlay=null;   // 表示コマンドは再送しない
+  ws.send(JSON.stringify(base));
+}
+
+// ── AIによる一言コメント ──────────────────────────────────────────────────
+function aiComment(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  var btn=document.getElementById('lp-ai');
+  if(btn){ btn.disabled=true; btn.textContent='生成中…'; }
+
+  var s=_snapshot();
+  var an=teamNames.away||'先攻', hn=teamNames.home||'後攻';
+  var atk = s.top ? an : hn;
+  var def = s.top ? hn : an;
+
+  // 直近の記録（最大12件）
+  var recent=_gameLog.slice(-12).map(function(g){
+    return g.inn+'回'+(g.top?'表':'裏')+' '+g.label
+      +'（'+g.o+'アウト '+g.b+'-'+g.s
+      +(g.bases?' 走者'+g.bases.split('').join('・')+'塁':' 走者なし')
+      +(g.batter?' 打者'+g.batter:'')+'）';
+  }).join('\n');
+
+  var ctx =
+    '試合：'+an+'（先攻） 対 '+hn+'（後攻）\n'
+    +'現在：'+s.inn+'回'+(s.top?'表':'裏')+'、'+atk+'の攻撃\n'
+    +'スコア：'+s.score+'（先攻-後攻）\n'
+    +'カウント：'+s.o+'アウト '+s.b+'ボール '+s.s+'ストライク\n'
+    +'走者：'+(s.bases?s.bases.split('').join('・')+'塁':'なし')+'\n'
+    +'打者：'+(s.batter||'不明')+'\n'
+    +'投手：'+(s.pitcher||'不明')+'（'+def+'）\n'
+    +(recent?('\n直近の記録：\n'+recent):'');
+
+  fetch('/api/comment',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ context: ctx })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(btn){ btn.disabled=false; btn.textContent='💬 ここで一言'; }
+    if(!d.text) throw new Error(d.error||'生成に失敗しました');
+    confirmSpeak('💬 ここで一言', d.text, _cmtVoice, _cmtStyle, _cmtRate);
+  })
+  .catch(function(e){
+    if(btn){ btn.disabled=false; btn.textContent='💬 ここで一言'; }
+    toast('生成に失敗しました');
+    console.warn('[AI]', e && e.message);
+  });
+}
+
+// ── プレビューからの BSO 操作 ─────────────────────────────────────────────
+
+// 打席内の投球情報（受信した値を表示に使う）
+var _abPitch=0, _abFoul=0, _abBallSeq=[];
+
+function _updateAbDispPC(){
+  var f=document.getElementById('gb-foul');
+  var t=document.getElementById('gb-total');
+  if(f) f.textContent=_abFoul>0?('F'+_abFoul):'';
+  if(t) t.textContent=_abPitch>0?(_abPitch+'球'):'';
+}
+
+// ── 試合名 ────────────────────────────────────────────────────────────────
+function onGameTitlePC(){
+  if(!lastRemote) return;
+  lastRemote.gameTitle = document.getElementById('hdr-game-title').value;
+  pushState();
+}
+
+// ── 球速の記録と統計 ──────────────────────────────────────────────────────
+var _spdLog = [];               // [{v, type, pitcherId, pitcher, batter, inn, top, ts}]
+var SPD_LOG_KEY = 'bb_spd_log';
+
+function _spdSaveLog(){
+  try{ localStorage.setItem(SPD_LOG_KEY, JSON.stringify(_spdLog)); }catch(e){}
+}
+function _spdLoadLog(){
+  try{
+    var v=localStorage.getItem(SPD_LOG_KEY);
+    if(v) _spdLog=JSON.parse(v)||[];
+  }catch(e){ _spdLog=[]; }
+}
+
+// 球速を1件記録する
+function _spdRecord(sp){
+  if(!sp || sp.v==null || sp.clear) return;
+  // 同じ球を二重に記録しない
+  if(_spdLog.length && _spdLog[_spdLog.length-1].ts===sp.ts) return;
+  _spdLog.push({
+    v: sp.v,
+    type: sp.type || '',
+    pitcherId: sp.pitcherId || 0,
+    pitcher: sp.pitcher || '',
+    batter: sp.batter || '',
+    inn: sp.inn || 0,
+    top: sp.top !== false,
+    ts: sp.ts || Date.now()
+  });
+  if(_spdLog.length>500) _spdLog.shift();
+  _spdSaveLog();
+}
+
+// 投手ごとの集計を返す
+function _spdStats(pitcherId){
+  var list = _spdLog.filter(function(r){
+    return pitcherId ? r.pitcherId===pitcherId : true;
+  });
+  if(!list.length) return null;
+
+  var byType = {};
+  list.forEach(function(r){
+    var k = r.type || '不明';
+    if(!byType[k]) byType[k] = [];
+    byType[k].push(r.v);
+  });
+
+  var calc = function(arr){
+    var mx = Math.max.apply(null, arr);
+    var mn = Math.min.apply(null, arr);
+    var av = arr.reduce(function(a,b){ return a+b; },0) / arr.length;
+    return { max:mx, min:mn, avg:Math.round(av*10)/10, n:arr.length };
+  };
+
+  var types = Object.keys(byType).map(function(k){
+    return Object.assign({ type:k }, calc(byType[k]));
+  }).sort(function(a,b){ return b.n - a.n; });
+
+  return {
+    all: calc(list.map(function(r){ return r.v; })),
+    types: types,
+    list: list
+  };
+}
+
+// ── 投手情報を表示する ────────────────────────────────────────────────────
+var _pitViewId = 0;   // 表示中の投手ID（0なら全体）
+
+function openPitcherInfo(){
+  var s = lastRemote || {};
+  _pitViewId = (s.selIds && s.selIds.pitcher) || 0;
+  renderPitcherInfo();
+  document.getElementById('pit-mask').classList.add('open');
+}
+
+function renderPitcherInfo(){
+  var body=document.getElementById('pit-body');
+  var title=document.getElementById('pit-title');
+  var sub=document.getElementById('pit-sub');
+  if(!body) return;
+
+  // 記録に登場する投手の一覧
+  var pitchers={};
+  _spdLog.forEach(function(r){
+    var key=r.pitcherId||0;
+    if(!pitchers[key]) pitchers[key]={ id:key, name:r.pitcher||'（不明）', n:0 };
+    pitchers[key].n++;
+  });
+  var plist=Object.keys(pitchers).map(function(k){ return pitchers[k]; });
+
+  var cur = pitchers[_pitViewId];
+  if(title) title.textContent = cur ? (cur.name+' の球速') : '投手情報';
+
+  // 投手の切替タブ
+  var tabs='';
+  if(plist.length>1){
+    tabs='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'
+      + plist.map(function(p){
+          var on = (p.id===_pitViewId);
+          return '<button class="btn" style="font-size:13px;padding:8px 12px'
+            + (on?';background:#1e2a3a;border-color:#3a5a8a;color:#8fc0ff':'')
+            + '" onclick="switchPitcherInfo('+p.id+')">'+esc(p.name)+' ('+p.n+')</button>';
+        }).join('')
+      + '</div>';
+  }
+
+  var st=_spdStats(_pitViewId);
+  if(!st){
+    if(sub) sub.textContent='まだ球速の記録がありません';
+    body.innerHTML=tabs;
+    return;
+  }
+
+  if(sub) sub.textContent = st.all.n+'球を記録しています';
+
+  var rows = st.types.map(function(t){
+    return '<tr>'
+      +'<td>'+esc(t.type)+'</td>'
+      +'<td><span class="mx">'+t.max+'</span></td>'
+      +'<td>'+t.avg+'</td>'
+      +'<td>'+t.min+'</td>'
+      +'<td>'+t.n+'</td>'
+    +'</tr>';
+  }).join('');
+
+  var tbl = '<table class="pit-tbl">'
+    +'<thead><tr><th>球種</th><th>最速</th><th>平均</th><th>最遅</th><th>球数</th></tr></thead>'
+    +'<tbody>'+rows
+    +'<tr class="total"><td>全体</td><td><span class="mx">'+st.all.max+'</span></td>'
+    +'<td>'+st.all.avg+'</td><td>'+st.all.min+'</td><td>'+st.all.n+'</td></tr>'
+    +'</tbody></table>';
+
+  // 直近の記録（新しい順、編集用）
+  var recent = st.list.slice().reverse().slice(0,40);
+  var items = recent.map(function(r){
+    var i = _spdLog.indexOf(r);
+    return '<div class="pit-item">'
+      +'<span class="v">'+r.v+'</span>'
+      +'<span class="t">'+esc(r.type||'—')+'</span>'
+      +'<span class="b">'+(r.inn?r.inn+'回'+(r.top?'表':'ウラ'):'')
+        +(r.batter?' '+esc(r.batter):'')+'</span>'
+      +'<button class="pit-del" onclick="delSpdRecord('+i+')" title="削除">✕</button>'
+    +'</div>';
+  }).join('');
+
+  body.innerHTML = tabs + tbl
+    + '<div class="set-lbl" style="margin-top:14px">直近の記録（✕で削除）</div>'
+    + '<div class="pit-list">'+items+'</div>';
+}
+
+// 球速の傾向を実況で読み上げる
+function announcePitcherStats(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  var st=_spdStats(_pitViewId);
+  if(!st){ toast('記録がありません'); return; }
+
+  var pit='';
+  var r=_spdLog.find(function(x){ return x.pitcherId===_pitViewId; });
+  if(r) pit=r.pitcher;
+
+  var parts=[];
+  parts.push((pit?pit+'くん、':'')+'ここまで'+st.all.n+'球。');
+  parts.push('最速'+st.all.max+'キロ、平均'+st.all.avg+'キロです。');
+
+  // 主な球種を2つまで
+  var named=st.types.filter(function(t){ return t.type!=='不明'; }).slice(0,2);
+  named.forEach(function(t){
+    parts.push(t.type+'は最速'+t.max+'キロ、'+t.n+'球。');
+  });
+
+  confirmSpeak('🎙 投手の球速', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
+}
+
+function switchPitcherInfo(id){
+  _pitViewId=id;
+  renderPitcherInfo();
+}
+
+function delSpdRecord(i){
+  if(i<0 || i>=_spdLog.length) return;
+  _spdLog.splice(i,1);
+  _spdSaveLog();
+  renderPitcherInfo();
+  toast('削除しました');
+}
+
+function clearSpdLog(){
+  if(!_spdLog.length){ toast('記録がありません'); return; }
+  if(!confirm('球速の記録をすべて消去しますか？（'+_spdLog.length+'件）')) return;
+  _spdLog=[];
+  _spdSaveLog();
+  renderPitcherInfo();
+  toast('消去しました');
+}
+
+// ── 球速入力（十の位 → 1の位） ──────────────────────────────────────────
+var SPD_MIN=10, SPD_MAX=200;
+var SPD_TENS=[150,140,130,120,110,100,90,80,70,60,50];
+var SPD_ONES=[7,8,9,4,5,6,1,2,3,0];
+var SPD_TYPES=['ストレート','カーブ','スライダー','チェンジアップ','フォーク','シュート'];
+
+var spdLast=null, spdType=null, spdBase=null;
+var _spdClearTimer=null;
+
+function openSpdPanel(){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  spdBase=null;
+  spdRenderTens();
+  spdRenderTypes();
+  document.getElementById('spd-stage-tens').style.display='';
+  document.getElementById('spd-stage-ones').style.display='none';
+  document.getElementById('spd-mask').classList.add('open');
+}
+
+function spdRenderTens(){
+  var box=document.getElementById('spd-tens');
+  if(!box) return;
+  box.innerHTML = SPD_TENS.map(function(v){
+    return '<button class="spd-t10" onclick="spdPickTens('+v+')">'+v+'</button>';
+  }).join('') + '<button class="spd-t10 kp" onclick="spdManual()">手入力</button>';
+}
+
+function spdPickTens(v){
+  spdBase=v;
+  document.getElementById('spd-base').textContent=v;
+  spdRenderOnes();
+  document.getElementById('spd-stage-tens').style.display='none';
+  document.getElementById('spd-stage-ones').style.display='';
+}
+
+function spdBackToTens(){
+  spdBase=null;
+  document.getElementById('spd-stage-ones').style.display='none';
+  document.getElementById('spd-stage-tens').style.display='';
+}
+
+function spdRenderOnes(){
+  var box=document.getElementById('spd-ones');
+  if(!box) return;
+  box.innerHTML = SPD_ONES.map(function(d){
+    var v=spdBase+d;
+    var dis=(v<SPD_MIN||v>SPD_MAX)?' disabled':'';
+    var wide=(d===0)?' style="grid-column:2"':'';
+    return '<button class="spd-one"'+wide+dis+' onclick="spdSend('+v+')">'+d+'</button>';
+  }).join('');
+}
+
+function spdManual(){
+  var s=prompt('球速を入力してください（'+SPD_MIN+'〜'+SPD_MAX+'）');
+  if(s===null) return;
+  var v=Number(s);
+  if(!s || isNaN(v) || v<SPD_MIN || v>SPD_MAX){ toast('範囲外です'); return; }
+  spdSend(v);
+}
+
+function spdRenderTypes(){
+  var box=document.getElementById('spd-types');
+  if(!box) return;
+  box.innerHTML = SPD_TYPES.map(function(t){
+    return '<button class="spd-t'+(spdType===t?' on':'')+'" onclick="spdPickType(\''+t+'\')">'+t+'</button>';
+  }).join('');
+}
+
+function spdPickType(t){
+  spdType=(spdType===t)?null:t;
+  spdRenderTypes();
+  _spdRefreshDisp();
+  if(spdLast!=null) _spdPush(spdLast);
+}
+
+function spdSend(v){
+  spdLast=v;
+  spdBackToTens();
+  _spdRefreshDisp();
+  _spdPush(v);
+  closeModal('spd-mask');
+}
+
+function _spdPush(v){
+  if(ws && ws.readyState===1){
+    var s = lastRemote || {};
+    var sp = {
+      v:v, type:spdType, ts:Date.now(),
+      pitcherId:(s.selIds && s.selIds.pitcher) || 0,
+      pitcher:(s.pitcher||'').replace(/^#\d+\s*/,''),
+      batter:(s.batter||'').replace(/^#\d+\s*/,''),
+      inn:s.inn||0, top:s.top!==false
+    };
+    _spdRecord(sp);
+    ws.send(JSON.stringify({ _spd:true, speed:sp }));
+  }
+  _spdArmClear();
+}
+
+function spdClear(){
+  if(_spdClearTimer){ clearTimeout(_spdClearTimer); _spdClearTimer=null; }
+  spdLast=null; spdType=null;
+  _spdRefreshDisp(); spdRenderTypes();
+  if(ws && ws.readyState===1){
+    ws.send(JSON.stringify({ _spd:true, speed:{ v:null, ts:Date.now(), clear:true } }));
+  }
+}
+
+// 8秒後に表示と選択をリセット
+function _spdArmClear(){
+  if(_spdClearTimer) clearTimeout(_spdClearTimer);
+  _spdClearTimer=setTimeout(function(){
+    _spdClearTimer=null;
+    spdLast=null; spdType=null;
+    _spdRefreshDisp(); spdRenderTypes();
+  }, 8000);
+}
+
+function _spdRefreshDisp(){
+  var L=document.getElementById('spd-last');
+  var T=document.getElementById('spd-type-disp');
+  if(L){
+    if(spdLast==null){ L.innerHTML='--- <span>km/h</span>'; L.classList.add('empty'); }
+    else{ L.innerHTML=spdLast+' <span>km/h</span>'; L.classList.remove('empty'); }
+  }
+  if(T) T.textContent = (spdLast!=null && spdType) ? spdType : '';
+}
+
+function _spdInit(){ _spdRefreshDisp(); }
+
+// ── overlay の表示切替（PC側から） ────────────────────────────────────────
+function pcToggleDisp(key){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  lastRemote[key] = !lastRemote[key];
+  renderGame(lastRemote);
+  pushState();
+}
+
+function pcToggleScoreOverlay(){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  _scoreShown = !_scoreShown;
+  lastRemote.showScoreOverlay = _scoreShown ? 'show' : 'hide';
+  var b=document.querySelector('.disp-btn.score');
+  if(b) b.classList.toggle('on', _scoreShown);
+  if(ws && ws.readyState===1){
+    var base=JSON.parse(JSON.stringify(lastRemote));
+    base._ctl=true;
+    base.rostersAll={ away:rosters.away, home:rosters.home };
+    ws.send(JSON.stringify(base));
+  }
+  lastRemote.showScoreOverlay=null;
+}
+var _scoreShown=false;
+
+
+// ── 一球記録 ──────────────────────────────────────────────────────────────
+var _seenResultTs = 0;
+var _gameLog = [];          // [{ t, kind, label, inn, top, b,s,o, bases, batter, pitcher, score }]
+var LOG_KEY = 'bb_game_log';
+
+function _snapshot(){
+  var s = lastRemote || {};
+  var asc=s.asc||[], hsc=s.hsc||[];
+  var sum=function(a){ return a.filter(function(v){ return typeof v==='number'; })
+    .reduce(function(x,y){ return x+y; },0); };
+  var r=s.r||{};
+  var bs=[];
+  if(r[1]) bs.push('1');
+  if(r[2]) bs.push('2');
+  if(r[3]) bs.push('3');
+  return {
+    inn: s.inn||1,
+    top: s.top!==false,
+    b: s.b||0, s: s.s||0, o: s.o||0,
+    bases: bs.join(''),
+    batter: (s.batter||'').replace(/^#\d+\s*/,''),
+    batterId: (s.selIds && s.selIds.batter) || 0,
+    atkTeam: (s.top!==false) ? 'away' : 'home',
+    pitcher:(s.pitcher||'').replace(/^#\d+\s*/,''),
+    score: sum(asc)+'-'+sum(hsc)
+  };
+}
+
+function addLog(kind, label){
+  var snap=_snapshot();
+  var now=new Date();
+  var hh=String(now.getHours()).padStart(2,'0');
+  var mm=String(now.getMinutes()).padStart(2,'0');
+  _gameLog.push(Object.assign({
+    t: hh+':'+mm,
+    ts: now.getTime(),
+    kind: kind,
+    label: label
+  }, snap));
+  _saveLog();
+  renderLog();
+  if(kind==='result' && typeof renderFieldPane==='function') renderFieldPane();
+}
+
+function undoLog(){
+  if(!_gameLog.length){ toast('記録がありません'); return; }
+  var last=_gameLog.pop();
+  _saveLog();
+  renderLog();
+  toast('取消：'+last.label);
+}
+
+function clearLog(){
+  if(!_gameLog.length) return;
+  if(!confirm('記録をすべて消去しますか？（'+_gameLog.length+'件）')) return;
+  _gameLog=[];
+  _saveLog();
+  renderLog();
+  if(kind==='result' && typeof renderFieldPane==='function') renderFieldPane();
+}
+
+function _saveLog(){
+  try{ localStorage.setItem(LOG_KEY, JSON.stringify(_gameLog)); }catch(e){}
+}
+function _loadLog(){
+  try{
+    var v=localStorage.getItem(LOG_KEY);
+    if(v) _gameLog=JSON.parse(v)||[];
+  }catch(e){ _gameLog=[]; }
+  renderLog();
+}
+
+function renderLog(){
+  // 記録パネルは廃止したため、表示先があるときだけ更新する
+  var el=document.getElementById('lp-list');
+  var cnt=document.getElementById('lp-count');
+  if(cnt) cnt.textContent=_gameLog.length+'件';
+  if(!el) return;
+  if(!_gameLog.length){
+    el.innerHTML='<div style="padding:22px 6px;text-align:center;color:#555;font-size:12px">まだ記録がありません</div>';
+    return;
+  }
+  var list=_gameLog.slice().reverse();
+  el.innerHTML=list.map(function(g){
+    var tagCls = g.kind==='result' ? ' r' : (g.kind==='event' ? ' e' : '');
+    var tagTxt = g.kind==='pitch' ? '投球' : (g.kind==='result' ? '結果' : '記録');
+    return '<div class="lp-item">'
+      +'<span class="lp-when">'+esc(g.t)+'</span>'
+      +'<span class="lp-what">'
+        +'<span class="tag'+tagCls+'">'+tagTxt+'</span><b>'+esc(g.label)+'</b>'
+      +'</span>'
+    +'</div>';
+  }).join('');
+}
+
+// テキストで書き出す
+function exportLog(){
+  if(!_gameLog.length){ toast('記録がありません'); return; }
+  var an=teamNames.away||'先攻', hn=teamNames.home||'後攻';
+  var lines=[];
+  lines.push('【一球記録】'+an+' vs '+hn);
+  lines.push('');
+  var curKey='';
+  _gameLog.forEach(function(g){
+    var key=g.inn+'-'+(g.top?'t':'b');
+    if(key!==curKey){
+      curKey=key;
+      lines.push('■ '+g.inn+'回'+(g.top?'表':'裏'));
+    }
+    lines.push('  '+g.t+' '+g.label
+      +'  ['+g.o+'アウト '+g.b+'-'+g.s
+      +(g.bases?' 走者'+g.bases.split('').join('・'):'')
+      +(g.batter?' 打者:'+g.batter:'')
+      +(g.pitcher?' 投手:'+g.pitcher:'')
+      +' '+g.score+']');
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  var a=document.createElement('a');
+  var d=new Date();
+  var ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  a.href=URL.createObjectURL(blob);
+  a.download='game_log_'+ymd+'.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── 攻撃／守備パネルの幅調整（仕切りをドラッグ） ──────────────────────────
+var FP_MIN = 240, FP_MAX = 1400, FP_DEF = 420;
+var _fpWidth = FP_DEF;
+
+function _applyFpWidth(w){
+  // 画面幅の8割まで広げられる
+  var lim = Math.min(FP_MAX, Math.round(window.innerWidth * 0.8));
+  _fpWidth = Math.max(FP_MIN, Math.min(lim, Math.round(w)));
+  var pane = document.querySelector('.fieldpane');
+  if(pane) pane.style.gridTemplateColumns = '1fr 10px ' + _fpWidth + 'px';
+  // 図の再描画は不要（SVGは幅に追従）
+}
+
+function _initFpSplit(){
+  try{
+    var v = localStorage.getItem('bb_fp_width');
+    if(v) _fpWidth = Number(v) || FP_DEF;
+  }catch(e){}
+  _applyFpWidth(_fpWidth);
+
+  var sp = document.getElementById('fp-split');
+  if(!sp) return;
+  var pane = document.querySelector('.fieldpane');
+
+  var startX = 0, startW = 0, dragging = false;
+
+  var onMove = function(e){
+    if(!dragging) return;
+    var x = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    // 右パネルなので、左へ動かすほど広くなる
+    _applyFpWidth(startW + (startX - x));
+    if(e.cancelable) e.preventDefault();
+  };
+
+  var onUp = function(){
+    if(!dragging) return;
+    dragging = false;
+    sp.classList.remove('dragging');
+    document.body.classList.remove('fp-resizing');
+    try{ localStorage.setItem('bb_fp_width', _fpWidth); }catch(e){}
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend', onUp);
+  };
+
+  var onDown = function(e){
+    dragging = true;
+    startX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    startW = _fpWidth;
+    sp.classList.add('dragging');
+    document.body.classList.add('fp-resizing');
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive:false });
+    window.addEventListener('touchend', onUp);
+    if(e.cancelable) e.preventDefault();
+  };
+
+  sp.addEventListener('mousedown', onDown);
+  sp.addEventListener('touchstart', onDown, { passive:false });
+
+  // ダブルクリックで初期幅に戻す
+  sp.addEventListener('dblclick', function(){
+    _applyFpWidth(FP_DEF);
+    try{ localStorage.setItem('bb_fp_width', FP_DEF); }catch(e){}
+    toast('幅を初期値に戻しました');
+  });
+}
+
+// ── 打席結果の編集 ────────────────────────────────────────────────────────
+var ALL_RESULTS = ['ヒット','二塁打','三塁打','ホームラン','四球','敬遠','申告敬遠','死球',
+                   'ゴロアウト','フライアウト','ライナーアウト','併殺','犠打','犠飛',
+                   '三振','空振り三振','見逃し三振','スリーバント失敗',
+                   '失策','野選','打撃妨害'];
+var _editTarget = null;   // { team, id, index }
+
+function editResult(team, id, index){
+  var list=_gameLog.filter(function(g){
+    return g.kind==='result' && g.batterId===id && g.atkTeam===team;
+  });
+  var g=list[index];
+  if(!g) return;
+  _editTarget = { g:g };
+
+  var p=rosters[team].find(function(x){ return x.id===id; });
+  document.getElementById('edit-res-ctx').textContent =
+    (p?p.name:'') + ' ／ ' + g.inn + '回' + (g.top?'表':'ウラ');
+
+  var sel=document.getElementById('edit-res-label');
+  sel.innerHTML = ALL_RESULTS.map(function(r){
+    return '<option value="'+r+'"'+(r===g.label?' selected':'')+'>'+r+'</option>';
+  }).join('');
+  document.getElementById('edit-res-def').value = g.defense || '';
+  document.getElementById('edit-res-hit').value = g.hit || '';
+  document.getElementById('edit-res-mask').classList.add('open');
+}
+
+function applyEditResult(){
+  if(!_editTarget) return;
+  _editTarget.g.label = document.getElementById('edit-res-label').value;
+  _editTarget.g.defense = document.getElementById('edit-res-def').value.trim();
+  _editTarget.g.hit = document.getElementById('edit-res-hit').value.trim();
+  _saveLog();
+  renderFieldPane();
+  closeModal('edit-res-mask');
+  _editTarget=null;
+  toast('修正しました');
+}
+
+function deleteEditResult(){
+  if(!_editTarget) return;
+  if(!confirm('この打席結果を削除しますか？')) return;
+  var i=_gameLog.indexOf(_editTarget.g);
+  if(i>=0) _gameLog.splice(i,1);
+  _saveLog();
+  renderFieldPane();
+  closeModal('edit-res-mask');
+  _editTarget=null;
+  toast('削除しました');
+}
+
+// ── 打者ごとの打席結果 ────────────────────────────────────────────────────
+// 表示用の短縮表記
+var RESULT_SHORT = {
+  'ヒット':'安打', '二塁打':'二塁打', '三塁打':'三塁打', 'ホームラン':'本塁打',
+  'ゴロアウト':'ゴロ', 'フライアウト':'フライ', 'ライナーアウト':'ライナー',
+  '併殺':'併殺', '犠打':'犠打', '犠飛':'犠飛',
+  '失策':'失策', '野選':'野選', '打撃妨害':'妨害',
+  '四球':'四球', '死球':'死球',
+  '三振':'三振', '空振り三振':'空三振', '見逃し三振':'見三振',
+  'スリーバント失敗':'バント失'
+};
+
+// 出塁したかどうかで色分けする
+var REACHED = ['ヒット','二塁打','三塁打','ホームラン','失策','野選','四球','死球','打撃妨害'];
+
+// 指定選手の打席結果を古い順に返す
+function _batterResults(team, id){
+  if(!id) return [];
+  return _gameLog.filter(function(g){
+    return g.kind==='result' && g.batterId===id && g.atkTeam===team;
+  }).map(function(g){
+    return {
+      label: RESULT_SHORT[g.label] || g.label,
+      reached: REACHED.indexOf(g.label) >= 0,
+      inn: g.inn,
+      defense: g.defense || '',
+      hit: g.hit || ''
+    };
+  });
+}
+
+// ── 攻撃打順 ／ 守備位置図 ────────────────────────────────────────────────
+// 守備位置の座標（viewBox 400x330）
+var FIELD_SLOTS = [
+  { pos:'7', x:62,  y:46,  label:'LF' },
+  { pos:'8', x:210, y:30,  label:'CF' },
+  { pos:'9', x:358, y:46,  label:'RF' },
+  { pos:'5', x:74,  y:118, label:'3B' },
+  { pos:'6', x:150, y:96,  label:'SS' },
+  { pos:'4', x:270, y:96,  label:'2B' },
+  { pos:'3', x:346, y:118, label:'1B' },
+  { pos:'1', x:210, y:126, label:'P'  },
+  { pos:'2', x:210, y:182, label:'C'  }
+];
+
+function _atkTeam(){ return (lastRemote && lastRemote.top===false) ? 'home' : 'away'; }
+function _defTeam(){ return _atkTeam()==='away' ? 'home' : 'away'; }
+
+function renderFieldPane(){
+  var atk=_atkTeam(), def=_defTeam();
+  var an=(atk==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻');
+  var dn=(def==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻');
+  var e1=document.getElementById('fp-atk-team'); if(e1) e1.textContent=an;
+  var e2=document.getElementById('fp-def-team'); if(e2) e2.textContent=dn;
+
+  // 左：攻撃側の打順
+  var curId = (lastRemote && lastRemote.selIds) ? (lastRemote.selIds.batter||0) : 0;
+  var ordered = rosters[atk].filter(function(p){ return p.order; })
+    .sort(function(a,b){ return Number(a.order)-Number(b.order); });
+  var el=document.getElementById('fp-order');
+  if(el){
+    if(!ordered.length){
+      el.innerHTML='<div style="padding:20px 6px;text-align:center;color:#555;font-size:13px">打順が未設定です</div>';
+    }else{
+      el.innerHTML=ordered.map(function(p){
+        var cur = (p.id===curId) ? ' cur' : '';
+        var res = _batterResults(atk, p.id);
+        var hist = res.length
+          ? res.map(function(r,ri){
+              var extra = r.hit || r.defense || '';
+              var tip = r.inn+'回'+(extra?' / '+extra:'');
+              return '<span class="fp-res'+(r.reached?' ok':'')+'" title="'+esc(tip)+'"'
+                +' onclick="event.stopPropagation();editResult(\''+atk+'\','+p.id+','+ri+')">'
+                +esc(r.label)+(extra?'<em>'+esc(extra)+'</em>':'')+'</span>';
+            }).join('')
+          : '<span class="fp-res none">—</span>';
+        return '<div class="fp-ord-row'+cur+'" onclick="setBatter(\''+atk+'\','+p.id+')" style="cursor:pointer">'
+          +'<span class="fp-ord-no">'+esc(p.order)+'</span>'
+          +'<span class="fp-ord-num">'+(p.num?'#'+esc(p.num):'')+'</span>'
+          +'<span class="fp-ord-nm">'+esc(p.name)+'</span>'
+          +'<span class="fp-ord-pos">'+esc(posLabel(p.pos)||'')+'</span>'
+          +'<span class="fp-ord-res">'+hist+'</span>'
+        +'</div>';
+      }).join('');
+    }
+  }
+
+  renderField(def);
+  renderBench(def);
+}
+
+function renderField(team){
+  var svg=document.getElementById('fp-field');
+  if(!svg) return;
+  var h='';
+  // 外野・内野（横長）
+  h+='<path class="fld" d="M210 196 L14 92 A230 230 0 0 1 406 92 Z"/>';
+  h+='<path class="inf" d="M210 190 L128 140 L210 92 L292 140 Z"/>';
+  h+='<rect class="base" x="205" y="185" width="9" height="9" transform="rotate(45 210 190)"/>';
+  h+='<rect class="base" x="123" y="135" width="9" height="9" transform="rotate(45 128 140)"/>';
+  h+='<rect class="base" x="205" y="87"  width="9" height="9" transform="rotate(45 210 92)"/>';
+  h+='<rect class="base" x="287" y="135" width="9" height="9" transform="rotate(45 292 140)"/>';
+
+  FIELD_SLOTS.forEach(function(s){
+    var p = rosters[team].find(function(x){
+      return x.pos && String(x.pos).toLowerCase()===s.pos;
+    });
+    h+='<g>';
+    h+='<rect class="slot" data-pos="'+s.pos+'" '
+      +'x="'+(s.x-40)+'" y="'+(s.y-15)+'" width="80" height="30" rx="6"/>';
+    h+='<text class="p-pos" x="'+(s.x-34)+'" y="'+(s.y-3)+'">'+s.label+'</text>';
+    if(p){
+      h+='<text class="p-num" x="'+(s.x+34)+'" y="'+(s.y-3)+'" text-anchor="end">'+(p.num?'#'+esc(p.num):'')+'</text>';
+      h+='<text class="p-nm"  x="'+s.x+'" y="'+(s.y+11)+'" text-anchor="middle">'+esc(_short(p.name))+'</text>';
+    }else{
+      h+='<text class="p-nm" x="'+s.x+'" y="'+(s.y+11)+'" text-anchor="middle" fill="#555">―</text>';
+    }
+    h+='</g>';
+  });
+  svg.innerHTML=h;
+  _bindFieldDrop(team);
+}
+
+function _short(n){
+  var s=String(n||'').trim();
+  return s.length>5 ? s.slice(0,5)+'…' : s;
+}
+
+function renderBench(team){
+  var el=document.getElementById('fp-bench-list');
+  if(!el) return;
+  var bench=rosters[team].filter(function(p){ return !p.pos; });
+  if(!bench.length){
+    el.innerHTML='<div style="color:#555;font-size:12px;padding:6px 2px">控えなし</div>';
+    return;
+  }
+  el.innerHTML=bench.map(function(p){
+    return '<div class="fp-bp" data-id="'+p.id+'">'
+      +'<span class="fp-bp-num">'+(p.num?'#'+esc(p.num):'')+'</span>'
+      +'<span class="fp-bp-nm">'+esc(p.name)+'</span>'
+    +'</div>';
+  }).join('');
+  _bindBenchDrag(team);
+}
+
+// ── クリックで守備交代（2回タップ方式） ──
+// 1回目：選手またはポジションを選ぶ　2回目：移動先を選ぶ
+var _fpSel = null;   // { team, id }
+
+function _fpClear(){
+  _fpSel = null;
+  document.querySelectorAll('#fp-field .slot').forEach(function(s){ s.classList.remove('sel'); });
+  document.querySelectorAll('#fp-bench-list .fp-bp').forEach(function(b){ b.classList.remove('sel'); });
+}
+
+function _bindBenchDrag(team){
+  document.querySelectorAll('#fp-bench-list .fp-bp').forEach(function(el){
+    el.onclick = function(){
+      var id = Number(el.dataset.id);
+      if(_fpSel && _fpSel.id===id){ _fpClear(); return; }
+      _fpClear();
+      _fpSel = { team:team, id:id };
+      el.classList.add('sel');
+      var p = rosters[team].find(function(x){ return x.id===id; });
+      toast((p?p.name:'選手')+' → 守備位置を選んでください');
+    };
+  });
+}
+
+function _bindFieldDrop(team){
+  document.querySelectorAll('#fp-field .slot').forEach(function(slot){
+    slot.onclick = function(){
+      var pos = slot.dataset.pos;
+      var here = rosters[team].find(function(x){
+        return x.pos && String(x.pos).toLowerCase()===pos;
+      });
+
+      if(_fpSel){
+        // 移動先として確定
+        assignPosition(team, _fpSel.id, pos);
+        _fpClear();
+        return;
+      }
+      // 選択開始（守っている選手がいる場合）
+      if(here){
+        _fpClear();
+        _fpSel = { team:team, id:here.id };
+        slot.classList.add('sel');
+        toast(here.name+' → 移動先を選んでください');
+      }else{
+        toast('ベンチの選手を選んでから、この位置を押してください');
+      }
+    };
+  });
+}
+
+// 選手を指定ポジションに就かせる（元からいた選手とは入れ替え）
+var _lastSubInfo = null;   // 直近の守備変更（アナウンス用）
+
+function assignPosition(team, playerId, pos){
+  var moving = rosters[team].find(function(x){ return x.id===playerId; });
+  if(!moving) return;
+  var prevPos = moving.pos || '';
+  var occupant = rosters[team].find(function(x){
+    return x.id!==playerId && String(x.pos).toLowerCase()===String(pos).toLowerCase();
+  });
+
+  var posName = POS_YOMI[String(pos)] || posLabel(pos) || pos;
+
+  if(occupant){
+    if(prevPos){
+      var prevName = POS_YOMI[String(prevPos)] || posLabel(prevPos) || prevPos;
+      occupant.pos = prevPos;
+      _lastSubInfo = {
+        kind:'swap',
+        text:'守備の変更をお知らせします。'
+             + (moving.yomi||moving.name) + 'くんが' + posName + '、'
+             + (occupant.yomi||occupant.name) + 'くんが' + prevName + 'に入ります。'
+      };
+      toast(occupant.name+' ⇄ '+moving.name);
+    }else{
+      if(occupant.order){ moving.order = occupant.order; occupant.order=''; }
+      occupant.pos = '';
+      _lastSubInfo = {
+        kind:'sub',
+        text:'選手の交代をお知らせします。' + posName + '、'
+             + (occupant.yomi||occupant.name) + 'くんに代わりまして '
+             + (moving.yomi||moving.name) + 'くん。'
+             + (moving.num ? '背番号' + moving.num + '。' : '')
+             + posName + '、' + (moving.yomi||moving.name) + 'くん。'
+      };
+      toast('守備交代：'+occupant.name+' → '+moving.name);
+    }
+  }else{
+    _lastSubInfo = {
+      kind:'move',
+      text:'守備の変更をお知らせします。'
+           + (moving.yomi||moving.name) + 'くんが' + posName + 'に入ります。'
+    };
+    toast(moving.name+' を '+(posLabel(pos)||pos)+' へ');
+  }
+  moving.pos = pos;
+
+  renderAll();
+  renderFieldPane();
+  _refreshSubBtn();
+  push();
+}
+
+// 直近の守備変更をアナウンスする
+function announceLastSub(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  if(!_lastSubInfo){ toast('直近の守備変更がありません'); return; }
+  confirmSpeak('🔁 交代のお知らせ', _lastSubInfo.text, _ttsVoice, _ttsStyle, _annRate);
+}
+
+function _refreshSubBtn(){
+  var b=document.getElementById('fp-sub-call');
+  if(!b) return;
+  b.style.display = _lastSubInfo ? 'inline-flex' : 'none';
+}
+
+// ── 場内アナウンス（Azure TTS） ────────────────────────────────────────────
+var _annOn=false, _annRate=0.75;
+var _annPitch=0, _annStyleDeg=1.0, _annPause=250;
+var _ttsReady=false, _ttsVoice='ja-JP-NanamiNeural', _ttsStyle='';
+var _ttsCache={}, _audioEl=null;
+
+var POS_YOMI={
+  '1':'ピッチャー','2':'キャッチャー','3':'ファースト','4':'セカンド','5':'サード',
+  '6':'ショート','7':'レフト','8':'センター','9':'ライト','dh':'指名打者','10':'指名打者',
+  'P':'ピッチャー','C':'キャッチャー','1B':'ファースト','2B':'セカンド','3B':'サード',
+  'SS':'ショート','LF':'レフト','CF':'センター','RF':'ライト','DH':'指名打者'
+};
+
+function _initTTS(){
+  fetch('/api/tts/status').then(function(r){ return r.json(); })
+    .then(function(d){ _ttsReady=!!d.enabled; _refreshTtsStatus(); })
+    .catch(function(){ _ttsReady=false; _refreshTtsStatus(); });
+  try{
+    _annOn = localStorage.getItem('bb_announce')==='1';
+    var r=localStorage.getItem('bb_ann_rate'); if(r!=null) _annRate=Number(r);
+    var v=localStorage.getItem('bb_tts_voice'); if(v) _ttsVoice=v;
+    var s=localStorage.getItem('bb_tts_style'); if(s!==null) _ttsStyle=s;
+    var cv=localStorage.getItem('bb_cmt_voice'); if(cv) _cmtVoice=cv;
+    var cs=localStorage.getItem('bb_cmt_style'); if(cs!==null) _cmtStyle=cs;
+    var cr=localStorage.getItem('bb_cmt_rate'); if(cr!=null) _cmtRate=Number(cr);
+    var ap=localStorage.getItem('bb_ann_pitch'); if(ap!=null) _annPitch=Number(ap);
+    var au=localStorage.getItem('bb_ann_pause'); if(au!=null) _annPause=Number(au);
+    var ad=localStorage.getItem('bb_ann_deg');   if(ad!=null) _annStyleDeg=Number(ad);
+  }catch(e){}
+  _refreshAnnBtn();
+  _loadVoiceCache();
+}
+
+function openSettings(){
+  document.getElementById('settings-mask').classList.add('open');
+  _refreshSettingsUI();
+}
+
+function _refreshSettingsUI(){
+  var v=document.getElementById('set-voice');   if(v) v.value=_ttsVoice;
+  var s=document.getElementById('set-style');   if(s) s.value=_ttsStyle;
+  var cv=document.getElementById('set-cmt-voice'); if(cv) cv.value=_cmtVoice;
+  var cs=document.getElementById('set-cmt-style'); if(cs) cs.value=_cmtStyle;
+  var cr=document.getElementById('set-cmt-rate-val'); if(cr) cr.textContent=_cmtRate.toFixed(2);
+  var pv=document.getElementById('set-pitch-val'); if(pv) pv.textContent=(_annPitch>0?'+':'')+_annPitch+'%';
+  var uv=document.getElementById('set-pause-val'); if(uv) uv.textContent=_annPause;
+  var dv=document.getElementById('set-deg-val');   if(dv) dv.textContent=_annStyleDeg.toFixed(1);
+  var r=document.getElementById('set-rate-val');if(r) r.textContent=_annRate.toFixed(2);
+  var b=document.getElementById('set-ann-toggle');
+  if(b){
+    b.textContent=_annOn?'🔊 アナウンス ON':'🔈 アナウンス OFF';
+    b.style.background=_annOn?'#1a3a1a':'#2c2c2e';
+    b.style.borderColor=_annOn?'#3a6a2a':'#3a3a3c';
+    b.style.color=_annOn?'#86c867':'#ddd';
+  }
+  var st_=document.getElementById('set-tts-status');
+  if(st_){
+    st_.textContent=_ttsReady?'高品質音声（Azure）を使用中':'端末内蔵の音声を使用中';
+    st_.style.color=_ttsReady?'#7fd47f':'#c88';
+  }
+}
+
+function setTtsVoice(v){
+  _ttsVoice=v; _ttsCache={};
+  try{ localStorage.setItem('bb_tts_voice',v); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function setTtsStyle(v){
+  _ttsStyle=v; _ttsCache={};
+  try{ localStorage.setItem('bb_tts_style',v); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function adjAnnRate(d){
+  _annRate=Math.max(0.5, Math.min(1.5, Math.round((_annRate+d)*100)/100));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_rate',_annRate); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function adjAnnPitch(d){
+  _annPitch=Math.max(-30, Math.min(30, _annPitch+d));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_pitch',_annPitch); }catch(e){}
+  _refreshSettingsUI();
+}
+function adjAnnPause(d){
+  _annPause=Math.max(0, Math.min(1000, _annPause+d));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_pause',_annPause); }catch(e){}
+  _refreshSettingsUI();
+}
+function adjAnnDeg(d){
+  _annStyleDeg=Math.max(0.1, Math.min(2, Math.round((_annStyleDeg+d)*10)/10));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_ann_deg',_annStyleDeg); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function testAnnounce(){
+  var saved=_annOn; _annOn=true;
+  _speak('あの瞬間をいつでも。アスリーライブが配信をお送りいたします。');
+  _annOn=saved;
+}
+
+// 登録選手＋イニングコールをまとめて事前生成
+function prebuildVoices(){
+  if(!_ttsReady){ toast('音声合成が利用できません'); return; }
+  var texts=[];
+  ['away','home'].forEach(function(t){
+    rosters[t].forEach(function(p){
+      var s=_batterPhrase(p);
+      if(s) texts.push(s);
+    });
+  });
+  var an=teamNames.away||'先攻', hn=teamNames.home||'後攻';
+  for(var i=1;i<=10;i++){
+    texts.push(i+'回おもて、'+an+'の攻撃');
+    texts.push(i+'回うら、'+hn+'の攻撃');
+  }
+  texts=texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
+
+  var btn=document.getElementById('set-prebuild');
+  var total=texts.length, done=0, ng=0;
+  if(btn){ btn.disabled=true; btn.textContent='生成中… 0/'+total; }
+
+  var step=function(){
+    if(!texts.length){
+      if(btn){
+        btn.disabled=false;
+        btn.textContent = ng ? ('完了（'+ng+'件失敗）') : '✅ 事前生成 完了';
+        setTimeout(function(){ btn.textContent='🎙 音声を事前生成'; },3000);
+      }
+      return;
+    }
+    var t=texts.shift();
+    _fetchVoice(t)
+      .catch(function(){ ng++; })
+      .then(function(){
+        done++;
+        if(btn) btn.textContent='生成中… '+done+'/'+total;
+        setTimeout(step,60);
+      });
+  };
+  step();
+}
+
+function _refreshTtsStatus(){
+  var el=document.getElementById('ann-status');
+  if(!el) return;
+  el.textContent = _ttsReady ? 'Azure音声' : '端末音声';
+  el.style.color = _ttsReady ? '#7fd47f' : '#c88';
+  _refreshSettingsUI();
+}
+
+function _refreshAnnBtn(){
+  var b=document.getElementById('ann-toggle');
+  if(!b) return;
+  b.textContent = _annOn ? '🔊 ON' : '🔈 OFF';
+  b.className = 'ann-btn' + (_annOn ? ' on' : '');
+}
+
+function toggleAnnounce(){
+  _annOn=!_annOn;
+  try{ localStorage.setItem('bb_announce', _annOn?'1':'0'); }catch(e){}
+  _refreshAnnBtn();
+  _refreshSettingsUI();
+  if(_annOn) _speak('アナウンスを開始します');
+}
+
+
+// ── 音声の永続保存（IndexedDB） ───────────────────────────────────────────
+// 生成した音声をブラウザに保存し、再読み込み後もすぐ鳴るようにする
+var _voiceDB = null;
+
+function _openVoiceDB(){
+  return new Promise(function(resolve){
+    if(_voiceDB){ resolve(_voiceDB); return; }
+    if(!window.indexedDB){ resolve(null); return; }
+    try{
+      var rq = indexedDB.open('athleelive_voice', 1);
+      rq.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if(!db.objectStoreNames.contains('clips')) db.createObjectStore('clips');
+      };
+      rq.onsuccess = function(e){ _voiceDB = e.target.result; resolve(_voiceDB); };
+      rq.onerror   = function(){ resolve(null); };
+    }catch(e){ resolve(null); }
+  });
+}
+
+function _dbGet(key){
+  return _openVoiceDB().then(function(db){
+    if(!db) return null;
+    return new Promise(function(resolve){
+      try{
+        var tx = db.transaction('clips','readonly');
+        var rq = tx.objectStore('clips').get(key);
+        rq.onsuccess = function(){ resolve(rq.result || null); };
+        rq.onerror   = function(){ resolve(null); };
+      }catch(e){ resolve(null); }
+    });
+  });
+}
+
+function _dbPut(key, val){
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    try{
+      var tx = db.transaction('clips','readwrite');
+      tx.objectStore('clips').put(val, key);
+    }catch(e){}
+  });
+}
+
+// 保存済み音声をまとめてメモリに読み込む
+function _loadVoiceCache(){
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    return new Promise(function(resolve){
+      try{
+        var tx = db.transaction('clips','readonly');
+        var store = tx.objectStore('clips');
+        var kq = store.getAllKeys(), vq = store.getAll();
+        var keys=null, vals=null;
+        var done=function(){
+          if(keys && vals){
+            for(var i=0;i<keys.length;i++) _ttsCache[keys[i]] = vals[i];
+          }
+          resolve();
+        };
+        kq.onsuccess=function(){ keys=kq.result; if(vals) done(); };
+        vq.onsuccess=function(){ vals=vq.result; if(keys) done(); };
+        kq.onerror=vq.onerror=function(){ resolve(); };
+      }catch(e){ resolve(); }
+    });
+  });
+}
+
+// 保存済み音声をすべて削除
+function clearVoiceCache(){
+  _ttsCache = {};
+  return _openVoiceDB().then(function(db){
+    if(!db) return;
+    try{
+      var tx = db.transaction('clips','readwrite');
+      tx.objectStore('clips').clear();
+    }catch(e){}
+  });
+}
+
+function _ttsKey(t){ return _ttsVoice+'|'+_ttsStyle+'|'+_annStyleDeg+'|'+_annRate+'|'+_annPitch+'|'+_annPause+'|'+t; }
+
+function _fetchVoice(text){
+  var k=_ttsKey(text);
+  if(_ttsCache[k]) return Promise.resolve(_ttsCache[k]);
+  return _dbGet(k).then(function(saved){
+    if(saved){ _ttsCache[k]=saved; return saved; }
+    return fetch('/api/tts',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ text:text, voice:_ttsVoice, rate:_annRate, style:_ttsStyle,
+                          pitch:_annPitch, styleDegree:_annStyleDeg, pause:_annPause })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.audio) throw new Error(d.error||'no audio');
+      var url='data:audio/mp3;base64,'+d.audio;
+      _ttsCache[k]=url;
+      _dbPut(k, url);
+      return url;
+    });
+  });
+}
+
+function _speakLocal(text){
+  if(!window.speechSynthesis) return;
+  try{
+    speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='ja-JP'; u.rate=_annRate;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function _play(url){
+  try{
+    if(!_audioEl){ _audioEl=new Audio(); _audioEl.preload='auto'; }
+    _audioEl.pause(); _audioEl.src=url; _audioEl.currentTime=0;
+    var pr=_audioEl.play(); if(pr&&pr.catch) pr.catch(function(){});
+  }catch(e){}
+}
+
+function _speak(text){
+  if(!_annOn||!text) return;
+  if(!_ttsReady){ _speakLocal(text); return; }
+  var k=_ttsKey(text);
+  if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
+  _fetchVoice(text).then(_play).catch(function(e){ console.warn('[TTS] Azure失敗 → 端末音声に切替:', e && e.message); _speakLocal(text); });
+}
+
+// 「3番、ショート、山田くん」
+function _batterPhrase(p){
+  if(!p) return '';
+  var parts=[];
+  if(p.order) parts.push(p.order+'番');
+  var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
+  if(pl) parts.push(pl);
+  // 読み仮名があれば読み上げに使う
+  var nm = String(p.yomi || p.name || '').trim();
+  if(!nm) return '';
+  parts.push(nm+'くん');
+  if(p.num) parts.push('背番号'+p.num);
+  return parts.join('、');
+}
+
+// 読み上げ前に内容を確認・編集する
+var _pendingSpeak = null;   // { text, voice, style, rate }
+
+function confirmSpeak(title, text, voice, style, rate){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  _pendingSpeak = { voice:voice, style:style, rate:rate };
+  document.getElementById('speak-title').textContent = title;
+  document.getElementById('speak-text').value = text;
+  document.getElementById('speak-mask').classList.add('open');
+  setTimeout(function(){
+    var ta=document.getElementById('speak-text');
+    if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  },50);
+}
+
+function doSpeakConfirmed(){
+  if(!_pendingSpeak) return;
+  var t = document.getElementById('speak-text').value.trim();
+  closeModal('speak-mask');
+  if(!t) return;
+  _speakAs(t, _pendingSpeak.voice, _pendingSpeak.style, _pendingSpeak.rate);
+  _pendingSpeak = null;
+}
+
+function announceCurrentBatter(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  var s=lastRemote;
+  var team = (s.top!==false) ? 'away' : 'home';
+  var id = s.selIds ? s.selIds.batter : 0;
+  var p = rosters[team].find(function(x){ return x.id===id; });
+  if(!p){
+    var nm=(s.batter||'').replace(/^#\d+\s*/,'').trim();
+    p = rosters[team].find(function(x){ return x.name && nm.indexOf(x.name)>=0; });
+  }
+  if(!p){ toast('打者が特定できません'); return; }
+  var t=_batterPhrase(p);
+  if(t) _speakAs(t, _ttsVoice, _ttsStyle, _annRate);
+}
+
+// 「1回表、綾羽高校の攻撃」
+function announceCurrentInning(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  var s = lastRemote || {};
+  var isTop, innNo;
+  if(lastRemote){
+    isTop = s.top!==false;
+    innNo = s.inn||1;
+  }else{
+    var tb=document.getElementById('gb-tb');
+    var iv=document.getElementById('gb-inn');
+    isTop = !tb || tb.textContent.indexOf('表')>=0;
+    innNo = iv ? (Number(iv.textContent)||1) : 1;
+  }
+  var team = isTop ? (s.aab||teamNames.away||'先攻')
+                   : (s.hnm||teamNames.home||'後攻');
+  confirmSpeak('🔊 回コール', innNo+'回'+(isTop?'おもて':'うら')+'、'+team+'の攻撃',
+               _ttsVoice, _ttsStyle, _annRate);
+}
+
+// カウントの読み上げ用（0はアウトのみ「ノー」、B/Sは0なら読まない）
+var NUM_YOMI = ['ノー','ワン','ツー','スリー','フォー'];
+
+function _countPhrase(b, s, o){
+  var parts = [];
+  // アウトは0でも「ノーアウト」と読む
+  parts.push((NUM_YOMI[o] || o) + 'アウト');
+  // ボール・ストライクは0のときは読み上げない
+  var bs = [];
+  if(b > 0) bs.push((NUM_YOMI[b] || b) + 'ボール');
+  if(s > 0) bs.push((NUM_YOMI[s] || s) + 'ストライク');
+  if(bs.length) parts.push(bs.join(''));
+  return 'カウント、' + parts.join('、') + '。';
+}
+
+// ── 実況アナウンス（状況説明・別の声） ─────────────────────────────────────
+var _cmtVoice = 'ja-JP-KeitaNeural';   // 実況用の声（コールとは別）
+var _cmtStyle = '';
+var _cmtRate  = 1.10;
+
+function setCmtVoice(v){
+  _cmtVoice=v;
+  _ttsCache={};
+  try{ localStorage.setItem('bb_cmt_voice',v); }catch(e){}
+  _refreshSettingsUI();
+  toast('実況の声を変更しました');
+}
+function setCmtStyle(v){
+  _cmtStyle=v;
+  _ttsCache={};
+  try{ localStorage.setItem('bb_cmt_style',v); }catch(e){}
+  _refreshSettingsUI();
+}
+function adjCmtRate(d){
+  _cmtRate=Math.max(0.5, Math.min(1.5, Math.round((_cmtRate+d)*100)/100));
+  _ttsCache={};
+  try{ localStorage.setItem('bb_cmt_rate',_cmtRate); }catch(e){}
+  _refreshSettingsUI();
+}
+function testCommentary(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  _speakAs('カウント、ワンアウト、ツーボールワンストライク。ランナー1塁、2塁。', _cmtVoice, _cmtStyle, _cmtRate);
+}
+
+function _speakAs(text, voice, style, rate){
+  if(!_annOn || !text) return;
+  var rt = (typeof rate==='number') ? rate : _annRate;
+  console.log('[TTS] voice=', voice, 'style=', style, 'rate=', rt);
+  if(!_ttsReady){ _speakLocal(text); return; }
+  var k = voice+'|'+(style||'')+'|'+_annStyleDeg+'|'+rt+'|'+_annPitch+'|'+_annPause+'|'+text;
+  if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
+  _dbGet(k).then(function(saved){
+    if(saved){ _ttsCache[k]=saved; _play(saved); return; }
+    return fetch('/api/tts',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'',
+                            pitch:_annPitch, styleDegree:_annStyleDeg, pause:_annPause })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.audio) throw new Error(d.error||'no audio');
+      var url='data:audio/mp3;base64,'+d.audio;
+      _ttsCache[k]=url; _dbPut(k,url); _play(url);
+    });
+  }).catch(function(){ _speakLocal(text); });
+}
+
+// 現在の状況をまとめて読み上げる
+function announceSituation(){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  var s = lastRemote || {};
+  var isTop = s.top!==false;
+  var innNo = s.inn || 1;
+  var atk = isTop ? (s.aab||teamNames.away||'先攻') : (s.hnm||teamNames.home||'後攻');
+
+  var asc = s.asc||[], hsc = s.hsc||[];
+  var sum = function(a){ return a.filter(function(v){ return typeof v==='number'; })
+    .reduce(function(x,y){ return x+y; },0); };
+  var at = sum(asc), ht = sum(hsc);
+  var an = s.aab||teamNames.away||'先攻';
+  var hn = s.hnm||teamNames.home||'後攻';
+
+  var parts = [];
+  parts.push(innNo+'回'+(isTop?'おもて':'うら')+'、'+atk+'の攻撃。');
+
+  // 得点差
+  if(at===ht){
+    parts.push('試合は'+at+'対'+ht+'の同点です。');
+  }else{
+    var lead = at>ht ? an : hn;
+    var hi = Math.max(at,ht), lo = Math.min(at,ht);
+    parts.push(lead+'が'+hi+'対'+lo+'でリードしています。');
+  }
+
+  // カウント
+  parts.push(_countPhrase(s.b||0, s.s||0, s.o||0));
+
+  // ランナー
+  var r = s.r || {};
+  var on = [];
+  if(r[1]) on.push('1塁');
+  if(r[2]) on.push('2塁');
+  if(r[3]) on.push('3塁');
+  if(!on.length){
+    parts.push('ランナーはありません。');
+  }else if(on.length===3){
+    parts.push('満塁のチャンスです。');
+  }else{
+    parts.push('ランナー'+on.join('、')+'。');
+  }
+
+  // 打者
+  if(s.batter){
+    var nm = String(s.batter).replace(/^#\d+\s*/,'');
+    parts.push('バッターは'+nm+'くんです。');
+  }
+
+  confirmSpeak('🎙 実況', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
+}
+
+// ── 操作ロック ────────────────────────────────────────────────────────────
+let locked=false;
+function toggleLock(){
+  locked=!locked;
+  document.body.classList.toggle('locked',locked);
+  const b=document.getElementById('btn-lock');
+  b.textContent=locked?'🔒 ロック中':'🔓 操作可';
+  b.classList.toggle('locked',locked);
+  toast(locked?'操作をロックしました':'ロックを解除しました');
+}
+
+// ── 試合状況の描画（コントローラーから受信した内容） ──────────────────────
+function renderGame(s){
+  if(!s) return;
+  const inn=s.inn||1, isTop=s.top!==false;
+  const n=Math.max(s.maxInn||7, inn);
+  const asc=s.asc||[], hsc=s.hsc||[];
+
+  document.getElementById('gb-inn').textContent=inn;
+  var _tt=document.getElementById('gb-tb-t'), _tb=document.getElementById('gb-tb-b');
+  if(_tt) _tt.className='gb-tbb'+(isTop?' on':'');
+  if(_tb) _tb.className='gb-tbb'+(!isTop?' on':'');
+
+  const sum=function(a){ return a.filter(function(v){ return typeof v==='number'; })
+    .reduce(function(x,y){ return x+y; },0); };
+  const at=sum(asc), ht=sum(hsc);
+
+  let head='<th></th>';
+  for(let i=0;i<n;i++) head+='<th>'+(i+1)+'</th>';
+  head+='<th class="tot">R</th>';
+  document.getElementById('gb-sc-head').innerHTML=head;
+
+  const rowHtml=function(name,sc,tot,side){
+    let h='<td class="tname">'+esc(name)+'</td>';
+    for(let i=0;i<n;i++){
+      const v=sc[i];
+      const disp=(v===null||v===undefined)?'':(v==='x'?'×':String(v));
+      h+='<td class="'+((i+1)===inn?'cur':'')+'">'+disp+'</td>';
+    }
+    return h+'<td class="tot">'+tot+'</td>';
+  };
+  document.getElementById('gb-sc-away').innerHTML=rowHtml(s.aab||'先攻',asc,at,'away');
+  document.getElementById('gb-sc-home').innerHTML=rowHtml(s.hnm||'後攻',hsc,ht,'home');
+
+  const dots=function(id,count,max,cls){
+    let h='';
+    for(let i=0;i<max;i++) h+='<span class="gb-dot'+(i<count?' '+cls:'')+'"></span>';
+    document.getElementById(id).innerHTML=h;
+  };
+  (function(){
+    var el=document.getElementById('gb-b');
+    if(!el) return;
+    var seq=Array.isArray(s.abBallSeq)?s.abBallSeq:[];
+    var h='';
+    for(var i=0;i<3;i++){
+      var on=i<(s.b||0);
+      h+='<span class="gb-dot'+(on?' on-b':'')+'">'+((on&&seq[i])?seq[i]:'')+'</span>';
+    }
+    el.innerHTML=h;
+  })();
+  dots('gb-o',s.o||0,2,'on-o');
+  // ストライクはファウル分に F を出す
+  (function(){
+    var el=document.getElementById('gb-s');
+    if(!el) return;
+    var sl=Array.isArray(s.strikeSlots)?s.strikeSlots:[];
+    var h='';
+    for(var i=0;i<2;i++){
+      var on=i<(s.s||0), x=sl[i];
+      h+='<span class="gb-dot'+(on?' on-s':'')+'">'
+        +((on&&x)?(x.foul?'F':String(x.n)):'')+'</span>';
+    }
+    el.innerHTML=h;
+  })();
+
+  const r=s.r||{};
+  [['gb-b1',1],['gb-b2',2],['gb-b3',3]].forEach(function(pair){
+    const el=document.getElementById(pair[0]);
+    if(el) el.classList.toggle('on',!!r[pair[1]]);
+  });
+
+  // 打者・次打者・次々打者
+  const setTxt=function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v||'-'; };
+  setTxt('gb-batter',s.batter);
+  setTxt('gb-next',s.batterNext);
+  setTxt('gb-next2',s.batterNext2);
+
+  // 投手・捕手・守備チーム
+  setTxt('gb-pitcher',s.pitcher);
+  setTxt('gb-catcher',s.catcher);
+  setTxt('gb-defteam',s.defTeam);
+
+  // overlay の表示状態
+  const flags=[
+    ['打者',    s.showBatter],
+    ['打順',    s.showBat],
+    ['守備位置', s.showPC],
+    ['配置図',   s.showDef],
+    ['BSO',    s.showBSO]
+  ];
+  // 表示ボタンの状態を反映
+  document.querySelectorAll('.disp-btn[data-k]').forEach(function(b){
+    var on = !!s[b.dataset.k];
+    b.classList.toggle('on', on);
+  });
+}
+
+
+// ── QRコード表示（1画面ぶん） ─────────────────────────────────────────────
+var QR_INFO = {
+  'ctrl/':    { name:'コントローラー', desc:'スコア・BSO・走者の操作' },
+  'spd/':     { name:'球速入力',      desc:'球速の入力専用' },
+  'roster/':  { name:'メンバー管理',  desc:'選手登録・打順・守備' },
+  'overlay.html': { name:'オーバーレイ', desc:'配信に重ねる画面' }
+};
+
+function openQR(file){
+  var info = QR_INFO[file] || { name:file, desc:'' };
+  var url  = location.origin + '/' + file;
+
+  var m = document.getElementById('qr-mask');
+  if(!m) return;
+  document.getElementById('qr-name').textContent = info.name;
+  document.getElementById('qr-desc').textContent = info.desc;
+  document.getElementById('qr-url').textContent  = url;
+
+  var qbox = document.getElementById('qr-img');
+  qbox.innerHTML = '';
+  try{
+    var q = qrcode(0,'M');
+    q.addData(url);
+    q.make();
+    qbox.innerHTML = q.createSvgTag({ cellSize:4, margin:0 });
+    var svg = qbox.querySelector('svg');
+    if(svg){ svg.style.display='block'; svg.style.width='200px'; svg.style.height='200px'; }
+  }catch(e){
+    qbox.innerHTML = '<div style="width:200px;height:200px;display:flex;align-items:center;'
+      + 'justify-content:center;color:#c00;font-size:13px">生成に失敗しました</div>';
+  }
+  m.style.display = 'flex';
+}
+
+function closeQR(){
+  var m = document.getElementById('qr-mask');
+  if(m) m.style.display = 'none';
+}
+
+// ── 画面を引っ張って同期を要求する ────────────────────────────────────────
+(function(){
+  var startY=0, pulling=false, fired=false;
+  var TH=90;
+
+  function ind(show){
+    var el=document.getElementById('pull-ind');
+    if(el) el.classList.toggle('show', !!show);
+  }
+
+  function req(){
+    if(!ws || ws.readyState!==1){ return; }
+    try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if(window.scrollY>0){ pulling=false; return; }
+    if(!e.touches || !e.touches.length) return;
+    startY=e.touches[0].clientY;
+    pulling=true; fired=false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    if(!pulling || fired) return;
+    if(window.scrollY>0){ pulling=false; ind(false); return; }
+    var dy=e.touches[0].clientY - startY;
+    if(dy>TH){
+      fired=true;
+      ind(true);
+      req();
+      setTimeout(function(){ ind(false); }, 1200);
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', function(){
+    pulling=false;
+    if(!fired) ind(false);
+  });
+})();
+
+// 状態を要求して同期する
+function pcReqSync(){
+  if(!ws || ws.readyState!==1){ toast('接続していません'); return; }
+  try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
+  toast('同期しました');
+}
+
+// ── 時計 ──────────────────────────────────────────────────────────────────
+function tickClock(){
+  const d=new Date();
+  const p=function(n){ return String(n).padStart(2,'0'); };
+  document.getElementById('clock').textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
+tickClock();
+setInterval(tickClock,1000);
+
+// ── バッテリー表示（Battery Status API：非対応環境では非表示） ─────────────
+function initBattery(){
+  if(!navigator.getBattery) return;
+  navigator.getBattery().then(function(b){
+    const wrap=document.getElementById('batt');
+    const fill=document.getElementById('batt-fill');
+    const txt=document.getElementById('batt-txt');
+    wrap.style.display='flex';
+    const upd=function(){
+      const pct=Math.round(b.level*100);
+      fill.style.width=pct+'%';
+      fill.className='batt-fill'+(pct<=15?' low':(pct<=40?' mid':''));
+      txt.textContent=pct+'%';
+      wrap.className='batt'+(b.charging?' charging':'');
+    };
+    upd();
+    b.addEventListener('levelchange',upd);
+    b.addEventListener('chargingchange',upd);
+  }).catch(function(){});
+}
+initBattery();
+
+// ── 初期化 ────────────────────────────────────────────────────────────────
+['away','home'].forEach(function(t){
+  document.getElementById('new-'+t+'-pos').innerHTML=posOptions('');
+});
+renderAll();
+_spdLoadLog();
+_spdInit();
+_initFpSplit();
+renderFieldPane();
+_loadLog();
+_initTTS();
+connectWS();
+setWsUI(false);
+
+// Service Worker（この画面専用のスコープで登録）
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js', {scope:'./'}).catch(function(){});
+}
+</script>
+</body>
+</html>

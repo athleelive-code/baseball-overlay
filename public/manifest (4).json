@@ -1,13 +1,12 @@
 {
-  "name": "AthleeLive コントローラー",
-  "short_name": "AthleeCtrl",
-  "id": "/ctrl/",
-  "start_url": "/ctrl/",
-  "scope": "/ctrl/",
+  "name": "AthleeLive メンバー管理",
+  "short_name": "AthleeRoster",
+  "id": "/roster/",
+  "start_url": "/roster/",
+  "scope": "/roster/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#111111",
-  "theme_color": "#111111",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "icon-192.png",

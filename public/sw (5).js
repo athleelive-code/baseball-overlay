@@ -1,4 +1,4 @@
-const CACHE = 'athlee-ctrl-v1';
+const CACHE = 'athlee-roster-v1';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys =>
