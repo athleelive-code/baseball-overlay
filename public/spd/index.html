@@ -701,7 +701,7 @@ function renderCtx(s){
     var h='';
     for(var i=0;i<3;i++){
       var on=i<(s.b||0);
-      h+='<span class="cb-dot'+(on?' b':'')+'">'+((on&&seq[i])?seq[i]:'')+'</span>';
+      h+='<span class="cb-dot'+(on?' b':'')+'">'+(on?(seq[i]||(i+1)):'')+'</span>';
     }
     el.innerHTML=h;
   })();
@@ -713,7 +713,7 @@ function renderCtx(s){
     var h='';
     for(var i=0;i<2;i++){
       var on=i<(s.s||0), x=sl[i];
-      h+='<span class="cb-dot'+(on?' s':'')+'">'+((on&&x)?(x.foul?'F':x.n):'')+'</span>';
+      h+='<span class="cb-dot'+(on?' s':'')+'">'+(!on?'':(x?(x.foul?'F':x.n):(i+1)))+'</span>';
     }
     el.innerHTML=h;
   })();

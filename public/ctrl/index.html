@@ -806,7 +806,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
           <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
           <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
         </select>
-        <div style="font-size:20px;color:#666;margin:10px 0 6px">話し方</div>
+        <div style="font-size:20px;color:#666;margin:10px 0 6px">話し方（「ななみ」のみ対応）</div>
         <select id="cmt-style" onchange="setCmtStyle(this.value)" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:26px;padding:14px;outline:none">
           <option value="">標準</option>
           <option value="chat">やわらかい会話調</option>
@@ -837,7 +837,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
           <option value="ja-JP-DaichiNeural">男性・落ち着いた声（だいち）</option>
           <option value="ja-JP-NaokiNeural">男性・明るめ（なおき）</option>
         </select>
-        <div style="font-size:20px;color:#666;margin:10px 0 6px">話し方</div>
+        <div style="font-size:20px;color:#666;margin:10px 0 6px">話し方（「ななみ」のみ対応）</div>
         <select id="tts-style" onchange="setTtsStyle(this.value)"
           style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:26px;padding:14px;outline:none">
           <option value="">標準</option>
@@ -1490,7 +1490,12 @@ function _speak(text){
 
   _fetchVoice(text)
     .then(function(url){ _play(url); })
-    .catch(function(e){ console.warn('[TTS] Azure失敗 → 端末音声に切替:', e && e.message); _speakLocal(text); });   // 失敗時は端末音声に切替
+        .catch(function(e){
+      console.warn('[TTS] Azure失敗 → 端末音声に切替:', e && e.message);
+      if(typeof toastMsg==='function') toastMsg('音声の生成に失敗しました');
+      else if(typeof toast==='function') toast('音声の生成に失敗しました');
+      _speakLocal(text);
+    });   // 失敗時は端末音声に切替
 }
 
 function _play(url){
@@ -1696,7 +1701,12 @@ function _speakAs(text, voice, style, rate){
       var url='data:audio/mp3;base64,'+d.audio;
       _ttsCache[k]=url; _dbPut(k,url); _play(url);
     });
-  }).catch(function(){ _speakLocal(text); });
+  }).catch(function(e){
+    console.warn('[TTS]', e && e.message);
+    if(typeof toastMsg==='function') toastMsg('音声の生成に失敗しました');
+    else if(typeof toast==='function') toast('音声の生成に失敗しました');
+    _speakLocal(text);
+  });
 }
 
 // 現在の状況をまとめて読み上げる
@@ -2580,6 +2590,8 @@ function syncNow(){
     toastMsg('接続していません');
     return;
   }
+  _abReconcile();          // カウントと記録の食い違いを直してから配る
+  renderBSO();
   _doBroadcast();
   toastMsg('同期しました');
   if(navigator.vibrate) try{ navigator.vibrate(20); }catch(e){}
@@ -2803,7 +2815,8 @@ function renderBSO(){
     if(!d) continue;
     const on = i<bso.b;
     d.className='bdot tapdot'+(on?' on-b':'');
-    d.textContent = (on && bseq[i]) ? String(bseq[i]) : '';
+    // 記録がない分は連番で補う（同期直後でも空にしない）
+    d.textContent = on ? String(bseq[i] || (i+1)) : '';
   }
 
   // ストライク：通常は球順、ファウルは黄色地に黒で「F」
@@ -2814,7 +2827,9 @@ function renderBSO(){
     const on = i<bso.s;
     const sl = slots[i];
     s.className='bdot tapdot'+(on ? (sl&&sl.foul ? ' on-f' : ' on-s') : '');
-    s.textContent = (on && sl) ? (sl.foul ? 'F' : String(sl.n)) : '';
+    if(!on){ s.textContent=''; }
+    else if(sl){ s.textContent = sl.foul ? 'F' : String(sl.n); }
+    else { s.textContent = String(i+1); }
   }
 
   for(let i=0;i<2;i++){
@@ -4541,6 +4556,7 @@ function broadcast(){
 function _doBroadcast(){
   _broadcastTimer=null;
   if(!ws||ws.readyState!==1) return;
+  if(typeof _abReconcile==='function') _abReconcile();
   // 守備配置が未設定なら、守備側チームから自動で組み立てる
   (function(){
     var dk = st.top ? 'home' : 'away';

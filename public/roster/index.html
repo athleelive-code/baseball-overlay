@@ -665,7 +665,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     </div>
 
     <div class="set-sec">
-      <div class="set-lbl">話し方</div>
+      <div class="set-lbl">話し方（「ななみ」のみ対応）</div>
       <select class="set-sel" id="set-style" onchange="setTtsStyle(this.value)">
         <option value="">標準</option>
         <option value="chat">やわらかい会話調</option>
@@ -721,7 +721,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
         <option value="ja-JP-NanamiNeural">女性・標準（ななみ）</option>
         <option value="ja-JP-ShioriNeural">女性・落ち着いた声（しおり）</option>
       </select>
-      <div class="set-lbl">話し方</div>
+      <div class="set-lbl">話し方（「ななみ」のみ対応）</div>
       <select class="set-sel" id="set-cmt-style" onchange="setCmtStyle(this.value)">
         <option value="">標準</option>
         <option value="chat">やわらかい会話調</option>
@@ -2607,7 +2607,12 @@ function _speak(text){
   if(!_ttsReady){ _speakLocal(text); return; }
   var k=_ttsKey(text);
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
-  _fetchVoice(text).then(_play).catch(function(e){ console.warn('[TTS] Azure失敗 → 端末音声に切替:', e && e.message); _speakLocal(text); });
+  _fetchVoice(text).then(_play)    .catch(function(e){
+      console.warn('[TTS] Azure失敗 → 端末音声に切替:', e && e.message);
+      if(typeof toastMsg==='function') toastMsg('音声の生成に失敗しました');
+      else if(typeof toast==='function') toast('音声の生成に失敗しました');
+      _speakLocal(text);
+    });
 }
 
 // 「3番、ショート、山田くん」
@@ -2749,7 +2754,12 @@ function _speakAs(text, voice, style, rate){
       var url='data:audio/mp3;base64,'+d.audio;
       _ttsCache[k]=url; _dbPut(k,url); _play(url);
     });
-  }).catch(function(){ _speakLocal(text); });
+  }).catch(function(e){
+    console.warn('[TTS]', e && e.message);
+    if(typeof toastMsg==='function') toastMsg('音声の生成に失敗しました');
+    else if(typeof toast==='function') toast('音声の生成に失敗しました');
+    _speakLocal(text);
+  });
 }
 
 // 現在の状況をまとめて読み上げる
@@ -2861,7 +2871,7 @@ function renderGame(s){
     var h='';
     for(var i=0;i<3;i++){
       var on=i<(s.b||0);
-      h+='<span class="gb-dot'+(on?' on-b':'')+'">'+((on&&seq[i])?seq[i]:'')+'</span>';
+      h+='<span class="gb-dot'+(on?' on-b':'')+'">'+(on?(seq[i]||(i+1)):'')+'</span>';
     }
     el.innerHTML=h;
   })();
@@ -2875,7 +2885,7 @@ function renderGame(s){
     for(var i=0;i<2;i++){
       var on=i<(s.s||0), x=sl[i];
       h+='<span class="gb-dot'+(on?' on-s':'')+'">'
-        +((on&&x)?(x.foul?'F':String(x.n)):'')+'</span>';
+        +(!on?'':(x?(x.foul?'F':String(x.n)):String(i+1)))+'</span>';
     }
     el.innerHTML=h;
   })();
