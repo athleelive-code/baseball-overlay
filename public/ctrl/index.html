@@ -1303,6 +1303,10 @@ if(window.speechSynthesis){
 // Google TTS 利用可否・設定
 var _ttsReady = false;                       // サーバーにキーがあるか
 var _ttsVoice = 'ja-JP-NanamiNeural';        // 使用する音声
+// 実況用（コールとは別の声）— 設定の読み込みより前に宣言しておく
+var _cmtVoice = 'ja-JP-KeitaNeural';
+var _cmtStyle = '';
+var _cmtRate  = 1.10;
 var _ttsStyle = '';                          // 話し方スタイル
 var _ttsCache = {};                          // 文言 -> data URL
 var _audioEl = null;                          // 再生用 audio 要素
@@ -1625,10 +1629,6 @@ function resetPitchCount(){
 }
 
 // ── 実況アナウンス（状況説明・別の声） ─────────────────────────────────────
-var _cmtVoice = 'ja-JP-KeitaNeural';   // 実況用の声（コールとは別）
-var _cmtStyle = '';                    // 実況の話し方
-var _cmtRate  = 1.10;                  // 実況の読み上げ速度
-
 function setCmtVoice(v){
   _cmtVoice=v;
   _ttsCache={};                 // 声を変えたら作り直す
