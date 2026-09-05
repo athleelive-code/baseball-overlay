@@ -1235,6 +1235,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <button onclick="closeScan()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:40px;width:70px;height:70px;border-radius:50%;cursor:pointer">✕</button>
     </div>
     <div id="scan-status" style="font-size:28px;color:#888">読み取り中...</div>
+    <div id="scan-meta" style="display:none"></div>
     <div id="scan-results" style="display:flex;flex-direction:column;gap:8px"></div>
     <button id="scan-confirm" onclick="confirmScan()" style="display:none;background:#007aff;border:none;border-radius:12px;color:#fff;font-size:36px;padding:20px;cursor:pointer;width:100%">この内容で登録</button>
   </div>
@@ -3204,6 +3205,8 @@ function posLabel(p){
 
 // ── 写真スキャン ────────────────────────────────────────────────────────────────
 let _scanTeam=null, _scanPlayers=[];
+let _scanMeta={tournament:'',team:'',coach:''};
+var _coaches={away:'',home:''};   // 監督名
 
 function onScanFile(e, team){
   _scanTeam=team;
@@ -3235,6 +3238,15 @@ function onScanFile(e, team){
       const clean=text.replace(/```json|```/g,'').trim();
       const parsed=JSON.parse(clean);
       _scanPlayers=parsed.players||[];
+      _scanMeta={
+        tournament: parsed.tournament||'',
+        team: parsed.team||'',
+        coach: parsed.coach||''
+      };
+      console.log('[SCAN] 大会名=', _scanMeta.tournament,
+                  '/ チーム=', _scanMeta.team,
+                  '/ 監督=', _scanMeta.coach,
+                  '/ 人数=', _scanPlayers.length);
       showScanResults(_scanPlayers);
     }catch(err){
       document.getElementById('scan-status').textContent='エラー: '+err.message;
@@ -3245,6 +3257,19 @@ function onScanFile(e, team){
 
 function showScanResults(players){
   document.getElementById('scan-status').textContent=`${players.length}名を読み取りました。修正してから登録してください。`;
+  var meta=document.getElementById('scan-meta');
+  if(meta){
+    meta.style.display='';
+    meta.innerHTML=
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+      +'<input id="scan-tour" value="'+(_scanMeta.tournament||'').replace(/"/g,"&quot;")+'" placeholder="大会名"'
+      +' style="flex:1;min-width:200px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:26px;padding:10px;outline:none">'
+      +'<input id="scan-team" value="'+(_scanMeta.team||'').replace(/"/g,"&quot;")+'" placeholder="チーム名"'
+      +' style="flex:1;min-width:180px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:26px;padding:10px;outline:none">'
+      +'<input id="scan-coach" value="'+(_scanMeta.coach||'').replace(/"/g,"&quot;")+'" placeholder="監督名"'
+      +' style="flex:1;min-width:150px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:26px;padding:10px;outline:none">'
+      +'</div>';
+  }
   document.getElementById('scan-results').innerHTML=players.map((p,i)=>`
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
       <input value="${p.order||''}" placeholder="打順" style="width:70px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:28px;padding:10px;outline:none"
@@ -3253,6 +3278,8 @@ function showScanResults(players){
         oninput="_scanPlayers[${i}].num=this.value"/>
       <input value="${p.name||''}" placeholder="選手名" style="flex:1;min-width:120px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:28px;padding:10px;outline:none"
         oninput="_scanPlayers[${i}].name=this.value"/>
+      <input value="${p.yomi||''}" placeholder="よみ" style="flex:1;min-width:110px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#bbb;font-size:24px;padding:10px;outline:none"
+        oninput="_scanPlayers[${i}].yomi=this.value"/>
       <input value="${posLabel(p.pos)}" placeholder="守備" style="width:100px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#fff;font-size:28px;padding:10px;outline:none"
         oninput="_scanPlayers[${i}].pos=this.value"/>
       <button onclick="_scanPlayers.splice(${i},1);showScanResults(_scanPlayers)" style="background:#7a0000;border:none;border-radius:8px;color:#fff;font-size:28px;padding:10px 14px;cursor:pointer">×</button>
@@ -3262,11 +3289,47 @@ function showScanResults(players){
 }
 
 function confirmScan(){
-  _scanPlayers.forEach(p=>{
-    if(p.name&&p.name.trim())
-      rosters[_scanTeam].push({id:Date.now()+Math.random(),order:p.order||'',num:p.num||'',name:p.name.trim(),pos:p.pos||''});
+  var team=_scanTeam;
+  var added=0;
+  _scanPlayers.forEach(function(p,i){
+    if(p.name && p.name.trim()){
+      rosters[team].push({
+        id: Date.now()+i,
+        order: p.order||'',
+        num: p.num||'',
+        name: p.name.trim(),
+        yomi: p.yomi||'',
+        pos: p.pos||''
+      });
+      added++;
+    }
   });
-  renderRosters(); updateSelects(); closeScan();
+  // 大会名・チーム名・監督名を反映
+  var tEl=document.getElementById('scan-tour');
+  var nEl=document.getElementById('scan-team');
+  var cEl=document.getElementById('scan-coach');
+  if(tEl && tEl.value.trim()){
+    var gt=document.getElementById('game-title');
+    if(gt && !gt.value.trim()) gt.value=tEl.value.trim();
+  }
+  if(nEl && nEl.value.trim()){
+    var newName=nEl.value.trim();
+    var nameEl=document.getElementById('name-'+team);
+    if(nameEl) nameEl.textContent=newName;
+    // 選手登録ドロワーの入力欄にも反映する
+    var tnEl=document.getElementById('teamname-'+team);
+    if(tnEl) tnEl.value=newName;
+  }
+  if(cEl) _coaches[team]=cEl.value.trim();
+
+  // 守備側の一覧も作り直しておく
+  _defRoster = null;
+  renderRosters();
+  updateSelects();
+  saveState();      // 端末に保存
+  broadcast();      // 他の画面へ反映
+  closeScan();
+  if(typeof toastMsg==='function') toastMsg(added+'名を登録しました');
 }
 
 function closeScan(){
@@ -3833,6 +3896,7 @@ function _collectGameData(){
       away: na ? na.textContent : '先攻',
       home: nh ? nh.textContent : '後攻'
     },
+    coaches: { away:_coaches.away, home:_coaches.home },
     rosters: { away:rosters.away, home:rosters.home },
     state: {
       inn: st.inn, top: st.top, maxInn: st.maxInn,
@@ -3877,6 +3941,10 @@ function loadGameFile(e){
       if(d.rosters){
         rosters.away = Array.isArray(d.rosters.away) ? d.rosters.away : [];
         rosters.home = Array.isArray(d.rosters.home) ? d.rosters.home : [];
+      }
+      if(d.coaches){
+        _coaches.away=d.coaches.away||'';
+        _coaches.home=d.coaches.home||'';
       }
       if(d.teams){
         var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
@@ -4040,6 +4108,12 @@ function applyRemoteState(s){
 
     // 球速（他デバイスからの入力を中継する）
     if(s.speed) _speed = s.speed;
+
+    // 監督名
+    if(s.coaches){
+      _coaches.away=s.coaches.away||'';
+      _coaches.home=s.coaches.home||'';
+    }
 
     // 試合タイトル
     if(typeof s.gameTitle==='string'){
@@ -4538,6 +4612,7 @@ function _doBroadcast(){
     autoHideSec:_autoHideSec,
     _ctl:true,
     gameTitle:_getGameTitle(),
+    coaches:{away:_coaches.away,home:_coaches.home},
     abPitch:_abPitchCount(), abFoul:_abFoulCount(), abBallSeq:_abBallSeqCalc(),
     strikeSlots:_strikeSlots(),
     abLog:_abLog.slice(),
@@ -4584,6 +4659,7 @@ function saveState(){
       nameHome:nh?nh.textContent:'後攻',
       lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
       gameTitle:_getGameTitle(),
+    coaches:{away:_coaches.away,home:_coaches.home},
       savedAt:Date.now()
     };
     localStorage.setItem('bb_state',JSON.stringify(snap));
@@ -4637,6 +4713,11 @@ function restoreState(){
     // 球速（他デバイスからの入力を中継する）
     if(s.speed) _speed = s.speed;
 
+    // 監督名を復元
+    if(snap.coaches){
+      _coaches.away=snap.coaches.away||'';
+      _coaches.home=snap.coaches.home||'';
+    }
     // 試合タイトルを復元
     if(typeof snap.gameTitle==='string'){
       var _gt=document.getElementById('game-title');
