@@ -110,11 +110,9 @@ app.post('/api/tts', async (req, res) => {
     const styleDeg = Math.max(0.01, Math.min(2, Number(req.body.styleDegree) || 1));
     const pitchNum = Math.max(-30, Math.min(30, Number(req.body.pitch) || 0));
     const pitchStr = (pitchNum >= 0 ? '+' : '') + pitchNum + '%';
-    const volNum   = Math.max(-20, Math.min(20, Number(req.body.volume) || 0));
-    const volStr   = (volNum >= 0 ? '+' : '') + volNum + 'dB';
     const pauseMs  = Math.max(0, Math.min(1200, Number(req.body.pause) || 0));
 
-    const cacheKey = `${voiceName}|${styleName}|${styleDeg}|${rateStr}|${pitchStr}|${volStr}|${pauseMs}|${text}`;
+    const cacheKey = `${voiceName}|${styleName}|${styleDeg}|${rateStr}|${pitchStr}|${pauseMs}|${text}`;
     if (ttsCache.has(cacheKey)) {
       return res.json({ audio: ttsCache.get(cacheKey), cached: true });
     }
@@ -129,8 +127,10 @@ app.post('/api/tts', async (req, res) => {
     }
 
     const body = withPauses(text, pauseMs);
-    const prosody =
-      `<prosody rate="${rateStr}" pitch="${pitchStr}" volume="${volStr}">${body}</prosody>`;
+    // pitch は 0 のときは指定しない（環境によって弾かれることがある）
+    const prosody = (pitchNum === 0)
+      ? `<prosody rate="${rateStr}">${body}</prosody>`
+      : `<prosody rate="${rateStr}" pitch="${pitchStr}">${body}</prosody>`;
     const inner = styleName
       ? `<mstts:express-as style="${escapeXml(styleName)}" styledegree="${styleDeg}">${prosody}</mstts:express-as>`
       : prosody;
@@ -142,25 +142,44 @@ app.post('/api/tts', async (req, res) => {
 
     const token = await getAzureToken(key, region);
 
-    const r = await fetch(
-      `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/ssml+xml',
-          'X-Microsoft-OutputFormat': 'audio-48khz-192kbitrate-mono-mp3',
-          'User-Agent': 'AthleeLive'
-        },
-        body: ssml
-      }
-    );
+    // Azure へ送る（失敗したら素のSSMLでもう一度だけ試す）
+    async function synth(ssmlText) {
+      return fetch(
+        `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/ssml+xml',
+            'X-Microsoft-OutputFormat': 'audio-24khz-160kbitrate-mono-mp3',
+            'User-Agent': 'AthleeLive'
+          },
+          body: ssmlText
+        }
+      );
+    }
+
+    let r = await synth(ssml);
 
     if (!r.ok) {
-      const msg = await r.text().catch(() => '');
-      // トークン切れの可能性があるので次回は取り直す
-      azureToken = null;
-      return res.status(r.status).json({ error: 'TTS failed: ' + r.status + ' ' + msg.slice(0, 200) });
+      const firstErr = await r.text().catch(() => '');
+      console.warn('[TTS] 1回目失敗', r.status, firstErr.slice(0, 300));
+
+      // 声だけ指定した最小構成で再試行
+      const plain =
+        `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="ja-JP">` +
+        `<voice name="${escapeXml(voiceName)}">${escapeXml(text)}</voice></speak>`;
+      r = await synth(plain);
+
+      if (!r.ok) {
+        const msg = await r.text().catch(() => '');
+        azureToken = null;
+        console.warn('[TTS] 2回目も失敗', r.status, msg.slice(0, 300));
+        return res.status(r.status).json({
+          error: 'TTS failed: ' + r.status + ' ' + msg.slice(0, 200),
+          voice: voiceName
+        });
+      }
     }
 
     const buf = Buffer.from(await r.arrayBuffer());
