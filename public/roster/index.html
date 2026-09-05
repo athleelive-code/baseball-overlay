@@ -2655,8 +2655,9 @@ function _speak(text){
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
   _fetchVoice(text).then(_play)    .catch(function(e){
       console.warn('[TTS] Azure失敗 → 端末音声に切替:', e && e.message);
-      if(typeof toastMsg==='function') toastMsg('音声の生成に失敗しました');
-      else if(typeof toast==='function') toast('音声の生成に失敗しました');
+      var _m = (e && e.message) ? String(e.message).slice(0,60) : '';
+      if(typeof toastMsg==='function') toastMsg('音声生成エラー '+_m);
+      else if(typeof toast==='function') toast('音声生成エラー '+_m);
       _speakLocal(text);
     });
 }
@@ -2802,8 +2803,9 @@ function _speakAs(text, voice, style, rate){
     });
   }).catch(function(e){
     console.warn('[TTS]', e && e.message);
-    if(typeof toastMsg==='function') toastMsg('音声の生成に失敗しました');
-    else if(typeof toast==='function') toast('音声の生成に失敗しました');
+    var _m2 = (e && e.message) ? String(e.message).slice(0,60) : '';
+    if(typeof toastMsg==='function') toastMsg('音声生成エラー '+_m2);
+    else if(typeof toast==='function') toast('音声生成エラー '+_m2);
     _speakLocal(text);
   });
 }
