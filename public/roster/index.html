@@ -254,6 +254,10 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 .team-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
 .badge-away{background:rgba(200,16,46,.18);color:#ff8090;border:1px solid rgba(200,16,46,.4)}
 .badge-home{background:rgba(26,86,160,.22);color:#8ab4ff;border:1px solid rgba(26,86,160,.5)}
+.coach-inp{flex:0 0 150px;background:#242426;border:1px solid #333;border-radius:8px;
+  color:#bbb;font-size:14px;font-weight:600;padding:9px 10px;outline:none}
+.coach-inp:focus{border-color:#555;color:#fff}
+.coach-inp::placeholder{color:#555;font-weight:400}
 .team-name-inp{flex:1;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#fff;
   font-size:18px;font-weight:700;padding:9px 12px;outline:none}
 .team-name-inp:focus{border-color:#555}
@@ -311,7 +315,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   max-width:720px;max-height:86vh;overflow-y:auto;padding:20px}
 .modal h3{font-size:18px;margin-bottom:6px}
 .modal .note{font-size:13px;color:var(--sub);margin-bottom:14px}
-.scan-row{display:grid;grid-template-columns:56px 62px 1fr 96px 40px;gap:8px;align-items:center;
+.scan-row{display:grid;grid-template-columns:50px 56px 1fr 1fr 92px 38px;gap:7px;align-items:center;
   padding:7px 0;border-bottom:1px solid #262628}
 .modal-acts{display:flex;gap:10px;margin-top:16px}
 .respop{
@@ -512,6 +516,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <div class="team-hd">
       <span class="team-badge badge-away">先攻 / 1塁側</span>
       <input class="team-name-inp" id="tname-away" placeholder="チーム名" oninput="onTeamName('away')">
+      <input class="coach-inp" id="coach-away" placeholder="監督名" oninput="onCoachName('away')">
     </div>
     <div class="tools">
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
@@ -546,6 +551,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <div class="team-hd">
       <span class="team-badge badge-home">後攻 / 3塁側</span>
       <input class="team-name-inp" id="tname-home" placeholder="チーム名" oninput="onTeamName('home')">
+      <input class="coach-inp" id="coach-home" placeholder="監督名" oninput="onCoachName('home')">
     </div>
     <div class="tools">
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
@@ -581,6 +587,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   <div class="modal">
     <h3 id="scan-title">読み取り結果</h3>
     <div class="note" id="scan-note">読み取り中…</div>
+    <div id="scan-meta" style="display:none"></div>
     <div id="scan-rows"></div>
     <div class="modal-acts">
       <button class="btn btn-save" style="flex:1" onclick="applyScan()">この内容で登録</button>
@@ -976,9 +983,10 @@ function setBatter(team, id){
 // lastRemote の内容をそのまま送り返す（ロスター以外も維持）
 // PC版が担当する項目だけを送る（カウントや走者には触れない）
 function pushState(){
-  if(!ws || ws.readyState!==1 || !lastRemote) return;
+  if(!ws || ws.readyState!==1) return;
+  var lr = lastRemote || {};
 
-  const atk = (lastRemote.top!==false) ? 'away' : 'home';
+  const atk = (lr.top!==false) ? 'away' : 'home';
   const def = (atk==='away') ? 'home' : 'away';
   const conv = function(list){
     return list.map(function(p){
@@ -993,19 +1001,20 @@ function pushState(){
     defRoster: conv(rosters[def]),
     batTeam: (atk==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻'),
     defTeam: (def==='away') ? (teamNames.away||'先攻') : (teamNames.home||'後攻'),
-    selIds: lastRemote.selIds || {},
-    batter: lastRemote.batter || '',
-    batterNext: lastRemote.batterNext || '',
-    batterNext2: lastRemote.batterNext2 || '',
-    aab: teamNames.away || lastRemote.aab || '',
-    hnm: teamNames.home || lastRemote.hnm || '',
-    gameTitle: lastRemote.gameTitle || '',
-    showBat: lastRemote.showBat,
-    showDef: lastRemote.showDef,
-    showBatter: lastRemote.showBatter,
-    showPC: lastRemote.showPC,
-    showBSO: lastRemote.showBSO,
-    lastResult: lastRemote.lastResult || null
+    selIds: lr.selIds || {},
+    batter: lr.batter || '',
+    batterNext: lr.batterNext || '',
+    batterNext2: lr.batterNext2 || '',
+    aab: teamNames.away || lr.aab || '',
+    hnm: teamNames.home || lr.hnm || '',
+    gameTitle: (document.getElementById('hdr-game-title')||{}).value || lr.gameTitle || '',
+    coaches: { away:coaches.away, home:coaches.home },
+    showBat: lr.showBat,
+    showDef: lr.showDef,
+    showBatter: lr.showBatter,
+    showPC: lr.showPC,
+    showBSO: lr.showBSO,
+    lastResult: lr.lastResult || null
   };
   ws.send(JSON.stringify(msg));
 }
@@ -1174,6 +1183,7 @@ function importJSON(e){
 
 // ── 写真スキャン ──────────────────────────────────────────────────────────
 let scanTeam=null, scanPlayers=[];
+let scanMeta=null;
 function onScan(e,team){
   const f=e.target.files[0]; e.target.value='';
   if(!f) return;
@@ -1197,6 +1207,7 @@ function onScan(e,team){
       const clean=txt.replace(/```json|```/g,'').trim();
       const parsed=JSON.parse(clean);
       scanPlayers=parsed.players||[];
+      scanMeta={ tournament:parsed.tournament||'', team:parsed.team||'', coach:parsed.coach||'' };
       renderScan();
     })
     .catch(function(){
@@ -1208,11 +1219,27 @@ function onScan(e,team){
 
 function renderScan(){
   document.getElementById('scan-note').textContent=scanPlayers.length+'名を読み取りました。内容を確認・修正してから登録してください。';
+
+  // 大会名・チーム名・監督名
+  var mb=document.getElementById('scan-meta');
+  if(mb && scanMeta){
+    mb.style.display='';
+    mb.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+      +'<input class="set-sel" style="flex:1;min-width:170px" value="'+esc(scanMeta.tournament)+'" placeholder="大会名"'
+      +' onchange="scanMeta.tournament=this.value">'
+      +'<input class="set-sel" style="flex:1;min-width:150px" value="'+esc(scanMeta.team)+'" placeholder="チーム名"'
+      +' onchange="scanMeta.team=this.value">'
+      +'<input class="set-sel" style="flex:1;min-width:130px" value="'+esc(scanMeta.coach)+'" placeholder="監督名"'
+      +' onchange="scanMeta.coach=this.value">'
+      +'</div>';
+  }
+
   document.getElementById('scan-rows').innerHTML=scanPlayers.map(function(p,i){
     return '<div class="scan-row">'
       +'<input class="cell-inp" value="'+esc(p.order)+'" onchange="scanEdit('+i+',\'order\',this.value)">'
       +'<input class="cell-inp" value="'+esc(p.num)+'" onchange="scanEdit('+i+',\'num\',this.value)">'
       +'<input class="cell-inp name" value="'+esc(p.name)+'" onchange="scanEdit('+i+',\'name\',this.value)">'
+      +'<input class="cell-inp name" value="'+esc(p.yomi||'')+'" placeholder="よみ" onchange="scanEdit('+i+',\'yomi\',this.value)">'
       +'<select class="cell-sel" onchange="scanEdit('+i+',\'pos\',this.value)">'+posOptions(p.pos)+'</select>'
       +'<button class="mini del" onclick="scanDel('+i+')">✕</button>'
     +'</div>';
@@ -1225,9 +1252,31 @@ function applyScan(){
   if(!scanTeam||!scanPlayers.length){ closeModal('scan-mask'); return; }
   rosters[scanTeam]=scanPlayers.map(function(p,i){
     return { id:Date.now()+i, order:String(p.order||''), num:String(p.num||''),
-             name:String(p.name||''), pos:String(p.pos||'') };
+             name:String(p.name||''), yomi:String(p.yomi||''), pos:String(p.pos||'') };
   });
-  render(scanTeam); push();
+  // 大会名・チーム名・監督名も反映
+  if(scanMeta){
+    if(scanMeta.team){
+      teamNames[scanTeam]=scanMeta.team;
+      var tn=document.getElementById('tname-'+scanTeam);
+      if(tn) tn.value=scanMeta.team;
+    }
+    if(scanMeta.coach){
+      coaches[scanTeam]=scanMeta.coach;
+      var cn=document.getElementById('coach-'+scanTeam);
+      if(cn) cn.value=scanMeta.coach;
+    }
+    if(scanMeta.tournament){
+      var gt=document.getElementById('hdr-game-title');
+      if(gt && !gt.value.trim()){
+        gt.value=scanMeta.tournament;
+        if(lastRemote) lastRemote.gameTitle=scanMeta.tournament;
+      }
+    }
+  }
+  render(scanTeam);
+  renderFieldPane();
+  pushState();
   closeModal('scan-mask');
   toast(rosters[scanTeam].length+'名を登録しました');
 }
@@ -1313,6 +1362,13 @@ function applyRemote(s){
     if(_gt && typeof s.gameTitle==='string' && document.activeElement!==_gt){
       _gt.value=s.gameTitle;
     }
+    if(s.coaches){
+      ['away','home'].forEach(function(t){
+        coaches[t]=s.coaches[t]||'';
+        var el=document.getElementById('coach-'+t);
+        if(el && document.activeElement!==el) el.value=coaches[t];
+      });
+    }
     if(s.aab){ teamNames.away=s.aab; document.getElementById('tname-away').value=(s.aab==='先攻'?'':s.aab); }
     if(s.hnm){ teamNames.home=s.hnm; document.getElementById('tname-home').value=(s.hnm==='後攻'?'':s.hnm); }
     renderFieldPane();
@@ -1356,15 +1412,7 @@ function push(){
 
 function doPush(){
   pushTimer=null;
-  if(!ws||ws.readyState!==1) return;
-  // スコアなど他の状態は最後に受け取った内容を維持したまま、メンバーだけ差し替えて送る
-  const base = lastRemote ? JSON.parse(JSON.stringify(lastRemote)) : {};
-  base._ctl=true;
-  base.rostersAll={ away:rosters.away, home:rosters.home };
-  if(teamNames.away) base.aab=teamNames.away;
-  if(teamNames.home) base.hnm=teamNames.home;
-  base.showScoreOverlay=null;   // 表示コマンドは再送しない
-  ws.send(JSON.stringify(base));
+  pushState();      // PC版が担当する項目だけを送る
 }
 
 // ── AIによる一言コメント ──────────────────────────────────────────────────
@@ -1388,6 +1436,8 @@ function aiComment(){
 
   var ctx =
     '試合：'+an+'（先攻） 対 '+hn+'（後攻）\n'
+    +(coaches.away?('先攻の監督：'+coaches.away+'\n'):'')
+    +(coaches.home?('後攻の監督：'+coaches.home+'\n'):'')
     +'現在：'+s.inn+'回'+(s.top?'表':'裏')+'、'+atk+'の攻撃\n'
     +'スコア：'+s.score+'（先攻-後攻）\n'
     +'カウント：'+s.o+'アウト '+s.b+'ボール '+s.s+'ストライク\n'
@@ -1424,6 +1474,18 @@ function _updateAbDispPC(){
   var t=document.getElementById('gb-total');
   if(f) f.textContent=_abFoul>0?('F'+_abFoul):'';
   if(t) t.textContent=_abPitch>0?(_abPitch+'球'):'';
+}
+
+// 監督名
+var coaches = { away:'', home:'' };
+
+function onCoachName(team){
+  coaches[team] = document.getElementById('coach-'+team).value;
+  if(lastRemote){
+    lastRemote.coaches = lastRemote.coaches || {};
+    lastRemote.coaches[team] = coaches[team];
+  }
+  pushState();
 }
 
 // ── 試合名 ────────────────────────────────────────────────────────────────
