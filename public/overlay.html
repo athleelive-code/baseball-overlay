@@ -463,6 +463,8 @@ let _defVisible=false,_batVisible=false;
 
 function applyState(s){
   if(!s)return;
+  // 全状態（コントローラー）以外は表示に触れない（部分メッセージでカウントを消さない）
+  if(s._ctl!==true) return;
   // チームカラー適用
   const isTop=s.top!==false;
   const batColor=isTop?(s.awayColor||'#c8102e'):(s.homeColor||'#1a56a0');

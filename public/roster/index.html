@@ -436,8 +436,6 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   <div class="gb-people">
     <div class="gb-col">
       <div class="gb-bt-line"><span class="gb-bt-tag bat">打</span><span id="gb-batter">-</span></div>
-      <div class="gb-bt-line sub"><span class="gb-bt-tag">次</span><span id="gb-next">-</span></div>
-      <div class="gb-bt-line sub"><span class="gb-bt-tag">次々</span><span id="gb-next2">-</span></div>
     </div>
     <div class="gb-col">
       <div class="gb-bt-line"><span class="gb-bt-tag def">投</span><span id="gb-pitcher">-</span></div>
@@ -481,24 +479,36 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 <!-- 攻撃側の打順 ／ 守備位置図 -->
 <div class="fieldpane">
   <div class="fp-left">
-    <div class="fp-hd">
+    <div class="fp-hd" style="flex-wrap:wrap">
       <span class="fp-badge atk">攻撃</span>
-      <span id="fp-atk-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px">先攻</span>
+      <span id="fp-atk-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">先攻</span>
       <button class="qrbtn" onclick="openQR('ctrl/')" title="コントローラーを共有" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
+      <button id="fp-batter-call" onclick="fpBatterCall()"
+        style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:12px;font-weight:800;padding:7px 11px;cursor:pointer;white-space:nowrap">
+        🔊 打者コール
+      </button>
       <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
     </div>
+    <div id="fp-batter-card" style="display:none;margin:4px 8px 0;padding:8px 10px;background:#241a1c;border:1px solid #5a3a3e;border-radius:8px"></div>
     <div id="fp-order" class="fp-order"></div>
   </div>
   <div class="fp-split" id="fp-split" title="ドラッグで幅を調整"></div>
 
   <div class="fp-right">
-    <div class="fp-hd"><span class="fp-badge def">守備</span><span id="fp-def-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px">後攻</span>
+    <div class="fp-hd" style="flex-wrap:wrap">
+      <span class="fp-badge def">守備</span>
+      <span id="fp-def-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">後攻</span>
       <button class="fp-pit" onclick="openPitcherInfo()">📊 投手情報</button>
-      <button id="fp-sub-call" onclick="announceLastSub()"
+      <button id="fp-sub-call" onclick="announceSubs()"
         style="display:none;margin-left:auto;align-items:center;background:#2a3a1a;border:2px solid #5a8a3a;
                border-radius:8px;color:#b8e878;font-size:12px;font-weight:800;padding:7px 11px;cursor:pointer;white-space:nowrap">
         🔁 交代コール
       </button>
+      <button id="fp-sub-clear" onclick="clearSubQueue()"
+        style="display:none;background:#2c2c2e;border:1px solid #555;border-radius:8px;color:#999;font-size:12px;padding:7px 9px;cursor:pointer;white-space:nowrap">
+        クリア
+      </button>
+      <div id="sub-accum-list" style="display:none;flex-basis:100%;text-align:right;font-size:11px;color:#b8e878;line-height:1.7;margin-top:3px"></div>
     </div>
     <div class="fp-body">
       <svg id="fp-field" viewBox="0 0 420 210" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -525,6 +535,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <button class="btn btn-save" onclick="saveTeam('away')">💾 保存</button>
       <button class="btn btn-load" onclick="loadTeam('away')">📂 呼出</button>
       <button class="btn" onclick="renumber('away')">↕ 打順振り直し</button>
+      <button class="btn" id="hon-away" onclick="toggleTeamHon('away')">敬称：くん</button>
       <button class="btn btn-red" onclick="clearTeam('away')">全消去</button>
     </div>
     <div class="tbl-head">
@@ -560,6 +571,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <button class="btn btn-save" onclick="saveTeam('home')">💾 保存</button>
       <button class="btn btn-load" onclick="loadTeam('home')">📂 呼出</button>
       <button class="btn" onclick="renumber('home')">↕ 打順振り直し</button>
+      <button class="btn" id="hon-home" onclick="toggleTeamHon('home')">敬称：くん</button>
       <button class="btn btn-red" onclick="clearTeam('home')">全消去</button>
     </div>
     <div class="tbl-head">
@@ -923,6 +935,7 @@ function render(team){
       +'<select class="cell-sel" onchange="edit(\''+team+'\','+p.id+',\'pos\',this.value)">'+posOptions(p.pos)+'</select>'
       +'<div class="row-acts">'
         +'<button class="mini bat'+(isCur?' on':'')+'" onclick="setBatter(\''+team+'\','+p.id+')" title="この選手を打者にする">打</button>'
+        +'<button class="mini'+(p.f?' on':'')+'" onclick="toggleHon(\''+team+'\','+p.id+')" title="くん / さん">'+(p.f?'さ':'く')+'</button>'
         +'<button class="mini" onclick="toggleBench(\''+team+'\','+p.id+')">'+(p.order?'控':'出')+'</button>'
         +'<button class="mini del" onclick="delPlayer(\''+team+'\','+p.id+')">✕</button>'
       +'</div>'
@@ -931,7 +944,7 @@ function render(team){
   bindDrag(team);
 }
 
-function renderAll(){ render('away'); render('home'); }
+function renderAll(){ render('away'); render('home'); _refreshHonBtn('away'); _refreshHonBtn('home'); }
 
 // ── 編集 ──────────────────────────────────────────────────────────────────
 function edit(team,id,field,val){
@@ -940,6 +953,30 @@ function edit(team,id,field,val){
   p[field]=val.trim();
   if(field==='order') render(team);
   push();
+}
+
+// 敬称（くん/さん）— 選手個別
+function toggleHon(team,id){
+  const p=rosters[team].find(function(x){ return x.id===id; });
+  if(!p) return;
+  p.f = !p.f;
+  render(team); _refreshHonBtn(team); push();
+}
+// 敬称 — チーム一括（1人でも「くん」がいれば全員「さん」に、全員「さん」なら全員「くん」に）
+function toggleTeamHon(team){
+  const all=rosters[team]||[];
+  if(!all.length){ toast('選手が未登録です'); return; }
+  const toSan = all.some(function(p){ return !p.f; });
+  all.forEach(function(p){ p.f = toSan; });
+  render(team); _refreshHonBtn(team); push();
+  toast((team==='away'?'先攻':'後攻')+'：全員「'+(toSan?'さん':'くん')+'」付けに');
+}
+function _refreshHonBtn(team){
+  const b=document.getElementById('hon-'+team);
+  if(!b) return;
+  const all=rosters[team]||[];
+  const allSan = all.length>0 && all.every(function(p){ return !!p.f; });
+  b.textContent = '敬称：'+(allSan?'さん':'くん');
 }
 
 function addPlayer(team){
@@ -1003,6 +1040,48 @@ function setBatter(team, id){
   renderGame(lastRemote);
   pushState();
   toast('打者：'+p.name);
+  _showBatterCard(team, id);
+  _pcBatterId = id;
+}
+
+// ── 打者表示カード（次打者/打者選択で出現、コール後10秒で消える） ──────────
+var _batterCardTimer = null;
+function _showBatterCard(team, id){
+  var p = (rosters[team]||[]).find(function(x){ return x.id===id; });
+  var card = document.getElementById('fp-batter-card');
+  var btn  = document.getElementById('fp-batter-call');
+  if(!card || !p) return;
+  if(_batterCardTimer){ clearTimeout(_batterCardTimer); _batterCardTimer = null; }
+  var res = (typeof _batterResults==='function') ? _batterResults(team, p.id) : [];
+  var hist = res.length
+    ? res.map(function(r){
+        var ex = r.hit || r.defense || '';
+        return '<span class="fp-res'+(r.reached?' ok':'')+'">'+esc(r.label)+(ex?'<em>'+esc(ex)+'</em>':'')+'</span>';
+      }).join('')
+    : '<span class="fp-res none">まだ打席なし</span>';
+  card.innerHTML =
+     '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+    +  '<span style="font-size:22px;font-weight:800;color:#ff6b6b">'+esc(p.order||'-')+'番</span>'
+    +  '<span style="font-size:15px;color:#9ac0ff">'+esc(posLabel(p.pos)||'')+'</span>'
+    +  (p.num?'<span style="font-size:13px;color:#999">背番号 '+esc(p.num)+'</span>':'')
+    +'</div>'
+    +'<div style="font-size:20px;font-weight:700;color:#fff;margin-top:2px">'+esc(p.name||'')+'</div>'
+    +(p.yomi?'<div style="font-size:12px;color:#9a9;margin-top:1px">'+esc(p.yomi)+'</div>':'')
+    +'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">'+hist+'</div>';
+  card.style.display = 'block';
+  if(btn) btn.style.display = _annOn ? 'inline-flex' : 'none';
+}
+function _hideBatterCard(){
+  var card = document.getElementById('fp-batter-card');
+  var btn  = document.getElementById('fp-batter-call');
+  if(card) card.style.display = 'none';
+  if(btn)  btn.style.display = 'none';
+  if(_batterCardTimer){ clearTimeout(_batterCardTimer); _batterCardTimer = null; }
+}
+function fpBatterCall(){
+  announceCurrentBatter();
+  if(_batterCardTimer) clearTimeout(_batterCardTimer);
+  _batterCardTimer = setTimeout(_hideBatterCard, 10000);
 }
 
 // lastRemote の内容をそのまま送り返す（ロスター以外も維持）
@@ -1340,6 +1419,7 @@ function applySub(){
   const numTx   = pi.num ? '、背番号'+pi.num : '';
   const ord     = po.order || '';
   const base    = document.getElementById('sub-base').value || '';
+  const hO      = _hon(po), hI = _hon(pi);
   pi.order=po.order;
   po._prevOrder=po.order;
   po.order='';
@@ -1352,18 +1432,18 @@ function applySub(){
 
   // ── アナウンス ──
   if(subKind==='守備交代'){
-    _subQueue.push({ core:(posName?posName+'、':'') + outNm + 'くんに代わりまして、' + inNm + 'くん' + numTx });
+    _subQueue.push({ core:(posName?posName+'、':'') + outNm + hO + 'に代わりまして、' + inNm + hI + numTx });
     _refreshSubBtn();
     toast('交代コールに追加（'+_subQueue.length+'件）');
   }else if(subKind==='代打' && _annOn){
     confirmSpeak('🔊 代打',
-      '代打をお知らせします。' + (ord?ord+'番 ':'') + outNm + 'くんに代わりまして、代打、'
-      + inNm + 'くん' + numTx + '。バッター、' + inNm + 'くん。',
+      '代打をお知らせします。' + (ord?ord+'番 ':'') + outNm + hO + 'に代わりまして、代打、'
+      + inNm + hI + numTx + '。バッター、' + inNm + hI + '。',
       _ttsVoice, _ttsStyle, _annRate);
   }else if(subKind==='代走' && _annOn){
     confirmSpeak('🔊 代走',
-      '代走をお知らせします。' + (base?base+'ランナー ':'') + outNm + 'くんに代わりまして、代走、'
-      + inNm + 'くん。',
+      '代走をお知らせします。' + (base?base+'ランナー ':'') + outNm + hO + 'に代わりまして、代走、'
+      + inNm + hI + '。',
       _ttsVoice, _ttsStyle, _annRate);
   }
 }
@@ -1402,6 +1482,7 @@ function connectWS(){
 
 var _prevInnKey = null;
 var _prevPitcherId = 0;
+var _pcBatterId = 0;
 function applyRemote(s){
   applyingRemote=true;
   try{
@@ -1419,6 +1500,13 @@ function applyRemote(s){
       try{ _pitcherChangeReport(s, _prevPitcherId); }catch(e){}
     }
     _prevPitcherId = _pid;
+    // 打者が変わったら打者表示カードを出す（コントローラー側で次打者を押したときも）
+    var _bid = (s.selIds && s.selIds.batter) || 0;
+    if(_pcBatterId && _bid && _bid !== _pcBatterId){
+      var _bteam = (s.top!==false) ? 'away' : 'home';
+      try{ _showBatterCard(_bteam, _bid); }catch(e){}
+    }
+    _pcBatterId = _bid;
     if(s.rostersAll){
       if(Array.isArray(s.rostersAll.away)) rosters.away=JSON.parse(JSON.stringify(s.rostersAll.away));
       if(Array.isArray(s.rostersAll.home)) rosters.home=JSON.parse(JSON.stringify(s.rostersAll.home));
@@ -1719,9 +1807,10 @@ function announcePitcherStats(){
   var pit='';
   var r=_spdLog.find(function(x){ return x.pitcherId===_pitViewId; });
   if(r) pit=r.pitcher;
+  var _pp=(rosters.away||[]).concat(rosters.home||[]).find(function(x){ return x.id===_pitViewId; });
 
   var parts=[];
-  parts.push((pit?pit+'くん、':'')+'ここまで'+st.all.n+'球。');
+  parts.push((pit?pit+_hon(_pp)+'、':'')+'ここまで'+st.all.n+'球。');
   parts.push('最速'+st.all.max+'キロ、平均'+st.all.avg+'キロです。');
 
   // 主な球種を2つまで
@@ -2368,23 +2457,25 @@ function assignPosition(team, playerId, pos){
 
   var posName = POS_YOMI[String(pos)] || posLabel(pos) || pos;
   var mvNm = String(moving.yomi||moving.name||'').trim();
+  var hMv = _hon(moving);
 
   if(occupant){
     var ocNm = String(occupant.yomi||occupant.name||'').trim();
+    var hOc = _hon(occupant);
     if(prevPos){
       var prevName = POS_YOMI[String(prevPos)] || posLabel(prevPos) || prevPos;
       occupant.pos = prevPos;
-      _subQueue.push({ core: mvNm + 'くんが' + posName + '、' + ocNm + 'くんが' + prevName });
+      _subQueue.push({ core: mvNm + hMv + 'が' + posName + '、' + ocNm + hOc + 'が' + prevName });
       toast(occupant.name+' ⇄ '+moving.name);
     }else{
       if(occupant.order){ moving.order = occupant.order; occupant.order=''; }
       occupant.pos = '';
-      _subQueue.push({ core: posName + '、' + ocNm + 'くんに代わりまして、' + mvNm + 'くん'
+      _subQueue.push({ core: posName + '、' + ocNm + hOc + 'に代わりまして、' + mvNm + hMv
              + (moving.num ? '、背番号' + moving.num : '') });
       toast('守備交代：'+occupant.name+' → '+moving.name);
     }
   }else{
-    _subQueue.push({ core: mvNm + 'くんが' + posName + 'へ' });
+    _subQueue.push({ core: mvNm + hMv + 'が' + posName + 'へ' });
     toast(moving.name+' を '+(posLabel(pos)||pos)+' へ');
   }
   moving.pos = pos;
@@ -2407,12 +2498,32 @@ function announceSubs(){
 // 旧名の互換
 function announceLastSub(){ announceSubs(); }
 
+function _circledNum(n){
+  var c=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+  return c[n-1] || (n+'.');
+}
 function _refreshSubBtn(){
-  var b=document.getElementById('fp-sub-call');
-  if(!b) return;
   var n=_subQueue.length;
-  b.style.display = n ? 'inline-flex' : 'none';
-  b.textContent = n>1 ? ('🔁 交代コール ('+n+')') : '🔁 交代コール';
+  var esc=function(s){ return String(s||'').replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); };
+  var b=document.getElementById('fp-sub-call');
+  if(b){
+    b.style.display = n ? 'inline-flex' : 'none';
+    b.textContent = n>1 ? ('🔁 交代コール ('+n+')') : '🔁 交代コール';
+  }
+  var clr=document.getElementById('fp-sub-clear');
+  if(clr) clr.style.display = n ? 'inline-flex' : 'none';
+  var list=document.getElementById('sub-accum-list');
+  if(list){
+    list.style.display = n ? 'block' : 'none';
+    list.innerHTML = _subQueue.map(function(x,i){
+      return '<div>'+_circledNum(i+1)+' '+esc(x.core)+'</div>';
+    }).join('');
+  }
+}
+function clearSubQueue(){
+  _subQueue = [];
+  _refreshSubBtn();
+  toast('交代の蓄積をクリアしました');
 }
 
 // ── 場内アナウンス（Azure TTS） ────────────────────────────────────────────
@@ -2734,6 +2845,9 @@ function _speak(text){
     });
 }
 
+// 敬称：選手個別フラグ p.f（true=女子=さん付け）。チーム既定は登録画面の一括ボタンで p.f をまとめて設定。
+function _hon(p){ return (p && p.f) ? 'さん' : 'くん'; }
+
 // 「3番、ショート、山田くん」
 function _batterPhrase(p){
   if(!p) return '';
@@ -2744,7 +2858,7 @@ function _batterPhrase(p){
   // 読み仮名があれば読み上げに使う
   var nm = String(p.yomi || p.name || '').trim();
   if(!nm) return '';
-  parts.push(nm+'くん');
+  parts.push(nm+_hon(p));
   if(p.num) parts.push('背番号'+p.num);
   return parts.join('、');
 }
@@ -2835,10 +2949,10 @@ function _lineupText(team){
     var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
     var nm = String(p.yomi || p.name || '').trim();
     if(!nm) return '';
-    return p.order + '番、' + (pl ? pl + '、' : '') + nm + 'くん';
+    return p.order + '番、' + (pl ? pl + '、' : '') + nm + _hon(p);
   }).filter(Boolean);
   if(!lines.length) return '';
-  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。';
+  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。以上です。';
 }
 
 var _DEF_SEQ = ['1','2','3','4','5','6','7','8','9'];
@@ -2853,7 +2967,7 @@ function _defenseText(team){
     if(!p) return;
     var nm = String(p.yomi || p.name || '').trim();
     if(!nm) return;
-    parts.push((POS_YOMI[code] || '') + '、' + nm + 'くん');
+    parts.push((POS_YOMI[code] || '') + '、' + nm + _hon(p));
   });
   if(!parts.length) return '';
   return tn + 'の守備をお知らせします。' + parts.join('。') + '。';
@@ -2886,8 +3000,11 @@ function _pcAt(log, pid, inn, top){
   return log.filter(function(r){ return r.pid === pid && r.inn === inn && r.top === top; }).length;
 }
 
+function _pcPlayer(pid){
+  return (rosters.away || []).concat(rosters.home || []).find(function(x){ return x.id === pid; }) || null;
+}
 function _pcName(pid){
-  var p = (rosters.away || []).concat(rosters.home || []).find(function(x){ return x.id === pid; });
+  var p = _pcPlayer(pid);
   return p ? String(p.yomi || p.name || '').trim() : '';
 }
 
@@ -2904,7 +3021,8 @@ function _inningPitchReport(s, prevKey){
   if(thisInn <= 0) return;
   var total = log.filter(function(r){ return r.pid === pid; }).length;
   var nm = _pcName(pid);
-  var txt = 'この回の' + (nm ? nm + 'くんの' : '') + '投球数は' + thisInn + '球、累計は' + total + '球です。';
+  var txt = 'この回の' + (nm ? nm + _hon(_pcPlayer(pid)) + 'の' : '') + '投球数は' + thisInn + '球'
+      + (total !== thisInn ? '、累計は' + total + '球' : '') + 'です。';
   setTimeout(function(){ _speakAs(txt, _ttsVoice, _ttsStyle, _annRate); }, 400);
 }
 
@@ -2917,7 +3035,8 @@ function _pitcherChangeReport(s, oldPid){
   if(thisInn <= 0) return;   // この回投げていない＝イニング頭の交代（3アウト側で処理）
   var total = log.filter(function(r){ return r.pid === oldPid; }).length;
   var nm = _pcName(oldPid);
-  var txt = 'ここまでの' + (nm ? nm + 'くんの' : '') + '投球数は' + thisInn + '球、累計は' + total + '球です。';
+  var txt = 'ここまでの' + (nm ? nm + _hon(_pcPlayer(oldPid)) + 'の' : '') + '投球数は' + thisInn + '球'
+      + (total !== thisInn ? '、累計は' + total + '球' : '') + 'です。';
   setTimeout(function(){ _speakAs(txt, _ttsVoice, _ttsStyle, _annRate); }, 400);
 }
 
@@ -3041,7 +3160,8 @@ function announceSituation(){
   // 打者
   if(s.batter){
     var nm = String(s.batter).replace(/^#\d+\s*/,'');
-    parts.push('バッターは'+nm+'くんです。');
+    var _bp = (rosters.away||[]).concat(rosters.home||[]).find(function(x){ return x.id===(s.selIds&&s.selIds.batter); });
+    parts.push('バッターは'+nm+_hon(_bp)+'です。');
   }
 
   confirmSpeak('🎙 実況', parts.join(' '), _cmtVoice, _cmtStyle, _cmtRate);
@@ -3128,11 +3248,9 @@ function renderGame(s){
     if(el) el.classList.toggle('on',!!r[pair[1]]);
   });
 
-  // 打者・次打者・次々打者
+  // 打者（次・次々打者の表示は廃止。値は overlay 用に state では保持）
   const setTxt=function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v||'-'; };
   setTxt('gb-batter',s.batter);
-  setTxt('gb-next',s.batterNext);
-  setTxt('gb-next2',s.batterNext2);
 
   // 投手・捕手・守備チーム
   setTxt('gb-pitcher',s.pitcher);
