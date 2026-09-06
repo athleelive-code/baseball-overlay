@@ -811,13 +811,15 @@ function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/?overlay=1');
-    ws.onopen=()=>{_wsStatus('WS●','#1a5a1a');};
+    ws.onopen=()=>{_wsStatus('WS●','#1a5a1a');try{ws.send(JSON.stringify({_req:'state'}));}catch(e){}};
     ws.onmessage=e=>{
       const h=t=>{
         try{
           const d=JSON.parse(t);
           // 球速だけのメッセージは他の表示に触れず処理する
           if(d && d._spd){ applySpeed(d.speed); return; }
+          // 全状態（コントローラー）以外は無視。_pcEdit や _req でカウント・走者を消さない
+          if(!d || d._ctl!==true) return;
           _pendingState=d;
           if(!_applyTimer)_applyTimer=setTimeout(()=>{_applyTimer=null;if(_pendingState)applyState(_pendingState);},50);
         }catch(err){}

@@ -323,6 +323,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   font-variant-numeric:tabular-nums;line-height:1;
   min-width:2ch;text-align:center;
 }
+/* 試合中モード：1球操作に不要なボタンを隠す */
+body.gamemin .gm-hide{display:none!important}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -513,13 +515,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
 <!-- イニングスコア表示・イニングコール -->
 <div style="padding:8px 14px 10px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;gap:8px">
-  <button onclick="showScoreOverlay()" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:26px;font-weight:800;padding:18px 6px;cursor:pointer;line-height:1.2">
+  <button onclick="showScoreOverlay()" class="gm-hide" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:26px;font-weight:800;padding:18px 6px;cursor:pointer;line-height:1.2">
     📊 イニングスコア 表示
   </button>
-  <button onclick="announceCurrentInning()" style="flex:0 0 auto;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:24px;font-weight:800;padding:18px 16px;cursor:pointer;line-height:1.2;white-space:nowrap">
+  <button onclick="announceCurrentInning()" style="flex:1;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:24px;font-weight:800;padding:18px 16px;cursor:pointer;line-height:1.2;white-space:nowrap">
     🔊 回<br>コール
   </button>
-  <button onclick="announceSituation()" style="flex:0 0 auto;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:24px;font-weight:800;padding:18px 16px;cursor:pointer;line-height:1.2;white-space:nowrap">
+  <button onclick="announceSituation()" class="gm-hide" style="flex:0 0 auto;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:24px;font-weight:800;padding:18px 16px;cursor:pointer;line-height:1.2;white-space:nowrap">
     🎙 実況
   </button>
 </div>
@@ -562,7 +564,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       打者 表示
     </button>
     <!-- 打順表示 + 打順変更 -->
-    <div style="display:flex;gap:8px;width:100%">
+    <div class="gm-hide" style="display:flex;gap:8px;width:100%">
       <button id="btn-bat-visible" onclick="toggleBatVisible()"
         style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:700;padding:22px 6px;cursor:pointer">
         打順 表示
@@ -577,7 +579,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   <div style="flex:1;display:flex;flex-direction:column;border-left:1px solid #1a1a1a">
     <div class="battery-cell" style="border-bottom:1px solid #1a1a1a">
       <span class="battery-tag">投</span>
-      <select class="battery-sel" id="sel-pitcher" onchange="_updatePitchDisp()">
+      <select class="battery-sel" id="sel-pitcher" onchange="_onPitcherChange()">
         <option value="">-- 投手 --</option>
       </select>
     </div>
@@ -600,21 +602,21 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       </select>
     </div>
     <!-- 守備位置 表示/非表示ボタン -->
-    <div style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
+    <div class="gm-hide" style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
       <button id="btn-pc-visible" onclick="togglePCVisible()"
         style="width:100%;background:#3a2a1a;border:1px solid #8a6a3a;border-radius:10px;color:#ffaa66;font-size:28px;font-weight:700;padding:22px 8px;cursor:pointer">
         守備位置 表示
       </button>
     </div>
     <!-- 守備配置表示ボタン -->
-    <div style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
+    <div class="gm-hide" style="padding:6px 8px 4px;border-bottom:1px solid #1a1a1a">
       <button id="btn-def-visible" onclick="toggleDefVisible()"
         style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:700;padding:22px 8px;cursor:pointer">
         守備配置 表示
       </button>
     </div>
     <!-- 守備位置変更ボタン -->
-    <div style="padding:4px 8px 6px">
+    <div class="gm-hide" style="padding:4px 8px 6px">
       <button onclick="openDefSubPanel()"
         style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:28px;font-weight:700;padding:22px 8px;cursor:pointer">
         守備位置 変更
@@ -704,6 +706,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
       <button onclick="backToDefField()" style="flex:1;background:#2c2c2e;border:none;border-radius:10px;color:#888;font-size:14px;padding:12px;cursor:pointer">戻る</button>
     </div>
   </div>
+  <button id="def-sub-call" onclick="announceDefSubs()" style="display:none;width:100%;margin-top:10px;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:16px;font-weight:800;padding:12px;cursor:pointer">🔁 交代コール</button>
 </div>
 
 <!-- SETTINGS DRAWER -->
@@ -721,6 +724,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 
   <!-- 設定タブ -->
   <div id="dtab-config">
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">試合中モード</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">ONにすると、1球操作に不要なボタン（イニングスコア表示・実況・打順表示/変更・守備表示/変更）を隠します</div>
+      <button id="btn-gamemin" onclick="toggleGameMin()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:26px;font-weight:700;padding:14px;cursor:pointer">
+        試合中モード OFF
+      </button>
+    </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">チームカラー</div>
       <div style="display:flex;flex-direction:column;gap:14px">
@@ -855,6 +865,20 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
         style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:22px;font-weight:600;padding:12px;cursor:pointer;margin-top:8px">
         🗑 保存音声を削除
       </button>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">試合前アナウンス</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">「アナウンス ON」のときに使えます。押すと確認ウインドウが出るので、内容を直してから読み上げられます</div>
+      <div style="font-size:20px;color:#888;margin-bottom:6px">スタメン発表（試合開始前・打順どおり）</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button onclick="announceLineup('away')" style="flex:1;background:#2a3a1a;border:1px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:24px;font-weight:700;padding:16px 6px;cursor:pointer">先攻 スタメン</button>
+        <button onclick="announceLineup('home')" style="flex:1;background:#2a3a1a;border:1px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:24px;font-weight:700;padding:16px 6px;cursor:pointer">後攻 スタメン</button>
+      </div>
+      <div style="font-size:20px;color:#888;margin-bottom:6px">守備紹介（試合開始後・投→捕→一〜右）</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="announceDefense('away')" style="flex:1;background:#2a3a1a;border:1px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:24px;font-weight:700;padding:16px 6px;cursor:pointer">先攻 守備</button>
+        <button onclick="announceDefense('home')" style="flex:1;background:#2a3a1a;border:1px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:24px;font-weight:700;padding:16px 6px;cursor:pointer">後攻 守備</button>
+      </div>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">オーバーレイ表示</div>
@@ -1570,6 +1594,23 @@ function _updatePitchDisp(){
   el.textContent = _pitchThisInning(id) + ' / ' + _pitchTotal(id);
 }
 
+// 投手セレクトを手で変えたとき：表示更新＋直前の投手の球数を自動アナウンス
+var _prevPitcherId = 0;
+function _onPitcherChange(){
+  var newId = _curPitcherId();
+  var oldId = _prevPitcherId;
+  _prevPitcherId = newId;
+  _updatePitchDisp();
+  if(!oldId || !newId || oldId===newId) return;
+  if(!_pitchAutoCall || !_annOn) return;
+  var thisInn = _pitchAtInning(oldId, st.inn, st.top);
+  if(thisInn<=0) return;   // この回投げていない＝イニング頭の交代（3アウト側で処理）
+  var p = rosters.away.concat(rosters.home).find(function(x){ return x.id===oldId; });
+  var nm = p ? (p.yomi||p.name) : '';
+  var txt = 'ここまでの'+(nm ? nm+'くんの' : '')+'投球数は'+thisInn+'球、累計は'+_pitchTotal(oldId)+'球です。';
+  setTimeout(function(){ _speakAs(txt, _ttsVoice, _ttsStyle, _annRate); }, 400);
+}
+
 var _lastPitchReport = null;
 var _pitchAutoCall = false;
 
@@ -1588,23 +1629,44 @@ function _refreshPitchAutoBtn(){
   b.style.color       = _pitchAutoCall ? '#86c867' : '#999';
 }
 
+// ── 試合中モード（1球操作に不要なボタンを隠す） ─────────────────────────
+var _gameMin = false;
+function _refreshGameMinBtn(){
+  document.body.classList.toggle('gamemin', _gameMin);
+  var b=document.getElementById('btn-gamemin');
+  if(!b) return;
+  b.textContent      = _gameMin ? '試合中モード ON' : '試合中モード OFF';
+  b.style.background  = _gameMin ? '#1a3a1a' : '#2c2c2e';
+  b.style.borderColor = _gameMin ? '#3a6a2a' : '#444';
+  b.style.color       = _gameMin ? '#86c867' : '#999';
+}
+function toggleGameMin(){
+  _gameMin = !_gameMin;
+  try{ localStorage.setItem('bb_game_min', _gameMin?'1':'0'); }catch(e){}
+  _refreshGameMinBtn();
+}
+try{ _gameMin = localStorage.getItem('bb_game_min')==='1'; }catch(e){}
+_refreshGameMinBtn();
+
 // イニング交代時：締めた回の球数でアナウンス文を用意
-function _pitchInningEnd(){
-  var id=_curPitcherId();
+// id/inn/top は攻守交替が起きる前の値を渡す（省略時は現在値）
+function _pitchInningEnd(id, inn, top){
+  id = id || _curPitcherId();
   if(!id) return;
-  var thisInn=_pitchAtInning(id, st.inn, st.top);
+  if(typeof inn !== 'number')  inn = st.inn;
+  if(typeof top !== 'boolean') top = st.top;
+  var thisInn=_pitchAtInning(id, inn, top);
   if(thisInn<=0) return;
-  var team = st.top ? 'home' : 'away';
-  var p = rosters[team].find(function(x){ return x.id===id; });
+  // 投手はまだ交代していない。id でどちらのチームか探す
+  var p = rosters.away.concat(rosters.home).find(function(x){ return x.id===id; });
   var nm = p ? (p.yomi||p.name) : '';
   _lastPitchReport = {
-    text: (nm ? nm+'くん、' : '') + 'この回の投球数は'+thisInn+'球、'
-          + '合計'+_pitchTotal(id)+'球です。'
+    text: 'この回の'+(nm ? nm+'くんの' : '')+'投球数は'+thisInn+'球、累計は'+_pitchTotal(id)+'球です。'
   };
   _updatePitchDisp();
   if(_pitchAutoCall && _annOn && _lastPitchReport){
     setTimeout(function(){
-      _speakAs(_lastPitchReport.text, _cmtVoice, _cmtStyle, _cmtRate);
+      _speakAs(_lastPitchReport.text, _ttsVoice, _ttsStyle, _annRate);
     }, 400);
   }
 }
@@ -1733,9 +1795,9 @@ function announceSituation(){
 // 読み上げ前に内容を確認・編集する
 var _pendingSpeak = null;
 
-function confirmSpeak(title, text, voice, style, rate){
+function confirmSpeak(title, text, voice, style, rate, after){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
-  _pendingSpeak = { voice:voice, style:style, rate:rate };
+  _pendingSpeak = { voice:voice, style:style, rate:rate, after:after };
   document.getElementById('speak-title').textContent = title;
   document.getElementById('speak-text').value = text;
   openWin('speak-mask', null, null);
@@ -1754,6 +1816,7 @@ function doSpeakConfirmed(){
   closeSpeakModal();
   if(!t) return;
   _speakAs(t, opt.voice, opt.style, opt.rate);
+  if(typeof opt.after==='function'){ try{ opt.after(); }catch(e){} }
 }
 
 // 現在選択中の打者を読み上げる
@@ -1768,13 +1831,75 @@ function announceCurrentBatter(){
   if(t) _speakAs(t, _ttsVoice, _ttsStyle, _annRate);
 }
 
-// 現在のイニングを読み上げる
+// 現在のイニングを読み上げる（確認ウインドウなし・「〜の攻撃は」＋その回の先頭打者をセット）
 function announceCurrentInning(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var teamEl = st.top ? document.getElementById('name-away') : document.getElementById('name-home');
   var team = teamEl ? teamEl.textContent : (st.top ? '先攻' : '後攻');
-  confirmSpeak('🔊 回コール', st.inn+'回'+(st.top?'おもて':'うら')+'、'+team+'の攻撃',
-               _ttsVoice, _ttsStyle, _annRate);
+  var txt = st.inn+'回'+(st.top?'おもて':'うら')+'、'+team+'の攻撃は';
+  var sel = document.getElementById('sel-batter');
+  if(sel && sel.value){
+    var bteam = st.top ? 'away' : 'home';
+    var p = rosters[bteam].find(function(x){ return x.id===Number(sel.value); });
+    if(p){ var lp = _batterPhrase(p); if(lp) txt += '、' + lp; }
+  }
+  _speakAs(txt, _ttsVoice, _ttsStyle, _annRate);
+}
+
+// ── スタメン発表／守備紹介 ───────────────────────────────────────────────
+// team: 'away'=先攻, 'home'=後攻。読み上げは「コールの声」（_ttsVoice）を使う。
+
+// 打順どおりの文言（背番号なし）「◯◯のスタメン…。1番、ショート、やまだくん。2番、…」
+function _lineupText(team){
+  var roster = (rosters[team] || []).filter(function(p){ return p.order; })
+    .sort(function(a,b){ return Number(a.order) - Number(b.order); });
+  if(!roster.length) return '';
+  var nameEl = document.getElementById(team === 'away' ? 'name-away' : 'name-home');
+  var tn = nameEl ? nameEl.textContent : (team === 'away' ? '先攻' : '後攻');
+  var lines = roster.map(function(p){
+    var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
+    var nm = String(p.yomi || p.name || '').trim();
+    if(!nm) return '';
+    return p.order + '番、' + (pl ? pl + '、' : '') + nm + 'くん';
+  }).filter(Boolean);
+  if(!lines.length) return '';
+  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。';
+}
+
+// 守備位置順（投→捕→一→二→三→遊→左→中→右）の文言（背番号なし）
+var _DEF_SEQ = ['1','2','3','4','5','6','7','8','9'];
+function _defenseText(team){
+  var roster = rosters[team] || [];
+  if(!roster.length) return '';
+  var nameEl = document.getElementById(team === 'away' ? 'name-away' : 'name-home');
+  var tn = nameEl ? nameEl.textContent : (team === 'away' ? '先攻' : '後攻');
+  var parts = [];
+  _DEF_SEQ.forEach(function(code){
+    var lab = posLabel(code);
+    var p = roster.find(function(x){ return posLabel(x.pos) === lab || String(x.pos) === code; });
+    if(!p) return;
+    var nm = String(p.yomi || p.name || '').trim();
+    if(!nm) return;
+    parts.push((POS_YOMI[code] || '') + '、' + nm + 'くん');
+  });
+  if(!parts.length) return '';
+  return tn + 'の守備をお知らせします。' + parts.join('。') + '。';
+}
+
+// スタメン発表（試合開始前）
+function announceLineup(team){
+  if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  var t = _lineupText(team);
+  if(!t){ alert('打順が登録されていません'); return; }
+  confirmSpeak(team === 'away' ? '🔊 先攻 スタメン' : '🔊 後攻 スタメン', t, _ttsVoice, _ttsStyle, _annRate);
+}
+
+// 守備紹介（試合開始後）
+function announceDefense(team){
+  if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  var t = _defenseText(team);
+  if(!t){ alert('守備位置が登録されていません'); return; }
+  confirmSpeak(team === 'away' ? '🔊 先攻 守備' : '🔊 後攻 守備', t, _ttsVoice, _ttsStyle, _annRate);
 }
 
 function toggleAnnounce(){
@@ -1859,9 +1984,13 @@ function prebuildVoices(){
   var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
   var an=na?na.textContent:'先攻', hn=nh?nh.textContent:'後攻';
   for(var i=1;i<=10;i++){
-    texts.push(i+'回おもて、'+an+'の攻撃');
-    texts.push(i+'回うら、'+hn+'の攻撃');
+    texts.push(i+'回おもて、'+an+'の攻撃は');
+    texts.push(i+'回うら、'+hn+'の攻撃は');
   }
+  ['away','home'].forEach(function(t){
+    var lt=_lineupText(t);  if(lt) texts.push(lt);
+    var dt=_defenseText(t); if(dt) texts.push(dt);
+  });
   texts = texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
   var btn=document.getElementById('btn-prebuild');
@@ -2930,6 +3059,9 @@ function removeRun(){
   renderSB(); broadcast();
 }
 function nextInn(){
+  // 攻守交替の前に、締める回の投手・回・表裏を控える
+  const _endPid = _curPitcherId();
+  const _endInn = st.inn, _endTop = st.top;
   bso.b=0; bso.s=0; bso.o=0;
   Object.assign(bases,{1:false,2:false,3:false});
   // 現在の攻撃チームのイニングがnullなら0を入力
@@ -2940,8 +3072,8 @@ function nextInn(){
   else{ adjInn(1); setTop(true); }
   renderBSO(); renderDiamond(); renderSB();
   _abReset(); _updateAbDisp();
-  // その回の投球数を締めてアナウンス文を用意
-  if(typeof _pitchInningEnd==='function') _pitchInningEnd();
+  // その回の投球数を締めてアナウンス文を用意（交代前の値で集計）
+  if(typeof _pitchInningEnd==='function') _pitchInningEnd(_endPid, _endInn, _endTop);
   // イニングチャプターを記録
   var _chapLabel = (st.top ? st.inn+'回表' : st.inn+'回裏');
   _recordChapter(_chapLabel);
@@ -3473,6 +3605,8 @@ function updateSelects(){
     const curP=rosters[batTeam].find(p=>p.id===curBatId);
     orderEl.textContent=curP&&curP.order?curP.order:'-';
   }
+  // プログラムによる投手セレクトの変更は「交代」とみなさない
+  _prevPitcherId = _curPitcherId();
 }
 function adjMaxInn(d){
   st.maxInn = Math.max(3, Math.min(15, st.maxInn + d));
@@ -4319,11 +4453,31 @@ const DEF_POS_COORDS={
 const DEF_COLORS={'1':'rgba(150,60,20,.93)','2':'rgba(20,60,140,.93)','3':'rgba(15,80,50,.93)','4':'rgba(15,80,50,.93)','5':'rgba(15,80,50,.93)','6':'rgba(15,80,50,.93)','7':'rgba(30,80,15,.93)','8':'rgba(30,80,15,.93)','9':'rgba(30,80,15,.93)','DH':'rgba(60,40,130,.93)'};
 let _defSubTeam=null,_defSubOutId=null,_defSubInId=null,_dsubLT=null,_dsubProg=null;
 
+// 守備交代はキューに貯めて「交代コール」でまとめて読み上げる
+var _defSubQueue = [];
+function _refreshDefSubCall(){
+  var b=document.getElementById('def-sub-call');
+  if(!b) return;
+  var n=_defSubQueue.length;
+  b.style.display = n ? 'block' : 'none';
+  b.textContent = n>1 ? ('🔁 交代コール ('+n+')') : '🔁 交代コール';
+}
+function announceDefSubs(){
+  if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  if(!_defSubQueue.length){ alert('たまっている交代がありません'); return; }
+  var cores=_defSubQueue.map(function(x){ return x.core; }).filter(Boolean);
+  confirmSpeak('🔁 交代のお知らせ（'+_defSubQueue.length+'件）',
+    '選手の交代をお知らせします。'+cores.join('。')+'。',
+    _ttsVoice, _ttsStyle, _annRate,
+    function(){ _defSubQueue=[]; _refreshDefSubCall(); });
+}
+
 function openDefSubPanel(){
   document.getElementById('def-sub-bg').style.display='block';
   document.getElementById('def-sub-panel').style.display='block';
   document.getElementById('def-sub-bench').style.display='none';
   document.getElementById('def-sub-confirm').style.display='none';
+  _refreshDefSubCall();
   _defSubTeam=null;
   document.getElementById('def-sub-badges').innerHTML='';
   document.getElementById('dst-away-btn').style.background='#2c2c2e';
@@ -4428,6 +4582,13 @@ function confirmDefSub(){
   const outP=rosters[_defSubTeam].find(p=>p.id===_defSubOutId);
   const inP=rosters[_defSubTeam].find(p=>p.id===_defSubInId);
   if(!outP||!inP) return;
+  // アナウンス文言は入れ替え前の守備位置で作る
+  const _posNm = POS_YOMI[String(outP.pos)] || POS_YOMI[posLabel(outP.pos)] || '';
+  const _oNm = String(outP.yomi||outP.name||'').trim();
+  const _iNm = String(inP.yomi||inP.name||'').trim();
+  _defSubQueue.push({ core:(_posNm?_posNm+'、':'') + _oNm + 'くんに代わりまして、' + _iNm + 'くん'
+        + (inP.num ? '、背番号'+inP.num : '') });
+  _refreshDefSubCall();
   const tp=outP.pos; outP.pos=inP.pos; inP.pos=tp;
   const to=outP.order; outP.order=inP.order; inP.order=to;
   renderDefSubField(); updateSelects(); renderRosters();

@@ -261,7 +261,10 @@ wss.on('connection', (ws, req) => {
 
   ws.on('message', (data) => {
     const text = data.toString();
-    try { JSON.parse(text); lastState = text; } catch(e) {}
+    // 全状態（コントローラー _ctl:true）だけを復帰用に保存する。
+    // _pcEdit の部分更新や {_req:'state'} を保存すると、overlay 再接続時に
+    // カウント・走者・スコアが消えた状態で初期化されてしまう。
+    try { const d = JSON.parse(text); if (d && d._ctl === true) lastState = text; } catch(e) {}
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) client.send(text);
     });

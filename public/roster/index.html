@@ -610,6 +610,14 @@ body.fp-resizing{cursor:col-resize;user-select:none}
         <div class="note" style="margin:0 0 5px">入る選手（ベンチ）</div>
         <select class="cell-sel" id="sub-in" style="text-align:left;padding:10px"></select>
       </div>
+      <div id="sub-base-wrap" style="display:none">
+        <div class="note" style="margin:0 0 5px">入る塁</div>
+        <select class="cell-sel" id="sub-base" style="text-align:left;padding:10px">
+          <option value="一塁">一塁</option>
+          <option value="二塁">二塁</option>
+          <option value="三塁">三塁</option>
+        </select>
+      </div>
     </div>
     <div class="modal-acts">
       <button class="btn btn-save" style="flex:1" onclick="applySub()">交代する</button>
@@ -640,6 +648,23 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <div class="set-lbl">場内アナウンス</div>
       <button class="btn" id="set-ann-toggle" onclick="toggleAnnounce()"
         style="width:100%;font-size:16px;padding:14px">🔈 アナウンス OFF</button>
+      <button class="btn" id="set-pitch-auto" onclick="togglePitchAuto()"
+        style="width:100%;font-size:14px;padding:12px;margin-top:8px">🔈 イニング交代時に投球数を自動アナウンス OFF</button>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">試合前アナウンス</div>
+      <div class="note" style="margin-bottom:8px">「アナウンス ON」のときに使えます。押すと確認ウインドウが出ます</div>
+      <div class="note" style="margin-bottom:4px">スタメン発表（試合開始前・打順どおり）</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn" style="flex:1;font-size:15px;padding:13px;background:#2a3a1a;border-color:#5a8a3a;color:#b8e878" onclick="announceLineup('away')">先攻 スタメン</button>
+        <button class="btn" style="flex:1;font-size:15px;padding:13px;background:#2a3a1a;border-color:#5a8a3a;color:#b8e878" onclick="announceLineup('home')">後攻 スタメン</button>
+      </div>
+      <div class="note" style="margin-bottom:4px">守備紹介（試合開始後・投→捕→一〜右）</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="flex:1;font-size:15px;padding:13px;background:#2a3a1a;border-color:#5a8a3a;color:#b8e878" onclick="announceDefense('away')">先攻 守備</button>
+        <button class="btn" style="flex:1;font-size:15px;padding:13px;background:#2a3a1a;border-color:#5a8a3a;color:#b8e878" onclick="announceDefense('home')">後攻 守備</button>
+      </div>
     </div>
 
     <div class="set-sec">
@@ -1286,6 +1311,7 @@ let subTeam=null, subKind=null;
 function openSub(team,kind){
   subTeam=team; subKind=kind;
   document.getElementById('sub-title').textContent=kind;
+  document.getElementById('sub-base-wrap').style.display = (kind==='代走') ? 'block' : 'none';
   const on=sorted(team).filter(function(p){ return p.order; });
   const off=sorted(team).filter(function(p){ return !p.order; });
   if(!on.length||!off.length){
@@ -1307,6 +1333,13 @@ function applySub(){
   const po=rosters[subTeam].find(function(p){ return p.id===outId; });
   const pi=rosters[subTeam].find(function(p){ return p.id===inId; });
   if(!po||!pi){ closeModal('sub-mask'); return; }
+  // アナウンス用の値は交代処理の前に控える
+  const posName = POS_YOMI[String(po.pos)] || POS_YOMI[posLabel(po.pos)] || '';
+  const outNm   = String(po.yomi||po.name||'').trim();
+  const inNm    = String(pi.yomi||pi.name||'').trim();
+  const numTx   = pi.num ? '、背番号'+pi.num : '';
+  const ord     = po.order || '';
+  const base    = document.getElementById('sub-base').value || '';
   pi.order=po.order;
   po._prevOrder=po.order;
   po.order='';
@@ -1316,6 +1349,23 @@ function applySub(){
   render(subTeam); push();
   closeModal('sub-mask');
   toast(subKind+'：'+po.name+' → '+pi.name);
+
+  // ── アナウンス ──
+  if(subKind==='守備交代'){
+    _subQueue.push({ core:(posName?posName+'、':'') + outNm + 'くんに代わりまして、' + inNm + 'くん' + numTx });
+    _refreshSubBtn();
+    toast('交代コールに追加（'+_subQueue.length+'件）');
+  }else if(subKind==='代打' && _annOn){
+    confirmSpeak('🔊 代打',
+      '代打をお知らせします。' + (ord?ord+'番 ':'') + outNm + 'くんに代わりまして、代打、'
+      + inNm + 'くん' + numTx + '。バッター、' + inNm + 'くん。',
+      _ttsVoice, _ttsStyle, _annRate);
+  }else if(subKind==='代走' && _annOn){
+    confirmSpeak('🔊 代走',
+      '代走をお知らせします。' + (base?base+'ランナー ':'') + outNm + 'くんに代わりまして、代走、'
+      + inNm + 'くん。',
+      _ttsVoice, _ttsStyle, _annRate);
+  }
 }
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
@@ -1350,10 +1400,25 @@ function connectWS(){
   }catch(e){ wsTimer=setTimeout(connectWS,3000); }
 }
 
+var _prevInnKey = null;
+var _prevPitcherId = 0;
 function applyRemote(s){
   applyingRemote=true;
   try{
     lastRemote=s;
+    // イニング交代（3アウト）を検知して直前の投手の球数をアナウンス
+    var _ik = (s.inn||1) + '/' + (s.top!==false ? 'T' : 'B');
+    var _innChanged = (_prevInnKey !== null && _prevInnKey !== _ik);
+    if(_innChanged){
+      try{ _inningPitchReport(s, _prevInnKey); }catch(e){}
+    }
+    _prevInnKey = _ik;
+    // 投手交代を検知して直前の投手の球数をアナウンス（イニング交代と同時のときは除外）
+    var _pid = (s.selIds && s.selIds.pitcher) || 0;
+    if(!_innChanged && _prevPitcherId && _pid && _pid !== _prevPitcherId){
+      try{ _pitcherChangeReport(s, _prevPitcherId); }catch(e){}
+    }
+    _prevPitcherId = _pid;
     if(s.rostersAll){
       if(Array.isArray(s.rostersAll.away)) rosters.away=JSON.parse(JSON.stringify(s.rostersAll.away));
       if(Array.isArray(s.rostersAll.home)) rosters.home=JSON.parse(JSON.stringify(s.rostersAll.home));
@@ -2290,7 +2355,8 @@ function _bindFieldDrop(team){
 }
 
 // 選手を指定ポジションに就かせる（元からいた選手とは入れ替え）
-var _lastSubInfo = null;   // 直近の守備変更（アナウンス用）
+// 守備変更はキューに貯めて、「交代コール」でまとめて読み上げる
+var _subQueue = [];
 
 function assignPosition(team, playerId, pos){
   var moving = rosters[team].find(function(x){ return x.id===playerId; });
@@ -2301,37 +2367,24 @@ function assignPosition(team, playerId, pos){
   });
 
   var posName = POS_YOMI[String(pos)] || posLabel(pos) || pos;
+  var mvNm = String(moving.yomi||moving.name||'').trim();
 
   if(occupant){
+    var ocNm = String(occupant.yomi||occupant.name||'').trim();
     if(prevPos){
       var prevName = POS_YOMI[String(prevPos)] || posLabel(prevPos) || prevPos;
       occupant.pos = prevPos;
-      _lastSubInfo = {
-        kind:'swap',
-        text:'守備の変更をお知らせします。'
-             + (moving.yomi||moving.name) + 'くんが' + posName + '、'
-             + (occupant.yomi||occupant.name) + 'くんが' + prevName + 'に入ります。'
-      };
+      _subQueue.push({ core: mvNm + 'くんが' + posName + '、' + ocNm + 'くんが' + prevName });
       toast(occupant.name+' ⇄ '+moving.name);
     }else{
       if(occupant.order){ moving.order = occupant.order; occupant.order=''; }
       occupant.pos = '';
-      _lastSubInfo = {
-        kind:'sub',
-        text:'選手の交代をお知らせします。' + posName + '、'
-             + (occupant.yomi||occupant.name) + 'くんに代わりまして '
-             + (moving.yomi||moving.name) + 'くん。'
-             + (moving.num ? '背番号' + moving.num + '。' : '')
-             + posName + '、' + (moving.yomi||moving.name) + 'くん。'
-      };
+      _subQueue.push({ core: posName + '、' + ocNm + 'くんに代わりまして、' + mvNm + 'くん'
+             + (moving.num ? '、背番号' + moving.num : '') });
       toast('守備交代：'+occupant.name+' → '+moving.name);
     }
   }else{
-    _lastSubInfo = {
-      kind:'move',
-      text:'守備の変更をお知らせします。'
-           + (moving.yomi||moving.name) + 'くんが' + posName + 'に入ります。'
-    };
+    _subQueue.push({ core: mvNm + 'くんが' + posName + 'へ' });
     toast(moving.name+' を '+(posLabel(pos)||pos)+' へ');
   }
   moving.pos = pos;
@@ -2342,17 +2395,24 @@ function assignPosition(team, playerId, pos){
   push();
 }
 
-// 直近の守備変更をアナウンスする
-function announceLastSub(){
+// たまっている守備変更をまとめてアナウンスする
+function announceSubs(){
   if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
-  if(!_lastSubInfo){ toast('直近の守備変更がありません'); return; }
-  confirmSpeak('🔁 交代のお知らせ', _lastSubInfo.text, _ttsVoice, _ttsStyle, _annRate);
+  if(!_subQueue.length){ toast('たまっている交代がありません'); return; }
+  var cores = _subQueue.map(function(x){ return x.core; }).filter(Boolean);
+  var txt = '選手の交代をお知らせします。' + cores.join('。') + '。';
+  confirmSpeak('🔁 交代のお知らせ（'+_subQueue.length+'件）', txt, _ttsVoice, _ttsStyle, _annRate,
+    function(){ _subQueue = []; _refreshSubBtn(); });
 }
+// 旧名の互換
+function announceLastSub(){ announceSubs(); }
 
 function _refreshSubBtn(){
   var b=document.getElementById('fp-sub-call');
   if(!b) return;
-  b.style.display = _lastSubInfo ? 'inline-flex' : 'none';
+  var n=_subQueue.length;
+  b.style.display = n ? 'inline-flex' : 'none';
+  b.textContent = n>1 ? ('🔁 交代コール ('+n+')') : '🔁 交代コール';
 }
 
 // ── 場内アナウンス（Azure TTS） ────────────────────────────────────────────
@@ -2383,6 +2443,7 @@ function _initTTS(){
     var ap=localStorage.getItem('bb_ann_pitch'); if(ap!=null) _annPitch=Number(ap);
     var au=localStorage.getItem('bb_ann_pause'); if(au!=null) _annPause=Number(au);
     var ad=localStorage.getItem('bb_ann_deg');   if(ad!=null) _annStyleDeg=Number(ad);
+    var pa=localStorage.getItem('bb_pitch_auto'); if(pa!=null) _pitchAutoCall = pa==='1';
   }catch(e){}
   _refreshAnnBtn();
   _loadVoiceCache();
@@ -2414,6 +2475,13 @@ function _refreshSettingsUI(){
   if(st_){
     st_.textContent=_ttsReady?'高品質音声（Azure）を使用中':'端末内蔵の音声を使用中';
     st_.style.color=_ttsReady?'#7fd47f':'#c88';
+  }
+  var pab=document.getElementById('set-pitch-auto');
+  if(pab){
+    pab.textContent=_pitchAutoCall?'🔊 イニング交代時に投球数を自動アナウンス ON':'🔈 イニング交代時に投球数を自動アナウンス OFF';
+    pab.style.background=_pitchAutoCall?'#1a3a1a':'#2c2c2e';
+    pab.style.borderColor=_pitchAutoCall?'#3a6a2a':'#3a3a3c';
+    pab.style.color=_pitchAutoCall?'#86c867':'#ddd';
   }
 }
 
@@ -2473,9 +2541,13 @@ function prebuildVoices(){
   });
   var an=teamNames.away||'先攻', hn=teamNames.home||'後攻';
   for(var i=1;i<=10;i++){
-    texts.push(i+'回おもて、'+an+'の攻撃');
-    texts.push(i+'回うら、'+hn+'の攻撃');
+    texts.push(i+'回おもて、'+an+'の攻撃は');
+    texts.push(i+'回うら、'+hn+'の攻撃は');
   }
+  ['away','home'].forEach(function(t){
+    var lt=_lineupText(t);  if(lt) texts.push(lt);
+    var dt=_defenseText(t); if(dt) texts.push(dt);
+  });
   texts=texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
   var btn=document.getElementById('set-prebuild');
@@ -2680,9 +2752,9 @@ function _batterPhrase(p){
 // 読み上げ前に内容を確認・編集する
 var _pendingSpeak = null;   // { text, voice, style, rate }
 
-function confirmSpeak(title, text, voice, style, rate){
+function confirmSpeak(title, text, voice, style, rate, after){
   if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
-  _pendingSpeak = { voice:voice, style:style, rate:rate };
+  _pendingSpeak = { voice:voice, style:style, rate:rate, after:after };
   document.getElementById('speak-title').textContent = title;
   document.getElementById('speak-text').value = text;
   document.getElementById('speak-mask').classList.add('open');
@@ -2695,10 +2767,12 @@ function confirmSpeak(title, text, voice, style, rate){
 function doSpeakConfirmed(){
   if(!_pendingSpeak) return;
   var t = document.getElementById('speak-text').value.trim();
+  var after = _pendingSpeak.after;
   closeModal('speak-mask');
   if(!t) return;
   _speakAs(t, _pendingSpeak.voice, _pendingSpeak.style, _pendingSpeak.rate);
   _pendingSpeak = null;
+  if(typeof after==='function'){ try{ after(); }catch(e){} }
 }
 
 function announceCurrentBatter(){
@@ -2717,7 +2791,7 @@ function announceCurrentBatter(){
   if(t) _speakAs(t, _ttsVoice, _ttsStyle, _annRate);
 }
 
-// 「1回表、綾羽高校の攻撃」
+// 「1回おもて、綾羽高校の攻撃は」＋その回の先頭打者をセット（確認ウインドウなし）
 function announceCurrentInning(){
   if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
   var s = lastRemote || {};
@@ -2733,8 +2807,118 @@ function announceCurrentInning(){
   }
   var team = isTop ? (s.aab||teamNames.away||'先攻')
                    : (s.hnm||teamNames.home||'後攻');
-  confirmSpeak('🔊 回コール', innNo+'回'+(isTop?'おもて':'うら')+'、'+team+'の攻撃',
-               _ttsVoice, _ttsStyle, _annRate);
+  var txt = innNo+'回'+(isTop?'おもて':'うら')+'、'+team+'の攻撃は';
+  var lead = _leadoffPhrase(isTop);
+  if(lead) txt += '、' + lead;
+  _speakAs(txt, _ttsVoice, _ttsStyle, _annRate);
+}
+
+// その回の先頭打者（＝現在の選択打者）の読み上げ文言
+function _leadoffPhrase(isTop){
+  if(!lastRemote || !lastRemote.selIds) return '';
+  var team = isTop ? 'away' : 'home';
+  var id = lastRemote.selIds.batter || 0;
+  if(!id) return '';
+  var p = (rosters[team]||[]).find(function(x){ return x.id===id; });
+  return p ? _batterPhrase(p) : '';
+}
+
+// ── スタメン発表／守備紹介 ───────────────────────────────────────────────
+// team: 'away'=先攻, 'home'=後攻。読み上げは「コールの声」（_ttsVoice）を使う。背番号は読まない。
+
+function _lineupText(team){
+  var roster = (rosters[team] || []).filter(function(p){ return p.order; })
+    .sort(function(a,b){ return Number(a.order) - Number(b.order); });
+  if(!roster.length) return '';
+  var tn = (team === 'away' ? teamNames.away : teamNames.home) || (team === 'away' ? '先攻' : '後攻');
+  var lines = roster.map(function(p){
+    var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
+    var nm = String(p.yomi || p.name || '').trim();
+    if(!nm) return '';
+    return p.order + '番、' + (pl ? pl + '、' : '') + nm + 'くん';
+  }).filter(Boolean);
+  if(!lines.length) return '';
+  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。';
+}
+
+var _DEF_SEQ = ['1','2','3','4','5','6','7','8','9'];
+function _defenseText(team){
+  var roster = rosters[team] || [];
+  if(!roster.length) return '';
+  var tn = (team === 'away' ? teamNames.away : teamNames.home) || (team === 'away' ? '先攻' : '後攻');
+  var parts = [];
+  _DEF_SEQ.forEach(function(code){
+    var lab = posLabel(code);
+    var p = roster.find(function(x){ return posLabel(x.pos) === lab || String(x.pos) === code; });
+    if(!p) return;
+    var nm = String(p.yomi || p.name || '').trim();
+    if(!nm) return;
+    parts.push((POS_YOMI[code] || '') + '、' + nm + 'くん');
+  });
+  if(!parts.length) return '';
+  return tn + 'の守備をお知らせします。' + parts.join('。') + '。';
+}
+
+function announceLineup(team){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  var t = _lineupText(team);
+  if(!t){ toast('打順が登録されていません'); return; }
+  confirmSpeak(team === 'away' ? '🔊 先攻 スタメン' : '🔊 後攻 スタメン', t, _ttsVoice, _ttsStyle, _annRate);
+}
+
+function announceDefense(team){
+  if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
+  var t = _defenseText(team);
+  if(!t){ toast('守備位置が登録されていません'); return; }
+  confirmSpeak(team === 'away' ? '🔊 先攻 守備' : '🔊 後攻 守備', t, _ttsVoice, _ttsStyle, _annRate);
+}
+
+// ── イニング交代時：直前の投手の投球数を自動アナウンス ─────────────────────
+var _pitchAutoCall = false;
+
+function togglePitchAuto(){
+  _pitchAutoCall = !_pitchAutoCall;
+  try{ localStorage.setItem('bb_pitch_auto', _pitchAutoCall ? '1' : '0'); }catch(e){}
+  _refreshSettingsUI();
+}
+
+function _pcAt(log, pid, inn, top){
+  return log.filter(function(r){ return r.pid === pid && r.inn === inn && r.top === top; }).length;
+}
+
+function _pcName(pid){
+  var p = (rosters.away || []).concat(rosters.home || []).find(function(x){ return x.id === pid; });
+  return p ? String(p.yomi || p.name || '').trim() : '';
+}
+
+// prevKey: 締めた回（"3/T" = 3回おもて, "3/B" = 3回うら）
+function _inningPitchReport(s, prevKey){
+  if(!_pitchAutoCall || !_annOn) return;
+  var pk = String(prevKey).split('/');
+  var prevInn = Number(pk[0]);
+  var prevTop = pk[1] === 'T';
+  var log = Array.isArray(s.pitchLog) ? s.pitchLog : [];
+  var pid = (s.selIds && s.selIds.pitcher) || 0;
+  if(!pid || !log.length) return;
+  var thisInn = _pcAt(log, pid, prevInn, prevTop);
+  if(thisInn <= 0) return;
+  var total = log.filter(function(r){ return r.pid === pid; }).length;
+  var nm = _pcName(pid);
+  var txt = 'この回の' + (nm ? nm + 'くんの' : '') + '投球数は' + thisInn + '球、累計は' + total + '球です。';
+  setTimeout(function(){ _speakAs(txt, _ttsVoice, _ttsStyle, _annRate); }, 400);
+}
+
+// 投手交代（マウンドの投手が代わった）を検知して直前の投手の球数を読み上げる
+function _pitcherChangeReport(s, oldPid){
+  if(!_pitchAutoCall || !_annOn) return;
+  var log = Array.isArray(s.pitchLog) ? s.pitchLog : [];
+  var inn = s.inn || 1, top = s.top !== false;
+  var thisInn = _pcAt(log, oldPid, inn, top);
+  if(thisInn <= 0) return;   // この回投げていない＝イニング頭の交代（3アウト側で処理）
+  var total = log.filter(function(r){ return r.pid === oldPid; }).length;
+  var nm = _pcName(oldPid);
+  var txt = 'ここまでの' + (nm ? nm + 'くんの' : '') + '投球数は' + thisInn + '球、累計は' + total + '球です。';
+  setTimeout(function(){ _speakAs(txt, _ttsVoice, _ttsStyle, _annRate); }, 400);
 }
 
 // カウントの読み上げ用（0はアウトのみ「ノー」、B/Sは0なら読まない）
