@@ -853,9 +853,10 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <textarea id="speak-text" rows="4"
       style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;
              font-size:17px;line-height:1.6;padding:14px;outline:none;resize:vertical"></textarea>
-    <div class="modal-acts">
+    <div class="modal-acts" style="flex-wrap:wrap">
       <button class="btn btn-save" style="flex:1;font-size:16px;padding:14px" onclick="doSpeakConfirmed()">🔊 読み上げる</button>
-      <button class="btn" style="flex:1" onclick="closeModal('speak-mask')">キャンセル</button>
+      <button class="btn" style="flex:1;background:#1a2a3a;border-color:#3a5a8a;color:#8ab4ff" onclick="doSpeakStay()">▶ 開いたまま</button>
+      <button class="btn" style="flex:1" onclick="closeModal('speak-mask')">閉じる</button>
     </div>
   </div>
 </div>
@@ -1414,8 +1415,11 @@ function applySub(){
   if(!po||!pi){ closeModal('sub-mask'); return; }
   // アナウンス用の値は交代処理の前に控える
   const posName = POS_YOMI[String(po.pos)] || POS_YOMI[posLabel(po.pos)] || '';
+  const posK    = _posKanji(po.pos) || posLabel(po.pos) || '';
   const outNm   = String(po.yomi||po.name||'').trim();
   const inNm    = String(pi.yomi||pi.name||'').trim();
+  const outKanji= String(po.name||po.yomi||'').trim();
+  const inKanji = String(pi.name||pi.yomi||'').trim();
   const numTx   = pi.num ? '、背番号'+pi.num : '';
   const ord     = po.order || '';
   const base    = document.getElementById('sub-base').value || '';
@@ -1432,7 +1436,10 @@ function applySub(){
 
   // ── アナウンス ──
   if(subKind==='守備交代'){
-    _subQueue.push({ core:(posName?posName+'、':'') + outNm + hO + 'に代わりまして、' + inNm + hI + numTx });
+    _subQueue.push({
+      say:(posName?posName+'、':'') + outNm + hO + 'に代わりまして、' + inNm + hI + numTx,
+      disp:(posK?posK+' ':'') + outKanji + ' → ' + inKanji + (pi.num?'（背番号'+pi.num+'）':'')
+    });
     _refreshSubBtn();
     toast('交代コールに追加（'+_subQueue.length+'件）');
   }else if(subKind==='代打' && _annOn){
@@ -2455,27 +2462,43 @@ function assignPosition(team, playerId, pos){
     return x.id!==playerId && String(x.pos).toLowerCase()===String(pos).toLowerCase();
   });
 
-  var posName = POS_YOMI[String(pos)] || posLabel(pos) || pos;
-  var mvNm = String(moving.yomi||moving.name||'').trim();
+  var posName = POS_YOMI[String(pos)] || posLabel(pos) || pos;      // 読み（アナウンス用）
+  var posK    = _posKanji(pos) || posLabel(pos) || String(pos);     // 漢字（表示用）
+  var mvKana  = String(moving.yomi||moving.name||'').trim();
+  var mvKanji = String(moving.name||moving.yomi||'').trim();
   var hMv = _hon(moving);
 
   if(occupant){
-    var ocNm = String(occupant.yomi||occupant.name||'').trim();
+    var ocKana  = String(occupant.yomi||occupant.name||'').trim();
+    var ocKanji = String(occupant.name||occupant.yomi||'').trim();
     var hOc = _hon(occupant);
     if(prevPos){
       var prevName = POS_YOMI[String(prevPos)] || posLabel(prevPos) || prevPos;
+      var prevK    = _posKanji(prevPos) || posLabel(prevPos) || String(prevPos);
       occupant.pos = prevPos;
-      _subQueue.push({ core: mvNm + hMv + 'が' + posName + '、' + ocNm + hOc + 'が' + prevName });
+      _subQueue.push({
+        // ① 移動情報　② 改めて各ポジションの名前と背番号
+        say: prevName + '、' + mvKana + hMv + 'が' + posName + 'に。'
+           + posName + '、' + ocKana + hOc + 'が' + prevName + 'に。'
+           + posName + '、' + mvKana + hMv + (moving.num ? '、背番号' + moving.num : '') + '。'
+           + prevName + '、' + ocKana + hOc + (occupant.num ? '、背番号' + occupant.num : ''),
+        disp: mvKanji + ' ' + prevK + '→' + posK + '　' + ocKanji + ' ' + posK + '→' + prevK
+      });
       toast(occupant.name+' ⇄ '+moving.name);
     }else{
       if(occupant.order){ moving.order = occupant.order; occupant.order=''; }
       occupant.pos = '';
-      _subQueue.push({ core: posName + '、' + ocNm + hOc + 'に代わりまして、' + mvNm + hMv
-             + (moving.num ? '、背番号' + moving.num : '') });
+      _subQueue.push({
+        say: posName + '、' + ocKana + hOc + 'に代わりまして、' + mvKana + hMv + (moving.num ? '、背番号' + moving.num : ''),
+        disp: posK + ' ' + ocKanji + ' → ' + mvKanji + (moving.num ? '（背番号' + moving.num + '）' : '')
+      });
       toast('守備交代：'+occupant.name+' → '+moving.name);
     }
   }else{
-    _subQueue.push({ core: mvNm + hMv + 'が' + posName + 'へ' });
+    _subQueue.push({
+      say: mvKana + hMv + 'が' + posName + 'に入ります',
+      disp: mvKanji + ' → ' + posK
+    });
     toast(moving.name+' を '+(posLabel(pos)||pos)+' へ');
   }
   moving.pos = pos;
@@ -2490,8 +2513,8 @@ function assignPosition(team, playerId, pos){
 function announceSubs(){
   if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
   if(!_subQueue.length){ toast('たまっている交代がありません'); return; }
-  var cores = _subQueue.map(function(x){ return x.core; }).filter(Boolean);
-  var txt = '選手の交代をお知らせします。' + cores.join('。') + '。';
+  var says = _subQueue.map(function(x){ return x.say || x.core; }).filter(Boolean);
+  var txt = '選手の交代をお知らせします。' + says.join('。') + '。以上となります。';
   confirmSpeak('🔁 交代のお知らせ（'+_subQueue.length+'件）', txt, _ttsVoice, _ttsStyle, _annRate,
     function(){ _subQueue = []; _refreshSubBtn(); });
 }
@@ -2516,7 +2539,7 @@ function _refreshSubBtn(){
   if(list){
     list.style.display = n ? 'block' : 'none';
     list.innerHTML = _subQueue.map(function(x,i){
-      return '<div>'+_circledNum(i+1)+' '+esc(x.core)+'</div>';
+      return '<div>'+_circledNum(i+1)+' '+esc(x.disp || x.say || x.core)+'</div>';
     }).join('');
   }
 }
@@ -2538,6 +2561,9 @@ var POS_YOMI={
   'P':'ピッチャー','C':'キャッチャー','1B':'ファースト','2B':'セカンド','3B':'サード',
   'SS':'ショート','LF':'レフト','CF':'センター','RF':'ライト','DH':'指名打者'
 };
+// 表示用の漢字1文字（投・捕・一・二・三・遊・左・中・右・指）
+var POS_KANJI={ 'P':'投','C':'捕','1B':'一','2B':'二','3B':'三','SS':'遊','LF':'左','CF':'中','RF':'右','DH':'指' };
+function _posKanji(pos){ return POS_KANJI[posLabel(pos)] || ''; }
 
 function _initTTS(){
   fetch('/api/tts/status').then(function(r){ return r.json(); })
@@ -2887,6 +2913,14 @@ function doSpeakConfirmed(){
   _speakAs(t, _pendingSpeak.voice, _pendingSpeak.style, _pendingSpeak.rate);
   _pendingSpeak = null;
   if(typeof after==='function'){ try{ after(); }catch(e){} }
+}
+
+// ウインドウを閉じずに読み上げる（何度でも／文面を直して再生できる）
+function doSpeakStay(){
+  if(!_pendingSpeak) return;
+  var t = document.getElementById('speak-text').value.trim();
+  if(!t) return;
+  _speakAs(t, _pendingSpeak.voice, _pendingSpeak.style, _pendingSpeak.rate);
 }
 
 function announceCurrentBatter(){
