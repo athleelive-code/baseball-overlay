@@ -97,10 +97,9 @@ body{padding-bottom:40px}
 .gb-dot.on-s{background:#e8c33d}
 .gb-dot.on-o{background:var(--red)}
 
-.gb-dia{width:84px;height:84px;flex-shrink:0}
+.gb-dia{width:84px;height:60px;flex-shrink:0}
 .gb-dia rect{fill:none;stroke:#888;stroke-width:2.4;transition:fill .12s}
 .gb-dia rect.on{fill:#e8c33d;stroke:#e8c33d}
-.gb-dia #gb-hp{stroke:#aaa}
 
 .gb-people{display:flex;gap:22px}
 .gb-col{display:flex;flex-direction:column;gap:5px;font-size:17px;min-width:190px}
@@ -232,14 +231,14 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 #fp-field .fld{fill:#16301a;stroke:#2a4a2e;stroke-width:2}
 #fp-field .inf{fill:#3a2a1c;stroke:#54402c;stroke-width:2}
 #fp-field .base{fill:#d8d8d8}
-#fp-field .slot{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.18);stroke-width:1.5;
+#fp-field .slot{fill:rgba(6,10,16,.62);stroke:rgba(255,255,255,.4);stroke-width:1.5;
   cursor:pointer;transition:.12s}
-#fp-field .slot:hover{fill:rgba(255,255,255,.12)}
-#fp-field .slot.sel{fill:rgba(200,160,46,.42);stroke:#e8c33d;stroke-width:2.5}
+#fp-field .slot:hover{fill:rgba(6,10,16,.8)}
+#fp-field .slot.sel{fill:rgba(200,160,46,.5);stroke:#e8c33d;stroke-width:2.5}
 #fp-field text{pointer-events:none;font-family:inherit}
-#fp-field .p-pos{font-size:11px;font-weight:800;fill:#8ab4ff}
-#fp-field .p-num{font-size:11px;font-weight:700;fill:#aaa}
-#fp-field .p-nm{font-size:14px;font-weight:700;fill:#fff}
+#fp-field .p-pos{font-size:10px;font-weight:800;fill:#9ec2ff}
+#fp-field .p-num{font-size:10px;font-weight:700;fill:#cfcfcf}
+#fp-field .p-nm{font-size:13px;font-weight:800;fill:#fff}
 
 .fp-bench{background:#161618;border:1px solid #262628;border-radius:9px;padding:7px;
   max-height:none;overflow-y:auto}
@@ -441,11 +440,10 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     </div>
   </div>
 
-  <svg class="gb-dia" viewBox="0 0 74 74">
-    <rect id="gb-b2" class="gb-base" x="27" y="4"  width="20" height="20" transform="rotate(45 37 14)" />
-    <rect id="gb-b3" class="gb-base" x="7"  y="24" width="20" height="20" transform="rotate(45 17 34)" />
-    <rect id="gb-b1" class="gb-base" x="47" y="24" width="20" height="20" transform="rotate(45 57 34)" />
-    <rect id="gb-hp" x="27" y="44" width="20" height="20" transform="rotate(45 37 54)" />
+  <svg class="gb-dia" viewBox="0 2 74 52">
+    <rect id="gb-b2" class="gb-base" x="27" y="4"  width="20" height="20" rx="4" transform="rotate(45 37 14)" />
+    <rect id="gb-b3" class="gb-base" x="7"  y="24" width="20" height="20" rx="4" transform="rotate(45 17 34)" />
+    <rect id="gb-b1" class="gb-base" x="47" y="24" width="20" height="20" rx="4" transform="rotate(45 57 34)" />
   </svg>
 
   <div class="gb-people">
@@ -531,7 +529,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <div id="sub-accum-list" style="display:none;flex-basis:100%;text-align:right;font-size:11px;color:#b8e878;line-height:1.7;margin-top:3px"></div>
     </div>
     <div class="fp-body">
-      <svg id="fp-field" viewBox="0 0 420 210" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="fp-field" viewBox="0 0 304 304" xmlns="http://www.w3.org/2000/svg"></svg>
       <div class="fp-bench">
         <div class="fp-bench-t">ベンチ</div>
         <div id="fp-bench-list"></div>
@@ -2353,17 +2351,17 @@ function _batterResults(team, id){
 }
 
 // ── 攻撃打順 ／ 守備位置図 ────────────────────────────────────────────────
-// 守備位置の座標（viewBox 400x330）
+// 守備位置の座標（背景画像 field-bg.png の viewBox 0 0 304 304。本塁が下・外野が上）
 var FIELD_SLOTS = [
-  { pos:'7', x:62,  y:46,  label:'LF' },
-  { pos:'8', x:210, y:30,  label:'CF' },
-  { pos:'9', x:358, y:46,  label:'RF' },
-  { pos:'5', x:74,  y:118, label:'3B' },
-  { pos:'6', x:150, y:96,  label:'SS' },
-  { pos:'4', x:270, y:96,  label:'2B' },
-  { pos:'3', x:346, y:118, label:'1B' },
-  { pos:'1', x:210, y:126, label:'P'  },
-  { pos:'2', x:210, y:182, label:'C'  }
+  { pos:'7', x:62,  y:58,  label:'LF' },
+  { pos:'8', x:152, y:34,  label:'CF' },
+  { pos:'9', x:242, y:58,  label:'RF' },
+  { pos:'5', x:80,  y:152, label:'3B' },
+  { pos:'6', x:108, y:98,  label:'SS' },
+  { pos:'4', x:198, y:98,  label:'2B' },
+  { pos:'3', x:228, y:152, label:'1B' },
+  { pos:'1', x:152, y:174, label:'P'  },
+  { pos:'2', x:152, y:262, label:'C'  }
 ];
 
 function _atkTeam(){ return (lastRemote && lastRemote.top===false) ? 'home' : 'away'; }
@@ -2429,23 +2427,8 @@ function renderField(team){
   if(!svg) return;
   var subMap = _subColorMap(team);
   var h='';
-  // ── 球場（横長・ホーム下中央 / 2塁上中央） ──────────────────────────────
-  h+='<rect x="0" y="0" width="420" height="210" fill="#2f6b2c"/>';                       // ファウルゾーンの芝
-  h+='<path d="M210 202 L16 34 A254 254 0 0 1 404 34 Z" fill="#3f8a37"/>';                 // フェアゾーンの芝（扇形）
-  h+='<path d="M20 38 A250 250 0 0 1 400 38" fill="none" stroke="#b98c58" stroke-width="7"/>'; // ウォーニングトラック
-  h+='<path d="M210 202 L96 126 A150 150 0 0 1 324 126 Z" fill="#c69c67"/>';               // 内野ダート（扇形）
-  h+='<polygon points="210,190 150,140 210,90 270,140" fill="#3f8a37"/>';                  // 内野芝ダイヤ
-  h+='<path d="M210 188 L150 140 L210 92 L270 140 Z" fill="none" stroke="#c69c67" stroke-width="9" stroke-linejoin="round"/>'; // 塁間ダート
-  h+='<line x1="210" y1="192" x2="24" y2="42" stroke="#f2f2f2" stroke-width="2"/>';         // ファウルライン（三塁側）
-  h+='<line x1="210" y1="192" x2="396" y2="42" stroke="#f2f2f2" stroke-width="2"/>';        // ファウルライン（一塁側）
-  h+='<circle cx="210" cy="150" r="13" fill="#c69c67"/>';                                   // マウンド
-  h+='<circle cx="210" cy="150" r="2.4" fill="#f0f0f0"/>';                                  // 投手板
-  h+='<circle cx="210" cy="196" r="17" fill="#c69c67"/>';                                   // ホーム周りの土
-  h+='<rect x="205" y="185" width="9" height="9" transform="rotate(45 210 190)" fill="#fff"/>';   // 1塁側から見て… ホーム角
-  h+='<rect x="123" y="135" width="9" height="9" transform="rotate(45 128 140)" fill="#fff"/>';   // 3塁
-  h+='<rect x="205" y="87"  width="9" height="9" transform="rotate(45 210 92)" fill="#fff"/>';    // 2塁
-  h+='<rect x="287" y="135" width="9" height="9" transform="rotate(45 292 140)" fill="#fff"/>';   // 1塁
-  h+='<polygon points="204,190 216,190 216,197 210,202 204,197" fill="#fff"/>';             // ホームプレート
+  // ── 球場：参照画像をそのまま背景に使用 ──────────────────────────────
+  h+='<image href="field-bg.png" x="0" y="0" width="304" height="304"/>';
 
   FIELD_SLOTS.forEach(function(s){
     var p = rosters[team].find(function(x){
@@ -2454,14 +2437,14 @@ function renderField(team){
     var sc = subMap[posLabel(s.pos)] || subMap[s.label] || null;
     h+='<g>';
     h+='<rect class="slot" data-pos="'+s.pos+'" '
-      +(sc ? 'style="fill:'+sc+'44;stroke:'+sc+';stroke-width:3" ' : '')
-      +'x="'+(s.x-40)+'" y="'+(s.y-15)+'" width="80" height="30" rx="6"/>';
-    h+='<text class="p-pos" x="'+(s.x-34)+'" y="'+(s.y-3)+'">'+s.label+'</text>';
+      +(sc ? 'style="fill:'+sc+'55;stroke:'+sc+';stroke-width:3" ' : '')
+      +'x="'+(s.x-34)+'" y="'+(s.y-13)+'" width="68" height="26" rx="6"/>';
+    h+='<text class="p-pos" x="'+(s.x-29)+'" y="'+(s.y-2)+'">'+s.label+'</text>';
     if(p){
-      h+='<text class="p-num" x="'+(s.x+34)+'" y="'+(s.y-3)+'" text-anchor="end">'+(p.num?'#'+esc(p.num):'')+'</text>';
-      h+='<text class="p-nm"  x="'+s.x+'" y="'+(s.y+11)+'" text-anchor="middle">'+esc(_short(p.name))+'</text>';
+      h+='<text class="p-num" x="'+(s.x+29)+'" y="'+(s.y-2)+'" text-anchor="end">'+(p.num?'#'+esc(p.num):'')+'</text>';
+      h+='<text class="p-nm"  x="'+s.x+'" y="'+(s.y+10)+'" text-anchor="middle">'+esc(_short(p.name))+'</text>';
     }else{
-      h+='<text class="p-nm" x="'+s.x+'" y="'+(s.y+11)+'" text-anchor="middle" fill="#555">―</text>';
+      h+='<text class="p-nm" x="'+s.x+'" y="'+(s.y+10)+'" text-anchor="middle" fill="#666">―</text>';
     }
     h+='</g>';
   });
