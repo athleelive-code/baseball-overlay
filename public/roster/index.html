@@ -175,18 +175,19 @@ body.locked .team label{pointer-events:none;opacity:.5}
 body.locked .row{cursor:default}
 
 /* 攻撃打順・守備位置図（左右2チーム／攻守で打順表と配置図が上下入れ替わる） */
-.fp-actionbar{display:flex;flex-direction:column;gap:8px;padding:12px 16px 0;background:#0e0e10}
-.fp-act{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:18px;font-weight:800;color:#fff}
 .fieldpane{display:grid;grid-template-columns:minmax(0,1fr) 10px minmax(0,1fr);gap:6px;
-  padding:10px 16px 16px;background:#0e0e10;border-bottom:1px solid var(--line)}
+  padding:12px 16px 16px;background:#0e0e10;border-bottom:1px solid var(--line)}
 @media(max-width:1000px){
   .fieldpane{grid-template-columns:1fr!important;gap:14px}
   .fp-split{display:none}
 }
 .fp-col{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
 .fp-col-hd{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);
-  font-size:17px;font-weight:800;color:#fff}
-.fp-col-hd .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  font-size:17px;font-weight:800;color:#fff;flex-wrap:wrap}
+.fp-col-hd .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:60px}
+/* 各列ヘッダーに差し込む操作群（攻撃 or 守備） */
+.fp-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-basis:100%;
+  padding-top:8px;border-top:1px solid var(--line)}
 .fp-lr{background:#2c2c2e;border:1px solid #555;border-radius:7px;color:#aaa;font-size:15px;
   padding:4px 9px;cursor:pointer;flex-shrink:0}
 .fp-lr:hover{background:#3a3a3c;color:#ddd}
@@ -507,21 +508,17 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
 </div>
 
-<!-- 左右2チーム：攻守交替で「打順表」と「守備配置図」が上下入れ替わる -->
-<div class="fp-actionbar">
-  <div class="fp-act">
-    <span class="fp-badge atk">攻撃</span>
-    <span id="fp-atk-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">先攻</span>
-    <button class="qrbtn" onclick="openQR('ctrl/')" title="コントローラーを共有"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button>
+<!-- 左右2チーム：攻守交替で「打順表」と「守備配置図」が上下入れ替わる。
+     操作群（攻撃/守備）は該当チームの列ヘッダーへ JS で差し込む -->
+<div hidden>
+  <div class="fp-acts" id="fp-act-atk">
     <button id="fp-batter-call" onclick="fpBatterCall()" style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:12px;font-weight:800;padding:7px 11px;cursor:pointer;white-space:nowrap">🔊 打者コール</button>
     <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
     <button class="fp-sub" onclick="openSub(_atkTeam(),'代打')">代打<span class="cv">選ぶ ▼</span></button>
     <button class="fp-sub" onclick="openSub(_atkTeam(),'代走')">代走<span class="cv">選ぶ ▼</span></button>
+    <div id="fp-batter-card" style="display:none;flex-basis:100%;padding:8px 10px;background:#241a1c;border:1px solid #5a3a3e;border-radius:8px"></div>
   </div>
-  <div id="fp-batter-card" style="display:none;padding:8px 10px;background:#241a1c;border:1px solid #5a3a3e;border-radius:8px"></div>
-  <div class="fp-act">
-    <span class="fp-badge def">守備</span>
-    <span id="fp-def-team" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">後攻</span>
+  <div class="fp-acts" id="fp-act-def">
     <button class="fp-pit" onclick="openPitcherInfo()">📊 投手情報</button>
     <span style="font-size:11px;color:#666">守備交代は配置図・ベンチで</span>
     <button id="fp-sub-call" onclick="announceSubs()" style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:12px;font-weight:800;padding:7px 11px;cursor:pointer;white-space:nowrap">🔁 交代コール</button>
@@ -531,7 +528,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 </div>
 <div class="fieldpane">
   <div class="fp-col" id="fp-col-a">
-    <div class="fp-col-hd"><button class="fp-lr" onclick="fpSwapLR()" title="左右を入れ替え">⇄</button><span class="fp-badge" id="fp-side-a"></span><span class="nm" id="fp-team-a"></span></div>
+    <div class="fp-col-hd" id="fp-colhd-a"><button class="fp-lr" onclick="fpSwapLR()" title="左右を入れ替え">⇄</button><span class="fp-badge" id="fp-side-a"></span><span class="nm" id="fp-team-a"></span><button class="qrbtn" onclick="openQR('ctrl/')" title="コントローラーを共有" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button></div>
     <div class="fp-stack" id="fp-stack-a">
       <div class="fp-pane" id="fp-paneord-a"><div class="fp-pane-t">打順</div><div class="fp-order" id="fp-order-a"></div></div>
       <div class="fp-pane" id="fp-panefld-a"><div class="fp-pane-t">守備配置</div>
@@ -542,7 +539,7 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
   <div class="fp-split" id="fp-split" title="ドラッグで幅を調整"></div>
   <div class="fp-col" id="fp-col-b">
-    <div class="fp-col-hd"><button class="fp-lr" onclick="fpSwapLR()" title="左右を入れ替え">⇄</button><span class="fp-badge" id="fp-side-b"></span><span class="nm" id="fp-team-b"></span></div>
+    <div class="fp-col-hd" id="fp-colhd-b"><button class="fp-lr" onclick="fpSwapLR()" title="左右を入れ替え">⇄</button><span class="fp-badge" id="fp-side-b"></span><span class="nm" id="fp-team-b"></span></div>
     <div class="fp-stack" id="fp-stack-b">
       <div class="fp-pane" id="fp-paneord-b"><div class="fp-pane-t">打順</div><div class="fp-order" id="fp-order-b"></div></div>
       <div class="fp-pane" id="fp-panefld-b"><div class="fp-pane-t">守備配置</div>
@@ -2426,6 +2423,11 @@ function _fpRenderCol(slot, team, isAtk){
   var nm = document.getElementById('fp-team-'+slot);
   if(nm) nm.textContent = _teamName(team) + (slot==='a' ? '（3塁側）' : '（1塁側）');
 
+  // 操作群（攻撃 or 守備）をこの列のヘッダーへ差し込む
+  var hd = document.getElementById('fp-colhd-'+slot);
+  var acts = document.getElementById(isAtk ? 'fp-act-atk' : 'fp-act-def');
+  if(hd && acts && acts.parentNode!==hd) hd.appendChild(acts);
+
   _renderOrderList(team, 'fp-order-'+slot);
   renderField(team, 'fp-field-'+slot);
   renderBench(team, 'fp-bench-'+slot);
@@ -2439,8 +2441,6 @@ function _fpRenderCol(slot, team, isAtk){
 
 function renderFieldPane(){
   var atk=_atkTeam(), def=_defTeam();
-  var e1=document.getElementById('fp-atk-team'); if(e1) e1.textContent=_teamName(atk);
-  var e2=document.getElementById('fp-def-team'); if(e2) e2.textContent=_teamName(def);
 
   // 既定：左(a)=先攻(3塁側) / 右(b)=後攻(1塁側)。⇄で入れ替え
   var leftTeam  = _fpLRSwap ? 'home' : 'away';
