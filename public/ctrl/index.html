@@ -395,23 +395,11 @@ body.gamemin .gm-hide{display:none!important}
       </div>
     </div>
     </div>
-    <div style="padding:4px 12px 8px;display:flex;gap:8px">
-      <button id="btn-undo" onclick="undoPitch()"
-        style="flex:2;background:#3a2a1a;border:2px solid #8a6a3a;border-radius:10px;
-               color:#e8b878;font-size:26px;font-weight:800;padding:14px 6px;cursor:pointer">
-        ↩ 1球戻す
-      </button>
-      <button onclick="undoOut()"
-        style="flex:1;background:#2c2c2e;border:2px solid #6a5a3a;border-radius:10px;
-               color:#e8b878;font-size:22px;font-weight:800;padding:14px 4px;cursor:pointer;white-space:nowrap">
-        アウト −1
-      </button>
-    </div>
-    <div style="padding:0 12px 8px">
-      <button id="btn-runout" onclick="openRunOut()"
-        style="width:100%;background:#2c2c2e;border:2px solid #6a6a8a;border-radius:10px;
-               color:#b0b0e8;font-size:22px;font-weight:800;padding:12px 6px;cursor:pointer">
-        走者アウト（盗塁死・牽制など）
+    <div style="padding:6px 12px 10px">
+      <button id="btn-undo" onclick="undoLast()"
+        style="width:100%;background:#3a2a1a;border:3px solid #8a6a3a;border-radius:14px;
+               color:#e8b878;font-size:34px;font-weight:800;padding:30px 6px;cursor:pointer;line-height:1">
+        ↩ 戻す
       </button>
     </div>
   </div>
@@ -525,14 +513,14 @@ body.gamemin .gm-hide{display:none!important}
 </div>
 
 <!-- イニングスコア表示・イニングコール -->
-<div style="padding:8px 14px 10px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;gap:8px">
-  <button onclick="showScoreOverlay()" class="gm-hide" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:10px;color:#aaaaff;font-size:26px;font-weight:800;padding:18px 6px;cursor:pointer;line-height:1.2">
-    📊 イニングスコア 表示
+<div style="padding:8px 12px 12px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;gap:10px">
+  <button onclick="showScoreOverlay()" class="gm-hide" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:12px;color:#aaaaff;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15">
+    📊 イニング<br>スコア表示
   </button>
-  <button onclick="announceCurrentInning()" style="flex:1;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:10px;color:#b8e878;font-size:24px;font-weight:800;padding:18px 16px;cursor:pointer;line-height:1.2;white-space:nowrap">
+  <button onclick="announceCurrentInning()" style="flex:1;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:12px;color:#b8e878;font-size:28px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15;white-space:nowrap">
     🔊 回<br>コール
   </button>
-  <button onclick="announceSituation()" class="gm-hide" style="flex:0 0 auto;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:24px;font-weight:800;padding:18px 16px;cursor:pointer;line-height:1.2;white-space:nowrap">
+  <button onclick="announceSituation()" class="gm-hide" style="flex:1;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:12px;color:#c8a8ff;font-size:28px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15;white-space:nowrap">
     🎙 実況
   </button>
 </div>
@@ -596,17 +584,15 @@ body.gamemin .gm-hide{display:none!important}
     </div>
     <div class="battery-cell" style="border-bottom:1px solid #1a1a1a;gap:10px">
       <span class="battery-tag" style="font-size:26px">球数</span>
-      <span id="pitch-disp" style="flex:1;font-size:34px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums">0 / 0</span>
-      <button id="btn-hbp" onclick="openHBP()"
-        style="background:#3a2a2a;border:2px solid #aa6a6a;border-radius:8px;color:#ffb0b0;font-size:22px;font-weight:700;padding:12px 12px;cursor:pointer;white-space:nowrap;margin-right:6px">
-        死球
-      </button>
-      <button onclick="openIBBPanel()"
-        style="background:#2a3a4a;border:2px solid #4a7aaa;border-radius:8px;color:#9ac0ff;font-size:22px;font-weight:700;padding:12px 12px;cursor:pointer;white-space:nowrap;margin-right:6px">
-        申告敬遠
+      <span id="pitch-disp" style="flex:1;font-size:40px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums">0 / 0</span>
+    </div>
+    <div style="display:flex;gap:10px;padding:8px 10px;border-bottom:1px solid #1a1a1a">
+      <button id="btn-reach" onclick="openReach()"
+        style="flex:1.3;background:#3a2a2a;border:3px solid #aa6a6a;border-radius:12px;color:#ffc0c0;font-size:28px;font-weight:800;padding:24px 4px;cursor:pointer;white-space:nowrap;line-height:1">
+        🏃 出塁
       </button>
       <button onclick="announcePitchCount()"
-        style="background:#2a1e3a;border:2px solid #5a3a8a;border-radius:8px;color:#c8a8ff;font-size:22px;font-weight:700;padding:12px 14px;cursor:pointer;white-space:nowrap">
+        style="flex:1;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:12px;color:#c8a8ff;font-size:26px;font-weight:800;padding:24px 4px;cursor:pointer;white-space:nowrap;line-height:1">
         🔊 球数
       </button>
     </div>
@@ -1165,6 +1151,8 @@ body.gamemin .gm-hide{display:none!important}
     </div>
     <button class="win-b sub" style="background:#3a2a1a;border-color:#8a6a3a;color:#e8b878"
       onclick="pickStrikeout('スリーバント失敗')">スリーバント失敗</button>
+    <button class="win-b sub" style="background:#2a3a2a;border-color:#4a8a5a;color:#a0e0b0"
+      onclick="pickStrikeout('振り逃げ')">振り逃げ（出塁）</button>
     <button class="win-b cancel" onclick="cancelStrikeout()">キャンセル</button>
   </div>
 </div>
@@ -1183,52 +1171,41 @@ body.gamemin .gm-hide{display:none!important}
   </div>
 </div>
 
-<!-- 申告敬遠の確認 -->
-<div id="ibb-mask" class="win-mask" onclick="winBackdrop(event,'ibb-mask')">
-  <div class="win-box" style="max-width:520px">
-    <div class="win-t" style="color:#9ac0ff;font-size:28px">申告敬遠</div>
-    <div style="font-size:22px;color:#888;text-align:center;margin-bottom:14px">
-      投球なしで打者を1塁へ進めます
-    </div>
-    <div class="win-2col">
-      <button class="win-b main" style="background:#2a3a4a;border-color:#4a7aaa;font-size:32px;padding:26px 6px"
-        onclick="pickIBB(true)">実行</button>
-      <button class="win-b cancel" style="margin:0;font-size:28px;padding:26px 6px"
-        onclick="pickIBB(false)">キャンセル</button>
-    </div>
-  </div>
-</div>
-
-<!-- 死球の確認 -->
-<div id="hbp-mask" class="win-mask" onclick="winBackdrop(event,'hbp-mask')">
-  <div class="win-box" style="max-width:520px">
-    <div class="win-t" style="color:#ffb0b0;font-size:28px">死球</div>
-    <div style="font-size:22px;color:#888;text-align:center;margin-bottom:14px">
+<!-- 出塁（ヒット以外で打者が1塁へ）メニュー -->
+<div id="reach-mask" class="win-mask" onclick="winBackdrop(event,'reach-mask')">
+  <div class="win-box" style="max-width:560px">
+    <div class="win-t" style="color:#ffc0c0;font-size:30px">出塁</div>
+    <div style="font-size:20px;color:#888;text-align:center;margin-bottom:12px">
       打者を1塁へ。詰まっていれば押し出し（満塁なら1点）
     </div>
-    <div class="win-2col">
-      <button class="win-b main" style="background:#3a2a2a;border-color:#aa6a6a;font-size:32px;padding:26px 6px"
-        onclick="doHBP(true)">実行</button>
-      <button class="win-b cancel" style="margin:0;font-size:28px;padding:26px 6px"
-        onclick="doHBP(false)">キャンセル</button>
-    </div>
+    <button class="win-b sub" onclick="pickReach('死球')">死球</button>
+    <button class="win-b sub" onclick="pickReach('申告敬遠')">申告敬遠</button>
+    <button class="win-b sub" onclick="pickReach('打撃妨害')">打撃妨害</button>
+    <button class="win-b cancel" style="margin:6px 0 0" onclick="closeWin('reach-mask')">キャンセル</button>
   </div>
 </div>
 
-<!-- 走者アウト（打者と関係ないアウト） -->
+<!-- アウト内容メニュー（O の丸タップで開く） -->
 <div id="runout-mask" class="win-mask" onclick="winBackdrop(event,'runout-mask')">
-  <div class="win-box" style="max-width:560px">
-    <div class="win-t" style="color:#b0b0e8;font-size:28px">走者アウト</div>
+  <div class="win-box" style="max-width:600px">
+    <div class="win-t" style="color:#b0b0e8;font-size:30px">アウト</div>
     <div style="font-size:20px;color:#888;text-align:center;margin-bottom:12px">
-      1アウト追加（打者・カウントはそのまま）。記録に残ります
+      1アウト追加（打者・カウントはそのまま）
     </div>
-    <button class="win-b sub" onclick="pickRunOut('盗塁死')">盗塁死</button>
-    <button class="win-b sub" onclick="pickRunOut('牽制死')">牽制死</button>
-    <button class="win-b sub" onclick="pickRunOut('走塁死')">走塁死</button>
-    <button class="win-b sub" onclick="pickRunOut('挟殺')">挟殺（ランダウン）</button>
-    <button class="win-b sub" onclick="pickRunOut('アピールアウト')">アピールアウト</button>
-    <button class="win-b sub" onclick="pickRunOut('走者アウト')">その他（詳細なし）</button>
-    <button class="win-b cancel" style="margin:6px 0 0" onclick="closeWin('runout-mask')">キャンセル</button>
+    <div class="win-2col">
+      <button class="win-b sub" style="margin:0" onclick="pickRunOut('盗塁死')">盗塁死</button>
+      <button class="win-b sub" style="margin:0" onclick="pickRunOut('牽制死')">牽制死</button>
+    </div>
+    <div class="win-2col" style="margin-top:10px">
+      <button class="win-b sub" style="margin:0" onclick="pickRunOut('走塁死')">走塁死</button>
+      <button class="win-b sub" style="margin:0" onclick="pickRunOut('挟殺')">挟殺</button>
+    </div>
+    <div class="win-2col" style="margin-top:10px">
+      <button class="win-b sub" style="margin:0" onclick="pickRunOut('アピールアウト')">アピール</button>
+      <button class="win-b sub" style="margin:0" onclick="pickRunOut('その他のアウト')">その他</button>
+    </div>
+    <button class="win-b sub" style="margin:10px 0 0;background:#2a2a2e" onclick="pickRunOut('')">記録なしで +1</button>
+    <button class="win-b cancel" style="margin:10px 0 0" onclick="closeWin('runout-mask')">キャンセル</button>
   </div>
 </div>
 
@@ -2172,18 +2149,23 @@ function pickStrikeout(label){
   closeKPanel();
   // 三振は守備の記録を挟まない
   var _sel=document.getElementById('sel-batter');
+  var _dropped = (label === '振り逃げ');   // 振り逃げ：三振記録＋打者は1塁へ（アウトにしない）
   _lastResult = {
-    label:label, outs:1, ts:Date.now(),
+    label:label, outs: _dropped ? 0 : 1, ts:Date.now(),
     batterId: _sel && _sel.value ? Number(_sel.value) : 0,
     atkTeam: st.top ? 'away' : 'home',
     inn: st.inn, top: st.top
   };
   _paSnapshot = _snapOut();   // アウトを付ける前の状態を控える
-  // 三振の球（S 3球目）ぶんを差し引く → アウト -1 で球数・カウントも戻る
+  // 三振の球（S 3球目）ぶんを差し引く → 「戻す」で球数・カウントも戻る
   _paSnapshot.pitchLen = Math.max(0, _paSnapshot.pitchLen - 1);
   _paSnapshot.abLog    = _paSnapshot.abLog.slice(0, -1);
   _paSnapshot.s        = Math.max(0, _paSnapshot.s - 1);
-  bso.o = Math.min(3, bso.o+1);
+  if(_dropped){
+    walk();                       // 打者を1塁へ（1塁の空き等はルール上の判断を操作者が行う）
+  }else{
+    bso.o = Math.min(3, bso.o+1);
+  }
   bso.b=0; bso.s=0;
   _abReset(); _updateAbDisp();
   renderBSO();
@@ -2193,7 +2175,7 @@ function pickStrikeout(label){
     goNextBatter();
     broadcast();
   }
-  if(typeof toastMsg==='function') toastMsg(label);
+  if(typeof toastMsg==='function') toastMsg(_dropped ? '振り逃げ（出塁）' : label);
 }
 
 function toastMsg(m){
@@ -2248,19 +2230,18 @@ function _applyHomeRunCtl(){
   }
 }
 
-// 申告故意四球（投球なしで成立する）
-function openIBBPanel(){
-  var el=document.getElementById('sel-pitcher');
-  openWin('ibb-mask', el, null);
+// ── 出塁（ヒット以外で打者が1塁へ：死球・申告敬遠・打撃妨害） ──────────────
+function openReach(){
+  openWin('reach-mask', document.getElementById('btn-reach'), null);
 }
-
-function pickIBB(ok){
+function pickReach(kind){
   if(!winReady()) return;
-  closeWin('ibb-mask');
-  if(!ok) return;
+  closeWin('reach-mask');
+  if(!kind) return;
   var sel=document.getElementById('sel-batter');
+  _paSnapshot = _snapOut();          // 「戻す」で丸ごと戻せるように（出塁の前を控える）
   _lastResult = {
-    label:'申告敬遠', outs:0, ts:Date.now(),
+    label: kind, outs:0, ts:Date.now(),
     batterId: sel && sel.value ? Number(sel.value) : 0,
     atkTeam: st.top ? 'away' : 'home',
     inn: st.inn, top: st.top
@@ -2271,58 +2252,35 @@ function pickIBB(ok){
   renderBSO();
   goNextBatter();
   broadcast();
-  toastMsg('申告敬遠');
+  toastMsg(kind);
 }
 
-// ── 死球（どのカウントでも成立。四球と同じく打者を1塁へ） ────────────────
-function openHBP(){
-  var el=document.getElementById('btn-hbp');
-  openWin('hbp-mask', el, null);
+// ── アウト内容メニュー（O の丸タップで開く。打者・カウントは維持） ─────────
+function openRunOut(anchorEl){
+  openWin('runout-mask', anchorEl || document.getElementById('od1'), null);
 }
-function doHBP(ok){
-  if(!winReady()) return;
-  closeWin('hbp-mask');
-  if(!ok) return;
-  var sel=document.getElementById('sel-batter');
-  _lastResult = {
-    label:'死球', outs:0, ts:Date.now(),
-    batterId: sel && sel.value ? Number(sel.value) : 0,
-    atkTeam: st.top ? 'away' : 'home',
-    inn: st.inn, top: st.top
-  };
-  walk();
-  bso.b=0; bso.s=0;
-  _abReset(); _updateAbDisp();
-  renderBSO();
-  goNextBatter();
-  broadcast();
-  toastMsg('死球');
-}
-
-// ── 走者アウト（打者と関係ないアウト。打者・カウントは維持） ───────────────
-function openRunOut(){
-  var el=document.getElementById('btn-runout');
-  openWin('runout-mask', el, null);
-}
+// label が空文字なら記録なし（従来の O タップと同じ）
 function pickRunOut(label){
   if(!winReady()) return;
   closeWin('runout-mask');
   _paSnapshot = _snapOut();              // アウト -1 で戻せるように
   bso.o = Math.min(3, bso.o + 1);
-  _lastResult = {
-    label: label, outs: 1, ts: Date.now(),
-    batterId: 0,                          // 打者の打席結果ではない
-    atkTeam: st.top ? 'away' : 'home',
-    inn: st.inn, top: st.top,
-    runnerOut: true
-  };
+  if(label){
+    _lastResult = {
+      label: label, outs: 1, ts: Date.now(),
+      batterId: 0,                        // 打者の打席結果ではない
+      atkTeam: st.top ? 'away' : 'home',
+      inn: st.inn, top: st.top,
+      runnerOut: true
+    };
+  }
   renderBSO(); renderDiamond();
   if(bso.o >= 3){
     nextInn();                            // 打者は据え置き（_lastBatterId 未更新のため次イニング先頭で復帰）
   }else{
     broadcast();
   }
-  if(typeof toastMsg==='function') toastMsg(label);
+  if(typeof toastMsg==='function') toastMsg(label || 'アウト');
 }
 
 // ── 四球 ──────────────────────────────────────────────────────────────────
@@ -2683,59 +2641,56 @@ function _finishResult(r, defChain){
   toastMsg(r.label + (r.hit ? '（'+r.hit+'）' : (r.defense ? '（'+r.defense+'）' : '')));
 }
 
-// 直前の1球を取り消す
-function undoPitch(){
-  if(!_abUndo()){
-    if(typeof toastMsg==='function') toastMsg('戻せる投球がありません');
-    return;
+// スナップショット（三振・打席結果・出塁・Oドット・回送り）を丸ごと復元する
+function _restoreSnapshot(sn){
+  st.inn = sn.inn;
+  bso.b = sn.b; bso.s = sn.s; bso.o = sn.o;
+  bases[1]=sn.bases[1]; bases[2]=sn.bases[2]; bases[3]=sn.bases[3];
+  scores.away = sn.scAway.slice(); scores.home = sn.scHome.slice();
+  _abLog = sn.abLog.slice();
+  // 投球数（累計）を打席前の位置まで戻す
+  if(typeof sn.pitchLen==='number' && sn.pitchLen <= _pitchLog.length){
+    _pitchLog = _pitchLog.slice(0, sn.pitchLen);
   }
-  if(navigator.vibrate) try{ navigator.vibrate(20); }catch(e){}
-  if(typeof toastMsg==='function') toastMsg('1球戻しました');
+  if(sn.lastBat){ _lastBatterId.away = sn.lastBat.away; _lastBatterId.home = sn.lastBat.home; }
+  _lastResult = null;
+  var e=document.getElementById('inn-num'); if(e) e.textContent=st.inn;
+  setTop(sn.top);   // 表裏・インジケーター・セレクト更新
+  if(sn.batterId){
+    var sb=document.getElementById('sel-batter');
+    if(sb){ sb.value=String(sn.batterId); if(typeof onBatterChange==='function') onBatterChange(); }
+  }
+  renderBSO(); renderDiamond(); renderSB(); _updateAbDisp();
+  if(typeof _updatePitchDisp==='function') _updatePitchDisp();
+  broadcast();
 }
 
-// アウトを取り消す。三振・打席結果でついたアウトは B/S・走者・投球数・打者もまとめて戻す
-function undoOut(){
-  // アウト直前のスナップショット（Oドット/三振/打席結果）を最優先で使う
-  var sn = null;
-  if(_paSnapshot && (Date.now() - _paSnapshot.at) < 120000) sn = _paSnapshot;
-  else if(_innSnapshot && (Date.now() - _innSnapshot.at) < 120000) sn = _innSnapshot;
-
+// ひとつ戻す（1球 / アウト / 出塁 / 回送り をまとめて1ボタンで）
+function undoLast(){
+  // 直前の「大きい操作」（アウト・出塁・打席結果・回送り）を最優先で戻す
+  var sn = (_paSnapshot && (Date.now() - _paSnapshot.at) < 120000) ? _paSnapshot
+         : (_innSnapshot && (Date.now() - _innSnapshot.at) < 120000) ? _innSnapshot
+         : null;
   if(sn){
     _paSnapshot = null; _innSnapshot = null;
-    st.inn = sn.inn;
-    bso.b = sn.b; bso.s = sn.s; bso.o = sn.o;
-    bases[1]=sn.bases[1]; bases[2]=sn.bases[2]; bases[3]=sn.bases[3];
-    scores.away = sn.scAway.slice(); scores.home = sn.scHome.slice();
-    _abLog = sn.abLog.slice();
-    // 投球数（累計）を打席前の位置まで戻す
-    if(typeof sn.pitchLen==='number' && sn.pitchLen <= _pitchLog.length){
-      _pitchLog = _pitchLog.slice(0, sn.pitchLen);
-    }
-    if(sn.lastBat){ _lastBatterId.away = sn.lastBat.away; _lastBatterId.home = sn.lastBat.home; }
-    _lastResult = null;
-    var e=document.getElementById('inn-num'); if(e) e.textContent=st.inn;
-    setTop(sn.top);   // 表裏・インジケーター・セレクト更新
-    // 打者を戻す
-    if(sn.batterId){
-      var sb=document.getElementById('sel-batter');
-      if(sb){ sb.value=String(sn.batterId); if(typeof onBatterChange==='function') onBatterChange(); }
-    }
-    renderBSO(); renderDiamond(); renderSB(); _updateAbDisp();
-    if(typeof _updatePitchDisp==='function') _updatePitchDisp();
+    _restoreSnapshot(sn);
     if(navigator.vibrate) try{ navigator.vibrate(25); }catch(e){}
-    if(typeof toastMsg==='function') toastMsg('アウトを取り消しました');
-    broadcast();
+    if(typeof toastMsg==='function') toastMsg('直前の操作を戻しました');
     return;
   }
-
-  // スナップショットが無ければ単純にアウトを1つ減らす
+  // 打席内の1球を戻す
+  if(_abUndo()){
+    if(navigator.vibrate) try{ navigator.vibrate(20); }catch(e){}
+    if(typeof toastMsg==='function') toastMsg('1球戻しました');
+    return;
+  }
+  // それも無ければアウトだけでも1つ減らす
   if(bso.o > 0){
     adjBSO('o', -1);
-    if(navigator.vibrate) try{ navigator.vibrate(20); }catch(e){}
     if(typeof toastMsg==='function') toastMsg('アウトを1つ戻しました');
     return;
   }
-  if(typeof toastMsg==='function') toastMsg('戻せるアウトがありません');
+  if(typeof toastMsg==='function') toastMsg('戻せる操作がありません');
 }
 
 // ── ウインドウの共通処理 ──────────────────────────────────────────────────
@@ -2922,6 +2877,10 @@ function dotStart(k, e){
 
 function dotEnd(k, e){
   if(e){ if(e.stopPropagation) e.stopPropagation(); if(e.preventDefault) e.preventDefault(); }
+  if(k==='o'){                       // O の丸タップ → アウト内容のメニュー
+    openRunOut(e && (e.currentTarget || e.target));
+    return;
+  }
   if(k==='b'||k==='s'){ _pitchAdd(1); _abPush(k); }
   adjBSO(k,1);
 }
@@ -2998,8 +2957,7 @@ function _updateAbDisp(){
   var nf=_abFoulCount(), np=_abPitchCount();
   if(f) f.textContent = nf>0 ? ('F'+nf) : '';
   if(t) t.textContent = np>0 ? (np+'球') : '';
-  var u=document.getElementById('btn-undo');
-  if(u) u.disabled = (_abLog.length===0);
+  // 「戻す」は常時有効（戻すものが無ければトーストで知らせる）
 }
 
 function adjBSO(k, d){
@@ -4673,9 +4631,28 @@ function _refreshDefSubCall(){
 function announceDefSubs(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   if(!_defSubQueue.length){ alert('たまっている交代がありません'); return; }
-  var cores=_defSubQueue.map(function(x){ return x.core; }).filter(Boolean);
+  var moves=_defSubQueue.map(function(x){ return x.core; }).filter(Boolean);
+  // 影響したポジションの現在の名前・背番号を守備順で
+  var team=null, affected={};
+  _defSubQueue.forEach(function(x){
+    if(x.team) team=x.team;
+    (x.pos||[]).forEach(function(c){ if(c) affected[posLabel(c)]=true; });
+  });
+  var roll=[];
+  if(team){
+    _DEF_SEQ.forEach(function(code){
+      var lab=posLabel(code);
+      if(!affected[lab]) return;
+      var p=(rosters[team]||[]).find(function(x){ return posLabel(x.pos)===lab || String(x.pos)===code; });
+      if(!p) return;
+      var nm=String(p.yomi||p.name||'').trim();
+      if(!nm) return;
+      roll.push((POS_YOMI[code]||'') + '、' + nm + _hon(p) + (p.num ? '、背番号'+p.num : ''));
+    });
+  }
   confirmSpeak('🔁 交代のお知らせ（'+_defSubQueue.length+'件）',
-    '選手の交代をお知らせします。'+cores.join('。')+'。以上となります。',
+    '選手の交代をお知らせします。'+moves.join('。')+'。'
+      + (roll.length ? roll.join('。')+'。' : '') + '以上となります。',
     _ttsVoice, _ttsStyle, _annRate,
     function(){ _defSubQueue=[]; _refreshDefSubCall(); });
 }
@@ -4794,7 +4771,9 @@ function confirmDefSub(){
   const _posNm = POS_YOMI[String(outP.pos)] || POS_YOMI[posLabel(outP.pos)] || '';
   const _oNm = String(outP.yomi||outP.name||'').trim();
   const _iNm = String(inP.yomi||inP.name||'').trim();
-  _defSubQueue.push({ core:(_posNm?_posNm+'、':'') + _oNm + _hon(outP) + 'に代わりまして、' + _iNm + _hon(inP)
+  _defSubQueue.push({
+    team: _defSubTeam, pos: [String(outP.pos||'')],
+    core:(_posNm?_posNm+'、':'') + _oNm + _hon(outP) + 'に代わりまして、' + _iNm + _hon(inP)
         + (inP.num ? '、背番号'+inP.num : '') });
   _refreshDefSubCall();
   const tp=outP.pos; outP.pos=inP.pos; inP.pos=tp;

@@ -29,6 +29,9 @@ body{padding-bottom:40px}
 .ws-dot{width:10px;height:10px;border-radius:50%;background:#c00;transition:background .3s}
 .ws-dot.on{background:#3ac13a}
 .ws-label{font-size:13px;color:#555}
+.hdr-clock{font-size:16px;font-weight:700;color:#222;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.hdr-batt{font-size:14px;font-weight:700;color:#333;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hdr-batt.low{color:#c00}
 
 /* ロックボタン */
 .btn-lock{background:#e8f3e8;border-color:#8fc98f;color:#2a6a2a}
@@ -378,6 +381,9 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <span class="hdr-sub">メンバー管理</span>
   </div>
   <div class="hdr-right">
+    <span class="hdr-clock" id="hdr-clock">--:--</span>
+    <span class="hdr-batt" id="hdr-batt" style="display:none"></span>
+    <span class="hdr-div"></span>
     <button class="btn btn-lock" id="btn-lock" onclick="toggleLock()">🔓 操作可</button>
     <span class="hdr-div"></span>
     <span class="ws-dot" id="ws-dot"></span>
@@ -1414,6 +1420,7 @@ function applySub(){
   const pi=rosters[subTeam].find(function(p){ return p.id===inId; });
   if(!po||!pi){ closeModal('sub-mask'); return; }
   // アナウンス用の値は交代処理の前に控える
+  const posCode = String(po.pos||'');
   const posName = POS_YOMI[String(po.pos)] || POS_YOMI[posLabel(po.pos)] || '';
   const posK    = _posKanji(po.pos) || posLabel(po.pos) || '';
   const outNm   = String(po.yomi||po.name||'').trim();
@@ -1437,6 +1444,7 @@ function applySub(){
   // ── アナウンス ──
   if(subKind==='守備交代'){
     _subQueue.push({
+      team: subTeam, pos: [posCode],
       say:(posName?posName+'、':'') + outNm + hO + 'に代わりまして、' + inNm + hI + numTx,
       disp:(posK?posK+' ':'') + outKanji + ' → ' + inKanji + (pi.num?'（背番号'+pi.num+'）':'')
     });
@@ -2207,7 +2215,7 @@ function _initFpSplit(){
 // ── 打席結果の編集 ────────────────────────────────────────────────────────
 var ALL_RESULTS = ['ヒット','二塁打','三塁打','ホームラン','四球','敬遠','申告敬遠','死球',
                    'ゴロアウト','フライアウト','ライナーアウト','併殺','犠打','犠飛',
-                   '三振','空振り三振','見逃し三振','スリーバント失敗',
+                   '三振','空振り三振','見逃し三振','スリーバント失敗','振り逃げ',
                    '失策','野選','打撃妨害'];
 var _editTarget = null;   // { team, id, index }
 
@@ -2265,11 +2273,11 @@ var RESULT_SHORT = {
   '失策':'失策', '野選':'野選', '打撃妨害':'妨害',
   '四球':'四球', '死球':'死球',
   '三振':'三振', '空振り三振':'空三振', '見逃し三振':'見三振',
-  'スリーバント失敗':'バント失'
+  'スリーバント失敗':'バント失', '振り逃げ':'振逃'
 };
 
 // 出塁したかどうかで色分けする
-var REACHED = ['ヒット','二塁打','三塁打','ホームラン','失策','野選','四球','死球','打撃妨害'];
+var REACHED = ['ヒット','二塁打','三塁打','ホームラン','失策','野選','四球','死球','打撃妨害','振り逃げ'];
 
 // 指定選手の打席結果を古い順に返す
 function _batterResults(team, id){
@@ -2479,11 +2487,9 @@ function assignPosition(team, playerId, pos){
       var prevK    = _posKanji(prevPos) || posLabel(prevPos) || String(prevPos);
       occupant.pos = prevPos;
       _subQueue.push({
-        // ① 移動情報　② 改めて各ポジションの名前と背番号
+        team: team, pos: [String(pos), String(prevPos)],
         say: prevName + '、' + mvKana + hMv + 'が' + posName + 'に。'
-           + posName + '、' + ocKana + hOc + 'が' + prevName + 'に。'
-           + posName + '、' + mvKana + hMv + (moving.num ? '、背番号' + moving.num : '') + '。'
-           + prevName + '、' + ocKana + hOc + (occupant.num ? '、背番号' + occupant.num : ''),
+           + posName + '、' + ocKana + hOc + 'が' + prevName + 'に',
         disp: mvKanji + ' ' + prevK + '→' + posK + '　' + ocKanji + ' ' + posK + '→' + prevK
       });
       toast(occupant.name+' ⇄ '+moving.name);
@@ -2491,6 +2497,7 @@ function assignPosition(team, playerId, pos){
       if(occupant.order){ moving.order = occupant.order; occupant.order=''; }
       occupant.pos = '';
       _subQueue.push({
+        team: team, pos: [String(pos)],
         say: posName + '、' + ocKana + hOc + 'に代わりまして、' + mvKana + hMv + (moving.num ? '、背番号' + moving.num : ''),
         disp: posK + ' ' + ocKanji + ' → ' + mvKanji + (moving.num ? '（背番号' + moving.num + '）' : '')
       });
@@ -2498,6 +2505,7 @@ function assignPosition(team, playerId, pos){
     }
   }else{
     _subQueue.push({
+      team: team, pos: [String(pos)],
       say: mvKana + hMv + 'が' + posName + 'に入ります',
       disp: mvKanji + ' → ' + posK
     });
@@ -2512,11 +2520,31 @@ function assignPosition(team, playerId, pos){
 }
 
 // たまっている守備変更をまとめてアナウンスする
+// ① すべての移動情報 → ② 影響したポジションの現在の名前・背番号 → ③「以上となります」
 function announceSubs(){
   if(!_annOn){ toast('先にアナウンスをONにしてください'); return; }
   if(!_subQueue.length){ toast('たまっている交代がありません'); return; }
-  var says = _subQueue.map(function(x){ return x.say || x.core; }).filter(Boolean);
-  var txt = '選手の交代をお知らせします。' + says.join('。') + '。以上となります。';
+  var moves = _subQueue.map(function(x){ return x.say || x.core; }).filter(Boolean);
+  var team = null, affected = {};
+  _subQueue.forEach(function(x){
+    if(x.team) team = x.team;
+    (x.pos||[]).forEach(function(c){ if(c) affected[posLabel(c)] = true; });
+  });
+  var roll = [];
+  if(team){
+    _DEF_SEQ.forEach(function(code){
+      var lab = posLabel(code);
+      if(!affected[lab]) return;
+      var p = (rosters[team]||[]).find(function(x){ return posLabel(x.pos) === lab || String(x.pos) === code; });
+      if(!p) return;
+      var nm = String(p.yomi || p.name || '').trim();
+      if(!nm) return;
+      roll.push((POS_YOMI[code] || '') + '、' + nm + _hon(p) + (p.num ? '、背番号' + p.num : ''));
+    });
+  }
+  var txt = '選手の交代をお知らせします。' + moves.join('。') + '。'
+          + (roll.length ? roll.join('。') + '。' : '')
+          + '以上となります。';
   confirmSpeak('🔁 交代のお知らせ（'+_subQueue.length+'件）', txt, _ttsVoice, _ttsStyle, _annRate,
     function(){ _subQueue = []; _refreshSubBtn(); });
 }
@@ -3410,6 +3438,33 @@ _loadLog();
 _initTTS();
 connectWS();
 setWsUI(false);
+
+// ── ヘッダーの時計・バッテリー（端末のステータスバーが出ない端末向け） ──────
+function _tickClock(){
+  var el=document.getElementById('hdr-clock');
+  if(!el) return;
+  var d=new Date();
+  el.textContent = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+_tickClock();
+setInterval(_tickClock, 15000);
+
+function _initBattery(){
+  var el=document.getElementById('hdr-batt');
+  if(!el || !navigator.getBattery) return;   // 非対応端末（Safari 等）は非表示のまま
+  navigator.getBattery().then(function(b){
+    function render(){
+      var pct=Math.round(b.level*100);
+      el.textContent = (b.charging?'⚡':'🔋') + pct + '%';
+      el.classList.toggle('low', !b.charging && pct<=20);
+      el.style.display='inline';
+    }
+    render();
+    b.addEventListener('levelchange', render);
+    b.addEventListener('chargingchange', render);
+  }).catch(function(){});
+}
+_initBattery();
 
 // Service Worker（この画面専用のスコープで登録）
 if('serviceWorker' in navigator){
