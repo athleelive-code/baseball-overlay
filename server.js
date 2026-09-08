@@ -86,7 +86,7 @@ app.post('/api/tts', async (req, res) => {
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'text is required' });
     }
-    if (text.length > 200) {
+    if (text.length > 500) {
       return res.status(400).json({ error: 'text too long' });
     }
 

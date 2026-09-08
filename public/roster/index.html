@@ -2355,9 +2355,22 @@ function renderFieldPane(){
   renderBench(def);
 }
 
+// 未コールの守備交代を色分け（1件＝1色、関係するポジションは同色）
+var SUB_COLORS = ['#e0b84a','#4aa8e0','#e06a6a','#5fc06a','#b06ae0','#e0883a','#3ac0b0','#c04ac0'];
+function _subColorMap(team){
+  var m = {};
+  _subQueue.forEach(function(e, i){
+    if(e.team && e.team !== team) return;
+    var col = SUB_COLORS[i % SUB_COLORS.length];
+    (e.pos || []).forEach(function(c){ if(c) m[posLabel(c)] = col; });
+  });
+  return m;
+}
+
 function renderField(team){
   var svg=document.getElementById('fp-field');
   if(!svg) return;
+  var subMap = _subColorMap(team);
   var h='';
   // 外野・内野（横長）
   h+='<path class="fld" d="M210 196 L14 92 A230 230 0 0 1 406 92 Z"/>';
@@ -2371,8 +2384,10 @@ function renderField(team){
     var p = rosters[team].find(function(x){
       return x.pos && String(x.pos).toLowerCase()===s.pos;
     });
+    var sc = subMap[posLabel(s.pos)] || subMap[s.label] || null;
     h+='<g>';
     h+='<rect class="slot" data-pos="'+s.pos+'" '
+      +(sc ? 'style="fill:'+sc+'44;stroke:'+sc+';stroke-width:3" ' : '')
       +'x="'+(s.x-40)+'" y="'+(s.y-15)+'" width="80" height="30" rx="6"/>';
     h+='<text class="p-pos" x="'+(s.x-34)+'" y="'+(s.y-3)+'">'+s.label+'</text>';
     if(p){
@@ -2546,7 +2561,7 @@ function announceSubs(){
           + (roll.length ? roll.join('。') + '。' : '')
           + '以上となります。';
   confirmSpeak('🔁 交代のお知らせ（'+_subQueue.length+'件）', txt, _ttsVoice, _ttsStyle, _annRate,
-    function(){ _subQueue = []; _refreshSubBtn(); });
+    function(){ _subQueue = []; _refreshSubBtn(); renderFieldPane(); });
 }
 // 旧名の互換
 function announceLastSub(){ announceSubs(); }
@@ -2569,13 +2584,15 @@ function _refreshSubBtn(){
   if(list){
     list.style.display = n ? 'block' : 'none';
     list.innerHTML = _subQueue.map(function(x,i){
-      return '<div>'+_circledNum(i+1)+' '+esc(x.disp || x.say || x.core)+'</div>';
+      var col = SUB_COLORS[i % SUB_COLORS.length];
+      return '<div style="color:'+col+'">'+_circledNum(i+1)+' '+esc(x.disp || x.say || x.core)+'</div>';
     }).join('');
   }
 }
 function clearSubQueue(){
   _subQueue = [];
   _refreshSubBtn();
+  renderFieldPane();
   toast('交代の蓄積をクリアしました');
 }
 
@@ -2882,6 +2899,7 @@ function _speakLocal(text){
 function _play(url){
   try{
     if(!_audioEl){ _audioEl=new Audio(); _audioEl.preload='auto'; }
+    _audioEl.onended=null;
     _audioEl.pause(); _audioEl.src=url; _audioEl.currentTime=0;
     var pr=_audioEl.play(); if(pr&&pr.catch) pr.catch(function(){});
   }catch(e){}
@@ -3148,15 +3166,12 @@ function testCommentary(){
   _speakAs('カウント、ワンアウト、ツーボールワンストライク。ランナー1塁、2塁。', _cmtVoice, _cmtStyle, _cmtRate);
 }
 
-function _speakAs(text, voice, style, rate){
-  if(!_annOn || !text) return;
-  var rt = (typeof rate==='number') ? rate : _annRate;
-  console.log('[TTS] voice=', voice, 'style=', style, 'rate=', rt);
-  if(!_ttsReady){ _speakLocal(text); return; }
+// 1チャンクぶんの音声を取得（キャッシュ／IndexedDB 経由）
+function _ttsFetch1(text, voice, style, rt){
   var k = voice+'|'+(style||'')+'|'+_annStyleDeg+'|'+rt+'|'+_annPitch+'|'+_annPause+'|'+text;
-  if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
-  _dbGet(k).then(function(saved){
-    if(saved){ _ttsCache[k]=saved; _play(saved); return; }
+  if(_ttsCache[k]) return Promise.resolve(_ttsCache[k]);
+  return _dbGet(k).then(function(saved){
+    if(saved){ _ttsCache[k]=saved; return saved; }
     return fetch('/api/tts',{
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'',
@@ -3166,15 +3181,56 @@ function _speakAs(text, voice, style, rate){
     .then(function(d){
       if(!d.audio) throw new Error(d.error||'no audio');
       var url='data:audio/mp3;base64,'+d.audio;
-      _ttsCache[k]=url; _dbPut(k,url); _play(url);
+      _ttsCache[k]=url; _dbPut(k,url); return url;
     });
-  }).catch(function(e){
-    console.warn('[TTS]', e && e.message);
-    var _m2 = (e && e.message) ? String(e.message).slice(0,60) : '';
-    if(typeof toastMsg==='function') toastMsg('音声生成エラー '+_m2);
-    else if(typeof toast==='function') toast('音声生成エラー '+_m2);
-    _speakLocal(text);
   });
+}
+// 長文を「。」区切りで max 文字以内のチャンクに分ける
+function _splitForTts(text, max){
+  max = max || 180;
+  var raw = String(text).split('。');
+  var sents = [];
+  for(var i=0;i<raw.length;i++){
+    if(raw[i]==='') continue;
+    sents.push(raw[i] + (i < raw.length-1 ? '。' : ''));
+  }
+  var chunks=[], cur='';
+  sents.forEach(function(s){
+    if(cur && (cur+s).length > max){ chunks.push(cur); cur=s; }
+    else cur += s;
+    if(cur.length > max*1.8){ chunks.push(cur); cur=''; }
+  });
+  if(cur) chunks.push(cur);
+  return chunks.length ? chunks : [text];
+}
+// 複数クリップを続けて再生
+function _playSeq(urls){
+  if(!urls || !urls.length) return;
+  if(!_audioEl){ _audioEl=new Audio(); _audioEl.preload='auto'; }
+  var i=0;
+  function next(){
+    if(i>=urls.length){ _audioEl.onended=null; return; }
+    _audioEl.onended = next;
+    try{ _audioEl.pause(); _audioEl.src=urls[i++]; _audioEl.currentTime=0;
+      var pr=_audioEl.play(); if(pr&&pr.catch) pr.catch(function(){}); }catch(e){}
+  }
+  next();
+}
+
+function _speakAs(text, voice, style, rate){
+  if(!_annOn || !text) return;
+  var rt = (typeof rate==='number') ? rate : _annRate;
+  if(!_ttsReady){ _speakLocal(text); return; }
+  var chunks = (text.length > 190) ? _splitForTts(text, 180) : [text];
+  Promise.all(chunks.map(function(c){ return _ttsFetch1(c, voice, style, rt); }))
+    .then(function(urls){ _playSeq(urls); })
+    .catch(function(e){
+      console.warn('[TTS]', e && e.message);
+      var _m2 = (e && e.message) ? String(e.message).slice(0,60) : '';
+      if(typeof toastMsg==='function') toastMsg('音声生成エラー '+_m2);
+      else if(typeof toast==='function') toast('音声生成エラー '+_m2);
+      _speakLocal(text);
+    });
 }
 
 // 現在の状況をまとめて読み上げる

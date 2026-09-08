@@ -441,7 +441,7 @@ body.gamemin .gm-hide{display:none!important}
       <rect class="tap-area" x="0"  y="28" width="36" height="48" fill="transparent"
         onclick="tapBase(3)" style="cursor:pointer"/>
       <rect class="tap-area" x="64" y="28" width="36" height="48" fill="transparent"
-        onclick="tapBase(1)" style="cursor:pointer"/>
+        onclick="openBase1(event)" style="cursor:pointer"/>
     </svg>
   </div>
 
@@ -587,13 +587,9 @@ body.gamemin .gm-hide{display:none!important}
       <span id="pitch-disp" style="flex:1;font-size:40px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums">0 / 0</span>
     </div>
     <div style="display:flex;gap:10px;padding:8px 10px;border-bottom:1px solid #1a1a1a">
-      <button id="btn-reach" onclick="openReach()"
-        style="flex:1.3;background:#3a2a2a;border:3px solid #aa6a6a;border-radius:12px;color:#ffc0c0;font-size:28px;font-weight:800;padding:24px 4px;cursor:pointer;white-space:nowrap;line-height:1">
-        🏃 出塁
-      </button>
       <button onclick="announcePitchCount()"
-        style="flex:1;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:12px;color:#c8a8ff;font-size:26px;font-weight:800;padding:24px 4px;cursor:pointer;white-space:nowrap;line-height:1">
-        🔊 球数
+        style="flex:1;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:12px;color:#c8a8ff;font-size:28px;font-weight:800;padding:24px 4px;cursor:pointer;white-space:nowrap;line-height:1">
+        🔊 球数アナウンス
       </button>
     </div>
     <div class="battery-cell" style="border-bottom:1px solid #1a1a1a">
@@ -1171,12 +1167,28 @@ body.gamemin .gm-hide{display:none!important}
   </div>
 </div>
 
-<!-- 出塁（ヒット以外で打者が1塁へ）メニュー -->
+<!-- 「戻す」の確認（打席まるごと・チェンジの巻き戻し時のみ） -->
+<div id="undo-mask" class="win-mask" onclick="winBackdrop(event,'undo-mask')">
+  <div class="win-box" style="max-width:540px">
+    <div class="win-t" style="color:#e8b878;font-size:28px">取り消し</div>
+    <div id="undo-msg" style="font-size:23px;color:#ccc;text-align:center;margin-bottom:16px;line-height:1.5"></div>
+    <div class="win-2col">
+      <button class="win-b main" style="background:#3a2a1a;border-color:#8a6a3a;color:#e8b878;font-size:30px;padding:24px 6px"
+        onclick="doUndoConfirmed()">取り消す</button>
+      <button class="win-b cancel" style="margin:0;font-size:26px;padding:24px 6px"
+        onclick="closeWin('undo-mask')">やめる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 1塁メニュー（ダイヤモンドの1塁タップで開く） -->
 <div id="reach-mask" class="win-mask" onclick="winBackdrop(event,'reach-mask')">
   <div class="win-box" style="max-width:560px">
-    <div class="win-t" style="color:#ffc0c0;font-size:30px">出塁</div>
-    <div style="font-size:20px;color:#888;text-align:center;margin-bottom:12px">
-      打者を1塁へ。詰まっていれば押し出し（満塁なら1点）
+    <div class="win-t" style="font-size:30px">1塁</div>
+    <button id="base1-toggle" class="win-b main" style="background:#5a4a12;border-color:#c8a02e;font-size:30px;padding:24px 6px;margin-bottom:12px"
+      onclick="base1Toggle()">走者を出す</button>
+    <div style="font-size:19px;color:#888;text-align:center;margin-bottom:10px">
+      ── ヒット以外で1塁へ（詰まっていれば押し出し） ──
     </div>
     <button class="win-b sub" onclick="pickReach('死球')">死球</button>
     <button class="win-b sub" onclick="pickReach('申告敬遠')">申告敬遠</button>
@@ -1525,6 +1537,7 @@ function _play(url){
       _audioEl = new Audio();
       _audioEl.preload = 'auto';
     }
+    _audioEl.onended = null;
     _audioEl.pause();
     _audioEl.src = url;
     _audioEl.currentTime = 0;
@@ -1740,15 +1753,12 @@ function testCommentary(){
   _speakAs('カウント、ワンアウト、ツーボールワンストライク。ランナー1塁、2塁。', _cmtVoice, _cmtStyle, _cmtRate);
 }
 
-function _speakAs(text, voice, style, rate){
-  if(!_annOn || !text) return;
-  var rt = (typeof rate==='number') ? rate : _annRate;
-  console.log('[TTS] voice=', voice, 'style=', style, 'rate=', rt);
-  if(!_ttsReady){ _speakLocal(text); return; }
+// 1チャンクぶんの音声を取得
+function _ttsFetch1(text, voice, style, rt){
   var k = voice+'|'+(style||'')+'|'+_annStyleDeg+'|'+rt+'|'+_annPitch+'|'+_annPause+'|'+text;
-  if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
-  _dbGet(k).then(function(saved){
-    if(saved){ _ttsCache[k]=saved; _play(saved); return; }
+  if(_ttsCache[k]) return Promise.resolve(_ttsCache[k]);
+  return _dbGet(k).then(function(saved){
+    if(saved){ _ttsCache[k]=saved; return saved; }
     return fetch('/api/tts',{
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ text:text, voice:voice, rate:rt, style:style||'',
@@ -1758,15 +1768,53 @@ function _speakAs(text, voice, style, rate){
     .then(function(d){
       if(!d.audio) throw new Error(d.error||'no audio');
       var url='data:audio/mp3;base64,'+d.audio;
-      _ttsCache[k]=url; _dbPut(k,url); _play(url);
+      _ttsCache[k]=url; _dbPut(k,url); return url;
     });
-  }).catch(function(e){
-    console.warn('[TTS]', e && e.message);
-    var _m2 = (e && e.message) ? String(e.message).slice(0,60) : '';
-    if(typeof toastMsg==='function') toastMsg('音声生成エラー '+_m2);
-    else if(typeof toast==='function') toast('音声生成エラー '+_m2);
-    _speakLocal(text);
   });
+}
+function _splitForTts(text, max){
+  max = max || 180;
+  var raw = String(text).split('。'), sents = [];
+  for(var i=0;i<raw.length;i++){
+    if(raw[i]==='') continue;
+    sents.push(raw[i] + (i < raw.length-1 ? '。' : ''));
+  }
+  var chunks=[], cur='';
+  sents.forEach(function(s){
+    if(cur && (cur+s).length > max){ chunks.push(cur); cur=s; }
+    else cur += s;
+    if(cur.length > max*1.8){ chunks.push(cur); cur=''; }
+  });
+  if(cur) chunks.push(cur);
+  return chunks.length ? chunks : [text];
+}
+function _playSeq(urls){
+  if(!urls || !urls.length) return;
+  if(!_audioEl){ _audioEl = new Audio(); _audioEl.preload = 'auto'; }
+  var i=0;
+  function nx(){
+    if(i>=urls.length){ _audioEl.onended=null; return; }
+    _audioEl.onended = nx;
+    try{ _audioEl.pause(); _audioEl.src=urls[i++]; _audioEl.currentTime=0;
+      var pr=_audioEl.play(); if(pr&&pr.catch) pr.catch(function(){}); }catch(e){}
+  }
+  nx();
+}
+
+function _speakAs(text, voice, style, rate){
+  if(!_annOn || !text) return;
+  var rt = (typeof rate==='number') ? rate : _annRate;
+  if(!_ttsReady){ _speakLocal(text); return; }
+  var chunks = (text.length > 190) ? _splitForTts(text, 180) : [text];
+  Promise.all(chunks.map(function(c){ return _ttsFetch1(c, voice, style, rt); }))
+    .then(function(urls){ _playSeq(urls); })
+    .catch(function(e){
+      console.warn('[TTS]', e && e.message);
+      var _m2 = (e && e.message) ? String(e.message).slice(0,60) : '';
+      if(typeof toastMsg==='function') toastMsg('音声生成エラー '+_m2);
+      else if(typeof toast==='function') toast('音声生成エラー '+_m2);
+      _speakLocal(text);
+    });
 }
 
 // 現在の状況をまとめて読み上げる
@@ -2157,6 +2205,7 @@ function pickStrikeout(label){
     inn: st.inn, top: st.top
   };
   _paSnapshot = _snapOut();   // アウトを付ける前の状態を控える
+  _paSnapshot.kind = _dropped ? '振り逃げ' : label;
   // 三振の球（S 3球目）ぶんを差し引く → 「戻す」で球数・カウントも戻る
   _paSnapshot.pitchLen = Math.max(0, _paSnapshot.pitchLen - 1);
   _paSnapshot.abLog    = _paSnapshot.abLog.slice(0, -1);
@@ -2230,9 +2279,17 @@ function _applyHomeRunCtl(){
   }
 }
 
-// ── 出塁（ヒット以外で打者が1塁へ：死球・申告敬遠・打撃妨害） ──────────────
-function openReach(){
-  openWin('reach-mask', document.getElementById('btn-reach'), null);
+// ── 1塁メニュー（ダイヤの1塁タップ）：走者ON/OFF ＋ 死球・申告敬遠・打撃妨害 ──
+function openBase1(e){
+  var b=document.getElementById('base1-toggle');
+  if(b) b.textContent = bases[1] ? '走者を消す' : '走者を出す';
+  openWin('reach-mask', (e && (e.currentTarget || e.target)) || null, null);
+}
+function base1Toggle(){
+  if(!winReady()) return;
+  closeWin('reach-mask');
+  bases[1] = !bases[1];
+  renderDiamond(); broadcast();
 }
 function pickReach(kind){
   if(!winReady()) return;
@@ -2240,6 +2297,7 @@ function pickReach(kind){
   if(!kind) return;
   var sel=document.getElementById('sel-batter');
   _paSnapshot = _snapOut();          // 「戻す」で丸ごと戻せるように（出塁の前を控える）
+  _paSnapshot.kind = kind;
   _lastResult = {
     label: kind, outs:0, ts:Date.now(),
     batterId: sel && sel.value ? Number(sel.value) : 0,
@@ -2263,7 +2321,8 @@ function openRunOut(anchorEl){
 function pickRunOut(label){
   if(!winReady()) return;
   closeWin('runout-mask');
-  _paSnapshot = _snapOut();              // アウト -1 で戻せるように
+  _paSnapshot = _snapOut();              // 「戻す」で戻せるように
+  _paSnapshot.kind = label || 'アウト';
   bso.o = Math.min(3, bso.o + 1);
   if(label){
     _lastResult = {
@@ -2308,6 +2367,11 @@ function pickWalk(label){
     atkTeam: st.top ? 'away' : 'home',
     inn: st.inn, top: st.top
   };
+  _paSnapshot = _snapOut();          // 「戻す」で丸ごと戻せるように
+  _paSnapshot.kind = label;
+  _paSnapshot.pitchLen = Math.max(0, _paSnapshot.pitchLen - 1);   // 4球目ぶん
+  _paSnapshot.abLog    = _paSnapshot.abLog.slice(0, -1);
+  _paSnapshot.b        = Math.max(0, _paSnapshot.b - 1);
   walk();
   bso.b=0; bso.s=0;
   _abReset(); _updateAbDisp();
@@ -2621,13 +2685,12 @@ function _finishResult(r, defChain){
   _lastResult = r;
   _defPendingResult = null;
 
+  _paSnapshot = _snapOut();   // 打席結果（アウト／セーフ どちらも）を「戻す」で丸ごと戻せるように
+  _paSnapshot.kind = r.label;
+  // インプレー打球の球（H）ぶんを差し引く → 球数も戻る
+  _paSnapshot.pitchLen = Math.max(0, _paSnapshot.pitchLen - 1);
+  _paSnapshot.abLog    = _paSnapshot.abLog.slice(0, -1);
   if(r.label==='ホームラン') _applyHomeRunCtl();
-  _paSnapshot = (r.outs>0) ? _snapOut() : null;   // アウトなら付ける前の状態を控える
-  if(_paSnapshot){
-    // インプレー打球の球（H）ぶんを差し引く → アウト -1 で球数も戻る
-    _paSnapshot.pitchLen = Math.max(0, _paSnapshot.pitchLen - 1);
-    _paSnapshot.abLog    = _paSnapshot.abLog.slice(0, -1);
-  }
   if(r.outs>0) bso.o = Math.min(3, bso.o + r.outs);
   bso.b=0; bso.s=0;
   _abReset(); _updateAbDisp();
@@ -2665,32 +2728,56 @@ function _restoreSnapshot(sn){
   broadcast();
 }
 
+// 「戻す」ボタンのラベルを、いま戻せる対象に合わせて更新
+function _refreshUndoBtn(){
+  var b=document.getElementById('btn-undo');
+  if(!b) return;
+  var sn = _paSnapshot || _innSnapshot || null;
+  if(sn)                b.textContent = '↩ 戻す（'+(sn.kind||'直前')+'）';
+  else if(_abLog.length) b.textContent = '↩ 1球戻す';
+  else if(bso.o > 0)     b.textContent = '↩ アウト −1';
+  else                   b.textContent = '↩ 戻す';
+}
+
 // ひとつ戻す（1球 / アウト / 出塁 / 回送り をまとめて1ボタンで）
+// スナップショットは「次の1球（B/S/F/H）が入った時点」で無効化される（時間制限はなし）
+var _pendingUndoSn = null;
 function undoLast(){
-  // 直前の「大きい操作」（アウト・出塁・打席結果・回送り）を最優先で戻す
-  var sn = (_paSnapshot && (Date.now() - _paSnapshot.at) < 120000) ? _paSnapshot
-         : (_innSnapshot && (Date.now() - _innSnapshot.at) < 120000) ? _innSnapshot
-         : null;
+  var sn = _paSnapshot || _innSnapshot || null;
   if(sn){
-    _paSnapshot = null; _innSnapshot = null;
-    _restoreSnapshot(sn);
-    if(navigator.vibrate) try{ navigator.vibrate(25); }catch(e){}
-    if(typeof toastMsg==='function') toastMsg('直前の操作を戻しました');
+    // 打席まるごと・チェンジの巻き戻しは確認をはさむ
+    _pendingUndoSn = sn;
+    var m=document.getElementById('undo-msg');
+    if(m) m.textContent = '「'+(sn.kind||'直前の操作')+'」を取り消して、その前の状態に戻します';
+    openWin('undo-mask', document.getElementById('btn-undo'), null);
     return;
   }
-  // 打席内の1球を戻す
+  // 打席内の1球を戻す（軽いので即時）
   if(_abUndo()){
     if(navigator.vibrate) try{ navigator.vibrate(20); }catch(e){}
     if(typeof toastMsg==='function') toastMsg('1球戻しました');
+    _refreshUndoBtn();
     return;
   }
-  // それも無ければアウトだけでも1つ減らす
+  // それも無ければアウトだけでも1つ減らす（即時）
   if(bso.o > 0){
     adjBSO('o', -1);
     if(typeof toastMsg==='function') toastMsg('アウトを1つ戻しました');
+    _refreshUndoBtn();
     return;
   }
   if(typeof toastMsg==='function') toastMsg('戻せる操作がありません');
+}
+function doUndoConfirmed(){
+  if(!winReady()) return;
+  closeWin('undo-mask');
+  var sn = _pendingUndoSn; _pendingUndoSn = null;
+  if(!sn) return;
+  _paSnapshot = null; _innSnapshot = null;
+  _restoreSnapshot(sn);
+  if(navigator.vibrate) try{ navigator.vibrate(25); }catch(e){}
+  if(typeof toastMsg==='function') toastMsg('取り消しました');
+  _refreshUndoBtn();
 }
 
 // ── ウインドウの共通処理 ──────────────────────────────────────────────────
@@ -2895,6 +2982,8 @@ function _abReset(){ _abLog = []; }
 
 // 1球積む
 function _abPush(kind){
+  // 新しい1球が入ったら、前の打席結果／アウト／回送りは「戻す」対象から外す
+  _paSnapshot = null; _innSnapshot = null;
   _abLog.push(kind);
   _updateAbDisp();
 }
@@ -2957,7 +3046,7 @@ function _updateAbDisp(){
   var nf=_abFoulCount(), np=_abPitchCount();
   if(f) f.textContent = nf>0 ? ('F'+nf) : '';
   if(t) t.textContent = np>0 ? (np+'球') : '';
-  // 「戻す」は常時有効（戻すものが無ければトーストで知らせる）
+  if(typeof _refreshUndoBtn==='function') _refreshUndoBtn();
 }
 
 function adjBSO(k, d){
@@ -3211,6 +3300,7 @@ function nextInn(){
   const _endInn = st.inn, _endTop = st.top;
   // 取り消し用スナップショット（アウト誤爆でイニングが飛んだとき戻せるように）
   _innSnapshot = {
+    kind: 'チェンジ',
     inn: st.inn, top: st.top,
     b: bso.b, s: bso.s, o: bso.o,
     bases: { 1:bases[1], 2:bases[2], 3:bases[3] },
