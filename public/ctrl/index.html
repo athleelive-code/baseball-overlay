@@ -407,8 +407,13 @@ body.gamemin .gm-hide{display:none!important}
         アウト −1
       </button>
     </div>
-
-    
+    <div style="padding:0 12px 8px">
+      <button id="btn-runout" onclick="openRunOut()"
+        style="width:100%;background:#2c2c2e;border:2px solid #6a6a8a;border-radius:10px;
+               color:#b0b0e8;font-size:22px;font-weight:800;padding:12px 6px;cursor:pointer">
+        走者アウト（盗塁死・牽制など）
+      </button>
+    </div>
   </div>
 
 
@@ -592,6 +597,10 @@ body.gamemin .gm-hide{display:none!important}
     <div class="battery-cell" style="border-bottom:1px solid #1a1a1a;gap:10px">
       <span class="battery-tag" style="font-size:26px">球数</span>
       <span id="pitch-disp" style="flex:1;font-size:34px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums">0 / 0</span>
+      <button id="btn-hbp" onclick="openHBP()"
+        style="background:#3a2a2a;border:2px solid #aa6a6a;border-radius:8px;color:#ffb0b0;font-size:22px;font-weight:700;padding:12px 12px;cursor:pointer;white-space:nowrap;margin-right:6px">
+        死球
+      </button>
       <button onclick="openIBBPanel()"
         style="background:#2a3a4a;border:2px solid #4a7aaa;border-radius:8px;color:#9ac0ff;font-size:22px;font-weight:700;padding:12px 12px;cursor:pointer;white-space:nowrap;margin-right:6px">
         申告敬遠
@@ -1187,6 +1196,39 @@ body.gamemin .gm-hide{display:none!important}
       <button class="win-b cancel" style="margin:0;font-size:28px;padding:26px 6px"
         onclick="pickIBB(false)">キャンセル</button>
     </div>
+  </div>
+</div>
+
+<!-- 死球の確認 -->
+<div id="hbp-mask" class="win-mask" onclick="winBackdrop(event,'hbp-mask')">
+  <div class="win-box" style="max-width:520px">
+    <div class="win-t" style="color:#ffb0b0;font-size:28px">死球</div>
+    <div style="font-size:22px;color:#888;text-align:center;margin-bottom:14px">
+      打者を1塁へ。詰まっていれば押し出し（満塁なら1点）
+    </div>
+    <div class="win-2col">
+      <button class="win-b main" style="background:#3a2a2a;border-color:#aa6a6a;font-size:32px;padding:26px 6px"
+        onclick="doHBP(true)">実行</button>
+      <button class="win-b cancel" style="margin:0;font-size:28px;padding:26px 6px"
+        onclick="doHBP(false)">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 走者アウト（打者と関係ないアウト） -->
+<div id="runout-mask" class="win-mask" onclick="winBackdrop(event,'runout-mask')">
+  <div class="win-box" style="max-width:560px">
+    <div class="win-t" style="color:#b0b0e8;font-size:28px">走者アウト</div>
+    <div style="font-size:20px;color:#888;text-align:center;margin-bottom:12px">
+      1アウト追加（打者・カウントはそのまま）。記録に残ります
+    </div>
+    <button class="win-b sub" onclick="pickRunOut('盗塁死')">盗塁死</button>
+    <button class="win-b sub" onclick="pickRunOut('牽制死')">牽制死</button>
+    <button class="win-b sub" onclick="pickRunOut('走塁死')">走塁死</button>
+    <button class="win-b sub" onclick="pickRunOut('挟殺')">挟殺（ランダウン）</button>
+    <button class="win-b sub" onclick="pickRunOut('アピールアウト')">アピールアウト</button>
+    <button class="win-b sub" onclick="pickRunOut('走者アウト')">その他（詳細なし）</button>
+    <button class="win-b cancel" style="margin:6px 0 0" onclick="closeWin('runout-mask')">キャンセル</button>
   </div>
 </div>
 
@@ -2137,6 +2179,10 @@ function pickStrikeout(label){
     inn: st.inn, top: st.top
   };
   _paSnapshot = _snapOut();   // アウトを付ける前の状態を控える
+  // 三振の球（S 3球目）ぶんを差し引く → アウト -1 で球数・カウントも戻る
+  _paSnapshot.pitchLen = Math.max(0, _paSnapshot.pitchLen - 1);
+  _paSnapshot.abLog    = _paSnapshot.abLog.slice(0, -1);
+  _paSnapshot.s        = Math.max(0, _paSnapshot.s - 1);
   bso.o = Math.min(3, bso.o+1);
   bso.b=0; bso.s=0;
   _abReset(); _updateAbDisp();
@@ -2226,6 +2272,57 @@ function pickIBB(ok){
   goNextBatter();
   broadcast();
   toastMsg('申告敬遠');
+}
+
+// ── 死球（どのカウントでも成立。四球と同じく打者を1塁へ） ────────────────
+function openHBP(){
+  var el=document.getElementById('btn-hbp');
+  openWin('hbp-mask', el, null);
+}
+function doHBP(ok){
+  if(!winReady()) return;
+  closeWin('hbp-mask');
+  if(!ok) return;
+  var sel=document.getElementById('sel-batter');
+  _lastResult = {
+    label:'死球', outs:0, ts:Date.now(),
+    batterId: sel && sel.value ? Number(sel.value) : 0,
+    atkTeam: st.top ? 'away' : 'home',
+    inn: st.inn, top: st.top
+  };
+  walk();
+  bso.b=0; bso.s=0;
+  _abReset(); _updateAbDisp();
+  renderBSO();
+  goNextBatter();
+  broadcast();
+  toastMsg('死球');
+}
+
+// ── 走者アウト（打者と関係ないアウト。打者・カウントは維持） ───────────────
+function openRunOut(){
+  var el=document.getElementById('btn-runout');
+  openWin('runout-mask', el, null);
+}
+function pickRunOut(label){
+  if(!winReady()) return;
+  closeWin('runout-mask');
+  _paSnapshot = _snapOut();              // アウト -1 で戻せるように
+  bso.o = Math.min(3, bso.o + 1);
+  _lastResult = {
+    label: label, outs: 1, ts: Date.now(),
+    batterId: 0,                          // 打者の打席結果ではない
+    atkTeam: st.top ? 'away' : 'home',
+    inn: st.inn, top: st.top,
+    runnerOut: true
+  };
+  renderBSO(); renderDiamond();
+  if(bso.o >= 3){
+    nextInn();                            // 打者は据え置き（_lastBatterId 未更新のため次イニング先頭で復帰）
+  }else{
+    broadcast();
+  }
+  if(typeof toastMsg==='function') toastMsg(label);
 }
 
 // ── 四球 ──────────────────────────────────────────────────────────────────
@@ -2568,6 +2665,11 @@ function _finishResult(r, defChain){
 
   if(r.label==='ホームラン') _applyHomeRunCtl();
   _paSnapshot = (r.outs>0) ? _snapOut() : null;   // アウトなら付ける前の状態を控える
+  if(_paSnapshot){
+    // インプレー打球の球（H）ぶんを差し引く → アウト -1 で球数も戻る
+    _paSnapshot.pitchLen = Math.max(0, _paSnapshot.pitchLen - 1);
+    _paSnapshot.abLog    = _paSnapshot.abLog.slice(0, -1);
+  }
   if(r.outs>0) bso.o = Math.min(3, bso.o + r.outs);
   bso.b=0; bso.s=0;
   _abReset(); _updateAbDisp();

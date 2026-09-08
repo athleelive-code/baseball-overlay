@@ -1547,13 +1547,15 @@ function applyRemote(s){
         ts: now.getTime(),
         kind: 'result',
         label: lr.label,
+        runnerOut: !!lr.runnerOut,
         inn: lr.inn || (s.inn||1),
         top: (lr.top!==undefined) ? lr.top : (s.top!==false),
         batterId: lr.batterId || 0,
         atkTeam: lr.atkTeam || ((s.top!==false) ? 'away' : 'home'),
         defense: lr.defense || '',
         hit: lr.hit || '',
-        b:0, s:0, o:s.o||0, bases:'', batter:'', pitcher:'', score:''
+        b: lr.runnerOut ? (s.b||0) : 0, s: lr.runnerOut ? (s.s||0) : 0,
+        o:s.o||0, bases:'', batter:'', pitcher:'', score:''
       });
       _saveLog();
       renderFieldPane();
@@ -2091,7 +2093,7 @@ function renderLog(){
   var list=_gameLog.slice().reverse();
   el.innerHTML=list.map(function(g){
     var tagCls = g.kind==='result' ? ' r' : (g.kind==='event' ? ' e' : '');
-    var tagTxt = g.kind==='pitch' ? '投球' : (g.kind==='result' ? '結果' : '記録');
+    var tagTxt = g.runnerOut ? '走者' : (g.kind==='pitch' ? '投球' : (g.kind==='result' ? '結果' : '記録'));
     return '<div class="lp-item">'
       +'<span class="lp-when">'+esc(g.t)+'</span>'
       +'<span class="lp-what">'
