@@ -52,6 +52,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-team-row:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-team-ind{width:3px;border-radius:1px;align-self:stretch;background:rgba(255,255,255,.1);flex-shrink:0}
 .ov-team-ind.active{background:var(--red)}
+.ov-team-logo{height:26px;width:auto;max-width:44px;object-fit:contain;flex-shrink:0}
 .ov-team-name{font-size:24px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;max-width:15em}
 .ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
 .ov-total-cell{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:60px;padding:4px 6px}
@@ -98,9 +99,10 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-snum{font-size:6px;font-weight:900;fill:#3a2a00;text-anchor:middle;
   dominant-baseline:central;font-family:inherit;pointer-events:none}
 .ov-ab{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
-  margin-left:8px;flex-shrink:0;min-width:44px}
-.ov-ab-f{font-size:13px;font-weight:800;color:#e8a33d;line-height:1.1;
-  font-variant-numeric:tabular-nums}
+  margin-left:8px;flex-shrink:0;min-width:36px}
+.ov-ab-f{font-size:15px;font-weight:800;color:#e8a33d;line-height:1;
+  font-variant-numeric:tabular-nums;margin-left:5px}
+.ov-ab-f:empty{display:none}
 .ov-ab-t{font-size:12px;font-weight:700;color:rgba(255,255,255,.55);line-height:1.1;
   font-variant-numeric:tabular-nums}
 .ov-bso-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
@@ -131,14 +133,27 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   text-shadow:0 0 6px rgba(125,255,90,.5);
 }
 .ov-speed-t:empty{display:none}
+.ov-pcinfo{
+  display:none;align-items:baseline;gap:10px;justify-content:center;
+  margin:0 10px 8px;padding:4px 12px;border-radius:5px;
+  background:rgba(8,10,12,.9);border:1px solid rgba(255,255,255,.12);white-space:nowrap;
+}
+.ov-pcinfo.show{display:flex}
+.ov-pcinfo-p{font-size:20px;font-weight:800;color:#fff}
+.ov-pcinfo-p::before{content:"投手 ";font-size:13px;font-weight:800;color:rgba(255,255,255,.45)}
+.ov-pcinfo-p:empty{display:none}
+.ov-pcinfo-c{font-size:15px;font-weight:700;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;padding-left:10px;border-left:1px solid rgba(255,255,255,.15)}
+.ov-pcinfo-c:empty{display:none;border:none}
+.ov-pcinfo-s{font-size:17px;font-weight:900;color:#7dff5a;font-variant-numeric:tabular-nums;padding-left:10px;border-left:1px solid rgba(255,255,255,.15);text-shadow:0 0 6px rgba(125,255,90,.5)}
+.ov-pcinfo-s:empty{display:none;border:none}
 @keyframes spdIn{
   0%{opacity:0;transform:scale(.9)}
   100%{opacity:1;transform:scale(1)}
 }
 
-/* ── 右上：P/C ＋ 守備配置スライドダウン ── */
+/* ── 左下：P/C ＋ 守備配置スライドアップ（右上はスポンサー枠として空ける） ── */
 .ov-pc-wrap{
-  position:fixed;right:20px;top:20px;
+  position:fixed;left:20px;bottom:20px;
   transition:opacity .3s;
   background:rgba(8,12,24,.7);
   border:1px solid rgba(255,255,255,.15);
@@ -153,8 +168,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-pc-tag{font-size:22px;font-weight:800;color:var(--team-color-pc,rgba(255,255,255,.35));flex-shrink:0;letter-spacing:-1px}
 .ov-pc-name{font-size:22px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ov-pc-num{font-size:16px;color:rgba(255,255,255,.5);white-space:nowrap;flex-shrink:0}
-.ov-def-panel{max-height:0;overflow:hidden;transition:max-height .45s ease}
-.ov-def-panel.open{max-height:700px;border-top:1px solid rgba(255,255,255,.08)}
+.ov-def-panel{max-height:0;overflow:hidden;transition:max-height .45s ease;order:-1}
+.ov-def-panel.open{max-height:700px;border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-def-hdr{padding:5px 12px;background:rgba(0,0,0,.2)}
 .ov-def-hdr span{font-size:14px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.5px}
 .ov-def-body{padding:4px 6px}
@@ -178,22 +193,38 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-bat-row{display:grid;grid-template-columns:28px 44px 1fr 36px;gap:4px;align-items:center;padding:5px 8px}
 .ov-bat-row.cur{background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)}
 
-/* 打順強調ブロック（イニングと同スタイル） */
-.ov-bat-order-block{background:var(--team-color,rgba(200,16,46,.85));display:flex;align-items:center;justify-content:center;padding:10px 14px;flex-shrink:0;min-width:52px;transition:background .3s}
-.ov-bat-order-num{font-size:32px;font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-/* B/NB/NNB 打者エリア */
+/* ── 打者ブロック（ロゴ帯＋打順＋守備位置＋氏名ルビ＋背番号） ── */
+.ov-b-brand{display:flex;align-items:center;gap:8px;padding:5px 12px;
+  background:linear-gradient(90deg,rgba(0,0,0,.6),rgba(0,0,0,.15));
+  border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-b-brand img{width:auto;display:block}
+.ov-b-brand .ov-b-wordmark{height:17px;opacity:.95}
+.ov-b-brand .ov-b-emblem{height:26px;object-fit:contain}
+.ov-b-brand-cap{font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(255,255,255,.4);margin-left:auto}
 .ov-b-area{display:flex;align-items:stretch;flex-direction:row}
-.ov-b-inner{display:flex;align-items:center;padding:12px 16px;gap:10px;border-left:1px solid rgba(255,255,255,.1)}
-.ov-b-cell{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.ov-b-sep{width:1px;height:20px;background:rgba(255,255,255,.12);flex-shrink:0}
-.ov-b-tag{display:none}
-.ov-b-name{font-size:36px;font-weight:700;color:#fff;white-space:nowrap}
-.ov-b-name.sub{font-size:20px;color:rgba(255,255,255,.6)}
-.ov-b-name.sub2{font-size:20px;color:rgba(255,255,255,.6)}
-
-.ov-b-pos{font-size:24px;font-weight:700;color:rgba(255,255,255,.5);flex-shrink:0;white-space:nowrap}
-.ov-b-num{font-size:24px;color:rgba(255,255,255,.45);flex-shrink:0;white-space:nowrap}
-.ov-b-arrow{font-size:14px;color:rgba(255,255,255,.5);flex-shrink:0}
+.ov-bat-order-block{background:var(--team-color,rgba(200,16,46,.85));display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:8px 16px;flex-shrink:0;min-width:62px;transition:background .3s}
+.ov-bat-order-cap{font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.75);line-height:1}
+.ov-bat-order-num{font-size:38px;font-weight:800;color:#fff;line-height:1.05;font-variant-numeric:tabular-nums}
+.ov-b-inner{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  padding:8px 18px;gap:5px;flex:1;min-width:0;border-left:1px solid rgba(255,255,255,.1)}
+.ov-b-line1{display:flex;align-items:center;gap:14px;min-width:0}
+.ov-b-pos{font-size:19px;font-weight:800;color:#fff;flex-shrink:0;white-space:nowrap;line-height:1;
+  background:var(--team-color,rgba(200,16,46,.85));padding:6px 11px;border-radius:5px}
+.ov-b-pos:empty{display:none}
+.ov-b-name{font-size:36px;font-weight:800;color:#fff;white-space:nowrap;
+  ruby-position:over;ruby-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ov-b-name rt{font-size:14px;font-weight:600;color:rgba(255,255,255,.65);letter-spacing:1px}
+.ov-b-name rt:empty{display:none}
+.ov-b-name.romaji{font-size:30px;letter-spacing:.5px}
+.ov-b-num{font-size:21px;font-weight:700;color:rgba(255,255,255,.5);flex-shrink:0;white-space:nowrap}
+.ov-b-num:empty{display:none}
+/* 打歴（この試合の打席結果） */
+.ov-b-hist{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow:hidden;max-width:100%}
+.ov-b-hist:empty{display:none}
+.ov-b-hist .h{font-size:13px;font-weight:800;line-height:1;padding:3px 7px;border-radius:4px;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.75);white-space:nowrap;flex-shrink:0}
+.ov-b-hist .h.reach{background:rgba(245,197,24,.92);color:#1a1400}
 </style>
 </head>
 <body>
@@ -221,6 +252,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
         <!-- チーム名 -->
         <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:10px">
           <div class="ov-team-ind active" id="ov-ind-away"></div>
+          <img class="ov-team-logo" id="ov-alogo" alt="" style="display:none">
           <span class="ov-team-name" id="ov-aname">先攻</span>
         </div>
         <!-- スコア表（先攻行・スライド展開） -->
@@ -237,6 +269,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
         <!-- チーム名 -->
         <div class="ov-team-row" style="flex-shrink:0;width:auto;min-width:10px">
           <div class="ov-team-ind" id="ov-ind-home"></div>
+          <img class="ov-team-logo" id="ov-hlogo" alt="" style="display:none">
           <span class="ov-team-name" id="ov-hname">後攻</span>
         </div>
         <!-- スコア表（後攻行・スライド展開） -->
@@ -254,31 +287,28 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   <div class="ov-bso-dia">
     <div class="ov-bso">
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">B</span><svg width="90" height="18" viewBox="0 0 30 10"><circle cx="5" cy="5" r="5" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="5" id="ov-bd3" fill="#333"/><text class="ov-bnum" id="ov-bn1" x="5" y="5">​</text><text class="ov-bnum" id="ov-bn2" x="15" y="5">​</text><text class="ov-bnum" id="ov-bn3" x="25" y="5">​</text></svg>
+        <span class="ov-bso-lbl">B</span><svg width="120" height="24" viewBox="0 0 30 10"><circle cx="5" cy="5" r="5" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="5" id="ov-bd3" fill="#333"/><text class="ov-bnum" id="ov-bn1" x="5" y="5">​</text><text class="ov-bnum" id="ov-bn2" x="15" y="5">​</text><text class="ov-bnum" id="ov-bn3" x="25" y="5">​</text></svg>
       </div>
       <div class="ov-bso-sep"></div>
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">S</span><svg width="60" height="18" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-sd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-sd2" fill="#333"/><text class="ov-snum" id="ov-sn1" x="5" y="5"></text><text class="ov-snum" id="ov-sn2" x="15" y="5"></text></svg>
+        <span class="ov-bso-lbl">S</span><svg width="80" height="24" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-sd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-sd2" fill="#333"/><text class="ov-snum" id="ov-sn1" x="5" y="5"></text><text class="ov-snum" id="ov-sn2" x="15" y="5"></text></svg>
+        <span class="ov-ab-f" id="ov-ab-foul"></span>
       </div>
       <div class="ov-bso-sep"></div>
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">O</span><svg width="60" height="18" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-od1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-od2" fill="#333"/></svg>
+        <span class="ov-bso-lbl">O</span><svg width="80" height="24" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-od1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-od2" fill="#333"/></svg>
       </div>
       <div class="ov-ab" id="ov-ab">
-        <span class="ov-ab-f" id="ov-ab-foul"></span>
         <span class="ov-ab-t" id="ov-ab-total"></span>
       </div>
     </div>
     <div class="ov-dia-sep"></div>
     <div class="ov-dia">
-      <svg viewBox="-12 -8 190 72" style="width:170px;height:auto;display:block;flex-shrink:0">
-        <line x1="80" y1="5" x2="25" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
-        <line x1="80" y1="5" x2="135" y2="32" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
-        <line x1="25" y1="32" x2="80" y2="59" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
-        <line x1="135" y1="32" x2="80" y2="59" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+      <svg viewBox="-12 -8 190 78" style="width:170px;height:auto;display:block;flex-shrink:0">
         <polygon id="ov-b2" points="80,-2 96,8 80,18 64,8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
         <polygon id="ov-b3" points="13,22 29,32 13,42 -3,32" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
         <polygon id="ov-b1" points="147,22 163,32 147,42 131,32" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" stroke-width="1.6"/>
+        <polygon points="80,48 94,58 80,68 66,58" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.4"/>
       </svg>
     </div>
     <!-- 広告エリア（スライド展開時に表示） -->
@@ -293,6 +323,12 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   <!-- 球速（BSOの下・横長） -->
   <div class="ov-speed" id="ov-speed">
     <span class="ov-speed-n" id="ov-speed-n">---</span><span class="ov-speed-u">km/h</span><span class="ov-speed-t" id="ov-speed-t"></span>
+  </div>
+  <!-- 投手名・背番号・投球数・球速（BSO直下・常時） -->
+  <div class="ov-pcinfo" id="ov-pcinfo">
+    <span class="ov-pcinfo-p" id="ov-pcinfo-p"></span>
+    <span class="ov-pcinfo-c" id="ov-pcinfo-c"></span>
+    <span class="ov-pcinfo-s" id="ov-pcinfo-s"></span>
   </div>
 </div>
 
@@ -314,55 +350,53 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     <div class="ov-def-hdr"><span id="ov-def-label">守備配置</span></div>
     <div class="ov-def-body">
       <svg id="ov-def-svg" viewBox="-35 -30 230 170" style="width:100%;display:block">
-        <line x1="80" y1="92" x2="-25" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
-        <line x1="80" y1="92" x2="185" y2="5" stroke="rgba(255,255,255,.04)" stroke-width=".8"/>
-        <line x1="80" y1="5" x2="140" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
-        <line x1="140" y1="50" x2="80" y2="95" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
-        <line x1="80" y1="95" x2="20" y2="50" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
-        <line x1="20" y1="50" x2="80" y2="5" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+        <!-- 球場（ホーム 80,96 / 2塁 80,8） -->
+        <rect x="-35" y="-30" width="230" height="170" fill="#2e5f2b" opacity=".5"/>
+        <path d="M80 100 L-32 -10 A162 162 0 0 1 192 -10 Z" fill="#3c7d36" opacity=".55"/>
+        <path d="M18 -6 A158 158 0 0 1 142 -6" fill="none" stroke="#b08550" stroke-opacity=".5" stroke-width="4"/>
+        <path d="M80 100 L12 58 A84 84 0 0 1 148 58 Z" fill="#c29a66" opacity=".5"/>
+        <polygon points="80,92 42,54 80,16 118,54" fill="#3c7d36" opacity=".55"/>
+        <path d="M80 90 L44 54 L80 18 L116 54 Z" fill="none" stroke="#c29a66" stroke-opacity=".55" stroke-width="6" stroke-linejoin="round"/>
+        <line x1="80" y1="94" x2="-30" y2="-8" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>
+        <line x1="80" y1="94" x2="190" y2="-8" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>
+        <circle cx="80" cy="52" r="7" fill="#c29a66" opacity=".5"/>
+        <circle cx="80" cy="96" r="10" fill="#c29a66" opacity=".45"/>
         <polygon points="80,0 88,8 80,16 72,8" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
         <polygon points="140,43 148,51 140,59 132,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
         <polygon points="80,88 88,96 80,104 72,96" fill="rgba(255,255,255,.65)" stroke="rgba(255,255,255,.75)" stroke-width=".5"/>
         <polygon points="20,43 28,51 20,59 12,51" fill="rgba(255,255,255,.85)" stroke="rgba(255,255,255,.9)" stroke-width=".5"/>
-        <ellipse cx="80" cy="57" rx="7" ry="4.5" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)" stroke-width=".7"/>
         <g id="ov-def-badges"></g>
       </svg>
     </div>
   </div>
 </div>
 
-<!-- 左下：打者B/NB/NNB ＋ 打順スライドアップ（幅2倍・強調） -->
+<!-- 右下：打者（ロゴ帯＋打順＋守備位置＋氏名ルビ＋背番号）＋打順スライドアップ -->
 <div class="ov-bat-wrap" id="ov-bat-wrap">
   <!-- 打順スライドアップ -->
   <div class="ov-bat-panel" id="ov-bat-panel">
     <div class="ov-bat-hdr"><span id="ov-bat-label">打順</span></div>
     <div class="ov-bat-list" id="ov-bat-list"></div>
   </div>
-  <!-- 打順強調ブロック＋B/NB/NNB 常時表示 -->
+  <!-- ロゴ帯（先頭）：攻撃側エンブレム。無ければ AthleeLive ロゴ -->
+  <div class="ov-b-brand">
+    <img class="ov-b-emblem" id="ov-b-emblem" alt="" style="display:none">
+    <img class="ov-b-wordmark" id="ov-b-wordmark" src="athlee-logo.jpg" alt="AthleeLive">
+    <span class="ov-b-brand-cap">AT BAT</span>
+  </div>
+  <!-- 打順番号＋打者情報 -->
   <div class="ov-b-area">
-    <!-- 打順番号 -->
     <div class="ov-bat-order-block">
+      <span class="ov-bat-order-cap">打順</span>
       <span class="ov-bat-order-num" id="ov-bat-order">-</span>
     </div>
-    <!-- B / NB / NNB -->
     <div class="ov-b-inner">
-      <!-- B: 守備位置 名前 背番号 -->
-      <div class="ov-b-cell">
-        <span class="ov-b-tag">B</span>
+      <div class="ov-b-line1">
         <span class="ov-b-pos" id="ov-batter-pos"></span>
-        <span class="ov-b-name" id="ov-batter"></span>
+        <ruby class="ov-b-name" id="ov-batter-name"><span id="ov-batter"></span><rt id="ov-batter-yomi"></rt></ruby>
         <span class="ov-b-num" id="ov-batter-num"></span>
       </div>
-      <span class="ov-b-arrow">▶</span>
-      <div class="ov-b-cell ov-b-nb">
-        <span class="ov-b-tag">NB</span>
-        <span class="ov-b-name sub" id="ov-batter-next"></span>
-      </div>
-      <span class="ov-b-arrow">▶</span>
-      <div class="ov-b-cell ov-b-nb">
-        <span class="ov-b-tag">NNB</span>
-        <span class="ov-b-name sub2" id="ov-batter-next2"></span>
-      </div>
+      <div class="ov-b-hist" id="ov-batter-hist"></div>
     </div>
   </div>
 </div>
@@ -400,6 +434,87 @@ function posToKey(rawPos){
   return POS_LABEL_TO_NUM[s]||POS_LABEL_TO_NUM[s.toUpperCase()]||null;
 }
 
+// ── 表記モード（漢字 / 英語）──────────────────────────────
+// コントローラーの設定から s.notation（'kanji' | 'en'）で受け取り、一貫して切り替える
+var _notation='kanji';
+(function(){ try{ var v=localStorage.getItem('bb_notation'); if(v==='en'||v==='kanji') _notation=v; }catch(e){} })();
+const POS_EN={'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF','DH':'DH'};
+const POS_JA={'1':'投','2':'捕','3':'一','4':'二','5':'三','6':'遊','7':'左','8':'中','9':'右','DH':'指'};
+function posDisp(rawPos){
+  var k=posToKey(rawPos);
+  if(!k) return String(rawPos||'');
+  return (_notation==='en') ? (POS_EN[k]||k) : (POS_JA[k]||k);
+}
+
+// 打歴の短縮表記（スコアブック風）
+const HIST_JA={
+  'ヒット':'安','二塁打':'二','三塁打':'三','ホームラン':'本','本塁打':'本',
+  'ゴロアウト':'ゴロ','フライアウト':'飛','ライナーアウト':'直','併殺':'併',
+  '犠打':'犠打','犠飛':'犠飛','失策':'失','野選':'野選','打撃妨害':'妨',
+  '四球':'四球','敬遠':'敬遠','申告敬遠':'申敬','死球':'死球',
+  '三振':'三振','空振り三振':'空三','見逃し三振':'見三',
+  'スリーバント失敗':'バ失','振り逃げ':'振逃'
+};
+const HIST_EN={
+  'ヒット':'1B','二塁打':'2B','三塁打':'3B','ホームラン':'HR','本塁打':'HR',
+  'ゴロアウト':'GO','フライアウト':'FO','ライナーアウト':'LO','併殺':'DP',
+  '犠打':'SAC','犠飛':'SF','失策':'E','野選':'FC','打撃妨害':'INT',
+  '四球':'BB','敬遠':'IBB','申告敬遠':'IBB','死球':'HBP',
+  '三振':'K','空振り三振':'K','見逃し三振':'ᴷc',
+  'スリーバント失敗':'K','振り逃げ':'K'
+};
+const HIST_REACH={'ヒット':1,'二塁打':1,'三塁打':1,'ホームラン':1,'本塁打':1,'四球':1,'敬遠':1,'申告敬遠':1,'死球':1,'失策':1,'野選':1,'打撃妨害':1,'振り逃げ':1};
+function histShort(l){
+  return (_notation==='en' ? HIST_EN[l] : HIST_JA[l]) || l;
+}
+
+// かな（ひら・カタ）→ ヘボン式ローマ字。氏名の読み仮名を英語表記に変換する簡易版
+function _kanaToRomaji(src){
+  if(!src) return '';
+  var s=String(src).replace(/[ァ-ヶ]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); });
+  var M={
+    'きゃ':'kya','きゅ':'kyu','きょ':'kyo','しゃ':'sha','しゅ':'shu','しょ':'sho',
+    'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+    'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','みゃ':'mya','みゅ':'myu','みょ':'myo',
+    'りゃ':'rya','りゅ':'ryu','りょ':'ryo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+    'じゃ':'ja','じゅ':'ju','じょ':'jo','びゃ':'bya','びゅ':'byu','びょ':'byo',
+    'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
+    'あ':'a','い':'i','う':'u','え':'e','お':'o',
+    'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+    'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+    'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+    'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+    'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+    'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+    'や':'ya','ゆ':'yu','よ':'yo',
+    'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+    'わ':'wa','ゐ':'i','ゑ':'e','を':'o','ん':'n',
+    'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+    'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+    'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
+    'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+    'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+    'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o','ゃ':'ya','ゅ':'yu','ょ':'yo','ゎ':'wa','ゔ':'vu'
+  };
+  var out='', i=0;
+  while(i<s.length){
+    var ch=s.charAt(i), two=s.substr(i,2);
+    if(ch==='っ'){
+      var nx=M[s.substr(i+1,2)]||M[s.charAt(i+1)]||'';
+      if(nx) out+=nx.charAt(0);
+      i++; continue;
+    }
+    if(ch==='ー'){ out+=(out.slice(-1)||''); i++; continue; }
+    if(ch===' '||ch==='　'){ out+=' '; i++; continue; }
+    if(M[two]){ out+=M[two]; i+=2; continue; }
+    if(M[ch]){ out+=M[ch]; i++; continue; }
+    out+=ch; i++;
+  }
+  out=out.replace(/ou/g,'o').replace(/oo/g,'o').replace(/uu/g,'u');
+  return out.split(/\s+/).filter(Boolean)
+    .map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(' ');
+}
+
 function renderDefBadges(roster){
   const g2=g('ov-def-badges');
   if(!g2)return;
@@ -422,7 +537,7 @@ function renderDefBadges(roster){
     t1.setAttribute('font-family','sans-serif');t1.setAttribute('font-size','4.5');
     t1.setAttribute('fill','rgba(255,255,255,.4)');t1.setAttribute('x',cx);
     t1.setAttribute('y',cy+7);t1.setAttribute('text-anchor','middle');
-    t1.textContent=coord.l;
+    t1.textContent=(key==='DH')?posDisp('DH'):(key+' '+posDisp(key));
     const t2=document.createElementNS(ns,'text');
     t2.setAttribute('font-family','sans-serif');t2.setAttribute('font-size','7');
     t2.setAttribute('font-weight','500');t2.setAttribute('fill','#fff');
@@ -443,18 +558,31 @@ function renderBatList(roster,currentBatter,teamLabel){
   const ordered=roster.filter(p=>p.order).sort((a,b)=>Number(a.order)-Number(b.order));
   const dh=roster.filter(p=>{const k=posToKey(p.pos);return k==='DH'&&!p.order;});
   const all=[...ordered,...dh];
-  const posColors={'1':'#e09060','2':'#6eaaee','3':'#5dc9a0','4':'#5dc9a0','5':'#5dc9a0','6':'#5dc9a0','7':'#86c867','8':'#86c867','9':'#86c867','DH':'#b09eee','P':'#e09060','C':'#6eaaee','1B':'#5dc9a0','2B':'#5dc9a0','3B':'#5dc9a0','SS':'#5dc9a0','LF':'#86c867','CF':'#86c867','RF':'#86c867'};
-  const posLblMap={'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF','DH':'DH'};
-  list.innerHTML=all.map(p=>{
-    const isCur=currentBatter&&p.name&&currentBatter.includes(p.name.split(' ')[0]);
+  const posColors={'1':'#e09060','2':'#6eaaee','3':'#5dc9a0','4':'#5dc9a0','5':'#5dc9a0','6':'#5dc9a0','7':'#86c867','8':'#86c867','9':'#86c867','DH':'#b09eee'};
+  // 現打者・次打者・次々打者（打順内で計算）を強調
+  let curIdx=-1;
+  if(currentBatter){
+    curIdx=ordered.findIndex(p=>p.name&&currentBatter.includes(p.name.split(' ')[0]));
+  }
+  const L=ordered.length;
+  const nextIdx =(curIdx>=0&&L)?(curIdx+1)%L:-1;
+  const next2Idx=(curIdx>=0&&L)?(curIdx+2)%L:-1;
+  list.innerHTML=all.map((p,i)=>{
     const key=posToKey(p.pos);
-    const posDisp=posLblMap[key]||String(p.pos||'');
-    const c=posColors[key]||posColors[posDisp]||'#aaa';
-    return `<div style="display:grid;grid-template-columns:24px 38px 1fr 32px;gap:3px;align-items:center;padding:3px 5px${isCur?';background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)':''}">
-      <span style="font-size:${isCur?14:12}px;color:${isCur?'#c8102e':'rgba(255,255,255,.4)'};font-weight:${isCur?700:400}">${p.order||'DH'}</span>
-      <span style="font-size:12px;color:${isCur?'#bbb':'#666'}">#${p.num||''}</span>
-      <span style="font-size:15px;color:${isCur?'#fff':'rgba(255,255,255,.7)'};font-weight:${isCur?700:400};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
-      <span style="font-size:11px;color:${c}">${posDisp}</span>
+    const posD=posDisp(p.pos);
+    const c=posColors[key]||'#aaa';
+    let mark='', box='';
+    if(i===curIdx){ mark='●'; box=';background:rgba(200,16,46,.3);border:1px solid rgba(200,16,46,.6)'; }
+    else if(i===nextIdx){ mark='▶'; box=';background:rgba(245,197,24,.16);border:1px solid rgba(245,197,24,.42)'; }
+    else if(i===next2Idx){ mark='▷'; box=';background:rgba(245,197,24,.07);border:1px solid rgba(245,197,24,.22)'; }
+    const hot=(i===curIdx||i===nextIdx||i===next2Idx);
+    const mc=(i===curIdx)?'#ff6b7d':(hot?'#f5c518':'rgba(255,255,255,.3)');
+    return `<div style="display:grid;grid-template-columns:16px 22px 36px 1fr 34px;gap:3px;align-items:center;padding:3px 5px;border-radius:3px${box}">
+      <span style="font-size:12px;color:${mc};text-align:center">${mark}</span>
+      <span style="font-size:${hot?14:12}px;color:${hot?'#fff':'rgba(255,255,255,.4)'};font-weight:${hot?700:400}">${p.order||(key==='DH'?'DH':'')}</span>
+      <span style="font-size:12px;color:${hot?'#bbb':'#666'}">#${p.num||''}</span>
+      <span style="font-size:15px;color:${hot?'#fff':'rgba(255,255,255,.7)'};font-weight:${hot?700:400};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
+      <span style="font-size:11px;color:${c}">${posD}</span>
     </div>`;
   }).join('');
 }
@@ -465,6 +593,11 @@ function applyState(s){
   if(!s)return;
   // 全状態（コントローラー）以外は表示に触れない（部分メッセージでカウントを消さない）
   if(s._ctl!==true) return;
+  // 表記モード（漢字 / 英語）— コントローラー設定に追従
+  if((s.notation==='en'||s.notation==='kanji') && _notation!==s.notation){
+    _notation=s.notation;
+    try{ localStorage.setItem('bb_notation',_notation); }catch(e){}
+  }
   // チームカラー適用
   const isTop=s.top!==false;
   const batColor=isTop?(s.awayColor||'#c8102e'):(s.homeColor||'#1a56a0');
@@ -483,6 +616,9 @@ function applyState(s){
   set('ov-hname',s.hnm||'後攻');
   setCls('ov-ind-away','ov-team-ind'+(isTop?' active':''));
   setCls('ov-ind-home','ov-team-ind'+(!isTop?' active':''));
+  // チームエンブレム（スコア表・打者ブロック）
+  _lastTop = isTop;
+  _paintTeamLogos();
 
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
@@ -587,48 +723,64 @@ function applyState(s){
     var p=splitPC(s.pitcher), ca=splitPC(s.catcher);
     set('ov-pitcher',p.name); set('ov-pitcher-num',p.num);
     set('ov-catcher',ca.name); set('ov-catcher-num',ca.num);
+    // BSO直下の帯：投手名＋背番号＋投球数
+    var pnum=(p.num||'').replace('#','');
+    var pe=g('ov-pcinfo-p'); if(pe) pe.textContent = p.name ? (p.name + (pnum?'　背番号'+pnum:'')) : '';
+    var ce=g('ov-pcinfo-c');
+    if(ce){
+      var pi=(typeof s.pcInn==='number')?s.pcInn:0, pt=(typeof s.pcTotal==='number')?s.pcTotal:0;
+      ce.textContent = pt>0 ? ('投球'+pi+'/'+pt) : '';
+    }
+    var band=g('ov-pcinfo'); if(band) band.classList.toggle('show', !!p.name);
   })();
 
-  // B/NB/NNB
-  // 打者: 守備位置 名前 背番号
+  // 打者: 守備位置 / 氏名（漢字＋ルビ or ヘボン式ローマ字）/ 背番号 / 打歴
   (function(){
     var bval=s.batter||'';
-    // defRosterから現打者の守備位置と背番号を取得
-    var pos='', num='', name=bval;
-    if(s.batRoster&&bval){
-      var bp=s.batRoster.find(function(p){return p.name&&bval.includes(p.name.split(' ')[0]);});
+    var rosterRef=s.batRoster||s.defRoster;
+    var pos='', num='', name=bval, yomi='', bid=null;
+    if(rosterRef&&bval){
+      var bp=rosterRef.find(function(p){return p.name&&bval.includes(p.name.split(' ')[0]);});
       if(bp){
-        pos=bp.pos||''; num=bp.num?'#'+bp.num:''; name=bp.name||bval;
+        pos=bp.pos||'';
+        num=bp.num?('背番号'+bp.num):'';
+        name=bp.name||bval;
+        yomi=bp.yomi||'';
+        bid=bp.id;
       }
     }
-    set('ov-batter',name); set('ov-batter-pos',pos); set('ov-batter-num',num);
+    var posEl=g('ov-batter-pos');
+    if(posEl) posEl.textContent = pos ? posDisp(pos) : '';
+    var nameEl=g('ov-batter'), rtEl=g('ov-batter-yomi'), rubyEl=g('ov-batter-name');
+    if(_notation==='en'){
+      if(nameEl) nameEl.textContent = _kanaToRomaji(yomi) || name;
+      if(rtEl) rtEl.textContent = '';
+      if(rubyEl) rubyEl.classList.add('romaji');
+    }else{
+      if(nameEl) nameEl.textContent = name;
+      if(rtEl) rtEl.textContent = yomi || '';
+      if(rubyEl) rubyEl.classList.remove('romaji');
+    }
+    var numEl=g('ov-batter-num'); if(numEl) numEl.textContent = num;
+    // 打歴（この試合の打席結果）— まず選手ID、無ければ氏名で照合
+    var he=g('ov-batter-hist');
+    if(he){
+      var list=Array.isArray(s.paResults)?s.paResults:[];
+      var nm0=(name||bval||'').split(' ')[0];
+      var mine=list.filter(function(x){
+        if(bid && x.batterId===bid) return true;
+        return (!bid && nm0 && x.name && x.name.indexOf(nm0)>=0);
+      });
+      he.innerHTML = mine.map(function(x){
+        return '<span class="h '+(HIST_REACH[x.label]?'reach':'')+'">'+histShort(x.label)+'</span>';
+      }).join('');
+    }
   })();
   // 打順番号
   (function(){
     var rosterRef=s.batRoster||s.defRoster;
     var bp=rosterRef&&s.batter?rosterRef.find(function(p){return p.name&&s.batter.includes(p.name.split(' ')[0]);}):null;
     set('ov-bat-order',bp&&bp.order?bp.order:'-');
-  })();
-  // NB/NNB: s.batterNextが空でもbatRosterから再計算
-  (function(){
-    var nb=s.batterNext||'', nnb=s.batterNext2||'';
-    if((!nb||!nnb) && (s.batRoster||s.defRoster) && s.batter){
-      var roster=s.batRoster||s.defRoster;
-      var ordered=roster.filter(function(p){return p.order;}).sort(function(a,b){return Number(a.order)-Number(b.order);});
-      if(ordered.length){
-        var bname=s.batter;
-        var idx=ordered.findIndex(function(p){return p.name&&bname.includes(p.name.split(' ')[0]);});
-        if(idx>=0){
-          var p1=ordered[(idx+1)%ordered.length];
-          var p2=ordered[(idx+2)%ordered.length];
-          var fmt=function(p){return p?(p.num?'#'+p.num+' ':'')+p.name:'';};
-          if(!nb) nb=fmt(p1);
-          if(!nnb) nnb=fmt(p2);
-        }
-      }
-    }
-    set('ov-batter-next',nb);
-    set('ov-batter-next2',nnb);
   })();
 
   // 表示切替
@@ -721,33 +873,91 @@ function applySpeed(sp){
   if(!el || !sp || !sp.ts || sp.ts===_seenSpdTs) return;
   _seenSpdTs=sp.ts;
   if(_spdTimer){ clearTimeout(_spdTimer); _spdTimer=null; }
+  var pcs=g('ov-pcinfo-s');
   if(sp.clear || sp.v==null){
     el.classList.remove('show');
+    if(pcs) pcs.textContent='';
     return;
   }
   var n=g('ov-speed-n');
   if(n) n.textContent=String(sp.v);
   var tp=g('ov-speed-t');
   if(tp) tp.textContent = sp.type || '';
+  if(pcs) pcs.textContent = String(sp.v) + (sp.type ? '（'+sp.type+'）' : '');
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
-  _spdTimer=setTimeout(function(){ el.classList.remove('show'); }, 8000);
+  _spdTimer=setTimeout(function(){ el.classList.remove('show'); if(pcs) pcs.textContent=''; }, 8000);
 }
 var _scoreDispSec=0;
 
+// ── チームエンブレム（コントローラー設定 → _teamcfg で受信）──────────────
+var _teamLogos = { away:'', home:'' };
+try{
+  var _tl = JSON.parse(localStorage.getItem('bb_teamlogos')||'null');
+  if(_tl && typeof _tl==='object'){ _teamLogos.away=_tl.away||''; _teamLogos.home=_tl.home||''; }
+}catch(e){}
+function applyTeamCfg(d){
+  _teamLogos.away = d.away || '';
+  _teamLogos.home = d.home || '';
+  try{ localStorage.setItem('bb_teamlogos', JSON.stringify(_teamLogos)); }catch(e){}
+  _paintTeamLogos();
+}
+function _setLogoImg(id, src){
+  var e=g(id); if(!e) return;
+  if(src){ e.src=src; e.style.display=''; }
+  else { e.removeAttribute('src'); e.style.display='none'; }
+}
+function _paintTeamLogos(){
+  _setLogoImg('ov-alogo', _teamLogos.away);
+  _setLogoImg('ov-hlogo', _teamLogos.home);
+  // 打者ブロックの先頭エンブレム（攻撃側）
+  var atk = _lastTop!==false ? _teamLogos.away : _teamLogos.home;
+  var em=g('ov-b-emblem'), wm=g('ov-b-wordmark');
+  if(em){ if(atk){ em.src=atk; em.style.display=''; } else { em.removeAttribute('src'); em.style.display='none'; } }
+  if(wm) wm.style.display = atk ? 'none' : '';
+}
+var _lastTop = true;
+
 // ── 広告ローテーション ─────────────────────────────
-// 広告画像リスト: publicフォルダに配置した画像パスを追加してください
+// 既定は public フォルダの ad1〜3.png。ROSTER の設定で差し替え・秒数・間隔を変更できる。
 var _adImages = ['ad1.png','ad2.png','ad3.png'];
+var _adSec = 0;        // 0 = スコア表示の秒数に従う
+var _adRotate = 0;     // 0 = 1回の表示で1枚のみ。>0 なら N 秒ごとに切替
 var _adIndex = 0;
+var _adRotTimer = null;
+
+try{
+  var _ac = JSON.parse(localStorage.getItem('bb_adcfg')||'null');
+  if(_ac){ if(Array.isArray(_ac.images)&&_ac.images.length) _adImages=_ac.images;
+    if(typeof _ac.sec==='number') _adSec=_ac.sec;
+    if(typeof _ac.rotate==='number') _adRotate=_ac.rotate; }
+}catch(e){}
+
+function applyAdCfg(d){
+  if(Array.isArray(d.images)) _adImages = d.images.slice();   // 空配列＝広告なし
+  if(typeof d.sec==='number') _adSec = d.sec;
+  if(typeof d.rotate==='number') _adRotate = d.rotate;
+  _adIndex = 0;
+  try{ localStorage.setItem('bb_adcfg', JSON.stringify({images:_adImages,sec:_adSec,rotate:_adRotate})); }catch(e){}
+}
 
 function _showNextAd(){
   var area=g('ov-ad-area');
   var img=g('ov-ad-img');
   if(!area||!img||!_adImages.length) return;
-  // 画像が存在するかチェックしながら表示
   img.onerror=function(){ area.classList.remove('open'); };
   img.onload=function(){ area.classList.add('open'); };
   img.src=_adImages[_adIndex % _adImages.length];
   _adIndex++;
+}
+function _startAdRotate(){
+  if(_adRotTimer){ clearInterval(_adRotTimer); _adRotTimer=null; }
+  _showNextAd();
+  if(_adRotate>0 && _adImages.length>1){
+    _adRotTimer=setInterval(_showNextAd, _adRotate*1000);
+  }
+}
+function _stopAdRotate(){
+  if(_adRotTimer){ clearInterval(_adRotTimer); _adRotTimer=null; }
 }
 
 function showScoreBig(state, sec){
@@ -755,10 +965,12 @@ function showScoreBig(state, sec){
   var sc=document.querySelector('.ov-score');
   if(sc) sc.classList.add('expanded');
   document.querySelectorAll('.ov-ist-slide').forEach(function(el){ el.classList.add('open'); });
-  _showNextAd();
+  _startAdRotate();
+  // 広告の表示秒数（_adSec）が設定されていればそちらを優先
+  var showSec = (_adSec>0) ? _adSec : sec;
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
-  if(sec>0){
-    _scoreDispTimer=setTimeout(function(){ hideScoreBig(); }, sec*1000);
+  if(showSec>0){
+    _scoreDispTimer=setTimeout(function(){ hideScoreBig(); }, showSec*1000);
   }
 }
 
@@ -766,6 +978,7 @@ function showScoreBig(state, sec){
 function hideScoreBig(){
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
   if(_hrCloseTimer){clearTimeout(_hrCloseTimer);_hrCloseTimer=null;}
+  _stopAdRotate();
   var sc=document.querySelector('.ov-score');
   if(sc) sc.classList.remove('expanded');
   document.querySelectorAll('.ov-ist-slide').forEach(function(el){ el.classList.remove('open'); });
@@ -813,13 +1026,17 @@ function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/?overlay=1');
-    ws.onopen=()=>{_wsStatus('WS●','#1a5a1a');try{ws.send(JSON.stringify({_req:'state'}));}catch(e){}};
+    ws.onopen=()=>{_wsStatus('WS●','#1a5a1a');try{ws.send(JSON.stringify({_req:'state'}));ws.send(JSON.stringify({_req:'adcfg'}));ws.send(JSON.stringify({_req:'teamcfg'}));}catch(e){}};
     ws.onmessage=e=>{
       const h=t=>{
         try{
           const d=JSON.parse(t);
           // 球速だけのメッセージは他の表示に触れず処理する
           if(d && d._spd){ applySpeed(d.speed); return; }
+          // 広告設定（ROSTERから）
+          if(d && d._adcfg){ applyAdCfg(d); return; }
+          // チームエンブレム設定（コントローラーから）
+          if(d && d._teamcfg){ applyTeamCfg(d); return; }
           // 全状態（コントローラー）以外は無視。_pcEdit や _req でカウント・走者を消さない
           if(!d || d._ctl!==true) return;
           _pendingState=d;
@@ -833,6 +1050,8 @@ function connectWS(){
   }catch(e){_wsTimer=setTimeout(connectWS,3000);}
 }
 connectWS();
+// localStorage にキャッシュ済みのエンブレムを先に反映（コントローラー未接続でも出す）
+try{ _paintTeamLogos(); }catch(e){}
 </script>
 
 </body></body>
