@@ -1538,7 +1538,10 @@ function connectWS(){
     ws.onopen=function(){
       setWsUI(true);
       try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
-      setTimeout(function(){ if(typeof _sendAdCfg==='function') _sendAdCfg(); }, 300);
+      setTimeout(function(){
+        if(typeof _sendAdCfg==='function') _sendAdCfg();
+        if(typeof _sendHist==='function') _sendHist();
+      }, 300);
     };
     ws.onclose=function(){ ws=null; setWsUI(false); wsTimer=setTimeout(connectWS,3000); };
     ws.onerror=function(){ try{ ws.close(); }catch(e){} };
@@ -1554,6 +1557,8 @@ function connectWS(){
       }
       // オーバーレイからの広告設定リクエスト → 現在の設定を送り返す
       if(s && s._req==='adcfg'){ _sendAdCfg(); return; }
+      // オーバーレイからの打歴リクエスト → 現在の打席結果一覧を送り返す
+      if(s && s._req==='hist'){ if(typeof _sendHist==='function') _sendHist(); return; }
       // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
       if(s && s._say){ if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true); return; }
       if(!s||s._ctl!==true) return;
@@ -2146,6 +2151,15 @@ function clearLog(){
 
 function _saveLog(){
   try{ localStorage.setItem(LOG_KEY, JSON.stringify(_gameLog)); }catch(e){}
+  if(typeof _sendHist==='function') _sendHist();
+}
+// 打歴（打者ごとの打席結果）をオーバーレイへ配信。ROSTER の記録編集・削除もここに反映される
+function _sendHist(){
+  if(!ws || ws.readyState!==1) return;
+  var results = _gameLog
+    .filter(function(g){ return g.kind==='result' && g.batterId && !g.runnerOut; })
+    .map(function(g){ return { batterId:g.batterId, atkTeam:g.atkTeam||'', inn:g.inn||0, label:g.label||'' }; });
+  try{ ws.send(JSON.stringify({ _hist:true, results:results })); }catch(e){}
 }
 function _loadLog(){
   try{

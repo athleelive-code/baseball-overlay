@@ -2779,11 +2779,17 @@ function doUndoConfirmed(){
 }
 
 // ── ウインドウの共通処理 ──────────────────────────────────────────────────
-// ・押した位置を中心に出す（画面外は自動補正）
+// ・すべてのウインドウは「押したボタン（無ければ直前に触れた位置）」を中心に出す（画面外は自動補正）
 // ・開いた直後 0.3 秒は反応しない（連打の突き抜け防止）
 // ・外側を押すとキャンセル
 var _winOpenAt = 0;
 var _winCancelFn = null;
+
+// 直前に触れた／クリックした画面座標（anchor が取れないウインドウの中心に使う）
+var _lastPtr = { x: 0, y: 0 };
+document.addEventListener('pointerdown', function(e){
+  if(typeof e.clientX==='number'){ _lastPtr.x=e.clientX; _lastPtr.y=e.clientY; }
+}, true);
 
 function openWin(id, anchorEl, cancelFn){
   var m=document.getElementById(id);
@@ -2792,21 +2798,23 @@ function openWin(id, anchorEl, cancelFn){
   _winCancelFn = cancelFn || null;
   m.style.display='flex';
 
-  // 押した位置に寄せる
+  // 押した位置（ボタン中心 or 直前タップ位置）にウインドウ中心を合わせる
   var box=m.querySelector('.win-box');
-  if(box && anchorEl){
+  if(box){
     box.style.position='absolute';
-    var r=anchorEl.getBoundingClientRect();
-    var w=box.offsetWidth, h=box.offsetHeight;
-    var left=r.left + r.width/2 - w/2;
-    var top =r.top  + r.height/2 - h/2;
-    left=Math.max(8, Math.min(window.innerWidth  - w - 8, left));
-    top =Math.max(8, Math.min(window.innerHeight - h - 8, top));
+    var w=box.offsetWidth, h=box.offsetHeight, cx, cy;
+    if(anchorEl){
+      var r=anchorEl.getBoundingClientRect();
+      cx=r.left + r.width/2; cy=r.top + r.height/2;
+    }else if(_lastPtr.x || _lastPtr.y){
+      cx=_lastPtr.x; cy=_lastPtr.y;
+    }else{
+      cx=window.innerWidth/2; cy=window.innerHeight/2;
+    }
+    var left=Math.max(8, Math.min(window.innerWidth  - w - 8, cx - w/2));
+    var top =Math.max(8, Math.min(window.innerHeight - h - 8, cy - h/2));
     box.style.left=left+'px';
     box.style.top =top+'px';
-  }else if(box){
-    box.style.position='';
-    box.style.left=''; box.style.top='';
   }
 }
 

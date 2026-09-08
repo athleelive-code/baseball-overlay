@@ -117,11 +117,12 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-pcinfo-tag{display:flex;align-items:center;flex-shrink:0;border-radius:4px;
   background:var(--team-color-pc,rgba(26,86,160,.9));color:#fff;
   font-size:18px;font-weight:900;letter-spacing:0;padding:5px 11px}
-.ov-pcinfo-p{font-size:22px;font-weight:800;color:#fff;padding-left:12px;
-  text-shadow:0 1px 3px rgba(0,0,0,.8)}
+/* 投手氏名・背番号・投球数はすべて同じ体裁（大きめ白の太字） */
+.ov-pcinfo-p{font-size:28px;font-weight:900;color:#fff;padding-left:12px;line-height:1;
+  text-shadow:0 1px 3px rgba(0,0,0,.85)}
 .ov-pcinfo-p:empty{display:none}
-.ov-pcinfo-c{font-size:28px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
-  padding-left:12px;margin-left:12px;border-left:1px solid rgba(255,255,255,.3);
+.ov-pcinfo-c{font-size:28px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums;
+  padding-left:12px;margin-left:12px;border-left:1px solid rgba(255,255,255,.35);
   text-shadow:0 1px 3px rgba(0,0,0,.85)}
 .ov-pcinfo-c:empty{display:none;border:none;margin-left:0}
 .ov-pcinfo-s{display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1;
@@ -158,13 +159,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-bat-row{display:grid;grid-template-columns:28px 44px 1fr 36px;gap:4px;align-items:center;padding:5px 8px}
 .ov-bat-row.cur{background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)}
 
-/* ── 打者ブロック（ロゴ帯＋打順＋守備位置＋氏名ルビ＋背番号） ── */
-/* ロゴ帯は常に最上段（order:-2）。打順表(order:-1)を開くと、この帯が蓋のように上へ伸びる */
-.ov-b-brand{order:-2;display:flex;align-items:center;gap:8px;padding:6px 12px;width:100%;
+/* ── 打者ブロック（帯＝攻撃チーム名＋打順＋守備位置＋氏名ルビ＋背番号） ── */
+/* 帯は常に最上段（order:-2）。打順表(order:-1)を開くと、この帯が蓋のように上へ伸びる */
+.ov-b-brand{order:-2;display:flex;align-items:center;gap:8px;padding:6px 14px;width:100%;
   background:rgba(0,0,0,.6);
   border-bottom:1px solid rgba(255,255,255,.1)}
-.ov-b-brand .ov-b-wordmark{height:17px;width:auto;display:block;opacity:.95}
-.ov-b-brand-cap{font-size:12px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.5);margin-left:auto}
+.ov-b-brand .ov-b-teamname{font-size:17px;font-weight:900;color:#fff;letter-spacing:1px;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ov-b-brand-cap{font-size:12px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.5);margin-left:auto;flex-shrink:0}
 .ov-b-area{display:flex;align-items:stretch;flex-direction:row}
 /* チームエンブレム：打順ブロックの左の専用ブロック（■/〇のロゴ想定） */
 .ov-b-emblem-block{display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:6px 12px}
@@ -324,9 +326,9 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     <div class="ov-bat-hdr"><span id="ov-bat-label">打順</span></div>
     <div class="ov-bat-list" id="ov-bat-list"></div>
   </div>
-  <!-- ロゴ帯（先頭・蓋）：AthleeLive ワードマーク -->
+  <!-- 帯（先頭・蓋）：攻撃チーム名（英語） -->
   <div class="ov-b-brand">
-    <img class="ov-b-wordmark" id="ov-b-wordmark" src="athlee-logo.jpg" alt="AthleeLive">
+    <span class="ov-b-teamname" id="ov-b-teamname"></span>
     <span class="ov-b-brand-cap">打席</span>
   </div>
   <!-- チームエンブレム ＋ 打順番号 ＋ 打者情報 -->
@@ -548,6 +550,8 @@ function renderBatList(roster,currentBatter,teamLabel){
 }
 
 let _defVisible=false,_batVisible=false;
+// 打歴：ROSTER から _hist で受け取ったらそれを正とする（null = 未受信 → s.paResults を使う）
+let _histResults=null;
 // コントローラーから来た showDef/showBat の「前回値」。毎ブロードキャストで同じ true が来ても
 // 自動非表示したパネルを勝手に開き直さないよう、値が変化したときだけ反映する
 let _lastCtlShowDef=null,_lastCtlShowBat=null;
@@ -574,6 +578,8 @@ function applyState(s){
   set('ov-hname',s.hnm||'後攻');
   setCls('ov-ind-away','ov-team-ind'+(isTop?' active':''));
   setCls('ov-ind-home','ov-team-ind'+(!isTop?' active':''));
+  // 打者ブロックの帯＝攻撃（打者）チーム名
+  set('ov-b-teamname', s.batTeam || (isTop ? (s.aab||'先攻') : (s.hnm||'後攻')));
   // チームエンブレム（スコア表・打者ブロック）
   _lastTop = isTop;
   _paintTeamLogos();
@@ -681,7 +687,18 @@ function applyState(s){
     var pe=g('ov-pcinfo-p'); if(pe) pe.textContent = p.name ? (p.name + (pnum?'　#'+pnum:'')) : '';
     var ce=g('ov-pcinfo-c');
     if(ce){
-      var pi=(typeof s.pcInn==='number')?s.pcInn:0, pt=(typeof s.pcTotal==='number')?s.pcTotal:0;
+      // 投球ログ（pitchLog）から「この回 / 累計」を毎回計算し直す
+      // （s.pcInn がイニング更新に追従しない不具合の対策。ログが無ければ s.pcInn/pcTotal を使う）
+      var plog = Array.isArray(s.pitchLog) ? s.pitchLog : [];
+      var pid  = (s.selIds && s.selIds.pitcher) ? s.selIds.pitcher : 0;
+      var pt, pi;
+      if(pid && plog.length){
+        pt = plog.filter(function(r){ return r && r.pid===pid; }).length;
+        pi = plog.filter(function(r){ return r && r.pid===pid && r.inn===inn && r.top===isTop; }).length;
+      }else{
+        pt = (typeof s.pcTotal==='number') ? s.pcTotal : 0;
+        pi = (typeof s.pcInn==='number')   ? s.pcInn   : 0;
+      }
       ce.textContent = pt>0 ? ('投球'+pi+'/'+pt) : '';
     }
     var band=g('ov-pcinfo'); if(band) band.classList.toggle('show', !!p.name);
@@ -714,21 +731,18 @@ function applyState(s){
     if(nameEl) nameEl.textContent = dispName;                // 氏名は漢字（氏と名の間にスペース）
     if(rtEl) rtEl.textContent = _romajiRuby(name, yomi);     // ルビはローマ字（頭大文字・名 姓・氏名間スペース）
     var numEl=g('ov-batter-num'); if(numEl) numEl.textContent = num;   // 背番号＝数字（白地■）
-    // 打歴（この試合の打席結果）
-    // 照合キーは selIds.batter（_pushPaResult の batterId と同じ元＝打者セレクトの値）を最優先。
-    // 型ゆれに備えて String 比較。取れなければ選手ID・氏名でも照合
+    // 打歴（この試合の打席結果）— 選手IDで厳密に照合（他の選手の結果を拾わない）
+    // ID が全く無いときだけ、氏名の完全一致でフォールバック
     var he=g('ov-batter-hist');
     if(he){
-      var list=Array.isArray(s.paResults)?s.paResults:[];
+      var list = (_histResults!==null) ? _histResults : (Array.isArray(s.paResults)?s.paResults:[]);
       var selId=(s.selIds && s.selIds.batter) ? String(s.selIds.batter) : '';
       var bidS=(bid!=null)?String(bid):'';
-      var nm0=String(name||bval||'').replace(/^#?\d+\s*/,'').replace(/[ 　].*$/,'');
+      var key=selId||bidS;
       var mine=list.filter(function(x){
         var xb=(x.batterId!=null)?String(x.batterId):'';
-        if(selId && xb && xb===selId) return true;
-        if(bidS && xb && xb===bidS) return true;
-        if(nm0 && x.name && x.name.indexOf(nm0)>=0) return true;
-        return false;
+        if(key) return xb===key;                 // ID があるならその一致のみ
+        return (name && x.name && x.name===name); // ID 不明時のみ氏名の完全一致
       });
       he.innerHTML = mine.map(function(x){
         return '<span class="h '+(HIST_REACH[x.label]?'reach':'')+'">'+histShort(x.label)+'</span>';
@@ -979,7 +993,7 @@ function connectWS(){
   if(_wsTimer){clearTimeout(_wsTimer);_wsTimer=null;}
   try{
     ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/?overlay=1');
-    ws.onopen=()=>{_wsStatus('WS●','#1a5a1a');try{ws.send(JSON.stringify({_req:'state'}));ws.send(JSON.stringify({_req:'adcfg'}));ws.send(JSON.stringify({_req:'teamcfg'}));}catch(e){}};
+    ws.onopen=()=>{_wsStatus('WS●','#1a5a1a');try{ws.send(JSON.stringify({_req:'state'}));ws.send(JSON.stringify({_req:'adcfg'}));ws.send(JSON.stringify({_req:'teamcfg'}));ws.send(JSON.stringify({_req:'hist'}));}catch(e){}};
     ws.onmessage=e=>{
       const h=t=>{
         try{
@@ -990,6 +1004,8 @@ function connectWS(){
           if(d && d._adcfg){ applyAdCfg(d); return; }
           // チームエンブレム設定（コントローラーから）
           if(d && d._teamcfg){ applyTeamCfg(d); return; }
+          // 打歴（ROSTER の記録が正・編集や削除も反映）
+          if(d && d._hist){ _histResults = Array.isArray(d.results) ? d.results : []; if(_pendingState) applyState(_pendingState); return; }
           // 全状態（コントローラー）以外は無視。_pcEdit や _req でカウント・走者を消さない
           if(!d || d._ctl!==true) return;
           _pendingState=d;
