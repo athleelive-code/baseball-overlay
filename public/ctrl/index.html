@@ -797,6 +797,10 @@ body.gamemin .gm-hide{display:none!important}
       <button id="btn-announce" onclick="toggleAnnounce()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:26px;font-weight:700;padding:14px;cursor:pointer;margin-bottom:10px">
         🔈 アナウンス OFF
       </button>
+      <div style="font-size:19px;color:#666;margin-bottom:6px">音声の再生先（この1台だけONにする。他端末のアナウンスもここから鳴ります）</div>
+      <button id="btn-audio-here" onclick="toggleAudioHere()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:24px;font-weight:700;padding:13px;cursor:pointer;margin-bottom:10px">
+        🔇 この端末で音声を再生：OFF
+      </button>
       <div style="display:flex;align-items:center;gap:12px">
         <button class="drawer-btn" style="flex:1;font-size:40px;font-weight:700" onclick="adjAnnRate(-0.05)">－</button>
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:100px">
@@ -1376,6 +1380,27 @@ var _annStyleDeg = 1.0;      // 感情の強さ
 var _annPause = 250;         // 読点で挟む間（ms）
 var _annVoice = null;        // 使用する音声
 
+// 音声の再生先。ON の端末が実際に音を鳴らし、OFF の端末は _say メッセージで他端末へ中継する。
+// 既定は ON（従来どおり）。複数端末で運用するときは、鳴らさない端末を OFF にする
+var _audioHere = true;
+try{ var _ah=localStorage.getItem('bb_audio_here'); if(_ah!=null) _audioHere = (_ah==='1'); }catch(e){}
+function toggleAudioHere(){
+  _audioHere = !_audioHere;
+  try{ localStorage.setItem('bb_audio_here', _audioHere?'1':'0'); }catch(e){}
+  _refreshAudioHereBtn();
+}
+function _refreshAudioHereBtn(){
+  var b=document.getElementById('btn-audio-here');
+  if(!b) return;
+  b.textContent = _audioHere ? '🔊 この端末で音声を再生：ON' : '🔇 この端末で音声を再生：OFF';
+  b.style.background  = _audioHere ? '#1a3a1a' : '#2c2c2e';
+  b.style.borderColor = _audioHere ? '#3a6a2a' : '#444';
+  b.style.color       = _audioHere ? '#86c867' : '#999';
+}
+function _sendSay(text, voice, style, rate){
+  try{ if(ws && ws.readyState===1) ws.send(JSON.stringify({ _say:true, text:text, voice:voice||'', style:style||'', rate:(typeof rate==='number'?rate:_annRate) })); }catch(e){}
+}
+
 var POS_YOMI = {
   '1':'ピッチャー','2':'キャッチャー','3':'ファースト','4':'セカンド','5':'サード',
   '6':'ショート','7':'レフト','8':'センター','9':'ライト','dh':'指名打者','10':'指名打者',
@@ -1556,6 +1581,7 @@ function _speak(text){
   if(!_annOn || !text) return;
   _setHudText(text);
 
+  if(!_audioHere){ _sendSay(text, _ttsVoice, _ttsStyle, _annRate); return; }
   if(!_ttsReady){ _speakLocal(text); return; }
 
   var key = _ttsKey(text);
@@ -1865,9 +1891,10 @@ function _playSeq(urls){
   nx();
 }
 
-function _speakAs(text, voice, style, rate){
-  if(!_annOn || !text) return;
+function _speakAs(text, voice, style, rate, _recv){
+  if((!_annOn && !_recv) || !text) return;
   _setHudText(text);
+  if(!_audioHere && !_recv){ _sendSay(text, voice||_ttsVoice, style||_ttsStyle, rate); return; }
   var rt = (typeof rate==='number') ? rate : _annRate;
   if(!_ttsReady){ _speakLocal(text); return; }
   var chunks = (text.length > 190) ? _splitForTts(text, 180) : [text];
@@ -3965,6 +3992,7 @@ function openSettingsDrawer(){
   _updateScoreDispSecUI();
   if(typeof _refreshNotationBtns==='function') _refreshNotationBtns();
   if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
+  if(typeof _refreshAudioHereBtn==='function') _refreshAudioHereBtn();
   if(typeof _refreshAnnBtn==='function'){
     _refreshAnnBtn();
     var _ar=document.getElementById('ann-rate-val');
@@ -4737,6 +4765,8 @@ function connectWS(){
       if(s && s._req==='state'){ _doBroadcast(); return; }
       // エンブレム要求には現在のエンブレムを返す
       if(s && s._req==='teamcfg'){ if(typeof _sendTeamCfg==='function') _sendTeamCfg(); return; }
+      // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
+      if(s && s._say){ if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true); return; }
       // 球速だけのメッセージは保持だけして送り返さない
       if(s && s._spd){ _speed=s.speed; return; }
       // PC版からの部分更新（選手・表示など。カウントには触れない）

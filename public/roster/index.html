@@ -680,6 +680,9 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <div class="set-lbl">場内アナウンス</div>
       <button class="btn" id="set-ann-toggle" onclick="toggleAnnounce()"
         style="width:100%;font-size:16px;padding:14px">🔈 アナウンス OFF</button>
+      <div class="note" style="margin-top:8px">音声の再生先（鳴らす端末を1台だけ ON。他端末のアナウンスもここから鳴ります）</div>
+      <button class="btn" id="btn-audio-here" onclick="toggleAudioHere()"
+        style="width:100%;font-size:15px;padding:12px;margin-top:4px">🔇 この端末で音声を再生：OFF</button>
       <button class="btn" id="set-pitch-auto" onclick="togglePitchAuto()"
         style="width:100%;font-size:14px;padding:12px;margin-top:8px">🔈 イニング交代時に投球数を自動アナウンス OFF</button>
     </div>
@@ -1541,6 +1544,8 @@ function connectWS(){
       }
       // オーバーレイからの広告設定リクエスト → 現在の設定を送り返す
       if(s && s._req==='adcfg'){ _sendAdCfg(); return; }
+      // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
+      if(s && s._say){ if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true); return; }
       if(!s||s._ctl!==true) return;
       applyRemote(s);
     };
@@ -2672,6 +2677,27 @@ var _annPitch=0, _annStyleDeg=1.0, _annPause=250;
 var _ttsReady=false, _ttsVoice='ja-JP-NanamiNeural', _ttsStyle='';
 var _ttsCache={}, _audioEl=null;
 
+// 音声の再生先。ON の端末が実際に音を鳴らし、OFF の端末は _say メッセージで他端末へ中継する。
+// 既定は ON（従来どおり）。複数端末で運用するときは、鳴らさない端末を OFF にする
+var _audioHere = true;
+try{ var _ah=localStorage.getItem('bb_audio_here'); if(_ah!=null) _audioHere = (_ah==='1'); }catch(e){}
+function toggleAudioHere(){
+  _audioHere = !_audioHere;
+  try{ localStorage.setItem('bb_audio_here', _audioHere?'1':'0'); }catch(e){}
+  _refreshAudioHereBtn();
+}
+function _refreshAudioHereBtn(){
+  var b=document.getElementById('btn-audio-here');
+  if(!b) return;
+  b.textContent = _audioHere ? '🔊 この端末で音声を再生：ON' : '🔇 この端末で音声を再生：OFF';
+  b.style.background  = _audioHere ? '#1a3a1a' : '#2c2c2e';
+  b.style.borderColor = _audioHere ? '#3a6a2a' : '#3a3a3c';
+  b.style.color       = _audioHere ? '#86c867' : '#ddd';
+}
+function _sendSay(text, voice, style, rate){
+  try{ if(ws && ws.readyState===1) ws.send(JSON.stringify({ _say:true, text:text, voice:voice||'', style:style||'', rate:(typeof rate==='number'?rate:_annRate) })); }catch(e){}
+}
+
 var POS_YOMI={
   '1':'ピッチャー','2':'キャッチャー','3':'ファースト','4':'セカンド','5':'サード',
   '6':'ショート','7':'レフト','8':'センター','9':'ライト','dh':'指名打者','10':'指名打者',
@@ -2792,6 +2818,7 @@ function _refreshSettingsUI(){
     b.style.borderColor=_annOn?'#3a6a2a':'#3a3a3c';
     b.style.color=_annOn?'#86c867':'#ddd';
   }
+  if(typeof _refreshAudioHereBtn==='function') _refreshAudioHereBtn();
   var st_=document.getElementById('set-tts-status');
   if(st_){
     st_.textContent=_ttsReady?'高品質音声（Azure）を使用中':'端末内蔵の音声を使用中';
@@ -3070,6 +3097,7 @@ function _play(url){
 function _speak(text){
   if(!_annOn||!text) return;
   _setHudText(text);
+  if(!_audioHere){ _sendSay(text, _ttsVoice, _ttsStyle, _annRate); return; }
   if(!_ttsReady){ _speakLocal(text); return; }
   var k=_ttsKey(text);
   if(_ttsCache[k]){ _play(_ttsCache[k]); return; }
@@ -3380,9 +3408,10 @@ function _playSeq(urls){
   next();
 }
 
-function _speakAs(text, voice, style, rate){
-  if(!_annOn || !text) return;
+function _speakAs(text, voice, style, rate, _recv){
+  if((!_annOn && !_recv) || !text) return;
   _setHudText(text);
+  if(!_audioHere && !_recv){ _sendSay(text, voice||_ttsVoice, style||_ttsStyle, rate); return; }
   var rt = (typeof rate==='number') ? rate : _annRate;
   if(!_ttsReady){ _speakLocal(text); return; }
   var chunks = (text.length > 190) ? _splitForTts(text, 180) : [text];
