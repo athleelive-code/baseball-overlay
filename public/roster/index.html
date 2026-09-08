@@ -174,79 +174,24 @@ body.locked .team input,body.locked .team select,body.locked .team button,
 body.locked .team label{pointer-events:none;opacity:.5}
 body.locked .row{cursor:default}
 
-/* 攻撃打順・守備位置図（左右2チーム／攻守で打順表と配置図が上下入れ替わる） */
-.fieldpane{display:grid;grid-template-columns:minmax(0,1fr) 10px minmax(0,1fr);gap:6px;
-  padding:12px 16px 16px;background:#0e0e10;border-bottom:1px solid var(--line)}
-@media(max-width:1000px){
-  .fieldpane{grid-template-columns:1fr!important;gap:14px}
-  .fp-split{display:none}
-}
-.fp-col{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
-.fp-col-hd{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);
-  font-size:17px;font-weight:800;color:#fff;flex-wrap:wrap}
-.fp-col-hd .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:60px}
-/* 各列ヘッダーに差し込む操作群（攻撃 or 守備） */
-.fp-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-basis:100%;
-  padding-top:8px;border-top:1px solid var(--line)}
-.fp-lr{background:#2c2c2e;border:1px solid #555;border-radius:7px;color:#aaa;font-size:15px;
-  padding:4px 9px;cursor:pointer;flex-shrink:0}
-.fp-lr:hover{background:#3a3a3c;color:#ddd}
-.fp-stack{display:flex;flex-direction:column;gap:8px;padding:8px}
-.fp-pane{background:#141416;border:1px solid #242426;border-radius:9px;overflow:hidden}
-.fp-pane-t{font-size:11px;font-weight:800;letter-spacing:1px;color:#8a8a8c;padding:6px 10px;
-  background:rgba(255,255,255,.03);border-bottom:1px solid #242426}
-.fp-pane.hot .fp-pane-t{color:#c8a02e}
-/* ドラッグで幅を変える仕切り */
-.fp-split{
-  position:relative;cursor:col-resize;border-radius:5px;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .12s;
-}
-.fp-split::before{
-  content:'';width:4px;height:56px;border-radius:2px;
-  background:#3a3a3c;transition:background .12s;
-}
-.fp-split:hover::before,.fp-split.dragging::before{background:#c8a02e}
-.fp-split.dragging{background:rgba(200,160,46,.08)}
-body.fp-resizing{cursor:col-resize;user-select:none}
-.fp-left,.fp-right{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.fp-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);
-  font-size:19px;font-weight:700;color:#fff}
-.fp-badge{font-size:13px;font-weight:800;padding:4px 11px;border-radius:20px;flex-shrink:0}
-.fp-badge.atk{background:rgba(200,16,46,.2);color:#ff8090;border:1px solid rgba(200,16,46,.45)}
-.fp-badge.def{background:rgba(26,86,160,.24);color:#8ab4ff;border:1px solid rgba(26,86,160,.55)}
-.fp-hint{font-size:11px;color:#666;font-weight:400}
-.fp-pit{margin-left:auto;background:#1e2a3a;border:2px solid #3a5a8a;border-radius:8px;
-  color:#8fc0ff;font-size:12px;font-weight:800;padding:7px 12px;cursor:pointer;white-space:nowrap}
+/* 守備交代モーダル（フィールド図＋ベンチ）＋ 上部アクションバー */
+.top-actbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:#0e0e10;border-bottom:1px solid var(--line);padding:10px 16px}
+.fp-pit{background:#1e2a3a;border:2px solid #3a5a8a;border-radius:8px;
+  color:#8fc0ff;font-size:13px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .fp-pit:hover{background:#26364a}
 .fp-next{background:#c8102e;border:none;border-radius:9px;color:#fff;
-  font-size:17px;font-weight:800;padding:11px 22px;cursor:pointer;white-space:nowrap;transition:.12s}
+  font-size:16px;font-weight:800;padding:10px 20px;cursor:pointer;white-space:nowrap;transition:.12s}
 .fp-next:hover{background:#e0203e}
 .fp-next:active{transform:scale(.96)}
-/* 代打・代走：次打者より控えめ（小さめ・グレー）。右端の▼で「押すと選択ウインドウが開く」を示す */
-.fp-sub{display:inline-flex;align-items:center;gap:6px;background:#2c2c2e;border:1px solid #454547;
-  border-radius:8px;color:#bbb;font-size:13px;font-weight:700;padding:7px 11px;cursor:pointer;
-  white-space:nowrap;transition:.12s}
-.fp-sub:hover{background:#3a3a3c;color:#ddd}
-.fp-sub:active{transform:scale(.96)}
-.fp-sub .cv{font-size:11px;opacity:.8;border-left:1px solid rgba(255,255,255,.22);padding-left:6px}
-
-.fp-order{padding:5px 8px}
-.fp-ord-row{display:grid;grid-template-columns:40px 52px minmax(0,1fr) 54px minmax(0,1.3fr);
-  gap:9px;align-items:center;padding:10px 8px;border-bottom:1px solid #232325;font-size:19px}
-.fp-ord-res{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
 .fp-res{font-size:12px;font-weight:700;padding:3px 7px;border-radius:5px;
   background:#242426;color:#8a8a8c;border:1px solid #303032;white-space:nowrap;cursor:pointer}
 .fp-res:hover{background:#2e2e30;color:#ccc}
 .fp-res em{font-style:normal;font-size:10px;opacity:.7;margin-left:4px}
 .fp-res.ok{background:rgba(58,140,220,.18);color:#8ac0ff;border-color:rgba(58,140,220,.45)}
 .fp-res.none{background:none;border:none;color:#3a3a3c}
-.fp-ord-row.cur{background:rgba(200,160,46,.14);box-shadow:inset 3px 0 0 #c8a02e;border-radius:5px}
-.fp-ord-no{font-size:24px;font-weight:800;color:#c8a02e;text-align:center}
-.fp-ord-num{font-size:18px;color:#8a8a8a;text-align:right}
-.fp-ord-nm{color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fp-ord-row.cur .fp-ord-nm{color:#fff;font-weight:700}
-.fp-ord-pos{font-size:16px;color:#888;text-align:center}
+.row-hist{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px;padding:1px 4px 3px 40px}
+.row-hist:empty{display:none}
 
 .fp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,30%);gap:8px;padding:8px;align-items:start}
 .fp-field{width:100%;height:auto;display:block}
@@ -275,16 +220,18 @@ body.fp-resizing{cursor:col-resize;user-select:none}
 @media(max-width:900px){.wrap{grid-template-columns:1fr}}
 
 .team{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.team-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.team-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .team-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
+.tlogo-prev{width:34px;height:34px;object-fit:contain;border-radius:6px;background:#2c2c2e;flex-shrink:0}
+.tlogo-prev:not([src]){opacity:.35}
 .badge-away{background:rgba(200,16,46,.18);color:#ff8090;border:1px solid rgba(200,16,46,.4)}
 .badge-home{background:rgba(26,86,160,.22);color:#8ab4ff;border:1px solid rgba(26,86,160,.5)}
 .coach-inp{flex:0 0 150px;background:#242426;border:1px solid #333;border-radius:8px;
   color:#bbb;font-size:14px;font-weight:600;padding:9px 10px;outline:none}
 .coach-inp:focus{border-color:#555;color:#fff}
 .coach-inp::placeholder{color:#555;font-weight:400}
-.team-name-inp{flex:1;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#fff;
-  font-size:18px;font-weight:700;padding:9px 12px;outline:none}
+.team-name-inp{flex:1;min-width:160px;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#fff;
+  font-size:24px;font-weight:800;padding:10px 12px;outline:none}
 .team-name-inp:focus{border-color:#555}
 
 /* ツールバー */
@@ -329,8 +276,11 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   padding:10px 14px;border-top:1px solid var(--line);background:#191919}
 .sec-lbl{padding:10px 14px 4px;font-size:11px;color:var(--sub);letter-spacing:1px;border-top:1px solid var(--line)}
 
-/* 交代パネル */
-.subbar{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+/* 交代パネル（チームカード上部） */
+.subbar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.subbar .btn{font-size:15px;font-weight:800;padding:10px 16px}
+.subbar .btn.sub-def{background:#3a2f14;border-color:#c8a02e;color:#f0d48a}
+.subbar .btn.sub-def:hover{background:#4a3c1c}
 
 /* モーダル */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;
@@ -508,47 +458,13 @@ body.fp-resizing{cursor:col-resize;user-select:none}
   </div>
 </div>
 
-<!-- 左右2チーム：攻守交替で「打順表」と「守備配置図」が上下入れ替わる。
-     操作群（攻撃/守備）は該当チームの列ヘッダーへ JS で差し込む -->
-<div hidden>
-  <div class="fp-acts" id="fp-act-atk">
-    <button id="fp-batter-call" onclick="fpBatterCall()" style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:12px;font-weight:800;padding:7px 11px;cursor:pointer;white-space:nowrap">🔊 打者コール</button>
-    <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
-    <button class="fp-sub" onclick="openSub(_atkTeam(),'代打')">代打<span class="cv">選ぶ ▼</span></button>
-    <button class="fp-sub" onclick="openSub(_atkTeam(),'代走')">代走<span class="cv">選ぶ ▼</span></button>
-    <div id="fp-batter-card" style="display:none;flex-basis:100%;padding:8px 10px;background:#241a1c;border:1px solid #5a3a3e;border-radius:8px"></div>
-  </div>
-  <div class="fp-acts" id="fp-act-def">
-    <button class="fp-pit" onclick="openPitcherInfo()">📊 投手情報</button>
-    <span style="font-size:11px;color:#666">守備交代は配置図・ベンチで</span>
-    <button id="fp-sub-call" onclick="announceSubs()" style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:12px;font-weight:800;padding:7px 11px;cursor:pointer;white-space:nowrap">🔁 交代コール</button>
-    <button id="fp-sub-clear" onclick="clearSubQueue()" style="display:none;background:#2c2c2e;border:1px solid #555;border-radius:8px;color:#999;font-size:12px;padding:7px 9px;cursor:pointer;white-space:nowrap">クリア</button>
-    <div id="sub-accum-list" style="display:none;flex-basis:100%;text-align:right;font-size:11px;color:#b8e878;line-height:1.7;margin-top:3px"></div>
-  </div>
+<!-- 打者カード・次打者・投手情報（読み取り専用パネルの直下） -->
+<div class="top-actbar">
+  <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
+  <button class="fp-pit" onclick="openPitcherInfo()">📊 投手情報</button>
+  <button id="fp-batter-call" onclick="fpBatterCall()" style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:13px;font-weight:800;padding:9px 13px;cursor:pointer;white-space:nowrap">🔊 打者コール</button>
 </div>
-<div class="fieldpane">
-  <div class="fp-col" id="fp-col-a">
-    <div class="fp-col-hd" id="fp-colhd-a"><button class="fp-lr" onclick="fpSwapLR()" title="左右を入れ替え">⇄</button><span class="fp-badge" id="fp-side-a"></span><span class="nm" id="fp-team-a"></span><button class="qrbtn" onclick="openQR('ctrl/')" title="コントローラーを共有" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg></button></div>
-    <div class="fp-stack" id="fp-stack-a">
-      <div class="fp-pane" id="fp-paneord-a"><div class="fp-pane-t">打順</div><div class="fp-order" id="fp-order-a"></div></div>
-      <div class="fp-pane" id="fp-panefld-a"><div class="fp-pane-t">守備配置</div>
-        <div class="fp-body"><svg class="fp-field" id="fp-field-a" viewBox="0 0 304 304" xmlns="http://www.w3.org/2000/svg"></svg>
-          <div class="fp-bench"><div class="fp-bench-t">ベンチ</div><div id="fp-bench-a"></div></div></div>
-      </div>
-    </div>
-  </div>
-  <div class="fp-split" id="fp-split" title="ドラッグで幅を調整"></div>
-  <div class="fp-col" id="fp-col-b">
-    <div class="fp-col-hd" id="fp-colhd-b"><button class="fp-lr" onclick="fpSwapLR()" title="左右を入れ替え">⇄</button><span class="fp-badge" id="fp-side-b"></span><span class="nm" id="fp-team-b"></span></div>
-    <div class="fp-stack" id="fp-stack-b">
-      <div class="fp-pane" id="fp-paneord-b"><div class="fp-pane-t">打順</div><div class="fp-order" id="fp-order-b"></div></div>
-      <div class="fp-pane" id="fp-panefld-b"><div class="fp-pane-t">守備配置</div>
-        <div class="fp-body"><svg class="fp-field" id="fp-field-b" viewBox="0 0 304 304" xmlns="http://www.w3.org/2000/svg"></svg>
-          <div class="fp-bench"><div class="fp-bench-t">ベンチ</div><div id="fp-bench-b"></div></div></div>
-      </div>
-    </div>
-  </div>
-</div>
+<div id="fp-batter-card" style="display:none;margin:2px 16px 14px;padding:10px 12px;background:#241a1c;border:1px solid #5a3a3e;border-radius:10px"></div>
 
 <div class="wrap">
   <!-- 先攻 -->
@@ -557,6 +473,14 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <span class="team-badge badge-away">先攻 / 1塁側</span>
       <input class="team-name-inp" id="tname-away" placeholder="チーム名" oninput="onTeamName('away')">
       <input class="coach-inp" id="coach-away" placeholder="監督名" oninput="onCoachName('away')">
+      <img class="tlogo-prev" id="tlogo-away-prev" alt="">
+      <label class="btn" style="margin:0">ロゴ設定<input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('away',event)"></label>
+      <button class="btn" onclick="clearTeamLogo('away')">解除</button>
+    </div>
+    <div class="subbar">
+      <button class="btn" onclick="openSub('away','代打')">代打</button>
+      <button class="btn" onclick="openSub('away','代走')">代走</button>
+      <button class="btn sub-def" onclick="openSub('away','守備交代')">守備交代</button>
     </div>
     <div class="tools">
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
@@ -580,11 +504,6 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <select class="cell-sel" id="new-away-pos"></select>
       <button class="mini" onclick="addPlayer('away')">＋ 追加</button>
     </div>
-    <div class="subbar">
-      <button class="btn" onclick="openSub('away','代打')">代打</button>
-      <button class="btn" onclick="openSub('away','代走')">代走</button>
-      <button class="btn" onclick="openSub('away','守備交代')">守備交代</button>
-    </div>
   </div>
 
   <!-- 後攻 -->
@@ -593,6 +512,14 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <span class="team-badge badge-home">後攻 / 3塁側</span>
       <input class="team-name-inp" id="tname-home" placeholder="チーム名" oninput="onTeamName('home')">
       <input class="coach-inp" id="coach-home" placeholder="監督名" oninput="onCoachName('home')">
+      <img class="tlogo-prev" id="tlogo-home-prev" alt="">
+      <label class="btn" style="margin:0">ロゴ設定<input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('home',event)"></label>
+      <button class="btn" onclick="clearTeamLogo('home')">解除</button>
+    </div>
+    <div class="subbar">
+      <button class="btn" onclick="openSub('home','代打')">代打</button>
+      <button class="btn" onclick="openSub('home','代走')">代走</button>
+      <button class="btn sub-def" onclick="openSub('home','守備交代')">守備交代</button>
     </div>
     <div class="tools">
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
@@ -615,11 +542,6 @@ body.fp-resizing{cursor:col-resize;user-select:none}
       <input class="cell-inp name" id="new-home-name" placeholder="選手名を入力" onkeydown="if(event.key==='Enter')addPlayer('home')">
       <select class="cell-sel" id="new-home-pos"></select>
       <button class="mini" onclick="addPlayer('home')">＋ 追加</button>
-    </div>
-    <div class="subbar">
-      <button class="btn" onclick="openSub('home','代打')">代打</button>
-      <button class="btn" onclick="openSub('home','代走')">代走</button>
-      <button class="btn" onclick="openSub('home','守備交代')">守備交代</button>
     </div>
   </div>
 </div>
@@ -664,6 +586,26 @@ body.fp-resizing{cursor:col-resize;user-select:none}
     <div class="modal-acts">
       <button class="btn btn-save" style="flex:1" onclick="applySub()">交代する</button>
       <button class="btn" style="flex:1" onclick="closeModal('sub-mask')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 守備交代（フィールド図で今まで通りタップ操作） -->
+<div class="mask" id="deffield-mask">
+  <div class="modal" style="max-width:600px">
+    <h3 id="deffield-title">守備交代</h3>
+    <div class="note">動かす選手をタップ → 移動先の守備位置をタップ。ベンチの選手も同様に。</div>
+    <div class="fp-body">
+      <svg class="fp-field" id="deffield-svg" viewBox="0 0 304 304" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="fp-bench"><div class="fp-bench-t">ベンチ</div><div id="deffield-bench"></div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button id="fp-sub-call" onclick="announceSubs()" style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:13px;font-weight:800;padding:8px 12px;cursor:pointer;white-space:nowrap">🔁 交代コール</button>
+      <button id="fp-sub-clear" onclick="clearSubQueue()" style="display:none;background:#2c2c2e;border:1px solid #555;border-radius:8px;color:#999;font-size:12px;padding:8px 10px;cursor:pointer;white-space:nowrap">クリア</button>
+    </div>
+    <div id="sub-accum-list" style="display:none;text-align:left;font-size:12px;color:#b8e878;line-height:1.7;margin-top:6px"></div>
+    <div class="modal-acts">
+      <button class="btn" style="flex:1" onclick="closeModal('deffield-mask')">閉じる</button>
     </div>
   </div>
 </div>
@@ -986,6 +928,12 @@ function render(team){
   el.innerHTML=list.map(function(p){
     const bench = p.order ? '' : ' bench';
     const isCur = (curBatterId && p.id===curBatterId) ? ' current' : '';
+    var res = (typeof _batterResults==='function') ? _batterResults(team, p.id) : [];
+    var hist = res.map(function(r){
+      var ex = r.hit || r.defense || '';
+      return '<span class="fp-res'+(r.reached?' ok':'')+'" title="'+esc(r.inn+'回'+(ex?' / '+ex:''))+'">'
+        +esc(r.label)+(ex?'<em>'+esc(ex)+'</em>':'')+'</span>';
+    }).join('');
     return '<div class="row'+bench+isCur+'" draggable="true" data-id="'+p.id+'" data-team="'+team+'">'
       +'<div class="grip">'+(isCur?'<span class="cur-mark">▶</span>':'⠿')+'</div>'
       +'<input class="cell-inp" value="'+esc(p.order)+'" placeholder="―" onchange="edit(\''+team+'\','+p.id+',\'order\',this.value)">'
@@ -998,6 +946,7 @@ function render(team){
         +'<button class="mini" onclick="toggleBench(\''+team+'\','+p.id+')">'+(p.order?'控':'出')+'</button>'
         +'<button class="mini del" onclick="delPlayer(\''+team+'\','+p.id+')">✕</button>'
       +'</div>'
+      +'<div class="row-hist">'+hist+'</div>'
     +'</div>';
   }).join('');
   bindDrag(team);
@@ -1450,6 +1399,17 @@ function applyScan(){
 // ── 交代 ──────────────────────────────────────────────────────────────────
 let subTeam=null, subKind=null;
 function openSub(team,kind){
+  // 守備交代はフィールド守備配置図モーダルで（押したチームの1面だけ）今まで通りタップ操作
+  if(kind==='守備交代'){
+    _defFieldTeam=team;
+    var _dt=document.getElementById('deffield-title');
+    if(_dt) _dt.textContent='守備交代 — '+_teamName(team);
+    renderField(team,'deffield-svg');
+    renderBench(team,'deffield-bench');
+    _refreshSubBtn();
+    document.getElementById('deffield-mask').classList.add('open');
+    return;
+  }
   subTeam=team; subKind=kind;
   document.getElementById('sub-title').textContent=kind;
   document.getElementById('sub-base-wrap').style.display = (kind==='代走') ? 'block' : 'none';
@@ -1541,6 +1501,11 @@ function connectWS(){
       setTimeout(function(){
         if(typeof _sendAdCfg==='function') _sendAdCfg();
         if(typeof _sendHist==='function') _sendHist();
+        // ロゴを持っているときだけ配信（空データで他端末のロゴを消さない）。持っていなければ要求する
+        if(typeof _sendTeamCfg==='function'){
+          if(_teamLogos.away || _teamLogos.home) _sendTeamCfg();
+          else { try{ ws.send(JSON.stringify({ _req:'teamcfg' })); }catch(e){} }
+        }
       }, 300);
     };
     ws.onclose=function(){ ws=null; setWsUI(false); wsTimer=setTimeout(connectWS,3000); };
@@ -1559,6 +1524,19 @@ function connectWS(){
       if(s && s._req==='adcfg'){ _sendAdCfg(); return; }
       // オーバーレイからの打歴リクエスト → 現在の打席結果一覧を送り返す
       if(s && s._req==='hist'){ if(typeof _sendHist==='function') _sendHist(); return; }
+      // エンブレム要求 → ロゴを持っているときだけ送り返す（空データで他端末を消さない）
+      if(s && s._req==='teamcfg'){
+        if(typeof _sendTeamCfg==='function' && (_teamLogos.away || _teamLogos.home)) _sendTeamCfg();
+        return;
+      }
+      // 他端末（コントローラー等）が設定したチームロゴを取り込む（自分の空データで上書きしない）
+      if(s && s._teamcfg){
+        _teamLogos.away = s.away || '';
+        _teamLogos.home = s.home || '';
+        _saveTeamLogos();
+        _renderTeamLogoUI();
+        return;
+      }
       // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
       if(s && s._say){ if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true); return; }
       if(!s||s._ctl!==true) return;
@@ -2161,6 +2139,56 @@ function _sendHist(){
     .map(function(g){ return { batterId:g.batterId, atkTeam:g.atkTeam||'', inn:g.inn||0, label:g.label||'' }; });
   try{ ws.send(JSON.stringify({ _hist:true, results:results })); }catch(e){}
 }
+
+// ── チームロゴ（エンブレム） ──────────────────────────────────────────────
+// data URL（透過PNG想定）を保持。頻繁に飛ぶ _pcEdit には載せず、専用メッセージ _teamcfg で配信する
+// （コントローラーと相互取り込み。同一オリジンなので localStorage 'bb_teamlogos' は3画面で共有）
+var _teamLogos = { away:'', home:'' };
+try{
+  var _tl = JSON.parse(localStorage.getItem('bb_teamlogos')||'null');
+  if(_tl && typeof _tl==='object'){ _teamLogos.away=_tl.away||''; _teamLogos.home=_tl.home||''; }
+}catch(e){}
+function _saveTeamLogos(){
+  try{ localStorage.setItem('bb_teamlogos', JSON.stringify(_teamLogos)); }catch(e){}
+}
+function _sendTeamCfg(){
+  if(!ws || ws.readyState!==1) return;
+  try{ ws.send(JSON.stringify({ _teamcfg:true, away:_teamLogos.away||'', home:_teamLogos.home||'' })); }catch(e){}
+}
+function _renderTeamLogoUI(){
+  ['away','home'].forEach(function(t){
+    var img=document.getElementById('tlogo-'+t+'-prev');
+    if(!img) return;
+    if(_teamLogos[t]){ img.src=_teamLogos[t]; } else { img.removeAttribute('src'); }
+  });
+}
+function pickTeamLogo(team, ev){
+  var f = ev && ev.target && ev.target.files && ev.target.files[0];
+  if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var im=new Image();
+    im.onload=function(){
+      var max=220, w=im.width, h=im.height;
+      if(w>h){ if(w>max){ h=Math.round(h*max/w); w=max; } }
+      else   { if(h>max){ w=Math.round(w*max/h); h=max; } }
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(im,0,0,w,h);
+      try{ _teamLogos[team]=c.toDataURL('image/png'); }
+      catch(err){ _teamLogos[team]=e.target.result; }
+      _saveTeamLogos(); _sendTeamCfg(); _renderTeamLogoUI();
+      toast((team==='away'?'先攻':'後攻')+'のロゴを登録しました');
+    };
+    im.src=e.target.result;
+  };
+  reader.readAsDataURL(f);
+  if(ev.target) ev.target.value='';
+}
+function clearTeamLogo(team){
+  _teamLogos[team]='';
+  _saveTeamLogos(); _sendTeamCfg(); _renderTeamLogoUI();
+  toast((team==='away'?'先攻':'後攻')+'のロゴを解除しました');
+}
 function _loadLog(){
   try{
     var v=localStorage.getItem(LOG_KEY);
@@ -2221,75 +2249,6 @@ function exportLog(){
   a.download='game_log_'+ymd+'.txt';
   a.click();
   URL.revokeObjectURL(a.href);
-}
-
-// ── 攻撃／守備パネルの幅調整（仕切りをドラッグ） ──────────────────────────
-// 左右2カラムの割合（右カラムの%）。仕切りドラッグで調整
-var _fpRatio = 50;
-
-function _applyFpWidth(pct){
-  _fpRatio = Math.max(28, Math.min(72, Math.round(pct)));
-  var pane = document.querySelector('.fieldpane');
-  if(pane) pane.style.gridTemplateColumns = (100-_fpRatio)+'% 10px '+_fpRatio+'%';
-}
-
-function _initFpSplit(){
-  try{
-    var v = localStorage.getItem('bb_fp_ratio');
-    if(v) _fpRatio = Number(v) || 50;
-  }catch(e){}
-  _applyFpWidth(_fpRatio);
-
-  var sp = document.getElementById('fp-split');
-  if(!sp) return;
-  var pane = document.querySelector('.fieldpane');
-  var dragging = false;
-
-  var onMove = function(e){
-    if(!dragging || !pane) return;
-    var x = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-    var r = pane.getBoundingClientRect();
-    if(r.width>0) _applyFpWidth((r.right - x) / r.width * 100);
-    if(e.cancelable) e.preventDefault();
-  };
-  var onUp = function(){
-    if(!dragging) return;
-    dragging = false;
-    sp.classList.remove('dragging');
-    document.body.classList.remove('fp-resizing');
-    try{ localStorage.setItem('bb_fp_ratio', _fpRatio); }catch(e){}
-    window.removeEventListener('mousemove', onMove);
-    window.removeEventListener('mouseup', onUp);
-    window.removeEventListener('touchmove', onMove);
-    window.removeEventListener('touchend', onUp);
-  };
-  var onDown = function(e){
-    dragging = true;
-    sp.classList.add('dragging');
-    document.body.classList.add('fp-resizing');
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchmove', onMove, { passive:false });
-    window.addEventListener('touchend', onUp);
-    if(e.cancelable) e.preventDefault();
-  };
-  sp.addEventListener('mousedown', onDown);
-  sp.addEventListener('touchstart', onDown, { passive:false });
-  sp.addEventListener('dblclick', function(){
-    _applyFpWidth(50);
-    try{ localStorage.setItem('bb_fp_ratio', 50); }catch(e){}
-    toast('幅を50:50に戻しました');
-  });
-}
-
-// 左右チームの割り当て（既定：左＝先攻＝3塁側 / 右＝後攻＝1塁側）。⇄ボタンで手動入れ替え
-var _fpLRSwap = false;
-try{ _fpLRSwap = localStorage.getItem('bb_fp_lr')==='1'; }catch(e){}
-function fpSwapLR(){
-  _fpLRSwap = !_fpLRSwap;
-  try{ localStorage.setItem('bb_fp_lr', _fpLRSwap?'1':'0'); }catch(e){}
-  renderFieldPane();
-  toast('左右を入れ替えました');
 }
 
 // ── 打席結果の編集 ────────────────────────────────────────────────────────
@@ -2394,73 +2353,14 @@ function _defTeam(){ return _atkTeam()==='away' ? 'home' : 'away'; }
 
 function _teamName(t){ return (t==='away' ? (teamNames.away||'先攻') : (teamNames.home||'後攻')); }
 
-// 1チームぶんの打順表を elId に描画
-function _renderOrderList(team, elId){
-  var el=document.getElementById(elId);
-  if(!el) return;
-  var curId = (lastRemote && lastRemote.selIds) ? (lastRemote.selIds.batter||0) : 0;
-  var ordered = (rosters[team]||[]).filter(function(p){ return p.order; })
-    .sort(function(a,b){ return Number(a.order)-Number(b.order); });
-  if(!ordered.length){
-    el.innerHTML='<div style="padding:20px 6px;text-align:center;color:#555;font-size:13px">打順が未設定です</div>';
-    return;
-  }
-  el.innerHTML=ordered.map(function(p){
-    var cur = (p.id===curId) ? ' cur' : '';
-    var res = _batterResults(team, p.id);
-    var hist = res.length
-      ? res.map(function(r,ri){
-          var extra = r.hit || r.defense || '';
-          var tip = r.inn+'回'+(extra?' / '+extra:'');
-          return '<span class="fp-res'+(r.reached?' ok':'')+'" title="'+esc(tip)+'"'
-            +' onclick="event.stopPropagation();editResult(\''+team+'\','+p.id+','+ri+')">'
-            +esc(r.label)+(extra?'<em>'+esc(extra)+'</em>':'')+'</span>';
-        }).join('')
-      : '<span class="fp-res none">—</span>';
-    return '<div class="fp-ord-row'+cur+'" onclick="setBatter(\''+team+'\','+p.id+')" style="cursor:pointer">'
-      +'<span class="fp-ord-no">'+esc(p.order)+'</span>'
-      +'<span class="fp-ord-num">'+(p.num?'#'+esc(p.num):'')+'</span>'
-      +'<span class="fp-ord-nm">'+esc(p.name)+'</span>'
-      +'<span class="fp-ord-pos">'+esc(posLabel(p.pos)||'')+'</span>'
-      +'<span class="fp-ord-res">'+hist+'</span>'
-    +'</div>';
-  }).join('');
-}
-
-// 1チームぶんの列（打順表＋守備配置図＋ベンチ）を slot('a'|'b') に描画
-function _fpRenderCol(slot, team, isAtk){
-  var side = document.getElementById('fp-side-'+slot);
-  if(side){
-    side.textContent = isAtk ? '攻撃' : '守備';
-    side.className = 'fp-badge ' + (isAtk ? 'atk' : 'def');
-  }
-  var nm = document.getElementById('fp-team-'+slot);
-  if(nm) nm.textContent = _teamName(team) + (slot==='a' ? '（3塁側）' : '（1塁側）');
-
-  // 操作群（攻撃 or 守備）をこの列のヘッダーへ差し込む
-  var hd = document.getElementById('fp-colhd-'+slot);
-  var acts = document.getElementById(isAtk ? 'fp-act-atk' : 'fp-act-def');
-  if(hd && acts && acts.parentNode!==hd) hd.appendChild(acts);
-
-  _renderOrderList(team, 'fp-order-'+slot);
-  renderField(team, 'fp-field-'+slot);
-  renderBench(team, 'fp-bench-'+slot);
-
-  // 攻撃中は打順表を上に、守備中は配置図を上に
-  var po = document.getElementById('fp-paneord-'+slot);
-  var pf = document.getElementById('fp-panefld-'+slot);
-  if(po){ po.style.order = isAtk ? 0 : 1; po.classList.toggle('hot', isAtk); }
-  if(pf){ pf.style.order = isAtk ? 1 : 0; pf.classList.toggle('hot', !isAtk); }
-}
-
+// 守備交代モーダルが開いているときだけ、その1面を再描画する（旧・2カラム表示の後継。呼び出し元は多数）
 function renderFieldPane(){
-  var atk=_atkTeam(), def=_defTeam();
-
-  // 既定：左(a)=先攻(3塁側) / 右(b)=後攻(1塁側)。⇄で入れ替え
-  var leftTeam  = _fpLRSwap ? 'home' : 'away';
-  var rightTeam = _fpLRSwap ? 'away' : 'home';
-  _fpRenderCol('a', leftTeam,  leftTeam===atk);
-  _fpRenderCol('b', rightTeam, rightTeam===atk);
+  var m=document.getElementById('deffield-mask');
+  if(m && m.classList.contains('open') && _defFieldTeam){
+    renderField(_defFieldTeam, 'deffield-svg');
+    renderBench(_defFieldTeam, 'deffield-bench');
+    _refreshSubBtn();
+  }
 }
 
 // 未コールの守備交代を色分け（1件＝1色、関係するポジションは同色）
@@ -2542,6 +2442,7 @@ function renderBench(team, listId){
 // ── クリックで守備交代（2回タップ方式） ──
 // 1回目：選手またはポジションを選ぶ　2回目：移動先を選ぶ
 var _fpSel = null;   // { team, id }
+var _defFieldTeam = '';   // 守備交代モーダルで表示中のチーム（'away'|'home'）
 
 function _fpClear(){
   _fpSel = null;
@@ -3737,10 +3638,9 @@ function pcReqSync(){
 renderAll();
 _spdLoadLog();
 _spdInit();
-_initFpSplit();
-renderFieldPane();
 _loadLog();
 _adLoad();
+_renderTeamLogoUI();
 _initTTS();
 connectWS();
 setWsUI(false);

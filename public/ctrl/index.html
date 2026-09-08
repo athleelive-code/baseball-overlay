@@ -4644,6 +4644,14 @@ function connectWS(){
       if(s && s._req==='state'){ _doBroadcast(); return; }
       // エンブレム要求には現在のエンブレムを返す
       if(s && s._req==='teamcfg'){ if(typeof _sendTeamCfg==='function') _sendTeamCfg(); return; }
+      // 他端末（ROSTER等）が設定したチームロゴを取り込む（次の _sendTeamCfg で空データ上書きしない）
+      if(s && s._teamcfg){
+        _teamLogos.away = s.away || '';
+        _teamLogos.home = s.home || '';
+        _saveTeamLogos();
+        if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
+        return;
+      }
       // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
       if(s && s._say){ if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true); return; }
       // 球速だけのメッセージは保持だけして送り返さない
