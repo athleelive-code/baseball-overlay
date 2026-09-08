@@ -28,14 +28,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:auto;
-  min-width:200px;
+  width:calc(27% - 10px);   /* 打者エリアと同じくらいの幅 */
+  min-width:230px;
   max-width:calc(45% - 10px);
   transition:width .5s ease,max-width .5s ease;
   transform:scale(.8);transform-origin:top left;   /* 全体をやや縮小 */
 }
 .ov-score.expanded{
-  width:auto;
+  width:calc(45% - 10px);
   max-width:calc(60% - 10px);
 }
 .ov-topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#fff;border-bottom:1px solid rgba(0,0,0,.1)}
@@ -99,13 +99,9 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   dominant-baseline:central;font-family:inherit;pointer-events:none}
 .ov-snum{font-size:6px;font-weight:900;fill:#3a2a00;text-anchor:middle;
   dominant-baseline:central;font-family:inherit;pointer-events:none}
-.ov-ab{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
-  margin-left:6px;flex-shrink:0;min-width:30px}
-.ov-ab-f{font-size:15px;font-weight:800;color:#e8a33d;line-height:1;
-  font-variant-numeric:tabular-nums;margin-left:1px}
+.ov-ab-f{font-size:14px;font-weight:800;color:#e8a33d;line-height:1;
+  font-variant-numeric:tabular-nums;margin-left:2px;flex-shrink:0}
 .ov-ab-f:empty{display:none}
-.ov-ab-t{font-size:12px;font-weight:700;color:rgba(255,255,255,.55);line-height:1.1;
-  font-variant-numeric:tabular-nums}
 .ov-bso-sep{display:none}
 .ov-bso-lbl{display:inline-flex;align-items:center;justify-content:center;width:16px;flex-shrink:0;
   font-size:14px;font-weight:900;color:rgba(255,255,255,.9);line-height:1}
@@ -128,10 +124,13 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   padding-left:10px;margin-left:10px;border-left:1px solid rgba(255,255,255,.3);
   text-shadow:0 1px 3px rgba(0,0,0,.8)}
 .ov-pcinfo-c:empty{display:none;border:none;margin-left:0}
-.ov-pcinfo-s{font-size:15px;font-weight:900;color:#7dff5a;font-variant-numeric:tabular-nums;
-  padding-left:10px;margin-left:10px;border-left:1px solid rgba(255,255,255,.3);
+.ov-pcinfo-s{display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1;
+  padding-left:10px;margin-left:10px;border-left:1px solid rgba(255,255,255,.3)}
+.ov-pcinfo-s .v{font-size:15px;font-weight:900;color:#7dff5a;font-variant-numeric:tabular-nums;
   text-shadow:0 0 6px rgba(0,0,0,.9),0 0 10px rgba(125,255,90,.6)}
-.ov-pcinfo-s:empty{display:none;border:none;margin-left:0}
+.ov-pcinfo-s .t{font-size:10px;font-weight:700;color:rgba(180,255,150,.9);margin-top:2px;
+  text-shadow:0 1px 3px rgba(0,0,0,.85)}
+.ov-pcinfo-s .t:empty{display:none}
 
 /* ── 守備配置：左上スコアから下に延びるスライドダウン ── */
 .ov-def-panel{max-height:0;overflow:hidden;transition:max-height .45s ease}
@@ -148,8 +147,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(22% - 10px);   /* 右の余白が多いので横幅を約半分に */
-  min-width:230px;
+  width:calc(27% - 10px);   /* 氏名ルビ＋背番号の白箱が入るよう少し拡大 */
+  min-width:260px;
 }
 .ov-bat-panel{max-height:0;overflow:hidden;transition:max-height .45s ease;order:-1}
 .ov-bat-panel.open{max-height:400px;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -180,10 +179,11 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-b-pos:empty{display:none}
 .ov-b-name{font-size:36px;font-weight:800;color:#fff;white-space:nowrap;
   ruby-position:over;ruby-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.ov-b-name rt{font-size:14px;font-weight:600;color:rgba(255,255,255,.65);letter-spacing:1px}
+.ov-b-name rt{font-size:16px;font-weight:700;color:rgba(255,255,255,.72);letter-spacing:.5px}
 .ov-b-name rt:empty{display:none}
-.ov-b-name.romaji{font-size:30px;letter-spacing:.5px}
-.ov-b-num{font-size:21px;font-weight:700;color:rgba(255,255,255,.5);flex-shrink:0;white-space:nowrap}
+/* 背番号：白地の四角に黒文字の数字。名前と同じくらいの大きさ */
+.ov-b-num{font-size:30px;font-weight:900;color:#111;background:#fff;flex-shrink:0;line-height:1;
+  padding:5px 10px;border-radius:3px;font-variant-numeric:tabular-nums;text-align:center;min-width:1.3em}
 .ov-b-num:empty{display:none}
 /* 打歴（この試合の打席結果） */
 .ov-b-hist{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow:hidden;max-width:100%}
@@ -253,18 +253,15 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   <div class="ov-bso-dia">
     <div class="ov-bso">
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">B</span><svg width="120" height="24" viewBox="0 0 30 10"><circle cx="5" cy="5" r="5" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="5" id="ov-bd3" fill="#333"/><text class="ov-bnum" id="ov-bn1" x="5" y="5">​</text><text class="ov-bnum" id="ov-bn2" x="15" y="5">​</text><text class="ov-bnum" id="ov-bn3" x="25" y="5">​</text></svg>
+        <span class="ov-bso-lbl">B</span><svg width="72" height="24" viewBox="0 0 30 10"><circle cx="5" cy="5" r="5" id="ov-bd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-bd2" fill="#333"/><circle cx="25" cy="5" r="5" id="ov-bd3" fill="#333"/><text class="ov-bnum" id="ov-bn1" x="5" y="5">​</text><text class="ov-bnum" id="ov-bn2" x="15" y="5">​</text><text class="ov-bnum" id="ov-bn3" x="25" y="5">​</text></svg>
       </div>
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">S</span><svg width="80" height="24" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-sd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-sd2" fill="#333"/><text class="ov-snum" id="ov-sn1" x="5" y="5"></text><text class="ov-snum" id="ov-sn2" x="15" y="5"></text></svg>
+        <span class="ov-bso-lbl">S</span><svg width="48" height="24" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-sd1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-sd2" fill="#333"/><text class="ov-snum" id="ov-sn1" x="5" y="5"></text><text class="ov-snum" id="ov-sn2" x="15" y="5"></text></svg>
         <span class="ov-ab-f" id="ov-ab-foul"></span>
       </div>
       <div class="ov-bso-item">
-        <span class="ov-bso-lbl">O</span><svg width="80" height="24" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-od1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-od2" fill="#333"/></svg>
+        <span class="ov-bso-lbl">O</span><svg width="48" height="24" viewBox="0 0 20 10"><circle cx="5" cy="5" r="5" id="ov-od1" fill="#333"/><circle cx="15" cy="5" r="5" id="ov-od2" fill="#333"/></svg>
       </div>
-    </div>
-    <div class="ov-ab" id="ov-ab">
-      <span class="ov-ab-t" id="ov-ab-total"></span>
     </div>
     <div class="ov-dia-sep"></div>
     <div class="ov-dia">
@@ -289,15 +286,27 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
     <span class="ov-pcinfo-tag">投手</span>
     <span class="ov-pcinfo-p" id="ov-pcinfo-p"></span>
     <span class="ov-pcinfo-c" id="ov-pcinfo-c"></span>
-    <span class="ov-pcinfo-s" id="ov-pcinfo-s"></span>
+    <span class="ov-pcinfo-s" id="ov-pcinfo-s" style="display:none"><span class="v" id="ov-pcinfo-sv"></span><span class="t" id="ov-pcinfo-st"></span></span>
   </div>
   <!-- 守備配置（左上スコアから下に延びる） -->
   <div class="ov-def-panel" id="ov-def-panel">
     <div class="ov-def-hdr"><span id="ov-def-label">守備配置</span></div>
     <div class="ov-def-body">
       <svg id="ov-def-svg" viewBox="0 0 304 304" style="width:100%;display:block">
-        <!-- 参照画像をそのまま背景に使用 -->
-        <image href="field-bg.png" x="0" y="0" width="304" height="304"/>
+        <!-- 球場（本塁 下 / 2塁 上・ベクター描画） -->
+        <rect width="304" height="304" fill="#357a3f"/>
+        <path d="M152 262 L24 96 A164 164 0 0 1 280 96 Z" fill="#c99a63"/>
+        <path d="M16 84 A176 176 0 0 1 288 84" fill="none" stroke="#b3854f" stroke-width="10"/>
+        <polygon points="152,248 100,196 152,140 204,196" fill="#357a3f"/>
+        <path d="M152,250 L100,196 L152,138 L204,196 Z" fill="none" stroke="#c99a63" stroke-width="13" stroke-linejoin="round"/>
+        <line x1="152" y1="254" x2="22" y2="90" stroke="#eee" stroke-width="2.4"/>
+        <line x1="152" y1="254" x2="282" y2="90" stroke="#eee" stroke-width="2.4"/>
+        <circle cx="152" cy="200" r="17" fill="#c99a63"/>
+        <circle cx="152" cy="254" r="21" fill="#c99a63"/>
+        <rect x="147" y="135" width="10" height="10" transform="rotate(45 152 140)" fill="#fff"/>
+        <rect x="199" y="191" width="10" height="10" transform="rotate(45 204 196)" fill="#fff"/>
+        <rect x="95"  y="191" width="10" height="10" transform="rotate(45 100 196)" fill="#fff"/>
+        <polygon points="146,248 158,248 158,256 152,261 146,256" fill="#fff"/>
         <g id="ov-def-badges"></g>
       </svg>
     </div>
@@ -347,18 +356,18 @@ const POS_LABEL_TO_NUM={
   'DH':'DH','dh':'DH'
 };
 
-// 守備位置座標マップ（背景画像 field-bg.png の viewBox 0 0 304 304。本塁が下・外野が上）
+// 守備位置座標マップ（守備配置図 viewBox 0 0 304 304。本塁が下・外野が上）
 const DEF_POS={
-  '1' :{x:152,y:170,c:'rgba(150,60,20,.95)',s:'#c07030'},
-  '2' :{x:152,y:258,c:'rgba(20,60,140,.95)',s:'#3070c0'},
-  '3' :{x:224,y:150,c:'rgba(15,80,50,.95)',s:'#208a60'},
-  '4' :{x:196,y:100,c:'rgba(15,80,50,.95)',s:'#208a60'},
-  '5' :{x:84, y:150,c:'rgba(15,80,50,.95)',s:'#208a60'},
-  '6' :{x:110,y:100,c:'rgba(15,80,50,.95)',s:'#208a60'},
-  '7' :{x:62, y:58, c:'rgba(30,80,15,.95)',s:'#4a8a20'},
-  '8' :{x:152,y:32, c:'rgba(30,80,15,.95)',s:'#4a8a20'},
-  '9' :{x:242,y:58, c:'rgba(30,80,15,.95)',s:'#4a8a20'},
-  'DH':{x:48, y:284,c:'rgba(60,40,130,.95)',s:'#7050b0'},
+  '1' :{x:152,y:202,c:'rgba(150,60,20,.95)',s:'#c07030'},
+  '2' :{x:152,y:270,c:'rgba(20,60,140,.95)',s:'#3070c0'},
+  '3' :{x:224,y:176,c:'rgba(15,80,50,.95)',s:'#208a60'},
+  '4' :{x:190,y:150,c:'rgba(15,80,50,.95)',s:'#208a60'},
+  '5' :{x:80, y:176,c:'rgba(15,80,50,.95)',s:'#208a60'},
+  '6' :{x:114,y:150,c:'rgba(15,80,50,.95)',s:'#208a60'},
+  '7' :{x:64, y:72, c:'rgba(30,80,15,.95)',s:'#4a8a20'},
+  '8' :{x:152,y:44, c:'rgba(30,80,15,.95)',s:'#4a8a20'},
+  '9' :{x:240,y:72, c:'rgba(30,80,15,.95)',s:'#4a8a20'},
+  'DH':{x:46, y:284,c:'rgba(60,40,130,.95)',s:'#7050b0'},
 };
 
 function posToKey(rawPos){
@@ -367,19 +376,23 @@ function posToKey(rawPos){
   return POS_LABEL_TO_NUM[s]||POS_LABEL_TO_NUM[s.toUpperCase()]||null;
 }
 
-// ── 表記モード（漢字 / 英語）──────────────────────────────
-// コントローラーの設定から s.notation（'kanji' | 'en'）で受け取り、一貫して切り替える
-var _notation='kanji';
-(function(){ try{ var v=localStorage.getItem('bb_notation'); if(v==='en'||v==='kanji') _notation=v; }catch(e){} })();
+// 守備位置は英語表記で統一（P/C/1B/2B/3B/SS/LF/CF/RF/DH）
 const POS_EN={'1':'P','2':'C','3':'1B','4':'2B','5':'3B','6':'SS','7':'LF','8':'CF','9':'RF','DH':'DH'};
-const POS_JA={'1':'投','2':'捕','3':'一','4':'二','5':'三','6':'遊','7':'左','8':'中','9':'右','DH':'指'};
 function posDisp(rawPos){
   var k=posToKey(rawPos);
   if(!k) return String(rawPos||'');
-  return (_notation==='en') ? (POS_EN[k]||k) : (POS_JA[k]||k);
+  return POS_EN[k]||k;
 }
 
-// 打歴の短縮表記（スコアブック風）
+// 氏名に姓名の区切りスペースを入れる（既にスペースがあればそのまま。姓2文字と仮定）
+function _spaceName(n){
+  n=String(n||'').trim();
+  if(!n || /[ 　]/.test(n)) return n;
+  if(n.length>=3 && n.length<=5) return n.slice(0,2)+' '+n.slice(2);
+  return n;
+}
+
+// 打歴（漢字・スコアブック風の短縮表記）
 const HIST_JA={
   'ヒット':'安','二塁打':'二','三塁打':'三','ホームラン':'本','本塁打':'本',
   'ゴロアウト':'ゴロ','フライアウト':'飛','ライナーアウト':'直','併殺':'併',
@@ -388,18 +401,8 @@ const HIST_JA={
   '三振':'三振','空振り三振':'空三','見逃し三振':'見三',
   'スリーバント失敗':'バ失','振り逃げ':'振逃'
 };
-const HIST_EN={
-  'ヒット':'1B','二塁打':'2B','三塁打':'3B','ホームラン':'HR','本塁打':'HR',
-  'ゴロアウト':'GO','フライアウト':'FO','ライナーアウト':'LO','併殺':'DP',
-  '犠打':'SAC','犠飛':'SF','失策':'E','野選':'FC','打撃妨害':'INT',
-  '四球':'BB','敬遠':'IBB','申告敬遠':'IBB','死球':'HBP',
-  '三振':'K','空振り三振':'K','見逃し三振':'ᴷc',
-  'スリーバント失敗':'K','振り逃げ':'K'
-};
 const HIST_REACH={'ヒット':1,'二塁打':1,'三塁打':1,'ホームラン':1,'本塁打':1,'四球':1,'敬遠':1,'申告敬遠':1,'死球':1,'失策':1,'野選':1,'打撃妨害':1,'振り逃げ':1};
-function histShort(l){
-  return (_notation==='en' ? HIST_EN[l] : HIST_JA[l]) || l;
-}
+function histShort(l){ return HIST_JA[l] || l; }
 
 // かな（ひら・カタ）→ ヘボン式ローマ字。氏名の読み仮名を英語表記に変換する簡易版
 function _kanaToRomaji(src){
@@ -444,8 +447,10 @@ function _kanaToRomaji(src){
     out+=ch; i++;
   }
   out=out.replace(/ou/g,'o').replace(/oo/g,'o').replace(/uu/g,'u');
-  return out.split(/\s+/).filter(Boolean)
-    .map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(' ');
+  var w=out.split(/\s+/).filter(Boolean)
+    .map(function(x){ return x.charAt(0).toUpperCase()+x.slice(1); });
+  if(w.length===2) w.reverse();   // 「姓 名」→「名 姓」（例: Masafumi Yamasaki）
+  return w.join(' ');
 }
 
 function renderDefBadges(roster){
@@ -531,11 +536,6 @@ function applyState(s){
   if(!s)return;
   // 全状態（コントローラー）以外は表示に触れない（部分メッセージでカウントを消さない）
   if(s._ctl!==true) return;
-  // 表記モード（漢字 / 英語）— コントローラー設定に追従
-  if((s.notation==='en'||s.notation==='kanji') && _notation!==s.notation){
-    _notation=s.notation;
-    try{ localStorage.setItem('bb_notation',_notation); }catch(e){}
-  }
   // チームカラー適用
   const isTop=s.top!==false;
   const batColor=isTop?(s.awayColor||'#c8102e'):(s.homeColor||'#1a56a0');
@@ -632,12 +632,11 @@ function applyState(s){
     setAttr('ov-od'+(i+1),'stroke','none');
   }
 
-  // ファウル数・打席球数
+  // ファウル数（打席の球数は投手バンドに出すのでここでは出さない）
   (function(){
-    var f=g('ov-ab-foul'), t=g('ov-ab-total');
-    var nf=s.abFoul||0, np=s.abPitch||0;
+    var f=g('ov-ab-foul');
+    var nf=s.abFoul||0;
     if(f) f.textContent = nf>0 ? ('F'+nf) : '';
-    if(t) t.textContent = np>0 ? (np+'球') : '';
   })();
 
   // ダイヤモンド（角丸の塁3つ。占有＝黄色、空き＝細い輪郭のみ）
@@ -668,7 +667,7 @@ function applyState(s){
     var band=g('ov-pcinfo'); if(band) band.classList.toggle('show', !!p.name);
   })();
 
-  // 打者: 守備位置 / 氏名（漢字＋ルビ or ヘボン式ローマ字）/ 背番号 / 打歴
+  // 打者: 守備位置 / 氏名（漢字＋フリガナ・どちらの表記設定でも共通）/ 背番号 / 打歴
   (function(){
     var bval=s.batter||'';
     var rosterRef=s.batRoster||s.defRoster;
@@ -677,25 +676,18 @@ function applyState(s){
       var bp=rosterRef.find(function(p){return p.name&&bval.includes(p.name.split(' ')[0]);});
       if(bp){
         pos=bp.pos||'';
-        num=bp.num?('#'+bp.num):'';
+        num=bp.num?String(bp.num):'';
         name=bp.name||bval;
         yomi=bp.yomi||'';
         bid=bp.id;
       }
     }
     var posEl=g('ov-batter-pos');
-    if(posEl) posEl.textContent = pos ? posDisp(pos) : '';
-    var nameEl=g('ov-batter'), rtEl=g('ov-batter-yomi'), rubyEl=g('ov-batter-name');
-    if(_notation==='en'){
-      if(nameEl) nameEl.textContent = _kanaToRomaji(yomi) || name;
-      if(rtEl) rtEl.textContent = '';
-      if(rubyEl) rubyEl.classList.add('romaji');
-    }else{
-      if(nameEl) nameEl.textContent = name;
-      if(rtEl) rtEl.textContent = yomi || '';
-      if(rubyEl) rubyEl.classList.remove('romaji');
-    }
-    var numEl=g('ov-batter-num'); if(numEl) numEl.textContent = num;
+    if(posEl) posEl.textContent = pos ? posDisp(pos) : '';   // 守備位置＝英語
+    var nameEl=g('ov-batter'), rtEl=g('ov-batter-yomi');
+    if(nameEl) nameEl.textContent = _spaceName(name);        // 氏名は漢字（氏と名の間にスペース）
+    if(rtEl) rtEl.textContent = _kanaToRomaji(yomi);         // ルビはローマ字（頭大文字・名 姓）
+    var numEl=g('ov-batter-num'); if(numEl) numEl.textContent = num;   // 背番号＝数字（白地■）
     // 打歴（この試合の打席結果）
     // 照合キーは selIds.batter（_pushPaResult の batterId と同じ元＝打者セレクトの値）を最優先。
     // 型ゆれに備えて String 比較。取れなければ選手ID・氏名でも照合
@@ -809,16 +801,18 @@ var _scoreDispTimer=null;
 var _seenHrTs=0, _hrTimer=null, _hrCloseTimer=null;
 var _seenSpdTs=0, _spdTimer=null;
 
-// 球速を投手バンド末尾（#ov-pcinfo-s）に出す（8秒で消える）
+// 球速を投手バンド末尾に出す（8秒で消える）。上段＝球速 km/h、下段＝球種（小さく）
 function applySpeed(sp){
   if(!sp || !sp.ts || sp.ts===_seenSpdTs) return;
   _seenSpdTs=sp.ts;
   if(_spdTimer){ clearTimeout(_spdTimer); _spdTimer=null; }
-  var pcs=g('ov-pcinfo-s');
-  if(!pcs) return;
-  if(sp.clear || sp.v==null){ pcs.textContent=''; return; }
-  pcs.textContent = String(sp.v) + (sp.type ? '（'+sp.type+'）' : '');
-  _spdTimer=setTimeout(function(){ pcs.textContent=''; }, 8000);
+  var sw=g('ov-pcinfo-s'), sv=g('ov-pcinfo-sv'), st=g('ov-pcinfo-st');
+  var clr=function(){ if(sv)sv.textContent=''; if(st)st.textContent=''; if(sw)sw.style.display='none'; };
+  if(sp.clear || sp.v==null){ clr(); return; }
+  if(sv) sv.textContent = String(sp.v)+' km/h';
+  if(st) st.textContent = sp.type ? '（'+sp.type+'）' : '';
+  if(sw) sw.style.display='';
+  _spdTimer=setTimeout(clr, 8000);
 }
 var _scoreDispSec=0;
 

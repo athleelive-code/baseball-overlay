@@ -767,16 +767,6 @@ body.gamemin .gm-hide{display:none!important}
       </div>
     </div>
 
-    <div class="drawer-sec">
-      <div class="drawer-sec-t">守備位置の表記（オーバーレイ）</div>
-      <div style="font-size:20px;color:#666;margin-bottom:10px">守備位置・打順表の表記を漢字／英語で一貫して切り替えます</div>
-      <div style="display:flex;gap:8px">
-        <button id="notation-ja-btn" onclick="setNotation('kanji')" style="flex:1;padding:16px 0;border:none;border-radius:8px;font-size:24px;font-weight:700;background:#3a3a3c;color:#fff;cursor:pointer">漢字（投 捕 一）</button>
-        <button id="notation-en-btn" onclick="setNotation('en')" style="flex:1;padding:16px 0;border:none;border-radius:8px;font-size:24px;font-weight:700;background:transparent;color:#888;cursor:pointer">英語（P C 1B）</button>
-      </div>
-      <div style="font-size:18px;color:#555;margin-top:8px">英語表記のとき、氏名は読み仮名からヘボン式ローマ字で表示されます</div>
-    </div>
-
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">打順/守備配置 自動非表示</div>
@@ -3990,7 +3980,6 @@ function openSettingsDrawer(){
   if(e) e.textContent=st.maxInn;
   _updateAutoHideDisp();
   _updateScoreDispSecUI();
-  if(typeof _refreshNotationBtns==='function') _refreshNotationBtns();
   if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
   if(typeof _refreshAudioHereBtn==='function') _refreshAudioHereBtn();
   if(typeof _refreshAnnBtn==='function'){
@@ -4225,22 +4214,6 @@ function pickTeamLogo(team, ev){
 function clearTeamLogo(team){
   _teamLogos[team]='';
   _saveTeamLogos(); _sendTeamCfg(); _renderTeamLogoUI();
-}
-
-// ── 表記モード（漢字 / 英語）──────────────────────────────────────────────
-// オーバーレイの守備位置・打順表・打者氏名の表記を一貫して切り替える。broadcast で s.notation として送る
-var _notation = 'kanji';
-try{ var _nv=localStorage.getItem('bb_notation'); if(_nv==='en'||_nv==='kanji') _notation=_nv; }catch(e){}
-function setNotation(m){
-  _notation = (m==='en') ? 'en' : 'kanji';
-  try{ localStorage.setItem('bb_notation', _notation); }catch(e){}
-  _refreshNotationBtns();
-  broadcast();
-}
-function _refreshNotationBtns(){
-  var ja=document.getElementById('notation-ja-btn'), en=document.getElementById('notation-en-btn');
-  if(ja){ ja.style.background=(_notation!=='en')?'#3a3a3c':'transparent'; ja.style.color=(_notation!=='en')?'#fff':'#888'; }
-  if(en){ en.style.background=(_notation==='en')?'#2a4a6a':'transparent'; en.style.color=(_notation==='en')?'#fff':'#888'; }
 }
 
 // ── スコア拡大表示 ────────────────────────────────────────────────────────
@@ -5265,7 +5238,6 @@ function _doBroadcast(){
     awayColor:_teamColors.away,homeColor:_teamColors.home,
     scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
     autoHideSec:_autoHideSec,
-    notation:_notation,
     _ctl:true,
     gameTitle:_getGameTitle(),
     coaches:{away:_coaches.away,home:_coaches.home},
