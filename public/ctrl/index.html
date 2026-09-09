@@ -4487,6 +4487,17 @@ function applyPcEdit(s){
     if(typeof s.showPC==='boolean') _pcVisible=s.showPC;
     if(typeof s.showBSO==='boolean') _bsoVisible=s.showBSO;
 
+    // ROSTER で変更したチーム強調色を取り込む（この後の _doBroadcast で overlay に配る）
+    ['away','home'].forEach(function(t){
+      var v = (t==='away') ? s.awayColor : s.homeColor;
+      if(typeof v==='string' && v && _teamColors[t]!==v){
+        _teamColors[t]=v;
+        try{ localStorage.setItem('bb_clr_'+t, v); }catch(e){}
+        var ci=document.getElementById('color-'+t); if(ci) ci.value=v;
+        var ch=document.getElementById('color-'+t+'-hex'); if(ch) ch.textContent=v;
+      }
+    });
+
     updateSelects();
     if(s.selIds){
       var sb=document.getElementById('sel-batter');

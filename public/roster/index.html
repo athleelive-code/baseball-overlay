@@ -222,16 +222,29 @@ body.locked .row{cursor:default}
 .team{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .team-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .team-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
-.tlogo-prev{width:34px;height:34px;object-fit:contain;border-radius:6px;background:#2c2c2e;flex-shrink:0}
-.tlogo-prev:not([src]){opacity:.35}
+/* チームロゴ：プレビュー＋設定/削除＋強調色を1つの枠にまとめる */
+.tlogo-box{display:flex;align-items:center;gap:6px;padding:4px 6px;background:#242426;
+  border:1px solid #333;border-radius:8px;flex-shrink:0}
+.tlogo-prev{width:38px;height:38px;object-fit:contain;border-radius:5px;background:#1c1c1e;flex-shrink:0}
+.tlogo-prev:not([src]){opacity:.3}
+.tlogo-acts{display:flex;flex-direction:column;gap:3px}
+.tlogo-btn{background:#2c2c2e;border:1px solid #3a3a3c;border-radius:5px;color:#ccc;
+  font-size:11px;font-weight:600;padding:3px 9px;cursor:pointer;white-space:nowrap;text-align:center}
+.tlogo-btn:hover{background:#3a3a3c;color:#fff}
+.tlogo-clr{width:30px;height:38px;padding:0;border:1px solid #3a3a3c;border-radius:5px;
+  background:#1c1c1e;cursor:pointer;flex-shrink:0}
+.tlogo-clr::-webkit-color-swatch-wrapper{padding:3px}
+.tlogo-clr::-webkit-color-swatch{border:none;border-radius:3px}
+.tlogo-clr::-moz-color-swatch{border:none;border-radius:3px}
+.tlogo-clr-lbl{font-size:9px;color:#777;text-align:center;line-height:1;margin-top:1px}
 .badge-away{background:rgba(200,16,46,.18);color:#ff8090;border:1px solid rgba(200,16,46,.4)}
 .badge-home{background:rgba(26,86,160,.22);color:#8ab4ff;border:1px solid rgba(26,86,160,.5)}
-.coach-inp{flex:0 0 150px;background:#242426;border:1px solid #333;border-radius:8px;
-  color:#bbb;font-size:14px;font-weight:600;padding:9px 10px;outline:none}
+.coach-inp{flex:0 0 108px;background:#242426;border:1px solid #333;border-radius:7px;
+  color:#9a9a9c;font-size:12px;font-weight:500;padding:6px 8px;outline:none}
 .coach-inp:focus{border-color:#555;color:#fff}
 .coach-inp::placeholder{color:#555;font-weight:400}
-.team-name-inp{flex:1;min-width:160px;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#fff;
-  font-size:24px;font-weight:800;padding:10px 12px;outline:none}
+.team-name-inp{flex:1 1 220px;min-width:180px;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#fff;
+  font-size:30px;font-weight:800;letter-spacing:.5px;padding:10px 14px;outline:none}
 .team-name-inp:focus{border-color:#555}
 
 /* ツールバー */
@@ -422,7 +435,6 @@ body.locked .row{cursor:default}
     <div class="gb-col">
       <div class="gb-bt-line"><span class="gb-bt-tag def">投</span><span id="gb-pitcher">-</span></div>
       <div class="gb-bt-line"><span class="gb-bt-tag def">捕</span><span id="gb-catcher">-</span></div>
-      <div class="gb-bt-line sub"><span class="gb-bt-tag">守</span><span id="gb-defteam">-</span></div>
     </div>
   </div>
 
@@ -451,20 +463,16 @@ body.locked .row{cursor:default}
       <button class="ann-btn" id="ann-toggle" onclick="toggleAnnounce()" style="padding:14px 16px;min-height:0">🔈 OFF</button>
       <span id="ann-status" style="font-size:10px;color:#666">確認中…</span>
     </div>
-    <button class="ann-btn call" onclick="announceCurrentBatter()">🔊 打者<br>コール</button>
-    <button class="ann-btn call" onclick="announceCurrentInning()">🔊 回<br>コール</button>
-    <button class="ann-btn play" onclick="announceSituation()">🎙 実況</button>
-    <button class="ann-btn play" onclick="aiComment()" id="lp-ai">💬 ここで<br>一言</button>
+    <button class="ann-btn call" onclick="announceCurrentBatter()">🔊 打者<br>アナウンス</button>
+    <button class="ann-btn call" onclick="announceCurrentInning()">🔊 イニング<br>アナウンス</button>
   </div>
 </div>
 
-<!-- 打者カード・次打者・投手情報（読み取り専用パネルの直下） -->
+<!-- 次打者・投手情報（読み取り専用パネルの直下） -->
 <div class="top-actbar">
   <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
   <button class="fp-pit" onclick="openPitcherInfo()">📊 投手情報</button>
-  <button id="fp-batter-call" onclick="fpBatterCall()" style="display:none;background:#2a3a1a;border:2px solid #5a8a3a;border-radius:8px;color:#b8e878;font-size:13px;font-weight:800;padding:9px 13px;cursor:pointer;white-space:nowrap">🔊 打者コール</button>
 </div>
-<div id="fp-batter-card" style="display:none;margin:2px 16px 14px;padding:10px 12px;background:#241a1c;border:1px solid #5a3a3e;border-radius:10px"></div>
 
 <div class="wrap">
   <!-- 先攻 -->
@@ -473,9 +481,17 @@ body.locked .row{cursor:default}
       <span class="team-badge badge-away">先攻 / 1塁側</span>
       <input class="team-name-inp" id="tname-away" placeholder="チーム名" oninput="onTeamName('away')">
       <input class="coach-inp" id="coach-away" placeholder="監督名" oninput="onCoachName('away')">
-      <img class="tlogo-prev" id="tlogo-away-prev" alt="">
-      <label class="btn" style="margin:0">ロゴ設定<input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('away',event)"></label>
-      <button class="btn" onclick="clearTeamLogo('away')">解除</button>
+      <div class="tlogo-box">
+        <img class="tlogo-prev" id="tlogo-away-prev" alt="">
+        <div class="tlogo-acts">
+          <label class="tlogo-btn">設定<input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('away',event)"></label>
+          <button class="tlogo-btn" onclick="clearTeamLogo('away')">削除</button>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <input type="color" class="tlogo-clr" id="tclr-away" value="#c8102e" oninput="onTeamColorPC('away')" title="チーム強調色">
+          <span class="tlogo-clr-lbl">強調</span>
+        </div>
+      </div>
     </div>
     <div class="subbar">
       <button class="btn" onclick="openSub('away','代打')">代打</button>
@@ -512,9 +528,17 @@ body.locked .row{cursor:default}
       <span class="team-badge badge-home">後攻 / 3塁側</span>
       <input class="team-name-inp" id="tname-home" placeholder="チーム名" oninput="onTeamName('home')">
       <input class="coach-inp" id="coach-home" placeholder="監督名" oninput="onCoachName('home')">
-      <img class="tlogo-prev" id="tlogo-home-prev" alt="">
-      <label class="btn" style="margin:0">ロゴ設定<input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('home',event)"></label>
-      <button class="btn" onclick="clearTeamLogo('home')">解除</button>
+      <div class="tlogo-box">
+        <img class="tlogo-prev" id="tlogo-home-prev" alt="">
+        <div class="tlogo-acts">
+          <label class="tlogo-btn">設定<input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('home',event)"></label>
+          <button class="tlogo-btn" onclick="clearTeamLogo('home')">削除</button>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <input type="color" class="tlogo-clr" id="tclr-home" value="#1a56a0" oninput="onTeamColorPC('home')" title="チーム強調色">
+          <span class="tlogo-clr-lbl">強調</span>
+        </div>
+      </div>
     </div>
     <div class="subbar">
       <button class="btn" onclick="openSub('home','代打')">代打</button>
@@ -651,6 +675,15 @@ body.locked .row{cursor:default}
       <div style="display:flex;gap:8px">
         <button class="btn" style="flex:1;font-size:15px;padding:13px;background:#2a3a1a;border-color:#5a8a3a;color:#b8e878" onclick="announceDefense('away')">先攻 守備</button>
         <button class="btn" style="flex:1;font-size:15px;padding:13px;background:#2a3a1a;border-color:#5a8a3a;color:#b8e878" onclick="announceDefense('home')">後攻 守備</button>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">実況・ここで一言（テスト中）</div>
+      <div class="note" style="margin-bottom:8px">「アナウンス ON」のときに使えます。まだ調整中の機能です</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="flex:1;font-size:15px;padding:13px;background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff" onclick="announceSituation()">🎙 実況</button>
+        <button class="btn" id="lp-ai" style="flex:1;font-size:15px;padding:13px;background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff" onclick="aiComment()">💬 ここで一言</button>
       </div>
     </div>
 
@@ -1051,48 +1084,7 @@ function setBatter(team, id){
   renderGame(lastRemote);
   pushState();
   toast('打者：'+p.name);
-  _showBatterCard(team, id);
   _pcBatterId = id;
-}
-
-// ── 打者表示カード（次打者/打者選択で出現、コール後10秒で消える） ──────────
-var _batterCardTimer = null;
-function _showBatterCard(team, id){
-  var p = (rosters[team]||[]).find(function(x){ return x.id===id; });
-  var card = document.getElementById('fp-batter-card');
-  var btn  = document.getElementById('fp-batter-call');
-  if(!card || !p) return;
-  if(_batterCardTimer){ clearTimeout(_batterCardTimer); _batterCardTimer = null; }
-  var res = (typeof _batterResults==='function') ? _batterResults(team, p.id) : [];
-  var hist = res.length
-    ? res.map(function(r){
-        var ex = r.hit || r.defense || '';
-        return '<span class="fp-res'+(r.reached?' ok':'')+'">'+esc(r.label)+(ex?'<em>'+esc(ex)+'</em>':'')+'</span>';
-      }).join('')
-    : '<span class="fp-res none">まだ打席なし</span>';
-  card.innerHTML =
-     '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
-    +  '<span style="font-size:22px;font-weight:800;color:#ff6b6b">'+esc(p.order||'-')+'番</span>'
-    +  '<span style="font-size:15px;color:#9ac0ff">'+esc(posLabel(p.pos)||'')+'</span>'
-    +  (p.num?'<span style="font-size:13px;color:#999">背番号 '+esc(p.num)+'</span>':'')
-    +'</div>'
-    +'<div style="font-size:20px;font-weight:700;color:#fff;margin-top:2px">'+esc(p.name||'')+'</div>'
-    +(p.yomi?'<div style="font-size:12px;color:#9a9;margin-top:1px">'+esc(p.yomi)+'</div>':'')
-    +'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">'+hist+'</div>';
-  card.style.display = 'block';
-  if(btn) btn.style.display = _annOn ? 'inline-flex' : 'none';
-}
-function _hideBatterCard(){
-  var card = document.getElementById('fp-batter-card');
-  var btn  = document.getElementById('fp-batter-call');
-  if(card) card.style.display = 'none';
-  if(btn)  btn.style.display = 'none';
-  if(_batterCardTimer){ clearTimeout(_batterCardTimer); _batterCardTimer = null; }
-}
-function fpBatterCall(){
-  announceCurrentBatter();
-  if(_batterCardTimer) clearTimeout(_batterCardTimer);
-  _batterCardTimer = setTimeout(_hideBatterCard, 10000);
 }
 
 // lastRemote の内容をそのまま送り返す（ロスター以外も維持）
@@ -1124,6 +1116,8 @@ function pushState(){
     hnm: teamNames.home || lr.hnm || '',
     gameTitle: (document.getElementById('hdr-game-title')||{}).value || lr.gameTitle || '',
     coaches: { away:coaches.away, home:coaches.home },
+    awayColor: (typeof _teamColorsPC!=='undefined' ? _teamColorsPC.away : undefined),
+    homeColor: (typeof _teamColorsPC!=='undefined' ? _teamColorsPC.home : undefined),
     showBat: lr.showBat,
     showDef: lr.showDef,
     showBatter: lr.showBatter,
@@ -1220,13 +1214,16 @@ function reorder(team,fromId,toId){
 const LS_KEY='bb_team_rosters';
 function readStore(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ return {}; } }
 function writeStore(o){ try{ localStorage.setItem(LS_KEY,JSON.stringify(o)); }catch(e){} }
+// 保存エントリは旧＝選手配列そのまま／新＝{players,coach}。どちらでも読めるようにする
+function _storePlayers(v){ return Array.isArray(v) ? v : (v && Array.isArray(v.players) ? v.players : []); }
+function _storeCoach(v){ return (v && !Array.isArray(v) && typeof v.coach==='string') ? v.coach : ''; }
 
 function saveTeam(team){
   const name=(teamNames[team]||'').trim();
   if(!name){ toast('先にチーム名を入力してください'); return; }
   if(!rosters[team].length){ toast('選手が登録されていません'); return; }
   const store=readStore();
-  store[name]=JSON.parse(JSON.stringify(rosters[team]));
+  store[name]={ players:JSON.parse(JSON.stringify(rosters[team])), coach:(coaches[team]||'').trim() };
   writeStore(store);
   toast('「'+name+'」を保存しました');
 }
@@ -1241,8 +1238,9 @@ function loadTeam(team){
     el.innerHTML='<div style="padding:18px 0;color:#666;font-size:14px">保存されたチームがありません。</div>';
   }else{
     el.innerHTML=keys.map(function(k){
+      var _c=_storeCoach(store[k]);
       return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #262628">'
-        +'<span style="flex:1;font-size:15px">'+esc(k)+' <span style="color:#666;font-size:12px">('+store[k].length+'名)</span></span>'
+        +'<span style="flex:1;font-size:15px">'+esc(k)+' <span style="color:#666;font-size:12px">('+_storePlayers(store[k]).length+'名'+(_c?' / 監督 '+esc(_c):'')+')</span></span>'
         +'<button class="mini" onclick="applyLoad(\''+encodeURIComponent(k)+'\')">呼び出す</button>'
         +'<button class="mini del" onclick="delSaved(\''+encodeURIComponent(k)+'\')">削除</button>'
       +'</div>';
@@ -1255,9 +1253,13 @@ function applyLoad(enc){
   const key=decodeURIComponent(enc);
   const store=readStore();
   if(!store[key]||!loadTarget) return;
-  rosters[loadTarget]=JSON.parse(JSON.stringify(store[key]));
+  rosters[loadTarget]=JSON.parse(JSON.stringify(_storePlayers(store[key])));
   teamNames[loadTarget]=key;
   document.getElementById('tname-'+loadTarget).value=key;
+  var _c=_storeCoach(store[key]);
+  coaches[loadTarget]=_c;
+  var _cEl=document.getElementById('coach-'+loadTarget);
+  if(_cEl) _cEl.value=_c;
   render(loadTarget); push();
   closeModal('load-mask');
   toast('「'+key+'」を読み込みました');
@@ -1565,12 +1567,7 @@ function applyRemote(s){
       try{ _pitcherChangeReport(s, _prevPitcherId); }catch(e){}
     }
     _prevPitcherId = _pid;
-    // 打者が変わったら打者表示カードを出す（コントローラー側で次打者を押したときも）
     var _bid = (s.selIds && s.selIds.batter) || 0;
-    if(_pcBatterId && _bid && _bid !== _pcBatterId){
-      var _bteam = (s.top!==false) ? 'away' : 'home';
-      try{ _showBatterCard(_bteam, _bid); }catch(e){}
-    }
     _pcBatterId = _bid;
     if(s.rostersAll){
       if(Array.isArray(s.rostersAll.away)) rosters.away=JSON.parse(JSON.stringify(s.rostersAll.away));
@@ -1589,6 +1586,12 @@ function applyRemote(s){
     }
     if(s.aab){ teamNames.away=s.aab; document.getElementById('tname-away').value=(s.aab==='先攻'?'':s.aab); }
     if(s.hnm){ teamNames.home=s.hnm; document.getElementById('tname-home').value=(s.hnm==='後攻'?'':s.hnm); }
+    // チーム強調色（コントローラー等の変更を取り込む）
+    if(typeof _teamColorsPC!=='undefined'){
+      if(typeof s.awayColor==='string' && s.awayColor){ _teamColorsPC.away=s.awayColor; try{ localStorage.setItem('bb_clr_away', s.awayColor); }catch(e){} }
+      if(typeof s.homeColor==='string' && s.homeColor){ _teamColorsPC.home=s.homeColor; try{ localStorage.setItem('bb_clr_home', s.homeColor); }catch(e){} }
+      if(typeof _renderTeamColorUI==='function') _renderTeamColorUI();
+    }
     renderFieldPane();
     renderAll();
     renderGame(s);
@@ -2188,6 +2191,30 @@ function clearTeamLogo(team){
   _teamLogos[team]='';
   _saveTeamLogos(); _sendTeamCfg(); _renderTeamLogoUI();
   toast((team==='away'?'先攻':'後攻')+'のロゴを解除しました');
+}
+
+// ── チーム強調色 ─────────────────────────────────────────────────────────
+// コントローラーと同じ localStorage 'bb_clr_<team>'（同一オリジンで共有）。
+// 変更は _pcEdit（pushState）でコントローラーへ送り、コントローラーが _ctl で overlay に配る。
+var _teamColorsPC = { away:'#c8102e', home:'#1a56a0' };
+try{
+  ['away','home'].forEach(function(t){
+    var v=localStorage.getItem('bb_clr_'+t);
+    if(v) _teamColorsPC[t]=v;
+  });
+}catch(e){}
+function _renderTeamColorUI(){
+  ['away','home'].forEach(function(t){
+    var inp=document.getElementById('tclr-'+t);
+    if(inp && document.activeElement!==inp) inp.value=_teamColorsPC[t];
+  });
+}
+function onTeamColorPC(team){
+  var inp=document.getElementById('tclr-'+team);
+  if(!inp) return;
+  _teamColorsPC[team]=inp.value;
+  try{ localStorage.setItem('bb_clr_'+team, inp.value); }catch(e){}
+  pushState();
 }
 function _loadLog(){
   try{
@@ -3522,10 +3549,9 @@ function renderGame(s){
   const setTxt=function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v||'-'; };
   setTxt('gb-batter',s.batter);
 
-  // 投手・捕手・守備チーム
+  // 投手・捕手
   setTxt('gb-pitcher',s.pitcher);
   setTxt('gb-catcher',s.catcher);
-  setTxt('gb-defteam',s.defTeam);
 
   // overlay の表示状態
   const flags=[
@@ -3641,6 +3667,7 @@ _spdInit();
 _loadLog();
 _adLoad();
 _renderTeamLogoUI();
+_renderTeamColorUI();
 _initTTS();
 connectWS();
 setWsUI(false);
