@@ -193,6 +193,16 @@ body.locked .row{cursor:default}
 .fp-res.none{background:none;border:none;color:#3a3a3c}
 .row-hist{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px;padding:1px 4px 3px 40px}
 .row-hist:empty{display:none}
+/* フリガナ編集＋プレビュー（各行の下段・全幅） */
+.row-yomi{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 4px 5px 40px}
+.ry-lbl{font-size:10px;color:#777;flex-shrink:0;letter-spacing:.5px}
+.ry-inp{flex:0 1 220px;background:#252527;border:1px solid #333;border-radius:6px;color:#fff;
+  font-size:13px;padding:6px 9px;outline:none}
+.ry-inp:focus{border-color:#666;background:#2c2c2e}
+.ry-inp::placeholder{color:#555}
+.ry-sep{color:#4a4a4c;font-size:10px;flex-shrink:0}
+.ry-prev{font-size:15px;color:#dfe8e2;white-space:nowrap}
+.ry-prev rt{font-size:10px;color:#8ac0ff;letter-spacing:.4px;font-weight:700}
 
 .fp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,30%);gap:8px;padding:8px;align-items:start}
 .fp-field{width:100%;height:auto;display:block}
@@ -222,10 +232,10 @@ body.locked .row{cursor:default}
 
 .team{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .team-hd{display:flex;align-items:center;gap:8px 10px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-/* チーム名は単独行で大きく。バッジとロゴ枠は下段 */
-.team-hd .team-name-inp{order:0}
-.team-hd .team-badge{order:1}
-.team-hd .tlogo-box{order:2;margin-left:auto}
+/* ロゴ枠＋強調色をチーム名の左に。バッジは下段へ折り返す */
+.team-hd .tlogo-box{order:0}
+.team-hd .team-name-inp{order:1;flex:1 1 150px;width:auto;min-width:150px}
+.team-hd .team-badge{order:2}
 .team-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
 /* チームロゴ枠：プレビュー＝設定、右上✕＝削除、右に強調色スウォッチ。すべて枠内に集約 */
 .tlogo-box{display:flex;align-items:center;gap:10px;padding:5px 8px;background:#242426;
@@ -534,6 +544,7 @@ body.locked .row{cursor:default}
       <input class="cell-inp name" id="new-away-name" placeholder="選手名を入力" onkeydown="if(event.key==='Enter')addPlayer('away')">
       <select class="cell-sel" id="new-away-pos"></select>
       <button class="mini" onclick="addPlayer('away')">＋ 追加</button>
+      <input class="cell-inp name" id="new-away-yomi" placeholder="フリガナ（カタカナ）" style="grid-column:1/-1" onkeydown="if(event.key==='Enter')addPlayer('away')">
     </div>
   </div>
 
@@ -586,6 +597,7 @@ body.locked .row{cursor:default}
       <input class="cell-inp name" id="new-home-name" placeholder="選手名を入力" onkeydown="if(event.key==='Enter')addPlayer('home')">
       <select class="cell-sel" id="new-home-pos"></select>
       <button class="mini" onclick="addPlayer('home')">＋ 追加</button>
+      <input class="cell-inp name" id="new-home-yomi" placeholder="フリガナ（カタカナ）" style="grid-column:1/-1" onkeydown="if(event.key==='Enter')addPlayer('home')">
     </div>
   </div>
 </div>
@@ -950,6 +962,79 @@ function posOptions(sel){
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(m){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
 
+// ── ローマ字ルビのプレビュー（overlay.html と同じ変換） ────────────────────
+function _spaceName(n){
+  n=String(n||'').trim();
+  if(!n || /[ 　]/.test(n)) return n;
+  if(n.length>=3 && n.length<=5) return n.slice(0,2)+' '+n.slice(2);
+  return n;
+}
+function _romajiRuby(name, yomi){
+  yomi=String(yomi||'').trim();
+  if(!yomi) return '';
+  if(!/[ 　]/.test(yomi)){
+    var kanji=String(name||'').replace(/[ 　]/g,'');
+    var sIdx=_spaceName(name).indexOf(' ');
+    if(sIdx>0 && kanji.length>0){
+      var cut=Math.round(yomi.length * sIdx / kanji.length);
+      if(cut>0 && cut<yomi.length) yomi=yomi.slice(0,cut)+' '+yomi.slice(cut);
+    }
+  }
+  return _kanaToRomaji(yomi);
+}
+function _kanaToRomaji(src){
+  if(!src) return '';
+  var s=String(src).replace(/[ァ-ヶ]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); });
+  var M={
+    'きゃ':'kya','きゅ':'kyu','きょ':'kyo','しゃ':'sha','しゅ':'shu','しょ':'sho',
+    'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+    'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','みゃ':'mya','みゅ':'myu','みょ':'myo',
+    'りゃ':'rya','りゅ':'ryu','りょ':'ryo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+    'じゃ':'ja','じゅ':'ju','じょ':'jo','びゃ':'bya','びゅ':'byu','びょ':'byo',
+    'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
+    'あ':'a','い':'i','う':'u','え':'e','お':'o',
+    'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+    'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+    'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+    'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+    'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+    'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+    'や':'ya','ゆ':'yu','よ':'yo',
+    'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+    'わ':'wa','ゐ':'i','ゑ':'e','を':'o','ん':'n',
+    'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+    'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+    'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
+    'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+    'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+    'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o','ゃ':'ya','ゅ':'yu','ょ':'yo','ゎ':'wa','ゔ':'vu'
+  };
+  var out='', i=0;
+  while(i<s.length){
+    var ch=s.charAt(i), two=s.substr(i,2);
+    if(ch==='っ'){
+      var nx=M[s.substr(i+1,2)]||M[s.charAt(i+1)]||'';
+      if(nx) out+=nx.charAt(0);
+      i++; continue;
+    }
+    if(ch==='ー'){ out+=(out.slice(-1)||''); i++; continue; }
+    if(ch===' '||ch==='　'){ out+=' '; i++; continue; }
+    if(M[two]){ out+=M[two]; i+=2; continue; }
+    if(M[ch]){ out+=M[ch]; i++; continue; }
+    out+=ch; i++;
+  }
+  out=out.replace(/ou/g,'o').replace(/oo/g,'o').replace(/uu/g,'u');
+  var w=out.split(/\s+/).filter(Boolean)
+    .map(function(x){ return x.charAt(0).toUpperCase()+x.slice(1); });
+  if(w.length===2) w.reverse();   // 「姓 名」→「名 姓」
+  return w.join(' ');
+}
+function _ryPreview(inp){
+  var w=inp.closest('.row-yomi'); if(!w) return;
+  var rt=w.querySelector('.ry-prev rt'); if(!rt) return;
+  rt.textContent=_romajiRuby(w.getAttribute('data-name')||'', inp.value) || '—';
+}
+
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -998,6 +1083,13 @@ function render(team){
         +'<button class="mini'+(p.f?' on':'')+'" onclick="toggleHon(\''+team+'\','+p.id+')" title="くん / さん">'+(p.f?'さ':'く')+'</button>'
         +'<button class="mini" onclick="toggleBench(\''+team+'\','+p.id+')">'+(p.order?'控':'出')+'</button>'
         +'<button class="mini del" onclick="delPlayer(\''+team+'\','+p.id+')">✕</button>'
+      +'</div>'
+      +'<div class="row-yomi" data-name="'+esc(p.name||'')+'">'
+      +  '<span class="ry-lbl">フリガナ</span>'
+      +  '<input class="ry-inp" value="'+esc(p.yomi||'')+'" placeholder="ヤマダ タロウ" '
+      +     'oninput="_ryPreview(this)" onchange="edit(\''+team+'\','+p.id+',\'yomi\',this.value)">'
+      +  '<span class="ry-sep">▶</span>'
+      +  '<ruby class="ry-prev">'+esc(p.name||'')+'<rt>'+esc(_romajiRuby(p.name, p.yomi)||'—')+'</rt></ruby>'
       +'</div>'
       +'<div class="row-hist">'+hist+'</div>'
     +'</div>';
@@ -1604,8 +1696,18 @@ function applyRemote(s){
         if(el && document.activeElement!==el) el.value=coaches[t];
       });
     }
-    if(s.aab){ teamNames.away=s.aab; document.getElementById('tname-away').value=(s.aab==='先攻'?'':s.aab); }
-    if(s.hnm){ teamNames.home=s.hnm; document.getElementById('tname-home').value=(s.hnm==='後攻'?'':s.hnm); }
+    // チーム名。'先攻'/'後攻'/空 は「未設定」として入力欄を空に戻す（前の試合名を残さない）。
+    // 入力中の欄は上書きしない。
+    if(typeof s.aab==='string'){
+      teamNames.away = (s.aab && s.aab!=='先攻') ? s.aab : '';
+      var _tna=document.getElementById('tname-away');
+      if(_tna && document.activeElement!==_tna) _tna.value=teamNames.away;
+    }
+    if(typeof s.hnm==='string'){
+      teamNames.home = (s.hnm && s.hnm!=='後攻') ? s.hnm : '';
+      var _tnh=document.getElementById('tname-home');
+      if(_tnh && document.activeElement!==_tnh) _tnh.value=teamNames.home;
+    }
     // チーム強調色（コントローラー等の変更を取り込む）
     if(typeof _teamColorsPC!=='undefined'){
       if(typeof s.awayColor==='string' && s.awayColor){ _teamColorsPC.away=s.awayColor; try{ localStorage.setItem('bb_clr_away', s.awayColor); }catch(e){} }

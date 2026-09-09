@@ -254,17 +254,26 @@ app.post('/api/comment', async (req, res) => {
 });
 
 let lastState = null;
+let lastStateAt = 0;
+// 復帰用キャッシュの有効期限（12時間）。これより古い状態は「前の試合」とみなして配らない。
+const LAST_STATE_TTL = 12 * 60 * 60 * 1000;
 
 wss.on('connection', (ws, req) => {
-  const isOverlay = (req.url || '').includes('overlay');
-  if (isOverlay && lastState) ws.send(lastState);
+  // 接続直後に、十分新しい _ctl 状態があれば全クライアントへ復帰用に送る。
+  // 古い（前の試合の）状態は送らない → 各画面は先攻/後攻の初期表示のまま始まる。
+  if (lastState && (Date.now() - lastStateAt) < LAST_STATE_TTL) {
+    ws.send(lastState);
+  }
 
   ws.on('message', (data) => {
     const text = data.toString();
     // 全状態（コントローラー _ctl:true）だけを復帰用に保存する。
     // _pcEdit の部分更新や {_req:'state'} を保存すると、overlay 再接続時に
     // カウント・走者・スコアが消えた状態で初期化されてしまう。
-    try { const d = JSON.parse(text); if (d && d._ctl === true) lastState = text; } catch(e) {}
+    try {
+      const d = JSON.parse(text);
+      if (d && d._ctl === true) { lastState = text; lastStateAt = Date.now(); }
+    } catch(e) {}
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) client.send(text);
     });
