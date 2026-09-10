@@ -2161,10 +2161,31 @@ function _gsMark(k){
   _gsSave();
   _gsRender();
 }
-function _gsSpeak(title, text, k){
+// 読み上げられないときに、何が足りないのかをはっきり出す。
+// 「反応しない」で終わらせず、次に何をすればいいか分かるようにする。
+function _gsWhyNoLineup(team){
+  var who=(team==='away'?'先攻':'後攻')+'（'+_sideOf(team)+'）';
+  var r=rosters[team]||[];
+  if(!r.length) return who+'の選手が登録されていません。\n「👤 選手登録」から入れてください';
+  var ord=r.filter(function(p){ return p.order; });
+  if(!ord.length) return who+'に打順が入っていません。\n「👤 選手登録」で1番から順に打順を入れてください';
+  var named=ord.filter(function(p){ return String(p.yomi||p.name||'').trim(); });
+  if(!named.length) return who+'の氏名が入っていません';
+  return who+'のスタメンを読み上げられませんでした';
+}
+function _gsWhyNoDefense(team){
+  var who=(team==='away'?'先攻':'後攻')+'（'+_sideOf(team)+'）';
+  var r=rosters[team]||[];
+  if(!r.length) return who+'の選手が登録されていません';
+  return who+'に守備位置が入っていません。\n「👤 選手登録」で投手から順に守備位置を入れてください';
+}
+function _gsSpeak(title, text, k, why){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
-  if(!text){ alert('読み上げる内容がありません。選手登録を確認してください'); return; }
-  gsClose();       // 読み上げ確認ウインドウが隠れないよう、いったん閉じる
+  if(!text){ alert(why || '読み上げる内容がありません。選手登録を確認してください'); return; }
+  // 読み上げ確認ウインドウが隠れないよう、いったん閉じる。
+  // 閉じる前に押したボタンから離れておく（隠れた要素を基準に位置決めさせない）
+  try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(e){}
+  gsClose();
   confirmSpeak(title, text, _ttsVoice, _ttsStyle, _annRate, function(){
     _gsMark(k);
     gsOpen();
@@ -2180,9 +2201,9 @@ function gsDo(k){
     return;
   }
   if(k==='open'){ _gsSpeak('🔊 開始アナウンス', _gsOpenText(), k); return; }
-  if(k==='lu1'){  _gsSpeak('🔊 先攻 スタメン', _lineupText('away'), k); return; }
-  if(k==='lu2'){  _gsSpeak('🔊 後攻 スタメン', _lineupText('home'), k); return; }
-  if(k==='def'){  _gsSpeak('🔊 守備紹介（後攻）', _defenseText('home'), k); return; }
+  if(k==='lu1'){  _gsSpeak('🔊 先攻 スタメン', _lineupText('away'), k, _gsWhyNoLineup('away')); return; }
+  if(k==='lu2'){  _gsSpeak('🔊 後攻 スタメン', _lineupText('home'), k, _gsWhyNoLineup('home')); return; }
+  if(k==='def'){  _gsSpeak('🔊 守備紹介（後攻）', _defenseText('home'), k, _gsWhyNoDefense('home')); return; }
   if(k==='play'){ gsPlayBall(); _gsMark(k); return; }
   if(k==='inn'){
     if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
@@ -3578,9 +3599,12 @@ function openWin(id, anchorEl, cancelFn){
   if(box){
     box.style.position='absolute';
     var w=box.offsetWidth, h=box.offsetHeight, cx, cy;
-    if(anchorEl){
-      var r=anchorEl.getBoundingClientRect();
-      cx=r.left + r.width/2; cy=r.top + r.height/2;
+    // 隠れた要素を基準にすると座標が 0 になり、ウインドウが画面の隅に寄ってしまう。
+    // 大きさの無い基準は無かったことにして、直前に触れた位置に出す
+    var ar = anchorEl ? anchorEl.getBoundingClientRect() : null;
+    if(ar && (ar.width<1 || ar.height<1)) ar=null;
+    if(ar){
+      cx=ar.left + ar.width/2; cy=ar.top + ar.height/2;
     }else if(_lastPtr.x || _lastPtr.y){
       cx=_lastPtr.x; cy=_lastPtr.y;
     }else{
