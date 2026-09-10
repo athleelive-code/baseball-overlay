@@ -241,10 +241,14 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
 .ov-b-brand-cap{font-size:12px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.5);margin-left:auto;flex-shrink:0}
 .ov-b-area{display:flex;align-items:stretch;flex-direction:row}
 /* チームエンブレム：打順ブロックの左の専用ブロック（■/〇のロゴ想定） */
-.ov-b-emblem-block{display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:6px 12px}
-.ov-b-emblem-block img{height:54px;width:54px;object-fit:contain;display:block}
+/* エンブレムは枠いっぱいまで大きく。画像は絶対配置にして、縦長ロゴを入れても
+   帯そのものの高さを押し広げないようにする。縦横比は contain で保つ */
+.ov-b-emblem-block{position:relative;flex-shrink:0;width:112px;overflow:hidden}
+.ov-b-emblem-block img{position:absolute;top:2px;left:6px;
+  width:calc(100% - 12px);height:calc(100% - 4px);object-fit:contain;display:block}
+/* 「打順」と番号をひとかたまりにして、ブロックの上下中央に置く */
 .ov-bat-order-block{background:var(--team-color,rgba(200,16,46,.85));display:flex;flex-direction:column;
-  align-items:center;justify-content:flex-end;padding:8px 16px 10px;flex-shrink:0;min-width:62px;transition:background .3s}
+  align-items:center;justify-content:center;gap:5px;padding:8px 16px;flex-shrink:0;min-width:62px;transition:background .3s}
 .ov-bat-order-cap{font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.75);line-height:1}
 .ov-bat-order-num{font-size:38px;font-weight:800;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
 .ov-b-inner{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;

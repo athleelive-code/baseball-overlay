@@ -121,6 +121,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 .assist-done{ opacity:.42; filter:saturate(.5) }
 @media (prefers-reduced-motion:reduce){ .assist-todo{animation:none} }
+/* タップの手ごたえ：押した瞬間だけ光らせる。アシストの脈打ちより後に置いて上書きする */
+.tap-lit{ animation:tapLit .2s ease-out }
+@keyframes tapLit{
+  0%  { box-shadow:0 0 0 0 rgba(255,255,255,.6); filter:brightness(1.6) }
+  100%{ box-shadow:0 0 0 12px rgba(255,255,255,0); filter:brightness(1) }
+}
+@media (prefers-reduced-motion:reduce){ .tap-lit{animation:none} }
 .side-tag{
   font-size:19px;font-weight:700;color:#7a7a7c;letter-spacing:1px;
   flex-shrink:0;white-space:nowrap;
@@ -859,6 +866,17 @@ body.gamemin .gm-hide{display:none!important}
       </div>
       <div style="font-size:18px;color:#555;margin-top:6px;text-align:center" id="score-disp-sec-note">無効（手動のみ）</div>
 
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">タップの手ごたえ</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">押したボタンを光らせて、短く震わせます。この端末だけの設定です</div>
+      <button id="btn-tap-light" onclick="toggleTapLight()" style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:26px;font-weight:700;padding:14px;cursor:pointer">
+        ✨ 光る反応 ON
+      </button>
+      <button id="btn-tap-vib" onclick="toggleTapVib()" style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:26px;font-weight:700;padding:14px;cursor:pointer;margin-top:8px">
+        📳 振動 ON
+      </button>
+      <div id="tap-vib-note" style="font-size:18px;color:#666;margin-top:6px"></div>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">最終回</div>
@@ -1784,6 +1802,73 @@ function _refreshAssist(){
     bb.classList.toggle('assist-todo', !done);
     bb.classList.toggle('assist-done',  done);
   }
+}
+
+// ── タップの手ごたえ ──────────────────────────────────────────────────────
+// グラウンドは明るくて騒がしく、手袋のまま押すこともある。押せたかどうかが
+// その場で分かるように、押した瞬間にボタンを光らせて短く震わせる。
+// 振動は Android Chrome だけ。iPhone / iPad はブラウザからの振動に対応していない。
+var _tapLight = true, _tapVib = true;
+try{
+  var _tl=localStorage.getItem('bb_tap_light'); if(_tl!=null) _tapLight=(_tl==='1');
+  var _tv=localStorage.getItem('bb_tap_vib');   if(_tv!=null) _tapVib  =(_tv==='1');
+}catch(e){}
+var _vibOK = !!(typeof navigator!=='undefined' && typeof navigator.vibrate==='function');
+
+// 押された要素から「ボタンらしいもの」をさかのぼって探す
+function _tapTarget(el){
+  for(var i=0; el && el!==document.body && i<8; i++, el=el.parentNode){
+    if(el.nodeType!==1) continue;
+    var t=el.tagName;
+    if(t==='INPUT'||t==='TEXTAREA') return null;   // 文字入力は光らせない
+    if(t==='BUTTON'||t==='SELECT'||t==='LABEL'||t==='A') return el;
+    if(el.getAttribute && (el.getAttribute('onclick')||el.getAttribute('ontouchend'))) return el;
+  }
+  return null;
+}
+function _tapFeedback(el){
+  if(!el || el.disabled) return;
+  if(_tapVib && _vibOK){ try{ navigator.vibrate(12); }catch(e){} }
+  if(_tapLight && el.classList){
+    el.classList.remove('tap-lit');
+    void el.offsetWidth;                 // 連打しても毎回光らせるため再生をやり直す
+    el.classList.add('tap-lit');
+    setTimeout(function(){ try{ el.classList.remove('tap-lit'); }catch(e){} }, 260);
+  }
+}
+document.addEventListener('pointerdown', function(e){
+  if(!_tapLight && !_tapVib) return;
+  _tapFeedback(_tapTarget(e.target));
+}, true);
+
+function toggleTapLight(){
+  _tapLight=!_tapLight;
+  try{ localStorage.setItem('bb_tap_light', _tapLight?'1':'0'); }catch(e){}
+  _refreshTapBtns();
+}
+function toggleTapVib(){
+  _tapVib=!_tapVib;
+  try{ localStorage.setItem('bb_tap_vib', _tapVib?'1':'0'); }catch(e){}
+  _refreshTapBtns();
+  if(_tapVib && _vibOK){ try{ navigator.vibrate([12,50,25]); }catch(e){} }
+}
+function _refreshTapBtns(){
+  var b=document.getElementById('btn-tap-light');
+  if(b){
+    b.textContent=_tapLight?'✨ 光る反応 ON':'✨ 光る反応 OFF';
+    b.style.background =_tapLight?'#1a3a1a':'#2c2c2e';
+    b.style.borderColor=_tapLight?'#3a6a2a':'#444';
+    b.style.color      =_tapLight?'#86c867':'#999';
+  }
+  var v=document.getElementById('btn-tap-vib');
+  if(v){
+    v.textContent=_tapVib?'📳 振動 ON':'📳 振動 OFF';
+    v.style.background =_tapVib?'#1a3a1a':'#2c2c2e';
+    v.style.borderColor=_tapVib?'#3a6a2a':'#444';
+    v.style.color      =_tapVib?'#86c867':'#999';
+  }
+  var n=document.getElementById('tap-vib-note');
+  if(n) n.textContent = _vibOK ? '' : 'この端末（iPhone / iPad など）は、ブラウザからの振動に対応していません';
 }
 
 // ── スポンサーティッカー ──────────────────────────────────────────────────
@@ -5622,6 +5707,7 @@ _refreshCoolingUI();
 _refreshInnShowUI();
 _refreshSideLabels();
 _refreshAssist();
+_refreshTapBtns();
 renderSB();
 restoreState(); // 最後に復元（renderSB後）
 </script>

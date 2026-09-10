@@ -423,6 +423,13 @@ body.locked .row{cursor:default}
   border:1px solid #444;border-radius:10px;color:#fff;font-size:14px;padding:12px 20px;
   z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
 .toast.show{opacity:1}
+/* タップの手ごたえ：押した瞬間だけ光らせる */
+.tap-lit{ animation:tapLit .2s ease-out }
+@keyframes tapLit{
+  0%  { box-shadow:0 0 0 0 rgba(255,255,255,.6); filter:brightness(1.6) }
+  100%{ box-shadow:0 0 0 12px rgba(255,255,255,0); filter:brightness(1) }
+}
+@media (prefers-reduced-motion:reduce){ .tap-lit{animation:none} }
 </style>
 <script src="/qrcode.js"></script>
 </head>
@@ -901,6 +908,14 @@ body.locked .row{cursor:default}
     </div>
 
     <div class="set-sec">
+      <div class="set-lbl">タップの手ごたえ</div>
+      <div class="note" style="margin-bottom:10px">押したボタンを光らせて、短く震わせます。この端末だけの設定です</div>
+      <button class="btn" id="btn-tap-light" style="width:100%;font-size:15px;padding:13px" onclick="toggleTapLight()">✨ 光る反応 ON</button>
+      <button class="btn" id="btn-tap-vib" style="width:100%;font-size:15px;padding:13px;margin-top:8px" onclick="toggleTapVib()">📳 振動 ON</button>
+      <div class="note" id="tap-vib-note" style="margin-top:6px"></div>
+    </div>
+
+    <div class="set-sec">
       <div class="set-lbl">スポンサー表示</div>
       <div class="note" style="margin-bottom:10px">
         スポンサー画像はここで一括管理します。1枚ごとに「出す場所」を選べます。オーバーレイに即反映されます。<br>
@@ -941,7 +956,14 @@ body.locked .row{cursor:default}
       <textarea id="ad-sponsor-text" oninput="onSponsorText()" rows="3"
         placeholder="この試合は、◯◯商店、△△工務店の提供でお送りします。"
         style="width:100%;background:#252527;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;padding:10px;outline:none;resize:vertical;font-family:inherit;line-height:1.7"></textarea>
-      <button class="btn" style="width:100%;font-size:13px;padding:10px;margin-top:10px" onclick="adAddSlot()">＋ スロットを追加</button>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <label class="btn" style="flex:2;font-size:14px;padding:12px;margin:0;text-align:center;cursor:pointer;background:#1a3a1a;border-color:#3a6a2a;color:#86c867">
+          ＋ 画像を選んでまとめて追加
+          <input type="file" accept="image/*" multiple style="display:none" onchange="adAddFiles(this)">
+        </label>
+        <button class="btn" style="flex:1;font-size:14px;padding:12px" onclick="adAddSlot()">＋ 空のスロット</button>
+      </div>
+      <div class="note" id="ad-count" style="margin-top:6px"></div>
     </div>
 
     <div class="modal-acts">
@@ -3156,6 +3178,66 @@ function openSettings(){
   _renderAdSlots();
 }
 
+// ── タップの手ごたえ ──────────────────────────────────────────────────────
+// 押せたかどうかがその場で分かるように、押した瞬間にボタンを光らせて短く震わせる。
+// 振動は Android Chrome だけ。iPhone / iPad はブラウザからの振動に対応していない。
+var _tapLight = true, _tapVib = true;
+try{
+  var _tl=localStorage.getItem('bb_tap_light'); if(_tl!=null) _tapLight=(_tl==='1');
+  var _tv=localStorage.getItem('bb_tap_vib');   if(_tv!=null) _tapVib  =(_tv==='1');
+}catch(e){}
+var _vibOK = !!(typeof navigator!=='undefined' && typeof navigator.vibrate==='function');
+
+function _tapTarget(el){
+  for(var i=0; el && el!==document.body && i<8; i++, el=el.parentNode){
+    if(el.nodeType!==1) continue;
+    var t=el.tagName;
+    if(t==='INPUT'||t==='TEXTAREA') return null;   // 文字入力は光らせない
+    if(t==='BUTTON'||t==='SELECT'||t==='LABEL'||t==='A') return el;
+    if(el.getAttribute && el.getAttribute('onclick')) return el;
+  }
+  return null;
+}
+function _tapFeedback(el){
+  if(!el || el.disabled) return;
+  if(_tapVib && _vibOK){ try{ navigator.vibrate(12); }catch(e){} }
+  if(_tapLight && el.classList){
+    el.classList.remove('tap-lit');
+    void el.offsetWidth;                 // 連打しても毎回光らせるため再生をやり直す
+    el.classList.add('tap-lit');
+    setTimeout(function(){ try{ el.classList.remove('tap-lit'); }catch(e){} }, 260);
+  }
+}
+document.addEventListener('pointerdown', function(e){
+  if(!_tapLight && !_tapVib) return;
+  _tapFeedback(_tapTarget(e.target));
+}, true);
+
+function toggleTapLight(){
+  _tapLight=!_tapLight;
+  try{ localStorage.setItem('bb_tap_light', _tapLight?'1':'0'); }catch(e){}
+  _refreshTapBtns();
+}
+function toggleTapVib(){
+  _tapVib=!_tapVib;
+  try{ localStorage.setItem('bb_tap_vib', _tapVib?'1':'0'); }catch(e){}
+  _refreshTapBtns();
+  if(_tapVib && _vibOK){ try{ navigator.vibrate([12,50,25]); }catch(e){} }
+}
+function _tapBtnPaint(b, on, txtOn, txtOff){
+  if(!b) return;
+  b.textContent = on ? txtOn : txtOff;
+  b.style.background  = on ? '#1a3a1a' : '#2c2c2e';
+  b.style.borderColor = on ? '#3a6a2a' : '#3a3a3c';
+  b.style.color       = on ? '#86c867' : '#ddd';
+}
+function _refreshTapBtns(){
+  _tapBtnPaint(document.getElementById('btn-tap-light'), _tapLight, '✨ 光る反応 ON', '✨ 光る反応 OFF');
+  _tapBtnPaint(document.getElementById('btn-tap-vib'),   _tapVib,   '📳 振動 ON',    '📳 振動 OFF');
+  var n=document.getElementById('tap-vib-note');
+  if(n) n.textContent = _vibOK ? '' : 'この端末（iPhone / iPad など）は、ブラウザからの振動に対応していません';
+}
+
 // ── 広告バナー設定 ────────────────────────────────────────────────────────
 // スポンサー画像は1か所で管理し、スロットごとに「どこに出すか」を選ぶ。
 // where.score  … スコア拡大表示のとき、イニングスコア表の横
@@ -3181,7 +3263,10 @@ function _adLoad(){
   if(typeof _adCfg.tickerSpeed!=='number') _adCfg.tickerSpeed = 40;
 }
 function _adSave(){
-  try{ localStorage.setItem('bb_adcfg_edit', JSON.stringify(_adCfg)); }catch(e){}
+  // 枚数を増やすと画像の合計が端末の保存容量を超えることがある。
+  // 黙って消えると気づけないので、そのときははっきり知らせる。
+  try{ localStorage.setItem('bb_adcfg_edit', JSON.stringify(_adCfg)); }
+  catch(e){ toast('保存容量がいっぱいです。使わない画像を削除してください'); }
 }
 function _sendAdCfg(){
   _adSave();
@@ -3233,6 +3318,12 @@ function _renderAdSlots(){
   var tv=document.getElementById('ad-tspd-val'); if(tv) tv.textContent=_adCfg.tickerSpeed||40;
   var st=document.getElementById('ad-sponsor-text');
   if(st && document.activeElement!==st) st.value=_adCfg.sponsorText||'';
+  var cnt=document.getElementById('ad-count');
+  if(cnt){
+    var n=_adCfg.slots.length;
+    var use=_adCfg.slots.filter(function(s){ return s.on && s.src; }).length;
+    cnt.textContent = n ? ('全'+n+'枠／表示中 '+use+'枚') : '';
+  }
 }
 function adToggle(i){ if(_adCfg.slots[i]){ _adCfg.slots[i].on=!_adCfg.slots[i].on; _sendAdCfg(); _renderAdSlots(); } }
 function onSponsorText(){
@@ -3247,7 +3338,7 @@ function adWhereToggle(i,key){
   _sendAdCfg(); _renderAdSlots();
 }
 function adDelSlot(i){ _adCfg.slots.splice(i,1); _sendAdCfg(); _renderAdSlots(); }
-function adAddSlot(){ _adCfg.slots.push({src:'',on:true,where:_adWhere()}); _renderAdSlots(); }
+function adAddSlot(){ _adCfg.slots.push({src:'',on:true,where:_adWhere()}); _adSave(); _renderAdSlots(); }
 function adjAd(key,d){
   if(key==='tickerSpeed'){
     // 1周にかかる秒数。小さいほど速い
@@ -3257,29 +3348,60 @@ function adjAd(key,d){
   }
   _sendAdCfg(); _renderAdSlots();
 }
+// 画像ファイル1つを、横600pxのJPEGに縮めたデータURLにする
+// （同期メッセージと端末の保存容量が重くならないように）
+function _adShrink(file){
+  return new Promise(function(resolve, reject){
+    var rd=new FileReader();
+    rd.onerror=function(){ reject(new Error('read')); };
+    rd.onload=function(ev){
+      var im=new Image();
+      im.onerror=function(){ reject(new Error('decode')); };
+      im.onload=function(){
+        var maxW=600, sc=Math.min(1, maxW/im.width);
+        var c=document.createElement('canvas');
+        c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
+        c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+        try{ resolve(c.toDataURL('image/jpeg', 0.8)); }
+        catch(e){ resolve(ev.target.result); }
+      };
+      im.src=ev.target.result;
+    };
+    rd.readAsDataURL(file);
+  });
+}
+
 function adPickFile(i, input){
   var f = input.files && input.files[0];
   input.value='';
   if(!f || !_adCfg.slots[i]) return;
-  var rd=new FileReader();
-  rd.onload=function(ev){
-    var im=new Image();
-    im.onload=function(){
-      // 横600pxに縮小して JPEG 化（同期メッセージが重くならないように）
-      var maxW=600, sc=Math.min(1, maxW/im.width);
-      var c=document.createElement('canvas');
-      c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
-      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      try{ _adCfg.slots[i].src = c.toDataURL('image/jpeg', 0.8); }
-      catch(e){ _adCfg.slots[i].src = ev.target.result; }
-      _adCfg.slots[i].on = true;
-      _sendAdCfg(); _renderAdSlots();
-      toast('広告を差し替えました');
-    };
-    im.onerror=function(){ toast('画像を読み込めませんでした'); };
-    im.src=ev.target.result;
-  };
-  rd.readAsDataURL(f);
+  _adShrink(f).then(function(src){
+    if(!_adCfg.slots[i]) return;
+    _adCfg.slots[i].src = src;
+    _adCfg.slots[i].on  = true;
+    _sendAdCfg(); _renderAdSlots();
+    toast('広告を差し替えました');
+  }).catch(function(){ toast('画像を読み込めませんでした'); });
+}
+
+// 複数枚をまとめて追加する。1枚につき1スロット作る
+function adAddFiles(input){
+  var files = input.files ? Array.prototype.slice.call(input.files) : [];
+  input.value='';
+  if(!files.length) return;
+  toast(files.length+'枚を読み込んでいます…');
+  Promise.all(files.map(function(f){
+    return _adShrink(f).catch(function(){ return ''; });
+  })).then(function(srcs){
+    var ok=0;
+    srcs.forEach(function(src){
+      if(!src) return;
+      _adCfg.slots.push({ src:src, on:true, where:_adWhere() });
+      ok++;
+    });
+    _sendAdCfg(); _renderAdSlots();
+    toast(ok ? (ok+'枚を追加しました') : '画像を読み込めませんでした');
+  });
 }
 
 function _refreshSettingsUI(){
@@ -4202,6 +4324,7 @@ _renderTeamLogoUI();
 _renderTeamColorUI();
 _refreshCoolingUI();
 _refreshAudioStreamBtn();
+_refreshTapBtns();
 _applySideLayout();
 _initTTS();
 connectWS();

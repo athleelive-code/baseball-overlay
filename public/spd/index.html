@@ -175,6 +175,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
   font-size:18px;font-weight:700;padding:14px 26px;z-index:99;opacity:0;
   pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
+/* タップの手ごたえ：押した瞬間だけ光らせる */
+.tap-lit{ animation:tapLit .2s ease-out }
+@keyframes tapLit{
+  0%  { box-shadow:0 0 0 0 rgba(255,255,255,.6); filter:brightness(1.6) }
+  100%{ box-shadow:0 0 0 12px rgba(255,255,255,0); filter:brightness(1) }
+}
+@media (prefers-reduced-motion:reduce){ .tap-lit{animation:none} }
 </style>
 <script src="/qrcode.js"></script>
 </head>
@@ -296,6 +303,34 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
 <div class="toast" id="toast"></div>
 
 <script>
+// ── タップの手ごたえ ──────────────────────────────────────────────────────
+// 入切はコントローラー／メンバー管理の設定に合わせる（同じ端末なら同じ設定になる）
+var _tapLight = true, _tapVib = true;
+try{
+  var _tl=localStorage.getItem('bb_tap_light'); if(_tl!=null) _tapLight=(_tl==='1');
+  var _tv=localStorage.getItem('bb_tap_vib');   if(_tv!=null) _tapVib  =(_tv==='1');
+}catch(e){}
+var _vibOK = !!(typeof navigator!=='undefined' && typeof navigator.vibrate==='function');
+document.addEventListener('pointerdown', function(e){
+  if(!_tapLight && !_tapVib) return;
+  var el=e.target;
+  for(var i=0; el && el!==document.body && i<8; i++, el=el.parentNode){
+    if(el.nodeType!==1) continue;
+    var t=el.tagName;
+    if(t==='INPUT'||t==='TEXTAREA'){ el=null; break; }
+    if(t==='BUTTON'||t==='SELECT'||t==='LABEL'||t==='A') break;
+    if(el.getAttribute && el.getAttribute('onclick')) break;
+  }
+  if(!el || el===document.body || el.nodeType!==1 || el.disabled) return;
+  if(_tapVib && _vibOK){ try{ navigator.vibrate(12); }catch(_e){} }
+  if(_tapLight && el.classList){
+    el.classList.remove('tap-lit');
+    void el.offsetWidth;
+    el.classList.add('tap-lit');
+    setTimeout(function(){ try{ el.classList.remove('tap-lit'); }catch(_e){} }, 260);
+  }
+}, true);
+
 var MINV = 10, MAXV = 200;
 var lastVal = null;
 var baseTens = null;   // 選択中の十の位（例：130）
