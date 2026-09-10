@@ -186,6 +186,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   padding-left:44px;
 }
 @keyframes ovTk{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+/* 画面に収まるときは流さず、真ん中に並べて置く */
+.ov-tk-track.fit{animation:none;transform:none;width:100%;justify-content:center;padding-left:0}
 .ov-tk-item{display:inline-flex;align-items:center;flex:0 0 auto}
 .ov-tk-item img{
   height:96px;width:auto;object-fit:contain;display:block;
@@ -1209,16 +1211,40 @@ function applyAdCfg(d){
 // 前回消えた位置から続きが流れる。
 var _tickerOn = false;
 function _tickerBuild(){
-  var track=g('ov-ticker-track');
+  var track=g('ov-ticker-track'), bar=g('ov-ticker');
   if(!track) return;
   var list=_adTicker.length ? _adTicker : [];
-  if(!list.length){ track.innerHTML=''; return; }
-  // 途切れなく流すため同じ並びを2回敷き、-50% まで動かす
+  if(!list.length){ track.innerHTML=''; track.classList.remove('fit'); return; }
   var one=list.map(function(src){
     return '<span class="ov-tk-item"><img src="'+src+'" alt=""></span>';
   }).join('');
-  track.innerHTML = one + one;
   track.style.animationDuration = (_adTickerSpeed||40)+'s';
+  // まず1組だけ置いて幅を測る。画面に収まるなら流す必要がないので止めて中央に置く。
+  // 収まらないときだけ、途切れなく流すため同じ並びを2回敷いて -50% まで動かす。
+  track.innerHTML = one;
+  track.classList.remove('fit');
+  var decided=false;
+  var decide=function(){
+    if(decided) return;
+    decided=true;
+    var room=(bar ? bar.clientWidth : window.innerWidth) - 8;
+    if(track.scrollWidth <= room){
+      track.classList.add('fit');
+    }else{
+      track.classList.remove('fit');
+      track.innerHTML = one + one;
+      track.style.animationPlayState = _tickerOn ? 'running' : 'paused';
+    }
+  };
+  // 画像の大きさが決まってから測る
+  var imgs=track.querySelectorAll('img'), left=imgs.length;
+  if(!left){ decide(); return; }
+  var done=function(){ if(--left<=0) decide(); };
+  Array.prototype.forEach.call(imgs, function(im){
+    if(im.complete && im.naturalWidth) done();
+    else { im.onload=done; im.onerror=done; }
+  });
+  setTimeout(decide, 1500);          // 読み込めない画像があっても先へ進む
 }
 function applyTicker(on){
   var bar=g('ov-ticker'), track=g('ov-ticker-track');
