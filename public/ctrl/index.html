@@ -965,6 +965,17 @@ body.gamemin .gm-hide{display:none!important}
       </div>
     </div>
     <div class="drawer-sec">
+      <div class="drawer-sec-t">サイレン</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">試合開始フローの1段目で鳴らします。OFFにするとその段ごと出ません。音源ファイルは不要です</div>
+      <button id="btn-siren-use" onclick="toggleSirenUse()" style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:26px;font-weight:700;padding:14px;cursor:pointer">
+        🔔 サイレンを使う ON
+      </button>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button onclick="sirenNow()" style="flex:2;background:#3a2a10;border:1px solid #c8901e;border-radius:10px;color:#ffcf6a;font-size:22px;font-weight:700;padding:13px;cursor:pointer">▶ 鳴らす</button>
+        <button onclick="stopSiren()" style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:22px;font-weight:700;padding:13px;cursor:pointer">⏹ 止める</button>
+      </div>
+    </div>
+    <div class="drawer-sec">
       <div class="drawer-sec-t">クーリング中のBGM</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">
         クーリングタイムの間だけ流します。<b style="color:#8ac0ff">音を鳴らす端末</b>で登録してください。<br>
@@ -2066,6 +2077,29 @@ function _refreshTapBtns(){
 // 音源ファイルは持たず、その場で波形を作って鳴らす（読み込み待ちがない）。
 // ゆっくり上がって、しばらく伸ばして、ゆっくり下がる。球場のサイレンの形。
 var _sirenCtx = null, _sirenNodes = null;
+// サイレンを使うかどうか。大会によっては鳴らさないので選べるようにする
+var _sirenUse = true;
+try{ var _su=localStorage.getItem('bb_siren_use'); if(_su!=null) _sirenUse=(_su==='1'); }catch(e){}
+function toggleSirenUse(){
+  _sirenUse=!_sirenUse;
+  try{ localStorage.setItem('bb_siren_use', _sirenUse?'1':'0'); }catch(e){}
+  _refreshSirenBtn();
+  if(typeof _gsBuildSteps==='function'){ _gsBuildSteps(); _gsRender(); }
+}
+function _refreshSirenBtn(){
+  var b=document.getElementById('btn-siren-use');
+  if(!b) return;
+  b.textContent = _sirenUse ? '🔔 サイレンを使う ON' : '🔔 サイレンを使う OFF';
+  b.style.background  = _sirenUse ? '#1a3a1a' : '#2c2c2e';
+  b.style.borderColor = _sirenUse ? '#3a6a2a' : '#444';
+  b.style.color       = _sirenUse ? '#86c867' : '#999';
+}
+// どこからでも鳴らせるように（試合開始フローと設定のテストから使う）
+function sirenNow(){
+  if(_audioHere) playSiren(10);
+  else { try{ ws.send(JSON.stringify({ _siren:true, sec:10 })); }catch(e){} }
+  toastMsg('サイレン');
+}
 function playSiren(sec){
   sec = Math.max(3, Math.min(30, Number(sec) || 10));
   try{
@@ -2342,15 +2376,23 @@ try{
 }catch(e){}
 function _gsSave(){ try{ localStorage.setItem('bb_gs', JSON.stringify({i:_gsIdx, d:_gsDone, at:Date.now()})); }catch(e){} }
 
-var GS_STEPS = [
-  { k:'siren', t:'🔔 サイレン',            d:'試合開始のサイレンを鳴らします（約10秒）' },
-  { k:'open',  t:'🔊 開始アナウンス',      d:'試合名と両チーム名を読み上げます' },
-  { k:'lu1',   t:'🔊 先攻 スタメン発表',   d:'打順どおりに読み上げます' },
-  { k:'lu2',   t:'🔊 後攻 スタメン発表',   d:'打順どおりに読み上げます' },
-  { k:'play',  t:'⚾ 試合開始（1回表へ）',  d:'1回表にして、試合中モードに入ります' },
-  { k:'def',   t:'🔊 守備紹介',            d:'1回表に守るチームを紹介します' },
-  { k:'inn',   t:'🔊 1回表 イニングコール', d:'先頭打者まで読み上げます' }
+// 打順は「そのチームが攻める直前」、守備位置は「そのチームが守る直前」に読む。
+// 1回表は 先攻が攻め／後攻が守る、1回裏はその逆。
+var GS_ALL = [
+  { k:'siren', t:'🔔 サイレン',              d:'試合開始のサイレンを鳴らします（約10秒）' },
+  { k:'open',  t:'🔊 開始アナウンス',        d:'試合名と両チーム名を読み上げます' },
+  { k:'lu1',   t:'🔊 先攻 打順アナウンス',   d:'' },
+  { k:'def2',  t:'🔊 後攻 守備位置アナウンス', d:'' },
+  { k:'inn1',  t:'🔊 1回表 イニングコール',  d:'1回表にして、試合中モードに入ります' },
+  { k:'lu2',   t:'🔊 後攻 打順アナウンス',   d:'' },
+  { k:'def1',  t:'🔊 先攻 守備位置アナウンス', d:'' },
+  { k:'inn2',  t:'🔊 1回裏 イニングコール',  d:'いまの回を読み上げます' }
 ];
+// サイレンを使わない設定のときは、その段ごと出さない
+var GS_STEPS = GS_ALL.slice();
+function _gsBuildSteps(){
+  GS_STEPS = GS_ALL.filter(function(s){ return s.k!=='siren' || _sirenUse; });
+}
 function _gsAt(k){ for(var i=0;i<GS_STEPS.length;i++){ if(GS_STEPS[i].k===k) return i; } return -1; }
 
 // 開始アナウンスの文言
@@ -2363,9 +2405,10 @@ function _gsOpenText(){
 }
 // 段の見出し。どちらのベンチかも添えて取り違えを防ぐ
 function _gsLabel(s){
-  if(s.k==='lu1') return '🔊 先攻 スタメン発表（'+_sideOf('away')+'）';
-  if(s.k==='lu2') return '🔊 後攻 スタメン発表（'+_sideOf('home')+'）';
-  if(s.k==='def') return '🔊 守備紹介（後攻・'+_sideOf('home')+'）';
+  if(s.k==='lu1')  return '🔊 先攻 打順アナウンス（'+_sideOf('away')+'）';
+  if(s.k==='lu2')  return '🔊 後攻 打順アナウンス（'+_sideOf('home')+'）';
+  if(s.k==='def2') return '🔊 後攻 守備位置アナウンス（'+_sideOf('home')+'）';
+  if(s.k==='def1') return '🔊 先攻 守備位置アナウンス（'+_sideOf('away')+'）';
   return s.t;
 }
 
@@ -2445,17 +2488,18 @@ function gsReset(){
 // 押す前に、その段が実行できる状態かを見せる。
 // 「押しても何も起きない」で悩まずに済むよう、足りないものを先に出す。
 function _gsReady(k){
-  var team = (k==='lu1') ? 'away' : 'home';
   if(k==='lu1' || k==='lu2'){
+    var team=(k==='lu1')?'away':'home';
     var r=rosters[team]||[];
     if(!r.length) return { ok:false, t:'選手が未登録です' };
     var ord=r.filter(function(p){ return p.order; });
     if(!ord.length) return { ok:false, t:'打順が入っていません' };
     return { ok:true, t:ord.length+'人・打順あり' };
   }
-  if(k==='def'){
-    var rr=rosters['home']||[];
-    if(!rr.length) return { ok:false, t:'後攻の選手が未登録です' };
+  if(k==='def1' || k==='def2'){
+    var dteam=(k==='def1')?'away':'home';
+    var rr=rosters[dteam]||[];
+    if(!rr.length) return { ok:false, t:'選手が未登録です' };
     var n=0;
     for(var i=1;i<=9;i++){
       var code=String(i), lab=posLabel(code);
@@ -2531,20 +2575,15 @@ function _gsSpeak(title, text, k, why){
 }
 
 function gsDo(k){
-  if(k==='siren'){
-    if(_audioHere) playSiren(10);
-    else { try{ ws.send(JSON.stringify({ _siren:true, sec:10 })); }catch(e){} }
-    toastMsg('サイレン');
-    _gsMark(k);
-    return;
-  }
+  if(k==='siren'){ sirenNow(); _gsMark(k); return; }
   if(k==='open'){ _gsSpeak('🔊 開始アナウンス', _gsOpenText(), k); return; }
-  if(k==='lu1'){  _gsSpeak('🔊 先攻 スタメン', _lineupText('away'), k, _gsWhyNoLineup('away')); return; }
-  if(k==='lu2'){  _gsSpeak('🔊 後攻 スタメン', _lineupText('home'), k, _gsWhyNoLineup('home')); return; }
-  if(k==='def'){  _gsSpeak('🔊 守備紹介（後攻）', _defenseText('home'), k, _gsWhyNoDefense('home')); return; }
-  if(k==='play'){ gsPlayBall(); _gsMark(k); return; }
-  if(k==='inn'){
+  if(k==='lu1'){  _gsSpeak('🔊 先攻 打順', _lineupText('away'), k, _gsWhyNoLineup('away')); return; }
+  if(k==='lu2'){  _gsSpeak('🔊 後攻 打順', _lineupText('home'), k, _gsWhyNoLineup('home')); return; }
+  if(k==='def2'){ _gsSpeak('🔊 後攻 守備位置', _defenseText('home'), k, _gsWhyNoDefense('home')); return; }
+  if(k==='def1'){ _gsSpeak('🔊 先攻 守備位置', _defenseText('away'), k, _gsWhyNoDefense('away')); return; }
+  if(k==='inn1' || k==='inn2'){
     if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+    if(k==='inn1') gsPlayBall();     // 1回表にして試合中モードに入る
     gsClose();
     announceCurrentInning();
     _gsMark(k);
@@ -2562,9 +2601,22 @@ function gsPlayBall(){
   renderBSO(); renderDiamond(); renderSB();
   _abReset(); _updateAbDisp();
   _assistReset();
+  _gsPickLeadoff();          // 先頭打者を選んでおく（毎回選び直させない）
   if(!_gameMin) toggleGameMin();
   broadcast(); saveState();
   toastMsg('1回表 開始');
+}
+// 攻撃側の打順1番を打者に入れる。すでに誰か選ばれていれば触らない
+function _gsPickLeadoff(){
+  var sb=document.getElementById('sel-batter');
+  if(!sb || sb.value) return;
+  var team = st.top ? 'away' : 'home';
+  var lead = (rosters[team]||[])
+    .filter(function(p){ return p.order; })
+    .sort(function(a,b){ return Number(a.order)-Number(b.order); })[0];
+  if(!lead) return;
+  sb.value=String(lead.id);
+  if(typeof onBatterChange==='function') onBatterChange();
 }
 
 // ── スポンサーティッカー ──────────────────────────────────────────────────
@@ -6438,6 +6490,8 @@ _refreshTapBtns();
 _refreshWakeBtn();
 _wakeAcquire();
 _bgmInit();
+_refreshSirenBtn();
+_gsBuildSteps();
 renderSB();
 restoreState(); // 最後に復元（renderSB後）
 </script>

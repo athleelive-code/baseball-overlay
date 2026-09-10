@@ -193,6 +193,9 @@ body.locked .row{cursor:default}
   font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .fp-cool:hover{background:#17405a}
 .fp-cool.on{background:#3a1a1a;border-color:#8a3a3a;color:#ff9a9a}
+.fp-siren{background:#3a2a10;border:2px solid #c8901e;border-radius:9px;color:#ffcf6a;
+  font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-siren:hover{background:#4a360f}
 .cool-adj{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#aaa}
 .cool-adj .btn{padding:5px 9px;font-size:14px}
 #cool-min-val{font-size:17px;font-weight:800;color:#fff;min-width:22px;text-align:center;
@@ -566,6 +569,7 @@ body.locked .row{cursor:default}
   </span>
   <button class="fp-cool" id="btn-cooling" onclick="toggleCooling()">❄ クーリング 5分</button>
   <span class="cool-left" id="cooling-left" style="display:none">5:00</span>
+  <button class="fp-siren" id="btn-siren-go" onclick="sirenNow()">🔔 サイレン</button>
   <button class="fp-firstbat" onclick="openFirstBatPC()">⇄ 先攻選択</button>
 </div>
 
@@ -926,6 +930,13 @@ body.locked .row{cursor:default}
       <button class="btn" id="btn-wake" style="width:100%;font-size:15px;padding:13px;margin-top:8px" onclick="toggleWake()">📱 画面を消さない ON</button>
       <div class="note" style="margin-top:6px">操作の間が空いても画面が消えません。電池の減りは早くなります</div>
       <div class="note" id="wake-note" style="margin-top:4px"></div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-lbl">サイレン</div>
+      <div class="note" style="margin-bottom:10px">上部の「サイレン」ボタンで鳴らします。OFFにするとボタンごと消えます。音源ファイルは不要です</div>
+      <button class="btn" id="btn-siren-use" style="width:100%;font-size:15px;padding:13px" onclick="toggleSirenUse()">サイレンを使う ON</button>
+      <button class="btn" style="width:100%;font-size:14px;padding:12px;margin-top:8px" onclick="stopSiren()">鳴っているサイレンを止める</button>
     </div>
 
     <div class="set-sec">
@@ -2101,6 +2112,26 @@ var _coolingTick = null;
 // ── サイレン ──────────────────────────────────────────────────────────────
 // 音源ファイルは持たず、その場で波形を作って鳴らす。コントローラー側と同じ形。
 var _sirenCtx = null, _sirenNodes = null;
+// サイレンを使うかどうか（コントローラーと同じ設定を見る）
+var _sirenUse = true;
+try{ var _su=localStorage.getItem('bb_siren_use'); if(_su!=null) _sirenUse=(_su==='1'); }catch(e){}
+function toggleSirenUse(){
+  _sirenUse=!_sirenUse;
+  try{ localStorage.setItem('bb_siren_use', _sirenUse?'1':'0'); }catch(e){}
+  _refreshSirenBtn();
+}
+function _refreshSirenBtn(){
+  var b=document.getElementById('btn-siren-use');
+  if(b) _tapBtnPaint(b, _sirenUse, '🔔 サイレンを使う ON', '🔔 サイレンを使う OFF');
+  var m=document.getElementById('btn-siren-go');
+  if(m) m.style.display = _sirenUse ? '' : 'none';
+}
+// 音を鳴らす端末がこちらならここで鳴らし、そうでなければ相手へ送る
+function sirenNow(){
+  if(_audioHere) playSiren(10);
+  else { try{ if(ws && ws.readyState===1) ws.send(JSON.stringify({ _siren:true, sec:10 })); }catch(e){} }
+  toast('サイレン');
+}
 function playSiren(sec){
   sec = Math.max(3, Math.min(30, Number(sec) || 10));
   try{
@@ -4756,6 +4787,7 @@ _refreshTapBtns();
 _refreshWakeBtn();
 _wakeAcquire();
 _bgmInit();
+_refreshSirenBtn();
 _applySideLayout();
 _initTTS();
 connectWS();
