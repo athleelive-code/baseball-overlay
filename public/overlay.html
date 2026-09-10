@@ -1116,10 +1116,8 @@ function applyCooling(c){
   if(!box) return;
   if(on){
     _coolEndsAt = c.endsAt;
-    _coolAdsStart();
-    // スポンサーが1枚も無いときは見出しも出さない
-    var th=g('ov-cool-thanks');
-    if(th) th.style.display = _adCool.length ? 'flex' : 'none';
+    // 組み直すのは始まるときだけ。毎回の配信でやると切り替えが先頭に戻ってしまう
+    if(!box.classList.contains('on')) _coolAdsStart();
     box.classList.add('on');
     _coolPaint();
     if(!_coolTick) _coolTick=setInterval(_coolPaint, 500);
@@ -1166,6 +1164,9 @@ function _coolAdsStart(){
   _coolAdsStop();
   _coolAdPage=0;
   _coolAdsPaint();
+  // スポンサーが1枚も無いときは見出しも出さない
+  var th=g('ov-cool-thanks');
+  if(th) th.style.display = _adCool.length ? 'flex' : 'none';
   if(_coolAdPages().length>1){
     var sec=(_adRotate>0) ? _adRotate : 8;   // 設定の切替間隔。0なら8秒
     _coolAdTimer=setInterval(function(){ _coolAdPage++; _coolAdsPaint(); }, sec*1000);
@@ -1192,6 +1193,10 @@ function applyAdCfg(d){
   _adIndex = 0;
   _tickerBuild();
   _adTopStart();
+  // クーリング表示中に設定が届くことがある（オーバーレイを開いた直後など、
+  // 試合状態のほうが先に来る）。出しっぱなしにせず、その場で組み直す
+  var _cb=g('ov-cool');
+  if(_cb && _cb.classList.contains('on')) _coolAdsStart();
   try{ localStorage.setItem('bb_adcfg', JSON.stringify({
     ticker:_adTicker, cool:_adCool, top:_adTop,
     sec:_adSec, rotate:_adRotate, tickerSpeed:_adTickerSpeed
