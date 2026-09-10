@@ -229,10 +229,11 @@ body.locked .row{cursor:default}
 
 .team{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .team-hd{display:flex;align-items:center;gap:8px 10px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-/* ロゴ枠＋強調色をチーム名の左に。バッジは下段へ折り返す */
+/* ロゴ枠＋強調色をチーム名の左に。フリガナとバッジは下段へ折り返す */
 .team-hd .tlogo-box{order:0}
 .team-hd .team-name-inp{order:1;flex:1 1 150px;width:auto;min-width:150px}
-.team-hd .team-badge{order:2}
+.team-hd .team-yomi-inp{order:2;flex:1 1 100%}
+.team-hd .team-badge{order:3}
 .team-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
 /* チームロゴ枠：ロゴを押すと「追加」または「削除」。右に強調色スウォッチ */
 .tlogo-box{display:flex;align-items:center;gap:10px;padding:5px 8px;background:#242426;
@@ -262,6 +263,12 @@ body.locked .row{cursor:default}
 .team-name-inp{background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#fff;
   font-size:30px;font-weight:800;letter-spacing:.5px;padding:10px 14px;outline:none;width:100%}
 .team-name-inp:focus{border-color:#555}
+/* チーム名フリガナ：表示には出さず、場内アナウンスの読みだけに使う */
+.team-yomi-inp{background:#242426;border:1px solid #333;border-radius:7px;color:#b8b8ba;
+  font-size:13px;font-weight:500;padding:6px 10px;outline:none;width:100%}
+.team-yomi-inp:focus{border-color:#555;color:#fff}
+.team-yomi-inp::placeholder{color:#555;font-weight:400}
+.coach-yomi{flex:0 1 110px;min-width:70px}
 
 /* ツールバー */
 .tools{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
@@ -496,6 +503,7 @@ body.locked .row{cursor:default}
     <div class="team-hd">
       <span class="team-badge badge-away">先攻 / 1塁側</span>
       <input class="team-name-inp" id="tname-away" placeholder="チーム名" oninput="onTeamName('away')">
+      <input class="team-yomi-inp" id="tyomi-away" placeholder="チーム名フリガナ（アナウンスの読み）" oninput="onTeamYomi('away')">
       <div class="tlogo-box">
         <div class="tlogo-prev-wrap">
           <button type="button" class="tlogo-tap" onclick="tapTeamLogo('away')" title="タップでロゴを追加／削除">
@@ -518,7 +526,7 @@ body.locked .row{cursor:default}
       <button class="btn sub-def" onclick="openSub('away','守備交代')">守備交代</button>
     </div>
     <div class="tools">
-      <span class="coach-wrap"><span class="coach-label">監督</span><input class="coach-inp" id="coach-away" placeholder="氏名" oninput="onCoachName('away')"></span>
+      <span class="coach-wrap"><span class="coach-label">監督</span><input class="coach-inp" id="coach-away" placeholder="氏名" oninput="onCoachName('away')"><input class="coach-inp coach-yomi" id="cyomi-away" placeholder="ヨミ" oninput="onCoachYomi('away')"></span>
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
         <input type="file" accept="image/*" style="display:none" onchange="onScan(event,'away')">
       </label>
@@ -548,6 +556,7 @@ body.locked .row{cursor:default}
     <div class="team-hd">
       <span class="team-badge badge-home">後攻 / 3塁側</span>
       <input class="team-name-inp" id="tname-home" placeholder="チーム名" oninput="onTeamName('home')">
+      <input class="team-yomi-inp" id="tyomi-home" placeholder="チーム名フリガナ（アナウンスの読み）" oninput="onTeamYomi('home')">
       <div class="tlogo-box">
         <div class="tlogo-prev-wrap">
           <button type="button" class="tlogo-tap" onclick="tapTeamLogo('home')" title="タップでロゴを追加／削除">
@@ -570,7 +579,7 @@ body.locked .row{cursor:default}
       <button class="btn sub-def" onclick="openSub('home','守備交代')">守備交代</button>
     </div>
     <div class="tools">
-      <span class="coach-wrap"><span class="coach-label">監督</span><input class="coach-inp" id="coach-home" placeholder="氏名" oninput="onCoachName('home')"></span>
+      <span class="coach-wrap"><span class="coach-label">監督</span><input class="coach-inp" id="coach-home" placeholder="氏名" oninput="onCoachName('home')"><input class="coach-inp coach-yomi" id="cyomi-home" placeholder="ヨミ" oninput="onCoachYomi('home')"></span>
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
         <input type="file" accept="image/*" style="display:none" onchange="onScan(event,'home')">
       </label>
@@ -1147,6 +1156,8 @@ function pushState(){
     hnm: teamNames.home || lr.hnm || '',
     gameTitle: (document.getElementById('hdr-game-title')||{}).value || lr.gameTitle || '',
     coaches: { away:coaches.away, home:coaches.home },
+    teamYomi:  (typeof teamYomi!=='undefined')  ? { away:teamYomi.away,  home:teamYomi.home }  : undefined,
+    coachYomi: (typeof coachYomi!=='undefined') ? { away:coachYomi.away, home:coachYomi.home } : undefined,
     awayColor: (typeof _teamColorsPC!=='undefined' ? _teamColorsPC.away : undefined),
     homeColor: (typeof _teamColorsPC!=='undefined' ? _teamColorsPC.home : undefined),
     showBat: lr.showBat,
@@ -1257,13 +1268,15 @@ function saveTeam(team){
   if(!rosters[team].length){ toast('選手が登録されていません'); return; }
   const store=readStore();
   store[name]={
-    players: JSON.parse(JSON.stringify(rosters[team])),   // 打順・背番号・氏名・フリガナ・守備・敬称
-    coach:   (coaches[team]||'').trim(),
-    logo:    (typeof _teamLogos!=='undefined' ? (_teamLogos[team]||'') : ''),
-    color:   (typeof _teamColorsPC!=='undefined' ? (_teamColorsPC[team]||'') : '')
+    players:   JSON.parse(JSON.stringify(rosters[team])),   // 打順・背番号・氏名・フリガナ・守備・敬称
+    coach:     (coaches[team]||'').trim(),
+    nameYomi:  (typeof teamYomi!=='undefined'  ? (teamYomi[team]||'').trim()  : ''),
+    coachYomi: (typeof coachYomi!=='undefined' ? (coachYomi[team]||'').trim() : ''),
+    logo:      (typeof _teamLogos!=='undefined' ? (_teamLogos[team]||'') : ''),
+    color:     (typeof _teamColorsPC!=='undefined' ? (_teamColorsPC[team]||'') : '')
   };
   writeStore(store);
-  toast('「'+name+'」を保存しました（選手・監督・ロゴ・強調色）');
+  toast('「'+name+'」を保存しました（選手・読み・監督・ロゴ・強調色）');
 }
 
 let loadTarget=null;
@@ -1298,6 +1311,10 @@ function applyLoad(enc){
   coaches[loadTarget]=_c;
   var _cEl=document.getElementById('coach-'+loadTarget);
   if(_cEl) _cEl.value=_c;
+  // 読み仮名
+  if(typeof teamYomi!=='undefined')  teamYomi[loadTarget]  = _storeField(store[key],'nameYomi');
+  if(typeof coachYomi!=='undefined') coachYomi[loadTarget] = _storeField(store[key],'coachYomi');
+  if(typeof _renderYomiInputs==='function') _renderYomiInputs();
   // ロゴ（保存されているときだけ差し替え。無い保存データでは今のロゴを消さない）
   var _lg=_storeField(store[key],'logo');
   if(_lg && typeof _teamLogos!=='undefined'){
@@ -1664,6 +1681,16 @@ function applyRemote(s){
       var _tnh=document.getElementById('tname-home');
       if(_tnh && document.activeElement!==_tnh) _tnh.value=teamNames.home;
     }
+    // 読み仮名（他端末で入れたものを取り込む）
+    if(s.teamYomi && typeof teamYomi!=='undefined'){
+      if(typeof s.teamYomi.away==='string') teamYomi.away=s.teamYomi.away;
+      if(typeof s.teamYomi.home==='string') teamYomi.home=s.teamYomi.home;
+    }
+    if(s.coachYomi && typeof coachYomi!=='undefined'){
+      if(typeof s.coachYomi.away==='string') coachYomi.away=s.coachYomi.away;
+      if(typeof s.coachYomi.home==='string') coachYomi.home=s.coachYomi.home;
+    }
+    if(typeof _renderYomiInputs==='function') _renderYomiInputs();
     // チーム強調色（コントローラー等の変更を取り込む）
     if(typeof _teamColorsPC!=='undefined'){
       if(typeof s.awayColor==='string' && s.awayColor){ _teamColorsPC.away=s.awayColor; try{ localStorage.setItem('bb_clr_away', s.awayColor); }catch(e){} }
@@ -1787,6 +1814,40 @@ function onCoachName(team){
     lastRemote.coaches[team] = coaches[team];
   }
   pushState();
+}
+
+// ── 読み仮名（チーム名・監督名） ──────────────────────────────────────────
+// 画面表示は漢字のまま。ここで入れた読みは場内アナウンスの読み上げにだけ使う
+var teamYomi  = { away:'', home:'' };
+var coachYomi = { away:'', home:'' };
+
+function onTeamYomi(team){
+  var el=document.getElementById('tyomi-'+team);
+  teamYomi[team] = el ? el.value : '';
+  pushState();
+}
+function onCoachYomi(team){
+  var el=document.getElementById('cyomi-'+team);
+  coachYomi[team] = el ? el.value : '';
+  pushState();
+}
+// 読み上げ用のチーム名。読み仮名があればそれを、無ければ表示名を使う
+function _teamSay(team){
+  var y=(teamYomi[team]||'').trim();
+  if(y) return y;
+  return (team==='away' ? (teamNames.away||'先攻') : (teamNames.home||'後攻'));
+}
+// 読み上げ用の監督名。無ければ空文字（アナウンスから省く）
+function _coachSay(team){
+  return ((coachYomi[team]||'').trim() || (coaches[team]||'').trim());
+}
+function _renderYomiInputs(){
+  ['away','home'].forEach(function(t){
+    var ty=document.getElementById('tyomi-'+t);
+    if(ty && document.activeElement!==ty) ty.value=teamYomi[t]||'';
+    var cy=document.getElementById('cyomi-'+t);
+    if(cy && document.activeElement!==cy) cy.value=coachYomi[t]||'';
+  });
 }
 
 // ── 試合名 ────────────────────────────────────────────────────────────────
@@ -2705,7 +2766,7 @@ function announceSubs(){
       roll.push((POS_YOMI[code] || '') + '、' + nm + _hon(p) + (p.num ? '、背番号' + p.num : ''));
     });
   }
-  var tn = team ? ((team==='away' ? teamNames.away : teamNames.home) || (team==='away'?'先攻':'後攻')) : '';
+  var tn = team ? _teamSay(team) : '';
   var txt = (tn ? tn + 'の' : '') + '守備の交代をお知らせします。' + moves.join('。') + '。'
           + (roll.length ? roll.join('。') + '。' : '')
           + '以上となります。';
@@ -3266,8 +3327,7 @@ function announceCurrentInning(){
     isTop = !tb || tb.textContent.indexOf('表')>=0;
     innNo = iv ? (Number(iv.textContent)||1) : 1;
   }
-  var team = isTop ? (s.aab||teamNames.away||'先攻')
-                   : (s.hnm||teamNames.home||'後攻');
+  var team = _teamSay(isTop ? 'away' : 'home');
   var txt = innNo+'回'+(isTop?'おもて':'うら')+'、'+team+'の攻撃は';
   var lead = _leadoffPhrase(isTop);
   if(lead) txt += '、' + lead;
@@ -3291,7 +3351,7 @@ function _lineupText(team){
   var roster = (rosters[team] || []).filter(function(p){ return p.order; })
     .sort(function(a,b){ return Number(a.order) - Number(b.order); });
   if(!roster.length) return '';
-  var tn = (team === 'away' ? teamNames.away : teamNames.home) || (team === 'away' ? '先攻' : '後攻');
+  var tn = _teamSay(team);
   var lines = roster.map(function(p){
     var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
     var nm = String(p.yomi || p.name || '').trim();
@@ -3299,14 +3359,16 @@ function _lineupText(team){
     return p.order + '番、' + (pl ? pl + '、' : '') + nm + _hon(p);
   }).filter(Boolean);
   if(!lines.length) return '';
-  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。以上です。';
+  var cs = _coachSay(team);
+  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。'
+       + (cs ? '監督、' + cs + '。' : '') + '以上です。';
 }
 
 var _DEF_SEQ = ['1','2','3','4','5','6','7','8','9'];
 function _defenseText(team){
   var roster = rosters[team] || [];
   if(!roster.length) return '';
-  var tn = (team === 'away' ? teamNames.away : teamNames.home) || (team === 'away' ? '先攻' : '後攻');
+  var tn = _teamSay(team);
   var parts = [];
   _DEF_SEQ.forEach(function(code){
     var lab = posLabel(code);
@@ -3506,14 +3568,14 @@ function announceSituation(){
   var s = lastRemote || {};
   var isTop = s.top!==false;
   var innNo = s.inn || 1;
-  var atk = isTop ? (s.aab||teamNames.away||'先攻') : (s.hnm||teamNames.home||'後攻');
+  var atk = _teamSay(isTop ? 'away' : 'home');
 
   var asc = s.asc||[], hsc = s.hsc||[];
   var sum = function(a){ return a.filter(function(v){ return typeof v==='number'; })
     .reduce(function(x,y){ return x+y; },0); };
   var at = sum(asc), ht = sum(hsc);
-  var an = s.aab||teamNames.away||'先攻';
-  var hn = s.hnm||teamNames.home||'後攻';
+  var an = _teamSay('away');
+  var hn = _teamSay('home');
 
   var parts = [];
   parts.push(innNo+'回'+(isTop?'おもて':'うら')+'、'+atk+'の攻撃。');

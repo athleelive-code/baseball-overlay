@@ -1803,9 +1803,8 @@ function announceSituation(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
 
   var isTop = st.top;
-  var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
-  var an = na ? na.textContent : '先攻';
-  var hn = nh ? nh.textContent : '後攻';
+  var an = _teamSay('away');
+  var hn = _teamSay('home');
   var atk = isTop ? an : hn;
 
   var sum=function(a){ return a.filter(function(v){ return typeof v==='number'; })
@@ -1896,10 +1895,22 @@ function announceCurrentBatter(){
 }
 
 // 現在のイニングを読み上げる（確認ウインドウなし・「〜の攻撃は」＋その回の先頭打者をセット）
+// 読み上げ用のチーム名／監督名。ROSTER で入れた読み仮名があればそれを使う
+var _teamYomi  = { away:'', home:'' };
+var _coachYomi = { away:'', home:'' };
+function _teamSay(team){
+  var y=(_teamYomi[team]||'').trim();
+  if(y) return y;
+  var el=document.getElementById('name-'+team);
+  return (el && el.textContent) ? el.textContent : (team==='away'?'先攻':'後攻');
+}
+function _coachSay(team){
+  return ((_coachYomi[team]||'').trim() || (_coaches[team]||'').trim());
+}
+
 function announceCurrentInning(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
-  var teamEl = st.top ? document.getElementById('name-away') : document.getElementById('name-home');
-  var team = teamEl ? teamEl.textContent : (st.top ? '先攻' : '後攻');
+  var team = _teamSay(st.top ? 'away' : 'home');
   var txt = st.inn+'回'+(st.top?'おもて':'うら')+'、'+team+'の攻撃は';
   var sel = document.getElementById('sel-batter');
   if(sel && sel.value){
@@ -1918,8 +1929,7 @@ function _lineupText(team){
   var roster = (rosters[team] || []).filter(function(p){ return p.order; })
     .sort(function(a,b){ return Number(a.order) - Number(b.order); });
   if(!roster.length) return '';
-  var nameEl = document.getElementById(team === 'away' ? 'name-away' : 'name-home');
-  var tn = nameEl ? nameEl.textContent : (team === 'away' ? '先攻' : '後攻');
+  var tn = _teamSay(team);
   var lines = roster.map(function(p){
     var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
     var nm = String(p.yomi || p.name || '').trim();
@@ -1927,7 +1937,9 @@ function _lineupText(team){
     return p.order + '番、' + (pl ? pl + '、' : '') + nm + _hon(p);
   }).filter(Boolean);
   if(!lines.length) return '';
-  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。以上です。';
+  var cs = _coachSay(team);
+  return tn + 'のスターティングメンバーをお知らせします。' + lines.join('。') + '。'
+       + (cs ? '監督、' + cs + '。' : '') + '以上です。';
 }
 
 // 守備位置順（投→捕→一→二→三→遊→左→中→右）の文言（背番号なし）
@@ -1935,8 +1947,7 @@ var _DEF_SEQ = ['1','2','3','4','5','6','7','8','9'];
 function _defenseText(team){
   var roster = rosters[team] || [];
   if(!roster.length) return '';
-  var nameEl = document.getElementById(team === 'away' ? 'name-away' : 'name-home');
-  var tn = nameEl ? nameEl.textContent : (team === 'away' ? '先攻' : '後攻');
+  var tn = _teamSay(team);
   var parts = [];
   _DEF_SEQ.forEach(function(code){
     var lab = posLabel(code);
@@ -2048,8 +2059,7 @@ function prebuildVoices(){
       if(s) texts.push(s);
     });
   });
-  var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
-  var an=na?na.textContent:'先攻', hn=nh?nh.textContent:'後攻';
+  var an=_teamSay('away'), hn=_teamSay('home');
   for(var i=1;i<=10;i++){
     texts.push(i+'回おもて、'+an+'の攻撃は');
     texts.push(i+'回うら、'+hn+'の攻撃は');
@@ -3987,13 +3997,15 @@ function saveTeamRoster(side){
   if(!roster.length){ alert('選手が登録されていません'); return; }
   var store=_getRosterStore();
   store[teamName]={
-    players: roster,                                  // 打順・背番号・氏名・フリガナ・守備
-    coach:   (_coaches[side]||'').trim(),
-    logo:    (typeof _teamLogos!=='undefined' ? (_teamLogos[side]||'') : ''),
-    color:   (typeof _teamColors!=='undefined' ? (_teamColors[side]||'') : '')
+    players:   roster,                                  // 打順・背番号・氏名・フリガナ・守備
+    coach:     (_coaches[side]||'').trim(),
+    nameYomi:  (_teamYomi[side]||'').trim(),
+    coachYomi: (_coachYomi[side]||'').trim(),
+    logo:      (typeof _teamLogos!=='undefined' ? (_teamLogos[side]||'') : ''),
+    color:     (typeof _teamColors!=='undefined' ? (_teamColors[side]||'') : '')
   };
   _setRosterStore(store);
-  alert('"'+teamName+'" を保存しました（選手'+roster.length+'名・監督・ロゴ・強調色）');
+  alert('"'+teamName+'" を保存しました（選手'+roster.length+'名・読み・監督・ロゴ・強調色）');
 }
 // 保存済みチームの一覧パネル。設定ドロワー側と👤ドロワー側の両方に同じものを描く
 function _savedRosterPanels(side){
@@ -4053,9 +4065,11 @@ function applyTeamRoster(side,encodedName){
   var clrLbl=document.getElementById('clr-'+side+'-lbl');
   if(clrLbl) clrLbl.textContent=teamName;
   _fillTeamNameInputs(side, teamName);
-  // 監督名
+  // 監督名・読み仮名
   var _c=_storeField(entry,'coach');
   if(_c) _coaches[side]=_c;
+  _teamYomi[side]  = _storeField(entry,'nameYomi');
+  _coachYomi[side] = _storeField(entry,'coachYomi');
   // ロゴ（保存されているときだけ差し替え）
   var _lg=_storeField(entry,'logo');
   if(_lg && typeof _teamLogos!=='undefined'){
@@ -4563,6 +4577,15 @@ function applyPcEdit(s){
       if(typeof s.coaches.away==='string') _coaches.away=s.coaches.away;
       if(typeof s.coaches.home==='string') _coaches.home=s.coaches.home;
     }
+    // 読み仮名（アナウンスの読み上げに使う）
+    if(s.teamYomi){
+      if(typeof s.teamYomi.away==='string') _teamYomi.away=s.teamYomi.away;
+      if(typeof s.teamYomi.home==='string') _teamYomi.home=s.teamYomi.home;
+    }
+    if(s.coachYomi){
+      if(typeof s.coachYomi.away==='string') _coachYomi.away=s.coachYomi.away;
+      if(typeof s.coachYomi.home==='string') _coachYomi.home=s.coachYomi.home;
+    }
 
     if(typeof s.gameTitle==='string'){
       var gt=document.getElementById('game-title');
@@ -4978,6 +5001,8 @@ function _doBroadcast(){
     _ctl:true,
     gameTitle:_getGameTitle(),
     coaches:{away:_coaches.away,home:_coaches.home},
+    teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
+    coachYomi:{away:_coachYomi.away,home:_coachYomi.home},
     abPitch:_abPitchCount(), abFoul:_abFoulCount(), abBallSeq:_abBallSeqCalc(),
     strikeSlots:_strikeSlots(),
     abLog:_abLog.slice(),
@@ -5026,6 +5051,8 @@ function saveState(){
       lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
       gameTitle:_getGameTitle(),
     coaches:{away:_coaches.away,home:_coaches.home},
+    teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
+    coachYomi:{away:_coachYomi.away,home:_coachYomi.home},
       savedAt:Date.now()
     };
     localStorage.setItem('bb_state',JSON.stringify(snap));
@@ -5063,6 +5090,15 @@ function restoreState(){
     if(snap.coaches){
       _coaches.away=snap.coaches.away||'';
       _coaches.home=snap.coaches.home||'';
+    }
+    // 読み仮名を復元
+    if(snap.teamYomi){
+      _teamYomi.away=snap.teamYomi.away||'';
+      _teamYomi.home=snap.teamYomi.home||'';
+    }
+    if(snap.coachYomi){
+      _coachYomi.away=snap.coachYomi.away||'';
+      _coachYomi.home=snap.coachYomi.home||'';
     }
     // 試合タイトルを復元
     if(typeof snap.gameTitle==='string'){
