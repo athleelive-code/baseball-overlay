@@ -142,6 +142,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .gs-btn{width:100%;background:#242426;border:2px solid #3a3a3c;border-radius:12px;color:#ddd;
   font-size:24px;font-weight:800;padding:15px 12px;cursor:pointer;text-align:left}
 .gs-desc{font-size:17px;color:#666;margin-top:4px;padding-left:2px}
+.gs-st{color:#7aa87a}
+.gs-st.ng{color:#e08a8a;font-weight:700}
 .gs-row.gs-cur .gs-no{color:#f5c518}
 .gs-row.gs-cur .gs-btn{background:#3a2a10;border-color:#c8901e;color:#ffcf6a;
   box-shadow:0 0 0 3px rgba(245,197,24,.35)}
@@ -966,10 +968,13 @@ body.gamemin .gm-hide{display:none!important}
       <div class="drawer-sec-t">クーリング中のBGM</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">
         クーリングタイムの間だけ流します。<b style="color:#8ac0ff">音を鳴らす端末</b>で登録してください。<br>
-        曲を登録しなければ、その場で作る穏やかな環境音を流します。<br>
+        曲を登録しなければ、既定では何も鳴りません。<br>
         <b style="color:#c8a8ff">配信に乗るので、曲は著作権の心配がないものを使ってください</b>
       </div>
-      <div id="bgm-name" style="font-size:22px;color:#777;background:#242426;border:1px solid #3a3a3c;border-radius:10px;padding:12px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未登録（環境音を流します）</div>
+      <div id="bgm-name" style="font-size:22px;color:#777;background:#242426;border:1px solid #3a3a3c;border-radius:10px;padding:12px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未登録</div>
+      <button id="btn-bgm-chime" onclick="toggleBgmChime()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:22px;font-weight:700;padding:13px;cursor:pointer;margin-bottom:8px">
+        🔔 曲が無いときチャイム OFF
+      </button>
       <div style="display:flex;gap:8px">
         <label style="flex:2;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ddd;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer;text-align:center;margin:0">
           曲を選ぶ<input type="file" accept="audio/*" style="display:none" onchange="bgmPick(this)">
@@ -2120,6 +2125,8 @@ function stopSiren(){
 // 曲は大きいので localStorage ではなく IndexedDB に置く（Blob のまま持つ）。
 var _bgmVol = 0.35;
 try{ var _bv=localStorage.getItem('bb_bgm_vol'); if(_bv!=null) _bgmVol=Math.max(0,Math.min(1,Number(_bv))); }catch(e){}
+var _bgmChime = false;   // 曲が無いときにチャイムを流すか。既定は鳴らさない
+try{ var _bc=localStorage.getItem('bb_bgm_chime'); if(_bc!=null) _bgmChime=(_bc==='1'); }catch(e){}
 var _bgmName = '';
 try{ _bgmName = localStorage.getItem('bb_bgm_name') || ''; }catch(e){}
 var _bgmBlob = null, _bgmUrl = '', _bgmEl = null, _bgmFade = null, _bgmSynth = null, _bgmOn = false;
@@ -2170,9 +2177,15 @@ function bgmClear(){
 }
 function bgmTest(){
   if(_bgmOn){ _bgmStop(); _refreshBgmUI(); return; }
-  var saved=_audioHere; _audioHere=true;   // 試聴はこの端末で鳴らす
+  var sa=_audioHere, sc=_bgmChime;
+  _audioHere=true; if(!_bgmUrl) _bgmChime=true;   // 試聴はこの端末で、設定に関わらず鳴らす
   _bgmStart();
-  _audioHere=saved;
+  _audioHere=sa; _bgmChime=sc;
+  _refreshBgmUI();
+}
+function toggleBgmChime(){
+  _bgmChime=!_bgmChime;
+  try{ localStorage.setItem('bb_bgm_chime', _bgmChime?'1':'0'); }catch(e){}
   _refreshBgmUI();
 }
 function adjBgmVol(d){
@@ -2184,12 +2197,20 @@ function adjBgmVol(d){
 function _refreshBgmUI(){
   var n=document.getElementById('bgm-name');
   if(n){
-    n.textContent = _bgmName ? _bgmName : (_bgmBlob ? '登録済み' : '未登録（環境音を流します）');
+    n.textContent = _bgmName ? _bgmName : (_bgmBlob ? '登録済み' : '未登録');
     n.style.color = (_bgmName||_bgmBlob) ? '#ddd' : '#777';
   }
   var d=document.getElementById('bgm-del'); if(d) d.style.display = _bgmBlob ? '' : 'none';
   var v=document.getElementById('bgm-vol-val'); if(v) v.textContent = Math.round(_bgmVol*100)+'%';
   var t=document.getElementById('bgm-test'); if(t) t.textContent = _bgmOn ? '⏹ 試聴を止める' : '▶ 試聴';
+  var c=document.getElementById('btn-bgm-chime');
+  if(c){
+    c.textContent = _bgmChime ? '🔔 曲が無いときチャイム ON' : '🔔 曲が無いときチャイム OFF';
+    c.style.background  = _bgmChime ? '#1a3a1a' : '#2c2c2e';
+    c.style.borderColor = _bgmChime ? '#3a6a2a' : '#444';
+    c.style.color       = _bgmChime ? '#86c867' : '#999';
+    c.style.display     = _bgmBlob ? 'none' : '';
+  }
 }
 
 function _bgmFadeTo(target, ms, done){
@@ -2212,7 +2233,30 @@ function _bgmStartFile(){
   _bgmFadeTo(_bgmVol, 2500);
   return true;
 }
-// 曲が無いときの環境音。和音をうすく重ね、それぞれ違う速さでゆっくり揺らす
+// 曲が無いときに流す音。
+// 音を伸ばしっぱなしにすると唸りに聞こえるので、鳴らさない時間を挟んで、
+// オルゴールのような減衰する音を1つずつ置いていく。
+// 音階は5音（ペンタトニック）なので、どの順に出しても濁らない。
+var BGM_SCALE = [523.25, 587.33, 659.25, 783.99, 880.00,   // C5 D5 E5 G5 A5
+                 1046.50, 1174.66, 1318.51];                // C6 D6 E6
+function _bgmBell(ctx, out, freq, at, vel){
+  var o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(freq, at);
+  // 立ち上がりは速く、余韻は長く。鐘に近い形
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(vel, at+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, at+3.4);
+  // 倍音をひとつ足して硬さを出す
+  var o2=ctx.createOscillator(), g2=ctx.createGain();
+  o2.type='sine'; o2.frequency.setValueAtTime(freq*2, at);
+  g2.gain.setValueAtTime(0.0001, at);
+  g2.gain.linearRampToValueAtTime(vel*0.22, at+0.02);
+  g2.gain.exponentialRampToValueAtTime(0.0001, at+1.6);
+  o.connect(g); g.connect(out);
+  o2.connect(g2); g2.connect(out);
+  o.start(at); o.stop(at+3.6);
+  o2.start(at); o2.stop(at+1.8);
+}
 function _bgmStartSynth(){
   try{
     var AC=window.AudioContext||window.webkitAudioContext;
@@ -2220,42 +2264,46 @@ function _bgmStartSynth(){
     if(!_sirenCtx) _sirenCtx=new AC();
     var ctx=_sirenCtx;
     if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
-    var t0=ctx.currentTime;
     var out=ctx.createGain();
-    out.gain.setValueAtTime(0.0001,t0);
-    out.gain.linearRampToValueAtTime(_bgmVol*0.5, t0+3);
-    var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900;
-    lp.connect(out); out.connect(ctx.destination);
-    var freqs=[196.00,246.94,293.66,392.00], nodes=[];
-    freqs.forEach(function(f,i){
-      var o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
-      var g=ctx.createGain(); g.gain.value=0.16;
-      var lfo=ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.05+i*0.017;
-      var lg=ctx.createGain(); lg.gain.value=0.09;
-      lfo.connect(lg); lg.connect(g.gain);
-      o.connect(g); g.connect(lp);
-      o.start(t0); lfo.start(t0);
-      nodes.push(o); nodes.push(lfo);
-    });
-    _bgmSynth={ ctx:ctx, out:out, nodes:nodes };
+    out.gain.setValueAtTime(_bgmVol*0.5, ctx.currentTime);
+    var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3200;
+    out.connect(lp); lp.connect(ctx.destination);
+    var prev=-1;
+    var tick=function(){
+      if(!_bgmSynth) return;
+      // 同じ音が続かないように選ぶ
+      var i; do{ i=Math.floor(Math.random()*BGM_SCALE.length); }while(i===prev && BGM_SCALE.length>1);
+      prev=i;
+      _bgmBell(ctx, out, BGM_SCALE[i], ctx.currentTime+0.02, 0.20);
+      // たまに三度上を重ねて和音にする
+      if(Math.random()<0.35){
+        var j=Math.min(BGM_SCALE.length-1, i+2);
+        _bgmBell(ctx, out, BGM_SCALE[j], ctx.currentTime+0.14, 0.12);
+      }
+      _bgmSynth.timer=setTimeout(tick, 1900+Math.random()*1600);
+    };
+    _bgmSynth={ ctx:ctx, out:out, timer:null };
+    tick();
     return true;
   }catch(e){ return false; }
 }
 function _bgmStopSynth(){
   if(!_bgmSynth) return;
   try{
+    if(_bgmSynth.timer) clearTimeout(_bgmSynth.timer);
     var s=_bgmSynth, t=s.ctx.currentTime;
     s.out.gain.cancelScheduledValues(t);
     s.out.gain.setValueAtTime(s.out.gain.value, t);
-    s.out.gain.linearRampToValueAtTime(0.0001, t+2);
-    s.nodes.forEach(function(o){ try{ o.stop(t+2.1); }catch(e){} });
+    s.out.gain.linearRampToValueAtTime(0.0001, t+1.2);
   }catch(e){}
   _bgmSynth=null;
 }
 function _bgmStart(){
   if(_bgmOn || !_audioHere) return;
-  _bgmOn=true;
-  if(!_bgmStartFile()) _bgmStartSynth();
+  // 曲があればそれを流す。無いときは、チャイムを流す設定のときだけ鳴らす
+  if(_bgmUrl){ _bgmOn=true; if(!_bgmStartFile()){ _bgmOn=false; return; } }
+  else if(_bgmChime){ _bgmOn=true; if(!_bgmStartSynth()){ _bgmOn=false; return; } }
+  else return;
   _refreshBgmUI();
 }
 function _bgmStop(){
@@ -2382,26 +2430,60 @@ function gsReset(){
   _gsShowCheck();
 }
 
+// 押す前に、その段が実行できる状態かを見せる。
+// 「押しても何も起きない」で悩まずに済むよう、足りないものを先に出す。
+function _gsReady(k){
+  var team = (k==='lu1') ? 'away' : 'home';
+  if(k==='lu1' || k==='lu2'){
+    var r=rosters[team]||[];
+    if(!r.length) return { ok:false, t:'選手が未登録です' };
+    var ord=r.filter(function(p){ return p.order; });
+    if(!ord.length) return { ok:false, t:'打順が入っていません' };
+    return { ok:true, t:ord.length+'人・打順あり' };
+  }
+  if(k==='def'){
+    var rr=rosters['home']||[];
+    if(!rr.length) return { ok:false, t:'後攻の選手が未登録です' };
+    var n=0;
+    for(var i=1;i<=9;i++){
+      var code=String(i), lab=posLabel(code);
+      if(rr.some(function(p){ return posLabel(p.pos)===lab || String(p.pos)===code; })) n++;
+    }
+    if(!n) return { ok:false, t:'守備位置が入っていません' };
+    return { ok:(n>=9), t:'守備位置 '+n+'／9人' };
+  }
+  if(k==='open'){
+    var el=document.getElementById('game-title');
+    var t=(el && el.value ? el.value.trim() : '');
+    return { ok:true, t: t ? ('試合名：'+t) : '試合名なしで読み上げます' };
+  }
+  return null;
+}
 function _gsRender(){
   var box=document.getElementById('gs-steps');
   if(!box) return;
+  var esc=function(s){ return String(s||'').replace(/[<>&]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); };
   box.innerHTML = GS_STEPS.map(function(s,i){
     var done=!!_gsDone[s.k];
     var cur=(!done && i===_gsIdx);
+    var rd=_gsReady(s.k);
+    var desc = rd ? ('<span class="gs-st'+(rd.ok?'':' ng')+'">'+(rd.ok?'✓ ':'⚠ ')+esc(rd.t)+'</span>') : esc(s.d);
     return '<div class="gs-row'+(done?' gs-done':(cur?' gs-cur':''))+'">'
       +'<span class="gs-no">'+(done?'✓':(i+1))+'</span>'
       +'<div class="gs-body">'
         +'<button class="gs-btn" onclick="gsDo(\''+s.k+'\')">'+_gsLabel(s)+'</button>'
-        +'<div class="gs-desc">'+s.d+'</div>'
+        +'<div class="gs-desc">'+desc+'</div>'
       +'</div>'
     +'</div>';
   }).join('');
 }
 function _gsMark(k){
   _gsDone[k]=true;
-  // 次にやる段＝まだ済んでいない一番上の段
+  // 次にやる段は「いま押した段より下」で、まだ済んでいない一番上。
+  // 飛ばした段があっても、そこへ戻らず先へ進む
+  var at=_gsAt(k);
   _gsIdx=GS_STEPS.length;
-  for(var i=0;i<GS_STEPS.length;i++){ if(!_gsDone[GS_STEPS[i].k]){ _gsIdx=i; break; } }
+  for(var i=at+1;i<GS_STEPS.length;i++){ if(!_gsDone[GS_STEPS[i].k]){ _gsIdx=i; break; } }
   _gsSave();
   _gsRender();
 }
@@ -2537,8 +2619,8 @@ function _coolingStartTick(){
   _coolingTick = setInterval(function(){
     if(!_cooling.on){ _coolingStopTick(); return; }
     var left = _coolingRemain();
-    // 残り12秒で予告。音声の生成に数秒かかることがあるので、少し早めに出す
-    if(!_coolingSoonSaid && left > 0 && left <= 12){
+    // 残り30秒で予告
+    if(!_coolingSoonSaid && left > 0 && left <= 30){
       _coolingSoonSaid = true;
       if(_annOn){
         // 声が埋もれないよう、その間だけ音楽を下げる
@@ -2555,7 +2637,7 @@ function _coolingStopTick(){
   if(typeof _bgmStop==='function') _bgmStop();
 }
 function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
-function _coolingSoonText(){ return '間もなく試合再開です。'; }
+function _coolingSoonText(){ return '間もなく試合再開です、クーリングタイムを終了します。'; }
 
 function startCooling(){
   _cooling.on = true;

@@ -932,10 +932,11 @@ body.locked .row{cursor:default}
       <div class="set-lbl">クーリング中のBGM</div>
       <div class="note" style="margin-bottom:10px">
         クーリングタイムの間だけ流します。<b style="color:#8ac0ff">音を鳴らす端末</b>で登録してください。<br>
-        曲を登録しなければ、その場で作る穏やかな環境音を流します。<br>
+        曲を登録しなければ、既定では何も鳴りません。<br>
         <b style="color:#c8a8ff">配信に乗るので、曲は著作権の心配がないものを使ってください</b>
       </div>
-      <div id="bgm-name" style="font-size:14px;color:#777;background:#242426;border:1px solid #3a3a3c;border-radius:8px;padding:10px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未登録（環境音を流します）</div>
+      <div id="bgm-name" style="font-size:14px;color:#777;background:#242426;border:1px solid #3a3a3c;border-radius:8px;padding:10px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未登録</div>
+      <button class="btn" id="btn-bgm-chime" style="width:100%;font-size:14px;padding:12px;margin-bottom:8px" onclick="toggleBgmChime()">🔔 曲が無いときチャイム OFF</button>
       <div style="display:flex;gap:8px">
         <label class="btn" style="flex:2;font-size:14px;padding:12px;text-align:center;cursor:pointer;margin:0">
           曲を選ぶ<input type="file" accept="audio/*" style="display:none" onchange="bgmPick(this)">
@@ -2157,6 +2158,8 @@ function stopSiren(){
 // 鳴らすのは「この端末で音声を再生する」がONの端末だけ。コントローラー側と同じ作り。
 var _bgmVol = 0.35;
 try{ var _bv=localStorage.getItem('bb_bgm_vol'); if(_bv!=null) _bgmVol=Math.max(0,Math.min(1,Number(_bv))); }catch(e){}
+var _bgmChime = false;   // 曲が無いときにチャイムを流すか。既定は鳴らさない
+try{ var _bc=localStorage.getItem('bb_bgm_chime'); if(_bc!=null) _bgmChime=(_bc==='1'); }catch(e){}
 var _bgmName = '';
 try{ _bgmName = localStorage.getItem('bb_bgm_name') || ''; }catch(e){}
 var _bgmBlob = null, _bgmUrl = '', _bgmEl = null, _bgmFade = null, _bgmSynth = null, _bgmOn = false;
@@ -2207,9 +2210,15 @@ function bgmClear(){
 }
 function bgmTest(){
   if(_bgmOn){ _bgmStop(); _refreshBgmUI(); return; }
-  var saved=_audioHere; _audioHere=true;   // 試聴はこの端末で鳴らす
+  var sa=_audioHere, sc=_bgmChime;
+  _audioHere=true; if(!_bgmUrl) _bgmChime=true;   // 試聴はこの端末で、設定に関わらず鳴らす
   _bgmStart();
-  _audioHere=saved;
+  _audioHere=sa; _bgmChime=sc;
+  _refreshBgmUI();
+}
+function toggleBgmChime(){
+  _bgmChime=!_bgmChime;
+  try{ localStorage.setItem('bb_bgm_chime', _bgmChime?'1':'0'); }catch(e){}
   _refreshBgmUI();
 }
 function adjBgmVol(d){
@@ -2221,12 +2230,17 @@ function adjBgmVol(d){
 function _refreshBgmUI(){
   var n=document.getElementById('bgm-name');
   if(n){
-    n.textContent = _bgmName ? _bgmName : (_bgmBlob ? '登録済み' : '未登録（環境音を流します）');
+    n.textContent = _bgmName ? _bgmName : (_bgmBlob ? '登録済み' : '未登録');
     n.style.color = (_bgmName||_bgmBlob) ? '#ddd' : '#777';
   }
   var d=document.getElementById('bgm-del'); if(d) d.style.display = _bgmBlob ? '' : 'none';
   var v=document.getElementById('bgm-vol-val'); if(v) v.textContent = Math.round(_bgmVol*100)+'%';
   var t=document.getElementById('bgm-test'); if(t) t.textContent = _bgmOn ? '⏹ 試聴を止める' : '▶ 試聴';
+  var c=document.getElementById('btn-bgm-chime');
+  if(c){
+    _tapBtnPaint(c, _bgmChime, '🔔 曲が無いときチャイム ON', '🔔 曲が無いときチャイム OFF');
+    c.style.display = _bgmBlob ? 'none' : '';
+  }
 }
 
 function _bgmFadeTo(target, ms, done){
@@ -2249,7 +2263,28 @@ function _bgmStartFile(){
   _bgmFadeTo(_bgmVol, 2500);
   return true;
 }
-// 曲が無いときの環境音。和音をうすく重ね、それぞれ違う速さでゆっくり揺らす
+// 曲が無いときに流す音。
+// 音を伸ばしっぱなしにすると唸りに聞こえるので、鳴らさない時間を挟んで、
+// オルゴールのような減衰する音を1つずつ置いていく。
+// 音階は5音（ペンタトニック）なので、どの順に出しても濁らない。
+var BGM_SCALE = [523.25, 587.33, 659.25, 783.99, 880.00,
+                 1046.50, 1174.66, 1318.51];
+function _bgmBell(ctx, out, freq, at, vel){
+  var o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(freq, at);
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(vel, at+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, at+3.4);
+  var o2=ctx.createOscillator(), g2=ctx.createGain();
+  o2.type='sine'; o2.frequency.setValueAtTime(freq*2, at);
+  g2.gain.setValueAtTime(0.0001, at);
+  g2.gain.linearRampToValueAtTime(vel*0.22, at+0.02);
+  g2.gain.exponentialRampToValueAtTime(0.0001, at+1.6);
+  o.connect(g); g.connect(out);
+  o2.connect(g2); g2.connect(out);
+  o.start(at); o.stop(at+3.6);
+  o2.start(at); o2.stop(at+1.8);
+}
 function _bgmStartSynth(){
   try{
     var AC=window.AudioContext||window.webkitAudioContext;
@@ -2257,42 +2292,44 @@ function _bgmStartSynth(){
     if(!_sirenCtx) _sirenCtx=new AC();
     var ctx=_sirenCtx;
     if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
-    var t0=ctx.currentTime;
     var out=ctx.createGain();
-    out.gain.setValueAtTime(0.0001,t0);
-    out.gain.linearRampToValueAtTime(_bgmVol*0.5, t0+3);
-    var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900;
-    lp.connect(out); out.connect(ctx.destination);
-    var freqs=[196.00,246.94,293.66,392.00], nodes=[];
-    freqs.forEach(function(f,i){
-      var o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
-      var g=ctx.createGain(); g.gain.value=0.16;
-      var lfo=ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.05+i*0.017;
-      var lg=ctx.createGain(); lg.gain.value=0.09;
-      lfo.connect(lg); lg.connect(g.gain);
-      o.connect(g); g.connect(lp);
-      o.start(t0); lfo.start(t0);
-      nodes.push(o); nodes.push(lfo);
-    });
-    _bgmSynth={ ctx:ctx, out:out, nodes:nodes };
+    out.gain.setValueAtTime(_bgmVol*0.5, ctx.currentTime);
+    var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3200;
+    out.connect(lp); lp.connect(ctx.destination);
+    var prev=-1;
+    var tick=function(){
+      if(!_bgmSynth) return;
+      var i; do{ i=Math.floor(Math.random()*BGM_SCALE.length); }while(i===prev && BGM_SCALE.length>1);
+      prev=i;
+      _bgmBell(ctx, out, BGM_SCALE[i], ctx.currentTime+0.02, 0.20);
+      if(Math.random()<0.35){
+        var j=Math.min(BGM_SCALE.length-1, i+2);
+        _bgmBell(ctx, out, BGM_SCALE[j], ctx.currentTime+0.14, 0.12);
+      }
+      _bgmSynth.timer=setTimeout(tick, 1900+Math.random()*1600);
+    };
+    _bgmSynth={ ctx:ctx, out:out, timer:null };
+    tick();
     return true;
   }catch(e){ return false; }
 }
 function _bgmStopSynth(){
   if(!_bgmSynth) return;
   try{
+    if(_bgmSynth.timer) clearTimeout(_bgmSynth.timer);
     var s=_bgmSynth, t=s.ctx.currentTime;
     s.out.gain.cancelScheduledValues(t);
     s.out.gain.setValueAtTime(s.out.gain.value, t);
-    s.out.gain.linearRampToValueAtTime(0.0001, t+2);
-    s.nodes.forEach(function(o){ try{ o.stop(t+2.1); }catch(e){} });
+    s.out.gain.linearRampToValueAtTime(0.0001, t+1.2);
   }catch(e){}
   _bgmSynth=null;
 }
 function _bgmStart(){
   if(_bgmOn || !_audioHere) return;
-  _bgmOn=true;
-  if(!_bgmStartFile()) _bgmStartSynth();
+  // 曲があればそれを流す。無いときは、チャイムを流す設定のときだけ鳴らす
+  if(_bgmUrl){ _bgmOn=true; if(!_bgmStartFile()){ _bgmOn=false; return; } }
+  else if(_bgmChime){ _bgmOn=true; if(!_bgmStartSynth()){ _bgmOn=false; return; } }
+  else return;
   _refreshBgmUI();
 }
 function _bgmStop(){
@@ -2318,7 +2355,7 @@ function _bgmDuck(on){
 
 // 読み上げる文言。コントローラー側と同じにしておくこと（音声の使い回しが効く）
 function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
-function _coolingSoonText(){ return '間もなく試合再開です。'; }
+function _coolingSoonText(){ return '間もなく試合再開です、クーリングタイムを終了します。'; }
 
 function _coolingRemain(){
   if(!_cooling.on) return 0;

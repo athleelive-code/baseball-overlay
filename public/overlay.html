@@ -240,7 +240,7 @@ body.has-ticker .ov-bat-wrap{bottom:142px}
 @keyframes coolAdIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){ .ov-cool-ads.fade{animation:none} }
 .ov-cool-note{font-size:15px;color:rgba(255,255,255,.5);letter-spacing:2px}
-/* 残り10秒。読み上げと合わせて、色で再開が近いことを知らせる */
+/* 残り30秒。読み上げと合わせて、色で再開が近いことを知らせる */
 .ov-cool.soon .ov-cool-n{color:#ffd24a}
 .ov-cool.soon .ov-cool-note{color:rgba(255,210,74,.95)}
 
@@ -1108,8 +1108,8 @@ function _coolPaint(){
   if(!box) return;
   var left = Math.max(0, Math.ceil((_coolEndsAt - Date.now())/1000));
   if(n) n.textContent=_coolFmt(left);
-  // 残り10秒からは色を変えて、再開が近いことを見て分かるようにする
-  box.classList.toggle('soon', left>0 && left<=10);
+  // 残り30秒からは色を変えて、再開が近いことを見て分かるようにする
+  box.classList.toggle('soon', left>0 && left<=30);
   if(left<=0) applyCooling({on:false});
 }
 function applyCooling(c){
