@@ -2061,6 +2061,9 @@ var _coolingMin = 5;
 try{ var _cm=localStorage.getItem('bb_cooling_min'); if(_cm!=null) _coolingMin=Math.max(1,Math.min(30,Number(_cm)||5)); }catch(e){}
 var _cooling = { on:false, endsAt:0 };
 var _coolingTick = null;
+// 読み上げる文言。コントローラー側と同じにしておくこと（音声の使い回しが効く）
+function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
+function _coolingSoonText(){ return '間もなく試合再開です。'; }
 
 function _coolingRemain(){
   if(!_cooling.on) return 0;
@@ -2074,6 +2077,7 @@ function adjCoolingMin(d){
   _coolingMin = Math.max(1, Math.min(30, _coolingMin + d));
   try{ localStorage.setItem('bb_cooling_min', _coolingMin); }catch(e){}
   _refreshCoolingUI();
+  if(typeof _warmFixedVoices==='function') _warmFixedVoices();  // 分数が変われば文言も変わる
 }
 function _refreshCoolingUI(){
   var v=document.getElementById('cool-min-val');
@@ -3170,9 +3174,25 @@ var POS_YOMI={
 var POS_KANJI={ 'P':'投','C':'捕','1B':'一','2B':'二','3B':'三','SS':'遊','LF':'左','CF':'中','RF':'右','DH':'指' };
 function _posKanji(pos){ return POS_KANJI[posLabel(pos)] || ''; }
 
+// 選手やチーム名に関係なく、いつも同じ文言は起動時に黙って作って保存しておく。
+// この端末で音を鳴らす運用でも、いざというときに待たされない。
+// 一度作れば端末に残るので、2回目以降は通信しない。
+function _warmFixedVoices(){
+  if(!_ttsReady || typeof _ttsFetch1!=='function') return;
+  var texts=[ _coolingSoonText(), _coolingSayText(_coolingMin) ];
+  var i=0;
+  (function next(){
+    if(i>=texts.length) return;
+    var t=texts[i++];
+    _ttsFetch1(t, _ttsVoice, _ttsStyle, _annRate)
+      .then(function(){ setTimeout(next,300); })
+      .catch(function(){ setTimeout(next,300); });
+  })();
+}
+
 function _initTTS(){
   fetch('/api/tts/status').then(function(r){ return r.json(); })
-    .then(function(d){ _ttsReady=!!d.enabled; _refreshTtsStatus(); })
+    .then(function(d){ _ttsReady=!!d.enabled; _refreshTtsStatus(); _warmFixedVoices(); })
     .catch(function(){ _ttsReady=false; _refreshTtsStatus(); });
   try{
     _annOn = localStorage.getItem('bb_announce')==='1';
@@ -3571,8 +3591,8 @@ function prebuildVoices(){
     var dt=_defenseText(t); if(dt) texts.push(dt);
   });
   // クーリングの案内。この端末で音を鳴らす運用でも間に合うよう作っておく
-  texts.push('間もなく試合開始です。');
-  for(var m=1;m<=30;m++) texts.push('只今より'+m+'分間のクーリングタイムを開始します。');
+  texts.push(_coolingSoonText());
+  for(var m=1;m<=30;m++) texts.push(_coolingSayText(m));
   texts=texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
   var btn=document.getElementById('set-prebuild');

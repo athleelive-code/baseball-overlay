@@ -1412,10 +1412,26 @@ var _ttsStyle = '';                          // 話し方スタイル
 var _ttsCache = {};                          // 文言 -> data URL
 var _audioEl = null;                          // 再生用 audio 要素
 
+// 選手やチーム名に関係なく、いつも同じ文言は起動時に黙って作って保存しておく。
+// 「音声を事前生成」を押し忘れても、いざというときに待たされない。
+// 一度作れば端末に残るので、2回目以降は通信しない。
+function _warmFixedVoices(){
+  if(!_ttsReady || typeof _ttsFetch1!=='function') return;
+  var texts=[ _coolingSoonText(), _coolingSayText(_coolingMin) ];
+  var i=0;
+  (function next(){
+    if(i>=texts.length) return;
+    var t=texts[i++];
+    _ttsFetch1(t, _ttsVoice, _ttsStyle, _annRate)
+      .then(function(){ setTimeout(next, 300); })
+      .catch(function(){ setTimeout(next, 300); });
+  })();
+}
+
 function _initTTS(){
   fetch('/api/tts/status')
     .then(function(r){ return r.json(); })
-    .then(function(d){ _ttsReady = !!d.enabled; _refreshTtsLabel(); })
+    .then(function(d){ _ttsReady = !!d.enabled; _refreshTtsLabel(); _warmFixedVoices(); })
     .catch(function(){ _ttsReady = false; _refreshTtsLabel(); });
   try{
     var v = localStorage.getItem('bb_tts_voice');
@@ -1898,6 +1914,7 @@ function adjCoolingMin(d){
   try{ localStorage.setItem('bb_cooling_min', _coolingMin); }catch(e){}
   _refreshCoolingMinUI();
   _refreshCoolingUI();
+  if(typeof _warmFixedVoices==='function') _warmFixedVoices();  // 分数が変われば文言も変わる
 }
 function _refreshCoolingMinUI(){
   var v=document.getElementById('cool-min-val');
@@ -1946,7 +1963,7 @@ function _coolingStopTick(){
   if(_coolingTick){ clearInterval(_coolingTick); _coolingTick=null; }
 }
 function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
-function _coolingSoonText(){ return '間もなく試合開始です。'; }
+function _coolingSoonText(){ return '間もなく試合再開です。'; }
 
 function startCooling(){
   _cooling.on = true;
