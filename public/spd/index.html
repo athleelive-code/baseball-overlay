@@ -331,6 +331,27 @@ document.addEventListener('pointerdown', function(e){
   }
 }, true);
 
+// ── 画面を消さない（Wake Lock） ───────────────────────────────────────────
+// 入切はコントローラー／メンバー管理の設定に合わせる（同じ端末なら同じ設定になる）
+var _wakeLock = null, _wakeOn = true;
+try{ var _wk=localStorage.getItem('bb_wake'); if(_wk!=null) _wakeOn=(_wk==='1'); }catch(e){}
+function _wakeAcquire(){
+  if(!_wakeOn || _wakeLock) return;
+  if(!(navigator.wakeLock && navigator.wakeLock.request)) return;
+  if(document.visibilityState!=='visible') return;
+  try{
+    navigator.wakeLock.request('screen').then(function(l){
+      _wakeLock=l;
+      l.addEventListener('release', function(){ _wakeLock=null; });
+    }).catch(function(){ _wakeLock=null; });
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible') _wakeAcquire();
+});
+document.addEventListener('pointerdown', function(){ _wakeAcquire(); }, true);
+_wakeAcquire();
+
 var MINV = 10, MAXV = 200;
 var lastVal = null;
 var baseTens = null;   // 選択中の十の位（例：130）

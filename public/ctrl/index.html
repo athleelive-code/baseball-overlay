@@ -911,6 +911,11 @@ body.gamemin .gm-hide{display:none!important}
         📳 振動 ON
       </button>
       <div id="tap-vib-note" style="font-size:18px;color:#666;margin-top:6px"></div>
+      <button id="btn-wake" onclick="toggleWake()" style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:26px;font-weight:700;padding:14px;cursor:pointer;margin-top:8px">
+        📱 画面を消さない ON
+      </button>
+      <div style="font-size:18px;color:#666;margin-top:6px">操作の間が空いても画面が消えません。電池の減りは早くなります</div>
+      <div id="wake-note" style="font-size:18px;color:#666;margin-top:4px"></div>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">最終回</div>
@@ -1964,6 +1969,52 @@ function toggleTapVib(){
   _refreshTapBtns();
   if(_tapVib && _vibOK){ try{ navigator.vibrate([12,50,25]); }catch(e){} }
 }
+// ── 画面を消さない（Wake Lock） ───────────────────────────────────────────
+// 試合中は操作の間が空くので、放っておくと画面が消えて操作が一手遅れる。
+// 端末の許す範囲で画面を点けたままにする。
+// ・OS が画面を消したあと戻ってきたときは取り直す
+// ・自動では取れない端末があるので、最初の操作でも取りにいく
+var _wakeLock = null, _wakeOn = true;
+try{ var _wk=localStorage.getItem('bb_wake'); if(_wk!=null) _wakeOn=(_wk==='1'); }catch(e){}
+var _wakeOK = !!(typeof navigator!=='undefined' && navigator.wakeLock && navigator.wakeLock.request);
+function _wakeAcquire(){
+  if(!_wakeOn || !_wakeOK || _wakeLock) return;
+  if(document.visibilityState!=='visible') return;
+  try{
+    navigator.wakeLock.request('screen').then(function(l){
+      _wakeLock=l;
+      l.addEventListener('release', function(){ _wakeLock=null; _refreshWakeBtn(); });
+      _refreshWakeBtn();
+    }).catch(function(){ _wakeLock=null; _refreshWakeBtn(); });
+  }catch(e){}
+}
+function _wakeRelease(){
+  if(_wakeLock){ try{ _wakeLock.release(); }catch(e){} _wakeLock=null; }
+  _refreshWakeBtn();
+}
+function toggleWake(){
+  _wakeOn=!_wakeOn;
+  try{ localStorage.setItem('bb_wake', _wakeOn?'1':'0'); }catch(e){}
+  if(_wakeOn) _wakeAcquire(); else _wakeRelease();
+  _refreshWakeBtn();
+}
+function _refreshWakeBtn(){
+  var b=document.getElementById('btn-wake');
+  if(b){
+    b.textContent = _wakeOn ? '📱 画面を消さない ON' : '📱 画面を消さない OFF';
+    b.style.background  = _wakeOn ? '#1a3a1a' : '#2c2c2e';
+    b.style.borderColor = _wakeOn ? '#3a6a2a' : '#444';
+    b.style.color       = _wakeOn ? '#86c867' : '#999';
+  }
+  var n=document.getElementById('wake-note');
+  if(n) n.textContent = _wakeOK ? (_wakeOn && !_wakeLock ? '（画面に触れると効き始めます）' : '')
+                                : 'この端末のブラウザは画面の消灯を止められません';
+}
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible') _wakeAcquire();
+});
+document.addEventListener('pointerdown', function(){ _wakeAcquire(); }, true);
+
 function _refreshTapBtns(){
   var b=document.getElementById('btn-tap-light');
   if(b){
@@ -6093,6 +6144,8 @@ _refreshInnShowUI();
 _refreshSideLabels();
 _refreshAssist();
 _refreshTapBtns();
+_refreshWakeBtn();
+_wakeAcquire();
 renderSB();
 restoreState(); // 最後に復元（renderSB後）
 </script>
