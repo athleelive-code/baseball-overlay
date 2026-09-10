@@ -692,6 +692,20 @@ body.gamemin .gm-hide{display:none!important}
 
     </div>
     <div class="drawer-sec">
+      <div class="drawer-sec-t">イニングコールで打順と守備位置を出す</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">イニングコールを押したとき、打順と守備位置を自動で出して指定の秒数で引っ込めます（0 = 出さない）</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="drawer-btn" style="flex:1;font-size:44px;font-weight:700" onclick="adjInnShow(-1)">－</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:90px">
+          <span style="font-size:52px;font-weight:700;color:#fff" id="inn-show-val">12</span>
+          <span style="font-size:18px;color:#666">秒</span>
+        </div>
+        <button class="drawer-btn" style="flex:1;font-size:44px;font-weight:700" onclick="adjInnShow(1)">＋</button>
+      </div>
+      <div style="font-size:18px;color:#555;margin-top:6px;text-align:center" id="inn-show-note">イニングコールで 12秒間 表示</div>
+    </div>
+
+    <div class="drawer-sec">
       <div class="drawer-sec-t">打順/守備配置 自動非表示</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">表示後に自動で非表示（0 = 手動のみ）</div>
       <div style="display:flex;align-items:center;gap:12px">
@@ -2212,6 +2226,7 @@ function _coachSay(team){
 
 function announceCurrentInning(){
   _setTicker(false);   // 次の回のコールと同時にティッカーを終了する
+  _showLineupForInning();   // 打順と守備位置を自動で出す（設定の秒数で引っ込む）
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   _assistMarkInning();
   var team = _teamSay(st.top ? 'away' : 'home');
@@ -4252,6 +4267,7 @@ function openSettingsDrawer(){
     if(typeof _refreshPitchAutoBtn==='function') _refreshPitchAutoBtn();
     if(typeof _refreshScoreAutoBtn==='function') _refreshScoreAutoBtn();
     if(typeof _refreshCoolingMinUI==='function') _refreshCoolingMinUI();
+    if(typeof _refreshInnShowUI==='function') _refreshInnShowUI();
     if(typeof _refreshAudioStreamBtn==='function') _refreshAudioStreamBtn();
     if(typeof _refreshDefRecBtn==='function') _refreshDefRecBtn();
     if(typeof _updatePitchDisp==='function') _updatePitchDisp();
@@ -5246,6 +5262,38 @@ function toggleBatterVisible(){
 
 var _batVisTimer=null, _defVisTimer=null;
 
+// ── イニングコール時に打順と守備位置を自動で出す ──────────────────────────
+// 0 = 無効（手動のみ）。回の頭にどちらも出したいので、通常の自動非表示とは
+// 別の秒数を持たせる。
+var _innShowSec = 12;
+try{ var _is=localStorage.getItem('bb_inn_show'); if(_is!=null) _innShowSec=Math.max(0,Math.min(60,Number(_is)||0)); }catch(e){}
+function adjInnShow(d){
+  _innShowSec = Math.max(0, Math.min(60, _innShowSec + d));
+  try{ localStorage.setItem('bb_inn_show', _innShowSec); }catch(e){}
+  _refreshInnShowUI();
+}
+function _refreshInnShowUI(){
+  var v=document.getElementById('inn-show-val');
+  var n=document.getElementById('inn-show-note');
+  if(v) v.textContent=_innShowSec;
+  if(n) n.textContent = _innShowSec===0 ? '無効（手動のみ）' : ('イニングコールで '+_innShowSec+'秒間 表示');
+}
+// イニングコールに合わせて打順と守備位置を出し、指定秒で引っ込める
+function _showLineupForInning(){
+  if(_innShowSec<=0) return;
+  _batVisible = true;  _setBatVisBtn();
+  _defVisible = true;  _setDefVisBtn();
+  if(_batVisTimer){ clearTimeout(_batVisTimer); _batVisTimer=null; }
+  if(_defVisTimer){ clearTimeout(_defVisTimer); _defVisTimer=null; }
+  _batVisTimer=setTimeout(function(){
+    _batVisTimer=null; _batVisible=false; _setBatVisBtn(); broadcast();
+  }, _innShowSec*1000);
+  _defVisTimer=setTimeout(function(){
+    _defVisTimer=null; _defVisible=false; _setDefVisBtn(); broadcast();
+  }, _innShowSec*1000);
+  broadcast();
+}
+
 function _setBatVisBtn(){
   const btn=document.getElementById('btn-bat-visible');
   if(!btn) return;
@@ -5542,6 +5590,7 @@ _initTeamColors();
 _initScoreDispSec();
 _refreshCoolingMinUI();
 _refreshCoolingUI();
+_refreshInnShowUI();
 _refreshSideLabels();
 _refreshAssist();
 renderSB();
