@@ -182,9 +182,22 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
   font-variant-numeric:tabular-nums;letter-spacing:4px;
   text-shadow:0 6px 30px rgba(0,0,0,.75);
 }
+/* スポンサーの上に添えるクレジット見出し。両側に細い罫を引く */
+.ov-cool-thanks{
+  display:flex;align-items:center;gap:20px;
+  width:min(620px,70%);margin-top:10px;
+}
+.ov-cool-thanks::before,.ov-cool-thanks::after{
+  content:'';flex:1;height:1px;background:rgba(255,255,255,.28);
+}
+.ov-cool-thanks span{
+  font-size:19px;font-weight:600;letter-spacing:7px;
+  color:rgba(255,255,255,.82);white-space:nowrap;padding-left:7px;
+  font-family:"Helvetica Neue",Arial,sans-serif;
+}
 .ov-cool-ads{
   display:flex;align-items:center;justify-content:center;gap:26px;
-  flex-wrap:wrap;max-width:76%;margin-top:6px;
+  flex-wrap:wrap;max-width:76%;margin-top:2px;
 }
 .ov-cool-ads img{
   height:88px;width:auto;object-fit:contain;display:block;
@@ -381,6 +394,7 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
 <div class="ov-cool" id="ov-cool">
   <div class="ov-cool-t">クーリングタイム</div>
   <div class="ov-cool-n" id="ov-cool-n">5:00</div>
+  <div class="ov-cool-thanks" id="ov-cool-thanks"><span>Special Thanks</span></div>
   <div class="ov-cool-ads" id="ov-cool-ads"></div>
   <div class="ov-cool-note">まもなく試合を再開します</div>
 </div>
@@ -949,14 +963,17 @@ function applyCooling(c){
     _coolEndsAt = c.endsAt;
     // クーリングタイム専用に選ばれたスポンサー（無ければスコア表用を流用）
     var ads=g('ov-cool-ads');
+    var list = _adCool.length ? _adCool : _adImages;
     if(ads){
-      var list = _adCool.length ? _adCool : _adImages;
       ads.innerHTML='';
       list.slice(0,4).forEach(function(src){
         var im=document.createElement('img'); im.src=src; im.alt='';
         ads.appendChild(im);
       });
     }
+    // スポンサーが1枚も無いときは見出しも出さない
+    var th=g('ov-cool-thanks');
+    if(th) th.style.display = list.length ? 'flex' : 'none';
     box.classList.add('on');
     _coolPaint();
     if(!_coolTick) _coolTick=setInterval(_coolPaint, 500);
