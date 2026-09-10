@@ -110,6 +110,17 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   background:#222;transition:background .15s;flex-shrink:0;
 }
 .team-ind.active{background:var(--red)}
+/* 操作アシスト：未実行は明るく脈打たせ、実行済みは沈める */
+.assist-todo{
+  box-shadow:0 0 0 3px rgba(245,197,24,.55), 0 0 22px -2px rgba(245,197,24,.6);
+  animation:assistPulse 1.9s ease-in-out infinite;
+}
+@keyframes assistPulse{
+  0%,100%{ box-shadow:0 0 0 3px rgba(245,197,24,.45), 0 0 18px -4px rgba(245,197,24,.45) }
+  50%    { box-shadow:0 0 0 5px rgba(245,197,24,.75), 0 0 30px 0 rgba(245,197,24,.75) }
+}
+.assist-done{ opacity:.42; filter:saturate(.5) }
+@media (prefers-reduced-motion:reduce){ .assist-todo{animation:none} }
 .side-tag{
   font-size:19px;font-weight:700;color:#7a7a7c;letter-spacing:1px;
   flex-shrink:0;white-space:nowrap;
@@ -529,10 +540,10 @@ body.gamemin .gm-hide{display:none!important}
   <button onclick="showScoreOverlay()" class="gm-hide" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:12px;color:#aaaaff;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15">
     📊 イニング<br>スコア表示
   </button>
-  <button onclick="announceCurrentBatter()" style="flex:1;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:12px;color:#b8e878;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15;white-space:nowrap">
+  <button id="btn-call-batter" onclick="announceCurrentBatter()" style="flex:1;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:12px;color:#b8e878;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15;white-space:nowrap">
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:30px;height:30px;display:block;margin:0 auto 4px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.06c1.5-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>打者<br>コール
   </button>
-  <button onclick="announceCurrentInning()" style="flex:1;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:12px;color:#b8e878;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15;white-space:nowrap">
+  <button id="btn-call-inning" onclick="announceCurrentInning()" style="flex:1;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:12px;color:#b8e878;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15;white-space:nowrap">
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:30px;height:30px;display:block;margin:0 auto 4px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.06c1.5-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>イニング<br>コール
   </button>
   <button onclick="announceSituation()" class="gm-hide" style="flex:1;background:#2a1e3a;border:3px solid #5a3a8a;border-radius:12px;color:#c8a8ff;font-size:28px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15;white-space:nowrap">
@@ -1710,6 +1721,56 @@ function _refreshPitchAutoBtn(){
   b.style.color       = _pitchAutoCall ? '#86c867' : '#999';
 }
 
+// ── 操作アシスト ──────────────────────────────────────────────────────────
+// 試合状態から「次にやる可能性が高い操作」を割り出し、未実行なら明るく、
+// 実行済みなら暗く見せる。判定が確実なものだけを対象にする。
+//  ・新しい回になった            → イニングコールが未実行
+//  ・打者が変わった              → その打者の打者コールが未実行
+// イニングコールはその回の先頭打者も読み上げるので、押した時点でその打者の
+// 打者コールは実行済みとして扱う。
+// アナウンスOFFのときは、そもそも読み上げないのでアシストも出さない。
+var _assist = { inningCalled:false, batterCalledId:0 };
+
+function _assistReset(){
+  _assist.inningCalled = false;
+  _assist.batterCalledId = 0;
+  _refreshAssist();
+}
+function _assistMarkInning(){
+  _assist.inningCalled = true;
+  var id=_curBatterId();
+  if(id) _assist.batterCalledId = id;   // 先頭打者も読み上げ済み
+  _refreshAssist();
+}
+function _assistMarkBatter(){
+  var id=_curBatterId();
+  if(id) _assist.batterCalledId = id;
+  _refreshAssist();
+}
+function _curBatterId(){
+  var sel=document.getElementById('sel-batter');
+  return (sel && sel.value) ? Number(sel.value) : 0;
+}
+function _refreshAssist(){
+  var bi=document.getElementById('btn-call-inning');
+  var bb=document.getElementById('btn-call-batter');
+  // アナウンスOFFなら中立に戻す
+  if(!_annOn){
+    [bi,bb].forEach(function(b){ if(b) b.classList.remove('assist-todo','assist-done'); });
+    return;
+  }
+  if(bi){
+    bi.classList.toggle('assist-todo', !_assist.inningCalled);
+    bi.classList.toggle('assist-done',  _assist.inningCalled);
+  }
+  if(bb){
+    var id=_curBatterId();
+    var done = (id!==0 && id===_assist.batterCalledId);
+    bb.classList.toggle('assist-todo', !done);
+    bb.classList.toggle('assist-done',  done);
+  }
+}
+
 // ── スポンサーティッカー ──────────────────────────────────────────────────
 // スリーアウトで回が終わったら流し始め、次の回のイニングコールで止める。
 // コールを忘れたときのために、その回の1球目が入った時点でも止める。
@@ -2127,6 +2188,7 @@ function announceCurrentBatter(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var sel=document.getElementById('sel-batter');
   if(!sel || !sel.value){ alert('打者が選択されていません'); return; }
+  _assistMarkBatter();
   var team = st.top ? 'away' : 'home';
   var p = rosters[team].find(function(x){ return x.id===Number(sel.value); });
   if(!p) return;
@@ -2151,6 +2213,7 @@ function _coachSay(team){
 function announceCurrentInning(){
   _setTicker(false);   // 次の回のコールと同時にティッカーを終了する
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  _assistMarkInning();
   var team = _teamSay(st.top ? 'away' : 'home');
   var txt = st.inn+'回'+(st.top?'おもて':'うら')+'、'+team+'の攻撃は';
   var sel = document.getElementById('sel-batter');
@@ -2222,6 +2285,7 @@ function toggleAnnounce(){
   _annOn = !_annOn;
   try{ localStorage.setItem('bb_announce', _annOn ? '1' : '0'); }catch(e){}
   _refreshAnnBtn();
+  if(typeof _refreshAssist==='function') _refreshAssist();
   if(_annOn) _speak('アナウンスを開始します');
 }
 
@@ -3595,6 +3659,7 @@ function nextInn(){
 
   if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; _refreshScoreBtn(); _armScoreAutoHide(); }
   _ticker.on = true;          // イニング交代中はスポンサーを流す（下の broadcast で配る）
+  _assistReset();
   broadcast();
 }
 
@@ -5028,6 +5093,7 @@ function applyRemoteState(s){
     var to=document.getElementById('tb-omote'), tu=document.getElementById('tb-ura');
     if(to) to.className=st.top?'active':'';
     if(tu) tu.className=!st.top?'active':'';
+    if(typeof _refreshAssist==='function') _refreshAssist();
     if(typeof _refreshSideLabels==='function') _refreshSideLabels();
     var innEl=document.getElementById('inn-num');
     if(innEl) innEl.textContent=st.inn;
@@ -5094,6 +5160,7 @@ connectWS();
 
 // ── 打者変更時：次打者・次々打者を更新 ─────────────────────────────────────
 function onBatterChange(){
+  if(typeof _refreshAssist==='function') setTimeout(_refreshAssist,0);
   const sel=document.getElementById('sel-batter');
   if(!sel) return;
   const selId=Number(sel.value);
@@ -5469,6 +5536,7 @@ _initScoreDispSec();
 _refreshCoolingMinUI();
 _refreshCoolingUI();
 _refreshSideLabels();
+_refreshAssist();
 renderSB();
 restoreState(); // 最後に復元（renderSB後）
 </script>
