@@ -186,6 +186,9 @@ body.locked .row{cursor:default}
 .fp-next:hover{background:#e0203e}
 .fp-next:active{transform:scale(.96)}
 /* クーリング */
+.fp-firstbat{background:#1a2a44;border:2px solid #3a5a8a;border-radius:9px;color:#a8c8ff;
+  font-size:14px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-firstbat:hover{background:#22375a}
 .fp-cool{background:#123040;border:2px solid #2a6a8a;border-radius:9px;color:#8fd8f0;
   font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .fp-cool:hover{background:#17405a}
@@ -238,6 +241,18 @@ body.locked .row{cursor:default}
 
 /* レイアウト */
 .wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;max-width:1600px;margin:0 auto}
+/* 左は必ず3塁側ベンチ。どちらが先攻かで中身（away/home）の並び順を入れ替える */
+.team{order:1}
+.team.side3{order:0}
+/* 攻撃中のチームをはっきりさせる */
+.team.batting{box-shadow:0 0 0 2px var(--atk,#e0b24a), 0 8px 26px -12px rgba(224,178,74,.5)}
+.team.fielding{opacity:.72}
+.team.fielding .team-name-inp{color:#c8c8ca}
+.atk-badge{
+  font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 11px;border-radius:20px;
+  background:var(--atk,#e0b24a);color:#1b1813;flex-shrink:0;white-space:nowrap;
+}
+.atk-badge.def{background:#2e2e30;color:#8a8a8c;border:1px solid #3f3f42}
 @media(max-width:900px){.wrap{grid-template-columns:1fr}}
 
 .team{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -533,13 +548,14 @@ body.locked .row{cursor:default}
   </span>
   <button class="fp-cool" id="btn-cooling" onclick="toggleCooling()">❄ クーリング 5分</button>
   <span class="cool-left" id="cooling-left" style="display:none">5:00</span>
+  <button class="fp-firstbat" onclick="openFirstBatPC()">⇄ 先攻選択</button>
 </div>
 
 <div class="wrap">
   <!-- 先攻 -->
-  <div class="team">
+  <div class="team" id="card-away">
     <div class="team-hd">
-      <span class="team-badge badge-away">先攻 / 1塁側</span>
+      <span class="team-badge badge-away" id="badge-away">先攻 / 1塁側</span>
       <input class="team-name-inp" id="tname-away" placeholder="チーム名" oninput="onTeamName('away')">
       <input class="team-yomi-inp" id="tyomi-away" placeholder="チーム名フリガナ（アナウンスの読み）" oninput="onTeamYomi('away')">
       <div class="tlogo-box">
@@ -590,9 +606,9 @@ body.locked .row{cursor:default}
   </div>
 
   <!-- 後攻 -->
-  <div class="team">
+  <div class="team" id="card-home">
     <div class="team-hd">
-      <span class="team-badge badge-home">後攻 / 3塁側</span>
+      <span class="team-badge badge-home" id="badge-home">後攻 / 3塁側</span>
       <input class="team-name-inp" id="tname-home" placeholder="チーム名" oninput="onTeamName('home')">
       <input class="team-yomi-inp" id="tyomi-home" placeholder="チーム名フリガナ（アナウンスの読み）" oninput="onTeamYomi('home')">
       <div class="tlogo-box">
@@ -703,6 +719,22 @@ body.locked .row{cursor:default}
     <div id="sub-accum-list" style="display:none;text-align:left;font-size:12px;color:#b8e878;line-height:1.7;margin-top:6px"></div>
     <div class="modal-acts">
       <button class="btn" style="flex:1" onclick="closeModal('deffield-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 先攻選択（左は常に3塁側。どちらのベンチが先攻かだけを決める） -->
+<div class="mask" id="firstbat-mask">
+  <div class="modal" style="max-width:460px">
+    <h3>先攻選択</h3>
+    <div class="note">どちらのベンチが先攻かを選びます。表示は左が3塁側で固定です。<br>
+      選手を登録したあとに切り替えると、先攻・後攻の中身が入れ替わります。</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn" id="fb-3" style="font-size:17px;font-weight:800;padding:18px" onclick="setFirstBatPC('3')">3塁側チームが先攻</button>
+      <button class="btn" id="fb-1" style="font-size:17px;font-weight:800;padding:18px" onclick="setFirstBatPC('1')">1塁側チームが先攻</button>
+    </div>
+    <div class="modal-acts">
+      <button class="btn" style="flex:1" onclick="closeModal('firstbat-mask')">閉じる</button>
     </div>
   </div>
 </div>
@@ -1209,6 +1241,7 @@ function pushState(){
     gameTitle: (document.getElementById('hdr-game-title')||{}).value || lr.gameTitle || '',
     coaches: { away:coaches.away, home:coaches.home },
     cooling: (typeof _cooling!=='undefined') ? { on:_cooling.on, endsAt:_cooling.endsAt } : undefined,
+    firstBatSide: (typeof _firstBatSide!=='undefined') ? _firstBatSide : undefined,
     teamYomi:  (typeof teamYomi!=='undefined')  ? { away:teamYomi.away,  home:teamYomi.home }  : undefined,
     coachYomi: (typeof coachYomi!=='undefined') ? { away:coachYomi.away, home:coachYomi.home } : undefined,
     awayColor: (typeof _teamColorsPC!=='undefined' ? _teamColorsPC.away : undefined),
@@ -1734,6 +1767,13 @@ function applyRemote(s){
       var _tnh=document.getElementById('tname-home');
       if(_tnh && document.activeElement!==_tnh) _tnh.value=teamNames.home;
     }
+    // 先攻がどちらのベンチか（他端末で変えた場合に追従）
+    if((s.firstBatSide==='1'||s.firstBatSide==='3') && typeof _firstBatSide!=='undefined'){
+      if(s.firstBatSide !== _firstBatSide){
+        _firstBatSide = s.firstBatSide;
+        try{ localStorage.setItem('bb_firstbat_side', _firstBatSide); }catch(e){}
+      }
+    }
     // クーリング（コントローラー等が開始・終了した場合に追従）
     if(s.cooling && typeof s.cooling.on==='boolean' && typeof _cooling!=='undefined'){
       var _cOn = s.cooling.on, _cEnd = s.cooling.endsAt || 0;
@@ -1763,6 +1803,7 @@ function applyRemote(s){
     renderAll();
     renderGame(s);
     renderLog();
+    _applySideLayout();          // 左右の並び・攻撃中の表示を更新
     if(typeof s.abPitch==='number'){ _abPitch=s.abPitch; _abFoul=s.abFoul||0; _abBallSeq=s.abBallSeq||[]; }
     _updateAbDispPC();
     // コントローラーで確定した打席結果を記録に取り込む
@@ -1876,6 +1917,80 @@ function onCoachName(team){
     lastRemote.coaches[team] = coaches[team];
   }
   pushState();
+}
+
+// ── 先攻・後攻とベンチの左右 ──────────────────────────────────────────────
+// 内部は今までどおり away=先攻 / home=後攻。ここでは「先攻がどちらのベンチか」
+// だけを持ち、表示のときに塁側へ読み替える。データは動かさないので、スコアや
+// 保存・同期の仕組みには手を入れていない。表示は左が常に3塁側。
+var _firstBatSide = '1';   // '1' = 1塁側が先攻 / '3' = 3塁側が先攻
+try{ var _fb=localStorage.getItem('bb_firstbat_side'); if(_fb==='1'||_fb==='3') _firstBatSide=_fb; }catch(e){}
+
+// スロット（away/home）がどちらの塁側か
+function _sideOf(slot){
+  if(_firstBatSide==='3') return slot==='away' ? '3塁側' : '1塁側';
+  return slot==='away' ? '1塁側' : '3塁側';
+}
+// 3塁側のスロット
+function _slot3(){ return _firstBatSide==='3' ? 'away' : 'home'; }
+// いま攻撃しているスロット
+function _battingSlot(){ return (lastRemote && lastRemote.top===false) ? 'home' : 'away'; }
+
+function openFirstBatPC(){
+  _refreshFirstBatUI();
+  document.getElementById('firstbat-mask').classList.add('open');
+}
+function setFirstBatPC(side){
+  if(side!=='1' && side!=='3') return;
+  _firstBatSide = side;
+  try{ localStorage.setItem('bb_firstbat_side', side); }catch(e){}
+  _applySideLayout();
+  pushState();
+  closeModal('firstbat-mask');
+  toast(side==='3' ? '3塁側チームが先攻' : '1塁側チームが先攻');
+}
+function _refreshFirstBatUI(){
+  ['1','3'].forEach(function(s){
+    var b=document.getElementById('fb-'+s);
+    if(!b) return;
+    var on = (_firstBatSide===s);
+    b.style.background  = on ? '#1a3a1a' : '';
+    b.style.borderColor = on ? '#3a6a2a' : '';
+    b.style.color       = on ? '#86c867' : '';
+  });
+}
+// カードの左右・バッジ・攻撃中の見た目をまとめて更新する
+function _applySideLayout(){
+  var s3=_slot3();
+  var atk = lastRemote ? _battingSlot() : null;
+  ['away','home'].forEach(function(slot){
+    var card=document.getElementById('card-'+slot);
+    if(card){
+      card.classList.toggle('side3', slot===s3);           // 3塁側を左へ
+      card.classList.toggle('batting', atk===slot);
+      card.classList.toggle('fielding', atk!==null && atk!==slot);
+      // 攻撃中の縁はそのチームの強調色に合わせる
+      var col = (typeof _teamColorsPC!=='undefined') ? _teamColorsPC[slot] : '';
+      card.style.setProperty('--atk', col || '#e0b24a');
+    }
+    var badge=document.getElementById('badge-'+slot);
+    if(badge){
+      badge.textContent = _sideOf(slot) + ' / ' + (slot==='away' ? '先攻' : '後攻');
+    }
+    // 「攻撃中 / 守備中」のバッジ
+    var hd = badge && badge.parentNode;
+    if(hd){
+      var ab = hd.querySelector('.atk-badge');
+      if(atk===null){ if(ab) ab.remove(); }
+      else{
+        if(!ab){ ab=document.createElement('span'); ab.className='atk-badge'; badge.insertAdjacentElement('afterend', ab); }
+        var isAtk = (atk===slot);
+        ab.textContent = isAtk ? '攻撃中' : '守備中';
+        ab.classList.toggle('def', !isAtk);
+      }
+    }
+  });
+  _refreshFirstBatUI();
 }
 
 // ── クーリング ────────────────────────────────────────────────────────────
@@ -4011,6 +4126,7 @@ _adLoad();
 _renderTeamLogoUI();
 _renderTeamColorUI();
 _refreshCoolingUI();
+_applySideLayout();
 _initTTS();
 connectWS();
 setWsUI(false);
