@@ -1644,6 +1644,7 @@ function _pitchAdd(n){
   if(!id) return;
   if(n>0){
     _setTicker(false);   // 1球目が入ったらティッカーを止める（コール忘れの保険）
+    _batterAutoShow();   // その打者の1球目で打者表示を出す
     _pitchLog.push({ pid:id, inn:st.inn, top:st.top });
   }else{
     // 直近のその投手の1球を取り消す
@@ -2202,7 +2203,7 @@ function announceCurrentBatter(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var sel=document.getElementById('sel-batter');
   if(!sel || !sel.value){ alert('打者が選択されていません'); return; }
-  _setBatterVisible(true);
+  _batterAutoShow();
   _assistMarkBatter();
   var team = st.top ? 'away' : 'home';
   var p = rosters[team].find(function(x){ return x.id===Number(sel.value); });
@@ -5188,6 +5189,11 @@ connectWS();
 // ── 打者変更時：次打者・次々打者を更新 ─────────────────────────────────────
 function onBatterChange(){
   if(typeof _refreshAssist==='function') setTimeout(_refreshAssist,0);
+  // 打者が変わったら打者表示をいったん消す。次の打者コールか1球目で出し直す
+  if(typeof _setBatterVisible==='function'){
+    _batterAutoShownId = 0;
+    _setBatterVisible(false);
+  }
   const sel=document.getElementById('sel-batter');
   if(!sel) return;
   const selId=Number(sel.value);
@@ -5271,6 +5277,16 @@ function _setBatterVisible(v){
   _batterVisible = !!v;
   _setBatterVisBtn();
   broadcast();
+}
+
+// 打者ごとに一度だけ自動で出す。手動で消したあと1球ごとに出し直さないための目印。
+// 打者が変わるとリセットされる。
+var _batterAutoShownId = 0;
+function _batterAutoShow(){
+  var id = (typeof _curBatterId==='function') ? _curBatterId() : 0;
+  if(!id || _batterAutoShownId === id) return;   // 未選択、またはこの打者では既に出した
+  _batterAutoShownId = id;
+  _setBatterVisible(true);
 }
 
 var _batVisTimer=null, _defVisTimer=null;
