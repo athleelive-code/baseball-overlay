@@ -348,7 +348,13 @@ body.locked .row{cursor:default}
 .subbar .btn.sub-def:hover{background:#4a3c1c}
 
 /* スポンサー設定のスロット */
-.ad-slot{display:flex;gap:10px;background:#242426;border:1px solid #333;border-radius:9px;padding:9px;margin-bottom:7px}
+.ad-slot{display:flex;align-items:center;gap:10px;background:#242426;border:1px solid #333;border-radius:9px;padding:9px;margin-bottom:7px}
+/* 並び順。この番号の順に、右上の切替・ティッカー・クーリングへ並ぶ */
+.ad-no{font-size:13px;font-weight:800;color:#888;width:16px;text-align:center;flex-shrink:0;
+  font-variant-numeric:tabular-nums}
+.ad-move{display:flex;gap:3px;margin-left:auto;flex-shrink:0}
+.ad-move .btn{font-size:12px;padding:6px 9px;line-height:1;margin:0}
+.ad-move .btn[disabled]{opacity:.3;cursor:default}
 .ad-slot.off{opacity:.45}
 .ad-thumb{width:96px;height:44px;object-fit:contain;background:#fff;border:1px solid #3a3a3c;border-radius:5px;flex-shrink:0}
 .ad-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
@@ -3308,14 +3314,20 @@ function _renderAdSlots(){
         +'<input type="checkbox" '+(w[p[0]]?'checked':'')+' onchange="adWhereToggle('+i+',\''+p[0]+'\')">'
         +p[1]+'</label>';
     }).join('');
+    var last=_adCfg.slots.length-1;
     return '<div class="ad-slot'+(s.on?'':' off')+'">'
+      +'<span class="ad-no">'+(i+1)+'</span>'
       +'<img src="'+esc(s.src||'')+'" alt="" class="ad-thumb" onerror="this.style.opacity=.2">'
       +'<div class="ad-body">'
         +'<div class="ad-row1">'
           +'<label class="btn" style="font-size:12px;padding:7px 10px;cursor:pointer;margin:0">画像を選ぶ'
             +'<input type="file" accept="image/*" style="display:none" onchange="adPickFile('+i+',this)"></label>'
           +'<label class="ad-on"><input type="checkbox" '+(s.on?'checked':'')+' onchange="adToggle('+i+')"> 使う</label>'
-          +'<button class="btn btn-red" style="font-size:12px;padding:7px 10px;margin-left:auto" onclick="adDelSlot('+i+')">✕</button>'
+          +'<span class="ad-move">'
+            +'<button class="btn" title="上へ" '+(i===0?'disabled':'')+' onclick="adMove('+i+',-1)">▲</button>'
+            +'<button class="btn" title="下へ" '+(i===last?'disabled':'')+' onclick="adMove('+i+',1)">▼</button>'
+          +'</span>'
+          +'<button class="btn btn-red" style="font-size:12px;padding:7px 10px" onclick="adDelSlot('+i+')">✕</button>'
         +'</div>'
         +'<div class="ad-wheres"><span class="ad-wlbl">出す場所</span>'+chips+'</div>'
       +'</div>'
@@ -3346,6 +3358,13 @@ function adWhereToggle(i,key){
   _sendAdCfg(); _renderAdSlots();
 }
 function adDelSlot(i){ _adCfg.slots.splice(i,1); _sendAdCfg(); _renderAdSlots(); }
+// 並び順の入れ替え。この順番のまま右上の切替・ティッカー・クーリングに並ぶ
+function adMove(i,d){
+  var j=i+d;
+  if(!_adCfg.slots[i] || j<0 || j>=_adCfg.slots.length) return;
+  var t=_adCfg.slots[i]; _adCfg.slots[i]=_adCfg.slots[j]; _adCfg.slots[j]=t;
+  _sendAdCfg(); _renderAdSlots();
+}
 function adAddSlot(){ _adCfg.slots.push({src:'',on:true,where:_adWhere()}); _adSave(); _renderAdSlots(); }
 function adjAd(key,d){
   if(key==='tickerSpeed'){

@@ -224,13 +224,15 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
   color:rgba(255,255,255,.82);white-space:nowrap;padding-left:7px;
   font-family:"Helvetica Neue",Arial,sans-serif;
 }
+/* スポンサーの枠はすべて同じ大きさ。段組みは枚数に応じて JS が決める
+   （4枚までは1段、5枚以上は2段） */
 .ov-cool-ads{
-  display:flex;align-items:center;justify-content:center;gap:26px;
-  flex-wrap:wrap;max-width:76%;margin-top:2px;
+  display:grid;gap:22px;justify-content:center;align-items:center;
+  max-width:84%;margin-top:2px;
 }
 .ov-cool-ads img{
-  height:88px;width:auto;object-fit:contain;display:block;
-  background:rgba(255,255,255,.94);border-radius:8px;padding:8px 14px;
+  width:100%;height:126px;object-fit:contain;display:block;
+  background:rgba(255,255,255,.94);border-radius:8px;padding:10px 16px;
 }
 .ov-cool-note{font-size:15px;color:rgba(255,255,255,.5);letter-spacing:2px}
 /* 残り10秒。読み上げと合わせて、色で再開が近いことを知らせる */
@@ -1112,14 +1114,17 @@ function applyCooling(c){
   if(on){
     _coolEndsAt = c.endsAt;
     // クーリングタイムに出すスポンサー（設定で「クーリング」を選んだ画像）
+    // 枠の幅はすべて同じにそろえ、多いときは自動で2段に分ける
     var ads=g('ov-cool-ads');
-    var list = _adCool;
+    var list = _adCool.slice(0,8);
     if(ads){
       ads.innerHTML='';
-      list.slice(0,4).forEach(function(src){
+      list.forEach(function(src){
         var im=document.createElement('img'); im.src=src; im.alt='';
         ads.appendChild(im);
       });
+      var per = (list.length<=4) ? list.length : Math.ceil(list.length/2);
+      ads.style.gridTemplateColumns = 'repeat('+Math.max(1,per)+', minmax(0,320px))';
     }
     // スポンサーが1枚も無いときは見出しも出さない
     var th=g('ov-cool-thanks');
