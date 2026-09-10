@@ -2879,7 +2879,7 @@ function _lineupText(team){
        + (cs ? '監督、' + cs + '。' : '') + '以上です。';
 }
 
-// 守備位置順（投→捕→一→二→三→遊→左→中→右）の文言（背番号なし）
+// 守備位置順（投→捕→一→二→三→遊→左→中→右）の文言
 var _DEF_SEQ = ['1','2','3','4','5','6','7','8','9'];
 function _defenseText(team){
   var roster = rosters[team] || [];
@@ -2892,7 +2892,10 @@ function _defenseText(team){
     if(!p) return;
     var nm = String(p.yomi || p.name || '').trim();
     if(!nm) return;
-    parts.push((POS_YOMI[code] || '') + '、' + nm + _hon(p));
+    // 打者アナウンスと同じ並び（守備位置、氏名、背番号）
+    var one = (POS_YOMI[code] || '') + '、' + nm + _hon(p);
+    if(p.num) one += '、背番号' + p.num;
+    parts.push(one);
   });
   if(!parts.length) return '';
   return tn + 'の守備をお知らせします。' + parts.join('。') + '。';
