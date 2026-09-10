@@ -279,9 +279,13 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .bdot.on-f{background:#f5c518;border-color:#c8a02e;color:#111}
 /* 共通ウインドウ */
 .win-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:760;
-  align-items:center;justify-content:center;padding:14px}
+  align-items:center;justify-content:center;padding:6px}
 .win-box{background:#1a1a1c;border:3px solid #4a4a4c;border-radius:18px;
-  box-shadow:0 12px 40px rgba(0,0,0,.8);padding:16px;width:100%;max-width:640px}
+  box-shadow:0 12px 40px rgba(0,0,0,.8);padding:16px;width:100%;
+  /* 開いたあと絶対配置に切り替わるので、幅は画面から直に決める
+     （100% だとマスクの余白ぶんはみ出す）。縦もスマホで使い切る */
+  max-width:min(760px, calc(100vw - 16px));
+  max-height:calc(100vh - 12px);overflow-y:auto}
 .win-t{font-size:32px;font-weight:900;text-align:center;margin-bottom:12px}
 .win-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
 .win-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
@@ -1172,9 +1176,9 @@ body.gamemin .gm-hide{display:none!important}
 
 <!-- 試合開始フロー -->
 <div id="gs-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:700;
-     align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto">
-  <div style="background:#1a1a1c;border:3px solid #4a4a4c;border-radius:18px;width:100%;max-width:640px;
-       padding:20px 18px 16px;margin:auto">
+     align-items:flex-start;justify-content:center;padding:6px;overflow-y:auto">
+  <div style="background:#1a1a1c;border:3px solid #4a4a4c;border-radius:18px;width:100%;max-width:760px;
+       padding:18px 14px 14px;margin:auto">
     <div style="font-size:34px;font-weight:900;color:#fff;text-align:center">▶ 試合開始</div>
     <div id="gs-sub" style="font-size:20px;color:#888;text-align:center;margin:6px 0 16px"></div>
 
@@ -1236,9 +1240,10 @@ body.gamemin .gm-hide{display:none!important}
   <div class="win-box">
     <div id="speak-title" class="win-t" style="font-size:30px">読み上げ内容</div>
     <div style="font-size:20px;color:#777;text-align:center;margin-bottom:12px">内容を確認・修正してから読み上げてください</div>
-    <textarea id="speak-text" rows="4"
+    <textarea id="speak-text" rows="8"
       style="width:100%;background:#2c2c2e;border:2px solid #444;border-radius:12px;color:#fff;
-             font-size:28px;line-height:1.6;padding:14px;outline:none;resize:vertical"></textarea>
+             font-size:28px;line-height:1.6;padding:14px;outline:none;resize:vertical;
+             min-height:38vh"></textarea>
     <div class="win-2col" style="margin-top:14px;margin-bottom:0">
       <button class="win-b" style="background:#1a3a1a;border-color:#3a6a2a;color:#86c867;font-size:24px;padding:16px 6px"
         onclick="doSpeakConfirmed()">🔊 読み上げる</button>
