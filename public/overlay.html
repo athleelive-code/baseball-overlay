@@ -140,6 +140,32 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-def-hdr span{font-size:14px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.5px}
 .ov-def-body{padding:4px 6px}
 
+/* ── クーリングタイム：中央のカウントダウン＋専用スポンサー ── */
+.ov-cool{
+  position:fixed;inset:0;z-index:60;display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:26px;
+  background:rgba(4,10,18,.82);
+}
+.ov-cool.on{display:flex}
+.ov-cool-t{
+  font-size:34px;font-weight:800;letter-spacing:10px;color:#bdf0ff;
+  text-shadow:0 2px 14px rgba(0,0,0,.7);padding-left:10px;
+}
+.ov-cool-n{
+  font-size:150px;font-weight:900;line-height:1;color:#fff;
+  font-variant-numeric:tabular-nums;letter-spacing:4px;
+  text-shadow:0 6px 30px rgba(0,0,0,.75);
+}
+.ov-cool-ads{
+  display:flex;align-items:center;justify-content:center;gap:26px;
+  flex-wrap:wrap;max-width:76%;margin-top:6px;
+}
+.ov-cool-ads img{
+  height:88px;width:auto;object-fit:contain;display:block;
+  background:rgba(255,255,255,.94);border-radius:8px;padding:8px 14px;
+}
+.ov-cool-note{font-size:15px;color:rgba(255,255,255,.5);letter-spacing:2px}
+
 /* ── 右下：打者＋打順スライドアップ ── */
 .ov-bat-wrap{
   position:fixed;right:20px;bottom:20px;
@@ -320,6 +346,14 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 </div>
 
 <!-- 右下：打者（ロゴ帯＋打順＋守備位置＋氏名ルビ＋背番号）＋打順スライドアップ -->
+<!-- クーリングタイム（試合状態には影響しない表示専用） -->
+<div class="ov-cool" id="ov-cool">
+  <div class="ov-cool-t">クーリングタイム</div>
+  <div class="ov-cool-n" id="ov-cool-n">5:00</div>
+  <div class="ov-cool-ads" id="ov-cool-ads"></div>
+  <div class="ov-cool-note">まもなく試合を再開します</div>
+</div>
+
 <div class="ov-bat-wrap" id="ov-bat-wrap">
   <!-- 打順スライドアップ -->
   <div class="ov-bat-panel" id="ov-bat-panel">
@@ -513,6 +547,7 @@ function applyState(s){
   if(!s)return;
   // 全状態（コントローラー）以外は表示に触れない（部分メッセージでカウントを消さない）
   if(s._ctl!==true) return;
+  applyCooling(s.cooling);
   // チームカラー適用
   const isTop=s.top!==false;
   const batColor=isTop?(s.awayColor||'#c8102e'):(s.homeColor||'#1a56a0');
@@ -851,6 +886,47 @@ try{
     if(typeof _ac.sec==='number') _adSec=_ac.sec;
     if(typeof _ac.rotate==='number') _adRotate=_ac.rotate; }
 }catch(e){}
+
+// ── クーリングタイム ───────────────────────────────
+// コントローラーから来る終了時刻をもとに、こちらで残り秒を計算して表示する。
+// ローカルに秒数を持たないので、読み込み直しても残り時間がズレない。
+var _coolEndsAt = 0;
+var _coolTick = null;
+function _coolFmt(sec){
+  var m=Math.floor(sec/60), s=sec%60;
+  return m+':'+(s<10?'0':'')+s;
+}
+function _coolPaint(){
+  var box=g('ov-cool'), n=g('ov-cool-n');
+  if(!box) return;
+  var left = Math.max(0, Math.ceil((_coolEndsAt - Date.now())/1000));
+  if(n) n.textContent=_coolFmt(left);
+  if(left<=0) applyCooling({on:false});
+}
+function applyCooling(c){
+  var on = !!(c && c.on && c.endsAt);
+  var box=g('ov-cool');
+  if(!box) return;
+  if(on){
+    _coolEndsAt = c.endsAt;
+    // 専用のスポンサー枠（今は通常の広告画像を大きく並べて使う）
+    var ads=g('ov-cool-ads');
+    if(ads){
+      ads.innerHTML='';
+      _adImages.slice(0,4).forEach(function(src){
+        var im=document.createElement('img'); im.src=src; im.alt='';
+        ads.appendChild(im);
+      });
+    }
+    box.classList.add('on');
+    _coolPaint();
+    if(!_coolTick) _coolTick=setInterval(_coolPaint, 500);
+  }else{
+    _coolEndsAt = 0;
+    box.classList.remove('on');
+    if(_coolTick){ clearInterval(_coolTick); _coolTick=null; }
+  }
+}
 
 function applyAdCfg(d){
   if(Array.isArray(d.images)) _adImages = d.images.slice();   // 空配列＝広告なし
