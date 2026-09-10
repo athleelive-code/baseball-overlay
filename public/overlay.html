@@ -68,8 +68,17 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* 名前は確保した欄の中で収まるようにする。長すぎるときだけ末尾を省略 */
 .ov-team-name{font-size:24px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0}
 .ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-total-cell{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:60px;padding:4px 6px}
+/* R（得点）と H（安打数）。イニング表と同じく、見出しは先攻行にだけ付けて
+   上下の桁が縦にそろうようにする */
+.ov-total-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;width:60px;padding:0 6px}
 .ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-tot-cap{font-size:13px;font-weight:700;line-height:1;padding:1px 4px;
+  color:rgba(255,255,255,.45);align-self:stretch;text-align:center;
+  border-bottom:1px solid rgba(255,255,255,.15)}
+/* 安打数は得点より一段控えめに。得点が主役 */
+.ov-h-cell{width:48px}
+.ov-h-num{font-size:22px;color:rgba(255,255,255,.72)}
 .ov-total-num{font-size:28px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
 /* スコア表（イニング別） - スコアブロック下に */
@@ -250,8 +259,9 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(27% - 10px);   /* 氏名ルビ＋背番号の白箱が入るよう少し拡大 */
-  min-width:260px;
+  /* エンブレムを大きくしたぶん氏名の欄が詰まるので、全体を広げて余裕を持たせる */
+  width:calc(33% - 10px);
+  min-width:300px;
 }
 .ov-bat-panel{max-height:0;overflow:hidden;transition:max-height .45s ease;order:-1}
 .ov-bat-panel.open{max-height:400px;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -283,7 +293,9 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
 .ov-bat-order-num{font-size:38px;font-weight:800;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
 .ov-b-inner{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
   padding:8px 18px;gap:5px;flex:1;min-width:0;border-left:1px solid rgba(255,255,255,.1)}
-.ov-b-line1{display:flex;align-items:flex-end;gap:14px;min-width:0}   /* フォントは下詰めで揃える */
+/* フォントは下詰めで揃える。狭い画面でも枠からはみ出さないよう、あふれたら
+   氏名側を詰める（背番号は縮めない） */
+.ov-b-line1{display:flex;align-items:flex-end;gap:14px;min-width:0;overflow:hidden;max-width:100%}
 @keyframes ovBSwap{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
 .ov-b-line1.swap{animation:ovBSwap .34s cubic-bezier(.2,.7,.2,1) both}
 .ov-b-pos{font-size:28px;font-weight:800;color:#fff;flex-shrink:0;white-space:nowrap;line-height:1}
@@ -341,7 +353,13 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
         </div>
         <!-- 得点 -->
         <div class="ov-total-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+          <span class="ov-tot-cap">R</span>
           <span class="ov-total-num" id="ov-score-away">0</span>
+        </div>
+        <!-- 安打数。イニング番号と同じく、見出しは先攻行にだけ付ける -->
+        <div class="ov-total-cell ov-h-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+          <span class="ov-tot-cap">H</span>
+          <span class="ov-total-num ov-h-num" id="ov-hits-away">0</span>
         </div>
       </div>
       <!-- 後攻行 -->
@@ -359,6 +377,9 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
         <!-- 得点 -->
         <div class="ov-total-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
           <span class="ov-total-num" id="ov-score-home">0</span>
+        </div>
+        <div class="ov-total-cell ov-h-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+          <span class="ov-total-num ov-h-num" id="ov-hits-home">0</span>
         </div>
       </div>
     </div>
@@ -551,6 +572,17 @@ const HIST_JA={
   'スリーバント失敗':'バ失','振り逃げ':'振逃'
 };
 const HIST_REACH={'ヒット':1,'二塁打':1,'三塁打':1,'ホームラン':1,'本塁打':1,'四球':1,'敬遠':1,'申告敬遠':1,'死球':1,'失策':1,'野選':1,'打撃妨害':1,'振り逃げ':1};
+// 安打として数えるもの。四球・死球・失策・野選での出塁は安打ではない
+const HIT_LABEL={'ヒット':1,'二塁打':1,'三塁打':1,'ホームラン':1,'本塁打':1};
+function _teamHits(list, team){
+  if(!Array.isArray(list)) return 0;
+  var n=0;
+  for(var i=0;i<list.length;i++){
+    var x=list[i];
+    if(x && x.atkTeam===team && HIT_LABEL[x.label]) n++;
+  }
+  return n;
+}
 function histShort(l){ return HIST_JA[l] || l; }
 
 function renderDefBadges(roster){
@@ -667,6 +699,11 @@ function applyState(s){
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   set('ov-score-away',at);set('ov-score-home',ht);
+
+  // 安打数（H）。打歴は ROSTER から来た _hist を正とし、無ければコントローラーの記録を使う
+  var paList = (_histResults!==null) ? _histResults : (Array.isArray(s.paResults)?s.paResults:[]);
+  set('ov-hits-away', _teamHits(paList,'away'));
+  set('ov-hits-home', _teamHits(paList,'home'));
 
   // イニングスコア表（先攻行は番号行つき2行、後攻行は1行）
   [[g('ov-ist-body-away'),asc,true],[g('ov-ist-body-home'),hsc,false]].forEach(function(pair){
