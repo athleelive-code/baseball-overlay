@@ -2332,11 +2332,15 @@ function _bgmDuck(on){
 // 次にやる段だけ明るく出し、済んだ段は沈めて、どこまで進んだかを見せる。
 // 途中で閉じても進み具合は残る。
 var _gsIdx = 0, _gsDone = {};
+// 進み具合は12時間で捨てる。前の試合の「済み」を持ち越さないため
+// （試合状況の復帰キャッシュと同じ考え方）
 try{
   var _gsv = JSON.parse(localStorage.getItem('bb_gs')||'null');
-  if(_gsv){ _gsIdx = _gsv.i||0; _gsDone = _gsv.d||{}; }
+  if(_gsv && (!_gsv.at || (Date.now()-_gsv.at) < 12*60*60*1000)){
+    _gsIdx = _gsv.i||0; _gsDone = _gsv.d||{};
+  }
 }catch(e){}
-function _gsSave(){ try{ localStorage.setItem('bb_gs', JSON.stringify({i:_gsIdx, d:_gsDone})); }catch(e){} }
+function _gsSave(){ try{ localStorage.setItem('bb_gs', JSON.stringify({i:_gsIdx, d:_gsDone, at:Date.now()})); }catch(e){} }
 
 var GS_STEPS = [
   { k:'siren', t:'🔔 サイレン',            d:'試合開始のサイレンを鳴らします（約10秒）' },
@@ -2424,9 +2428,17 @@ function gsSetFirstBat(side){ setFirstBat(side); _gsFillCheck(); }
 function gsAdjMaxInn(d){ adjMaxInn(d); _gsFillCheck(); }
 function gsConfirm(){ _gsShowSteps(); }
 function gsBack(){ _gsShowCheck(); }
+// 進行の記録を消す。リセットや試合データの読み込みからも呼ぶ
+// （前の試合の「済み」が残っていると、次の試合で段が最初から光らない）
+function _gsClearProgress(){
+  _gsIdx=0; _gsDone={};
+  _gsSave();
+  var m=document.getElementById('gs-mask');
+  if(m && m.style.display!=='none') _gsShowCheck();
+}
 function gsReset(){
   if(!confirm('進行をやり直しますか？\n（試合状況やスコアはそのままです）')) return;
-  _gsIdx=0; _gsDone={}; _gsSave();
+  _gsClearProgress();
   _gsShowCheck();
 }
 
@@ -5562,6 +5574,7 @@ function resetEverything(){
   bso.b=0; bso.s=0; bso.o=0;
   Object.assign(bases,{1:false,2:false,3:false});
   st.inn=1; st.top=true; st.maxInn=7; st.configMaxInn=7;
+  _gsClearProgress();          // 試合開始フローも最初から
 
   // 選手・チーム名
   rosters.away=[]; rosters.home=[];
@@ -5643,6 +5656,7 @@ function loadGameFile(e){
       var d=JSON.parse(rd.result);
       if(!d || !d.state){ alert('この形式には対応していません'); return; }
       if(!confirm('現在の内容を上書きして読み込みますか？')) return;
+      _gsClearProgress();     // 別の試合なので試合開始フローも最初から
 
       if(d.rosters){
         rosters.away = Array.isArray(d.rosters.away) ? d.rosters.away : [];
@@ -5703,6 +5717,7 @@ function resetAll(){
   Object.assign(bases,{1:false,2:false,3:false});
   st.inn=1; st.top=true; st.maxInn=7; st.configMaxInn=7;
   document.getElementById('inn-num').textContent=1;
+  _gsClearProgress();          // 次の試合なので試合開始フローも最初から
   renderSB(); renderBSO(); renderDiamond(); setTop(true); broadcast();
   closeDrawer();
 }
