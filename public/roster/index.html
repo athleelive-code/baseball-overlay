@@ -1642,6 +1642,7 @@ function applySub(){
   // 守備交代・代走は守備位置も引き継ぐ（代打は打席のみなので位置は空のまま）
   if(subKind==='守備交代'||subKind==='代走'){ pi.pos=po.pos; }
   po.pos='';
+  _syncBatteryIds(subTeam);
   render(subTeam); push();
   closeModal('sub-mask');
   toast(subKind+'：'+po.name+' → '+pi.name);
@@ -3004,10 +3005,28 @@ function assignPosition(team, playerId, pos){
   }
   moving.pos = pos;
 
+  _syncBatteryIds(team);
   renderAll();
   renderFieldPane();
   _refreshSubBtn();
   push();
+}
+
+// 守備の入れ替えでマウンドやキャッチャーが変わったら、投手・捕手の選択も追従させる。
+// これをやらないとコントローラーが古い投手を選んだままになり、投球数が
+// 交代前の投手に積まれ続ける。
+function _syncBatteryIds(team){
+  if(!lastRemote) return;
+  lastRemote.selIds = lastRemote.selIds || {};
+  var at=(rosters[team]||[]);
+  var find=function(code){
+    return at.find(function(p){
+      return p.pos && (String(p.pos).toLowerCase()===code || posLabel(p.pos)===posLabel(code));
+    });
+  };
+  var p=find('1'), c=find('2');
+  if(p) lastRemote.selIds.pitcher = p.id;
+  if(c) lastRemote.selIds.catcher = c.id;
 }
 
 // たまっている守備変更をまとめてアナウンスする

@@ -4969,6 +4969,13 @@ function applyPcEdit(s){
       if(sc&&s.selIds.catcher) sc.value=String(s.selIds.catcher);
     }
     if(typeof renderRosters==='function') renderRosters();
+    // ROSTER の守備交代でマウンドが変わった場合、球数の表示を新しい投手に切り替える
+    if(typeof _curPitcherId==='function'){
+      var _np=_curPitcherId();
+      if(_np!==_prevPitcherId){ _prevPitcherId=_np; }
+      if(typeof _updatePitchDisp==='function') _updatePitchDisp();
+    }
+    if(typeof _refreshAssist==='function') _refreshAssist();
     saveState();
   }catch(e){ console.log('applyPcEdit', e); }
   _applyingRemote=false;
