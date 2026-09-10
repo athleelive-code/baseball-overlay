@@ -1749,6 +1749,8 @@ function connectWS(){
         if(_pm && _pm.classList.contains('open')) renderPitcherInfo();
         return;
       }
+      // コントローラーからのサイレン。音を鳴らす端末がこちらのときに届く
+      if(s && s._siren){ if(_audioHere) playSiren(s.sec||10); return; }
       // 広告設定のリクエスト → 持っているときだけ送り返す
       // （空のまま返すと、別の端末で登録したスポンサーを消してしまう）
       if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(); return; }
@@ -2061,6 +2063,61 @@ var _coolingMin = 5;
 try{ var _cm=localStorage.getItem('bb_cooling_min'); if(_cm!=null) _coolingMin=Math.max(1,Math.min(30,Number(_cm)||5)); }catch(e){}
 var _cooling = { on:false, endsAt:0 };
 var _coolingTick = null;
+// ── サイレン ──────────────────────────────────────────────────────────────
+// 音源ファイルは持たず、その場で波形を作って鳴らす。コントローラー側と同じ形。
+var _sirenCtx = null, _sirenNodes = null;
+function playSiren(sec){
+  sec = Math.max(3, Math.min(30, Number(sec) || 10));
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return false;
+    if(!_sirenCtx) _sirenCtx = new AC();
+    var ctx=_sirenCtx;
+    if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
+    stopSiren();
+    var t0=ctx.currentTime + 0.05;
+    var up=sec*0.28, hold=sec*0.34, dn=sec-up-hold;
+    var gain=ctx.createGain();
+    var lp=ctx.createBiquadFilter();
+    lp.type='lowpass';
+    lp.frequency.setValueAtTime(1200, t0);
+    lp.frequency.linearRampToValueAtTime(3000, t0+up);
+    lp.frequency.linearRampToValueAtTime(1100, t0+sec);
+    var oscs=[], parts=[[1,0.5],[2,0.26],[3,0.13],[4,0.06]];
+    parts.forEach(function(p){
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine';
+      g.gain.value=p[1];
+      o.frequency.setValueAtTime(180*p[0], t0);
+      o.frequency.linearRampToValueAtTime(560*p[0], t0+up);
+      o.frequency.setValueAtTime(560*p[0], t0+up+hold);
+      o.frequency.linearRampToValueAtTime(170*p[0], t0+sec);
+      o.connect(g); g.connect(lp);
+      oscs.push(o);
+    });
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.5, t0+0.6);
+    gain.gain.setValueAtTime(0.5, t0+sec-dn*0.5);
+    gain.gain.linearRampToValueAtTime(0.0001, t0+sec);
+    lp.connect(gain); gain.connect(ctx.destination);
+    oscs.forEach(function(o){ o.start(t0); o.stop(t0+sec+0.1); });
+    _sirenNodes={ oscs:oscs, gain:gain };
+    setTimeout(function(){ _sirenNodes=null; }, (sec+0.4)*1000);
+    return true;
+  }catch(e){ return false; }
+}
+function stopSiren(){
+  if(!_sirenNodes) return;
+  try{
+    var n=_sirenNodes, t=_sirenCtx.currentTime;
+    n.gain.gain.cancelScheduledValues(t);
+    n.gain.gain.setValueAtTime(n.gain.gain.value, t);
+    n.gain.gain.linearRampToValueAtTime(0.0001, t+0.25);
+    n.oscs.forEach(function(o){ try{ o.stop(t+0.3); }catch(e){} });
+  }catch(e){}
+  _sirenNodes=null;
+}
+
 // 読み上げる文言。コントローラー側と同じにしておくこと（音声の使い回しが効く）
 function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
 function _coolingSoonText(){ return '間もなく試合再開です。'; }

@@ -120,6 +120,33 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   50%    { box-shadow:0 0 0 5px rgba(245,197,24,.75), 0 0 30px 0 rgba(245,197,24,.75) }
 }
 .assist-done{ opacity:.42; filter:saturate(.5) }
+/* 試合開始フロー */
+.gs-fld{margin-bottom:16px}
+.gs-lbl{font-size:19px;color:#888;margin-bottom:7px}
+#gs-title{width:100%;background:#2c2c2e;border:2px solid #444;border-radius:10px;color:#fff;
+  font-size:24px;padding:12px;outline:none}
+.gs-teams{display:flex;flex-direction:column;gap:7px}
+.gs-team{display:flex;align-items:center;gap:10px;background:#242426;border:1px solid #3a3a3c;
+  border-radius:10px;padding:10px 12px}
+.gs-side{font-size:18px;font-weight:700;color:#7a7a7c;flex-shrink:0;min-width:62px}
+.gs-tname{font-size:25px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gs-pick{flex:1;background:#242426;border:2px solid #3a3a3c;border-radius:12px;color:#bbb;
+  font-size:22px;font-weight:700;padding:15px 6px;cursor:pointer}
+.gs-pick.on{background:#1a3a5a;border-color:#4a8ad0;color:#fff}
+.gs-adj{flex:1;background:#242426;border:2px solid #444;border-radius:12px;color:#fff;
+  font-size:38px;font-weight:700;padding:8px;cursor:pointer}
+/* 進行の各段。次にやる段だけ明るく、済んだ段は沈める（操作アシストと同じ考え方） */
+.gs-row{display:flex;align-items:flex-start;gap:11px;margin-bottom:11px}
+.gs-no{font-size:21px;font-weight:800;color:#666;min-width:26px;text-align:center;padding-top:14px;flex-shrink:0}
+.gs-body{flex:1;min-width:0}
+.gs-btn{width:100%;background:#242426;border:2px solid #3a3a3c;border-radius:12px;color:#ddd;
+  font-size:24px;font-weight:800;padding:15px 12px;cursor:pointer;text-align:left}
+.gs-desc{font-size:17px;color:#666;margin-top:4px;padding-left:2px}
+.gs-row.gs-cur .gs-no{color:#f5c518}
+.gs-row.gs-cur .gs-btn{background:#3a2a10;border-color:#c8901e;color:#ffcf6a;
+  box-shadow:0 0 0 3px rgba(245,197,24,.35)}
+.gs-row.gs-done{opacity:.45}
+.gs-row.gs-done .gs-no{color:#86c867}
 @media (prefers-reduced-motion:reduce){ .assist-todo{animation:none} }
 /* タップの手ごたえ：押した瞬間だけ光らせる。アシストの脈打ちより後に置いて上書きする */
 .tap-lit{ animation:tapLit .2s ease-out }
@@ -480,6 +507,9 @@ body.gamemin .gm-hide{display:none!important}
   <span class="gt-label">試合名</span>
   <input id="game-title" type="text" placeholder="例）第○回○○大会 準決勝"
     oninput="onGameTitle()" autocomplete="off">
+  <button id="btn-gamestart" onclick="gsOpen()"
+    style="flex-shrink:0;background:#3a2a10;border:2px solid #c8901e;border-radius:10px;color:#ffcf6a;
+           font-size:22px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap">▶ 試合開始</button>
 </div>
 
 <div class="inning-area">
@@ -1137,6 +1167,67 @@ body.gamemin .gm-hide{display:none!important}
         3塁側チームが先攻
       </button>
     </div>
+  </div>
+</div>
+
+<!-- 試合開始フロー -->
+<div id="gs-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:700;
+     align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto">
+  <div style="background:#1a1a1c;border:3px solid #4a4a4c;border-radius:18px;width:100%;max-width:640px;
+       padding:20px 18px 16px;margin:auto">
+    <div style="font-size:34px;font-weight:900;color:#fff;text-align:center">▶ 試合開始</div>
+    <div id="gs-sub" style="font-size:20px;color:#888;text-align:center;margin:6px 0 16px"></div>
+
+    <!-- 1段目：設定の確認 -->
+    <div id="gs-check">
+      <div class="gs-fld">
+        <div class="gs-lbl">試合名</div>
+        <input id="gs-title" type="text" placeholder="例）第○回○○大会 準決勝" oninput="gsTitleInput()" autocomplete="off">
+      </div>
+      <div class="gs-fld">
+        <div class="gs-lbl">チーム（選手登録で変えられます）</div>
+        <div class="gs-teams">
+          <div class="gs-team"><span class="gs-side" id="gs-side-a"></span><span class="gs-tname" id="gs-name-a"></span></div>
+          <div class="gs-team"><span class="gs-side" id="gs-side-b"></span><span class="gs-tname" id="gs-name-b"></span></div>
+        </div>
+      </div>
+      <div class="gs-fld">
+        <div class="gs-lbl">先攻</div>
+        <div style="display:flex;gap:10px">
+          <button class="gs-pick" id="gs-fb1" onclick="gsSetFirstBat('1')">1塁側が先攻</button>
+          <button class="gs-pick" id="gs-fb3" onclick="gsSetFirstBat('3')">3塁側が先攻</button>
+        </div>
+      </div>
+      <div class="gs-fld">
+        <div class="gs-lbl">最終回</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <button class="gs-adj" onclick="gsAdjMaxInn(-1)">－</button>
+          <span id="gs-maxinn" style="font-size:44px;font-weight:800;color:#fff;min-width:70px;text-align:center">7</span>
+          <button class="gs-adj" onclick="gsAdjMaxInn(1)">＋</button>
+        </div>
+      </div>
+      <button onclick="gsConfirm()"
+        style="width:100%;background:#2a3a1a;border:3px solid #5a8a3a;border-radius:14px;color:#b8e878;
+               font-size:28px;font-weight:800;padding:16px;cursor:pointer;margin-top:6px">この内容で始める</button>
+    </div>
+
+    <!-- 2段目：進行 -->
+    <div id="gs-steps" style="display:none"></div>
+
+    <div id="gs-foot" style="display:none;font-size:19px;color:#666;margin-top:10px;text-align:center">
+      押した順に進みます。飛ばしたい段はそのまま次を押してください
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button onclick="gsBack()" id="gs-back"
+        style="flex:1;background:#242426;border:2px solid #444;border-radius:12px;color:#999;
+               font-size:22px;font-weight:700;padding:13px;cursor:pointer;display:none">← 設定に戻る</button>
+      <button onclick="gsClose()"
+        style="flex:1;background:#242426;border:2px solid #444;border-radius:12px;color:#bbb;
+               font-size:22px;font-weight:700;padding:13px;cursor:pointer">閉じる</button>
+    </div>
+    <button onclick="gsReset()" id="gs-reset"
+      style="width:100%;background:transparent;border:none;color:#666;font-size:18px;
+             padding:12px 0 2px;cursor:pointer;display:none">進行をやり直す</button>
   </div>
 </div>
 
@@ -1885,6 +1976,236 @@ function _refreshTapBtns(){
   }
   var n=document.getElementById('tap-vib-note');
   if(n) n.textContent = _vibOK ? '' : 'この端末（iPhone / iPad など）は、ブラウザからの振動に対応していません';
+}
+
+// ── サイレン ──────────────────────────────────────────────────────────────
+// 音源ファイルは持たず、その場で波形を作って鳴らす（読み込み待ちがない）。
+// ゆっくり上がって、しばらく伸ばして、ゆっくり下がる。球場のサイレンの形。
+var _sirenCtx = null, _sirenNodes = null;
+function playSiren(sec){
+  sec = Math.max(3, Math.min(30, Number(sec) || 10));
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return false;
+    if(!_sirenCtx) _sirenCtx = new AC();
+    var ctx=_sirenCtx;
+    if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
+    stopSiren();
+    var t0=ctx.currentTime + 0.05;
+    var up=sec*0.28, hold=sec*0.34, dn=sec-up-hold;
+    var gain=ctx.createGain();
+    var lp=ctx.createBiquadFilter();
+    lp.type='lowpass';
+    lp.frequency.setValueAtTime(1200, t0);
+    lp.frequency.linearRampToValueAtTime(3000, t0+up);
+    lp.frequency.linearRampToValueAtTime(1100, t0+sec);
+    // 素の正弦波だと電子音になるので、倍音を重ねて厚みを出す
+    var oscs=[], parts=[[1,0.5],[2,0.26],[3,0.13],[4,0.06]];
+    parts.forEach(function(p){
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine';
+      g.gain.value=p[1];
+      o.frequency.setValueAtTime(180*p[0], t0);
+      o.frequency.linearRampToValueAtTime(560*p[0], t0+up);
+      o.frequency.setValueAtTime(560*p[0], t0+up+hold);
+      o.frequency.linearRampToValueAtTime(170*p[0], t0+sec);
+      o.connect(g); g.connect(lp);
+      oscs.push(o);
+    });
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.5, t0+0.6);
+    gain.gain.setValueAtTime(0.5, t0+sec-dn*0.5);
+    gain.gain.linearRampToValueAtTime(0.0001, t0+sec);
+    lp.connect(gain); gain.connect(ctx.destination);
+    oscs.forEach(function(o){ o.start(t0); o.stop(t0+sec+0.1); });
+    _sirenNodes = { oscs:oscs, gain:gain };
+    setTimeout(function(){ _sirenNodes=null; }, (sec+0.4)*1000);
+    return true;
+  }catch(e){ return false; }
+}
+function stopSiren(){
+  if(!_sirenNodes) return;
+  try{
+    var n=_sirenNodes, t=_sirenCtx.currentTime;
+    n.gain.gain.cancelScheduledValues(t);
+    n.gain.gain.setValueAtTime(n.gain.gain.value, t);
+    n.gain.gain.linearRampToValueAtTime(0.0001, t+0.25);
+    n.oscs.forEach(function(o){ try{ o.stop(t+0.3); }catch(e){} });
+  }catch(e){}
+  _sirenNodes=null;
+}
+
+// ── 試合開始フロー ────────────────────────────────────────────────────────
+// 自動で全部やってしまわず、一段ずつオペレーターが押して進める。
+// 次にやる段だけ明るく出し、済んだ段は沈めて、どこまで進んだかを見せる。
+// 途中で閉じても進み具合は残る。
+var _gsIdx = 0, _gsDone = {};
+try{
+  var _gsv = JSON.parse(localStorage.getItem('bb_gs')||'null');
+  if(_gsv){ _gsIdx = _gsv.i||0; _gsDone = _gsv.d||{}; }
+}catch(e){}
+function _gsSave(){ try{ localStorage.setItem('bb_gs', JSON.stringify({i:_gsIdx, d:_gsDone})); }catch(e){} }
+
+var GS_STEPS = [
+  { k:'siren', t:'🔔 サイレン',            d:'試合開始のサイレンを鳴らします（約10秒）' },
+  { k:'open',  t:'🔊 開始アナウンス',      d:'試合名と両チーム名を読み上げます' },
+  { k:'lu1',   t:'🔊 先攻 スタメン発表',   d:'打順どおりに読み上げます' },
+  { k:'lu2',   t:'🔊 後攻 スタメン発表',   d:'打順どおりに読み上げます' },
+  { k:'play',  t:'⚾ 試合開始（1回表へ）',  d:'1回表にして、試合中モードに入ります' },
+  { k:'def',   t:'🔊 守備紹介',            d:'1回表に守るチームを紹介します' },
+  { k:'inn',   t:'🔊 1回表 イニングコール', d:'先頭打者まで読み上げます' }
+];
+function _gsAt(k){ for(var i=0;i<GS_STEPS.length;i++){ if(GS_STEPS[i].k===k) return i; } return -1; }
+
+// 開始アナウンスの文言
+function _gsOpenText(){
+  var el=document.getElementById('game-title');
+  var title=(el && el.value ? el.value.trim() : '');
+  var a=_teamSay('away'), h=_teamSay('home');
+  return 'お待たせいたしました。' + (title ? 'これより、'+title+'、' : 'これより、')
+       + a + '対' + h + 'の試合を開始いたします。';
+}
+// 段の見出し。どちらのベンチかも添えて取り違えを防ぐ
+function _gsLabel(s){
+  if(s.k==='lu1') return '🔊 先攻 スタメン発表（'+_sideOf('away')+'）';
+  if(s.k==='lu2') return '🔊 後攻 スタメン発表（'+_sideOf('home')+'）';
+  if(s.k==='def') return '🔊 守備紹介（後攻・'+_sideOf('home')+'）';
+  return s.t;
+}
+
+function gsOpen(){
+  var m=document.getElementById('gs-mask');
+  if(!m) return;
+  m.style.display='flex';
+  // 一度でも進んでいれば進行の画面から、まっさらなら設定の確認から
+  var started=false;
+  for(var k in _gsDone){ if(_gsDone[k]){ started=true; break; } }
+  if(started) _gsShowSteps(); else _gsShowCheck();
+}
+function gsClose(){
+  var m=document.getElementById('gs-mask');
+  if(m) m.style.display='none';
+}
+function _gsShowCheck(){
+  document.getElementById('gs-check').style.display='';
+  document.getElementById('gs-steps').style.display='none';
+  document.getElementById('gs-foot').style.display='none';
+  document.getElementById('gs-back').style.display='none';
+  document.getElementById('gs-reset').style.display='none';
+  document.getElementById('gs-sub').textContent='まず設定を確認します';
+  _gsFillCheck();
+}
+function _gsShowSteps(){
+  document.getElementById('gs-check').style.display='none';
+  document.getElementById('gs-steps').style.display='';
+  document.getElementById('gs-foot').style.display='';
+  document.getElementById('gs-back').style.display='';
+  document.getElementById('gs-reset').style.display='';
+  document.getElementById('gs-sub').textContent='上から順に押してください';
+  _gsRender();
+}
+function _gsFillCheck(){
+  var t=document.getElementById('gs-title'), gt=document.getElementById('game-title');
+  if(t && gt && document.activeElement!==t) t.value=gt.value||'';
+  // 表示は3塁側を左（上）に。中身の先攻／後攻はそのまま
+  var third = (_firstBatSide==='3') ? 'away' : 'home';
+  var first = (third==='away') ? 'home' : 'away';
+  [[ 'a', third ], [ 'b', first ]].forEach(function(pair){
+    var sd=document.getElementById('gs-side-'+pair[0]);
+    var nm=document.getElementById('gs-name-'+pair[0]);
+    var el=document.getElementById('name-'+pair[1]);
+    if(sd) sd.textContent=_sideOf(pair[1])+(pair[1]==='away'?'／先攻':'／後攻');
+    if(nm) nm.textContent=(el && el.textContent) ? el.textContent : (pair[1]==='away'?'先攻':'後攻');
+  });
+  var b1=document.getElementById('gs-fb1'), b3=document.getElementById('gs-fb3');
+  if(b1) b1.classList.toggle('on', _firstBatSide==='1');
+  if(b3) b3.classList.toggle('on', _firstBatSide==='3');
+  var mi=document.getElementById('gs-maxinn'); if(mi) mi.textContent=st.maxInn;
+}
+function gsTitleInput(){
+  var t=document.getElementById('gs-title'), gt=document.getElementById('game-title');
+  if(!t||!gt) return;
+  gt.value=t.value;
+  if(typeof onGameTitle==='function') onGameTitle();
+}
+function gsSetFirstBat(side){ setFirstBat(side); _gsFillCheck(); }
+function gsAdjMaxInn(d){ adjMaxInn(d); _gsFillCheck(); }
+function gsConfirm(){ _gsShowSteps(); }
+function gsBack(){ _gsShowCheck(); }
+function gsReset(){
+  if(!confirm('進行をやり直しますか？\n（試合状況やスコアはそのままです）')) return;
+  _gsIdx=0; _gsDone={}; _gsSave();
+  _gsShowCheck();
+}
+
+function _gsRender(){
+  var box=document.getElementById('gs-steps');
+  if(!box) return;
+  box.innerHTML = GS_STEPS.map(function(s,i){
+    var done=!!_gsDone[s.k];
+    var cur=(!done && i===_gsIdx);
+    return '<div class="gs-row'+(done?' gs-done':(cur?' gs-cur':''))+'">'
+      +'<span class="gs-no">'+(done?'✓':(i+1))+'</span>'
+      +'<div class="gs-body">'
+        +'<button class="gs-btn" onclick="gsDo(\''+s.k+'\')">'+_gsLabel(s)+'</button>'
+        +'<div class="gs-desc">'+s.d+'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+function _gsMark(k){
+  _gsDone[k]=true;
+  // 次にやる段＝まだ済んでいない一番上の段
+  _gsIdx=GS_STEPS.length;
+  for(var i=0;i<GS_STEPS.length;i++){ if(!_gsDone[GS_STEPS[i].k]){ _gsIdx=i; break; } }
+  _gsSave();
+  _gsRender();
+}
+function _gsSpeak(title, text, k){
+  if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  if(!text){ alert('読み上げる内容がありません。選手登録を確認してください'); return; }
+  gsClose();       // 読み上げ確認ウインドウが隠れないよう、いったん閉じる
+  confirmSpeak(title, text, _ttsVoice, _ttsStyle, _annRate, function(){
+    _gsMark(k);
+    gsOpen();
+  });
+}
+
+function gsDo(k){
+  if(k==='siren'){
+    if(_audioHere) playSiren(10);
+    else { try{ ws.send(JSON.stringify({ _siren:true, sec:10 })); }catch(e){} }
+    toastMsg('サイレン');
+    _gsMark(k);
+    return;
+  }
+  if(k==='open'){ _gsSpeak('🔊 開始アナウンス', _gsOpenText(), k); return; }
+  if(k==='lu1'){  _gsSpeak('🔊 先攻 スタメン', _lineupText('away'), k); return; }
+  if(k==='lu2'){  _gsSpeak('🔊 後攻 スタメン', _lineupText('home'), k); return; }
+  if(k==='def'){  _gsSpeak('🔊 守備紹介（後攻）', _defenseText('home'), k); return; }
+  if(k==='play'){ gsPlayBall(); _gsMark(k); return; }
+  if(k==='inn'){
+    if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+    gsClose();
+    announceCurrentInning();
+    _gsMark(k);
+    return;
+  }
+}
+
+// 1回表にして試合中モードに入る。スコアや選手には触らない
+function gsPlayBall(){
+  st.inn=1;
+  var e=document.getElementById('inn-num'); if(e) e.textContent=1;
+  setTop(true);
+  bso.b=0; bso.s=0; bso.o=0;
+  Object.assign(bases,{1:false,2:false,3:false});
+  renderBSO(); renderDiamond(); renderSB();
+  _abReset(); _updateAbDisp();
+  _assistReset();
+  if(!_gameMin) toggleGameMin();
+  broadcast(); saveState();
+  toastMsg('1回表 開始');
 }
 
 // ── スポンサーティッカー ──────────────────────────────────────────────────
