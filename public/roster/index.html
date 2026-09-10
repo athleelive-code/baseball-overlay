@@ -1723,7 +1723,12 @@ function connectWS(){
       setWsUI(true);
       try{ ws.send(JSON.stringify({ _req:'state' })); }catch(e){}
       setTimeout(function(){
-        if(typeof _sendAdCfg==='function') _sendAdCfg();
+        // 広告を持っているときだけ配信。持っていなければ要求する
+        // （空データを送ると、別の端末で登録したスポンサーを消してしまう）
+        if(typeof _sendAdCfg==='function'){
+          if(_adCfg.slots.length) _sendAdCfg();
+          else { try{ ws.send(JSON.stringify({ _req:'adcfg' })); }catch(e){} }
+        }
         if(typeof _sendHist==='function') _sendHist();
         // ロゴを持っているときだけ配信（空データで他端末のロゴを消さない）。持っていなければ要求する
         if(typeof _sendTeamCfg==='function'){
@@ -1744,8 +1749,11 @@ function connectWS(){
         if(_pm && _pm.classList.contains('open')) renderPitcherInfo();
         return;
       }
-      // オーバーレイからの広告設定リクエスト → 現在の設定を送り返す
-      if(s && s._req==='adcfg'){ _sendAdCfg(); return; }
+      // 広告設定のリクエスト → 持っているときだけ送り返す
+      // （空のまま返すと、別の端末で登録したスポンサーを消してしまう）
+      if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(); return; }
+      // 他の端末で登録された広告を取り込む（自分に何も無いときだけ）
+      if(s && s._adcfg){ _adIngest(s); return; }
       // オーバーレイからの打歴リクエスト → 現在の打席結果一覧を送り返す
       if(s && s._req==='hist'){ if(typeof _sendHist==='function') _sendHist(); return; }
       // エンブレム要求 → ロゴを持っているときだけ送り返す（空データで他端末を消さない）
@@ -3286,6 +3294,34 @@ function _adSave(){
   try{ localStorage.setItem('bb_adcfg_edit', JSON.stringify(_adCfg)); }
   catch(e){ toast('保存容量がいっぱいです。使わない画像を削除してください'); }
 }
+// 他の端末が登録した広告を取り込む。
+// 配信されてくるのは「出す場所ごとの画像の並び」なので、そこからスロットを組み直す。
+// 自分に設定があるときは触らない（登録した端末の内容を勝手に書き換えない）
+function _adIngest(d){
+  if(!d || _adCfg.slots.length) return;
+  var lists={ top:d.top||[], ticker:d.ticker||[], cool:d.cool||[] };
+  var order=[], seen={};
+  ['top','ticker','cool'].forEach(function(k){
+    (lists[k]||[]).forEach(function(src){
+      if(src && !seen[src]){ seen[src]=true; order.push(src); }
+    });
+  });
+  if(!order.length) return;
+  _adCfg.slots = order.map(function(src){
+    return { src:src, name:'', on:true, where:{
+      top:    lists.top.indexOf(src)>=0,
+      ticker: lists.ticker.indexOf(src)>=0,
+      cool:   lists.cool.indexOf(src)>=0
+    }};
+  });
+  if(typeof d.sec==='number') _adCfg.sec=d.sec;
+  if(typeof d.rotate==='number') _adCfg.rotate=d.rotate;
+  if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
+  if(typeof d.sponsorText==='string') _adCfg.sponsorText=d.sponsorText;
+  _adSave();
+  _renderAdSlots();
+}
+
 function _sendAdCfg(){
   _adSave();
   var pick=function(key){
@@ -3534,6 +3570,9 @@ function prebuildVoices(){
     var lt=_lineupText(t);  if(lt) texts.push(lt);
     var dt=_defenseText(t); if(dt) texts.push(dt);
   });
+  // クーリングの案内。この端末で音を鳴らす運用でも間に合うよう作っておく
+  texts.push('間もなく試合開始です。');
+  for(var m=1;m<=30;m++) texts.push('只今より'+m+'分間のクーリングタイムを開始します。');
   texts=texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
   var btn=document.getElementById('set-prebuild');

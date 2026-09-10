@@ -1933,8 +1933,8 @@ function _coolingStartTick(){
   _coolingTick = setInterval(function(){
     if(!_cooling.on){ _coolingStopTick(); return; }
     var left = _coolingRemain();
-    // 残り10秒で予告。読み上げに数秒かかるので、終わる前に流し切れるようここで出す
-    if(!_coolingSoonSaid && left > 0 && left <= 10){
+    // 残り12秒で予告。音声の生成に数秒かかることがあるので、少し早めに出す
+    if(!_coolingSoonSaid && left > 0 && left <= 12){
       _coolingSoonSaid = true;
       if(_annOn) _speakAs(_coolingSoonText(), _ttsVoice, _ttsStyle, _annRate);
     }
@@ -1956,6 +1956,10 @@ function startCooling(){
   _coolingStartTick();
   broadcast(); saveState();
   if(_annOn) _speakAs(_coolingSayText(_coolingMin), _ttsVoice, _ttsStyle, _annRate);
+  // 終了間際の予告は待たされると間に合わないので、いま作っておく
+  if(_annOn && _ttsReady && typeof _ttsFetch1==='function'){
+    try{ _ttsFetch1(_coolingSoonText(), _ttsVoice, _ttsStyle, _annRate).catch(function(){}); }catch(e){}
+  }
   toastMsg('クーリング開始（'+_coolingMin+'分）');
 }
 function stopCooling(auto){
@@ -2487,6 +2491,9 @@ function prebuildVoices(){
     var lt=_lineupText(t);  if(lt) texts.push(lt);
     var dt=_defenseText(t); if(dt) texts.push(dt);
   });
+  // クーリングの案内。特に終了10秒前の予告は、その場で作ると間に合わない
+  texts.push(_coolingSoonText());
+  for(var m=1;m<=30;m++) texts.push(_coolingSayText(m));
   texts = texts.filter(function(v,i,a){ return a.indexOf(v)===i; });
 
   var btn=document.getElementById('btn-prebuild');
