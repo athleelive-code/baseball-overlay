@@ -2202,6 +2202,7 @@ function announceCurrentBatter(){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var sel=document.getElementById('sel-batter');
   if(!sel || !sel.value){ alert('打者が選択されていません'); return; }
+  _setBatterVisible(true);
   _assistMarkBatter();
   var team = st.top ? 'away' : 'home';
   var p = rosters[team].find(function(x){ return x.id===Number(sel.value); });
@@ -2227,6 +2228,7 @@ function _coachSay(team){
 function announceCurrentInning(){
   _setTicker(false);   // 次の回のコールと同時にティッカーを終了する
   _showLineupForInning();   // 打順と守備位置を自動で出す（設定の秒数で引っ込む）
+  _setBatterVisible(true);   // イニング交代で消した打者表示をここで出し直す
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   _assistMarkInning();
   var team = _teamSay(st.top ? 'away' : 'home');
@@ -3675,6 +3677,8 @@ function nextInn(){
   if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; _refreshScoreBtn(); _armScoreAutoHide(); }
   _ticker.on = true;          // イニング交代中はスポンサーを流す（下の broadcast で配る）
   _assistReset();
+  _batterVisible = false;   // 打者表示は一度消し、次のコールで出し直す
+  _setBatterVisBtn();
   broadcast();
 }
 
@@ -5249,14 +5253,23 @@ function toggleBSOVisible(){
   broadcast();
 }
 
+function _setBatterVisBtn(){
+  const btn=document.getElementById('btn-batter-visible');
+  if(!btn) return;
+  btn.textContent=_batterVisible?'打者 非表示':'打者 表示';
+  btn.style.background=_batterVisible?'#5a1a1a':'#3a1a1a';
+  btn.style.borderColor=_batterVisible?'#aa3a3a':'#8a3a3a';
+}
 function toggleBatterVisible(){
   _batterVisible=!_batterVisible;
-  const btn=document.getElementById('btn-batter-visible');
-  if(btn){
-    btn.textContent=_batterVisible?'打者 非表示':'打者 表示';
-    btn.style.background=_batterVisible?'#5a1a1a':'#3a1a1a';
-    btn.style.borderColor=_batterVisible?'#aa3a3a':'#8a3a3a';
-  }
+  _setBatterVisBtn();
+  broadcast();
+}
+// 打者表示を出す／消す（イニング交代とコールから呼ぶ）
+function _setBatterVisible(v){
+  if(_batterVisible === !!v) return;
+  _batterVisible = !!v;
+  _setBatterVisBtn();
   broadcast();
 }
 
