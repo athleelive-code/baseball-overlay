@@ -236,15 +236,16 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
    枠の幅は画像に合わせて伸び縮みさせる。幅を決め打ちにすると、正方形の画像だけ
    高さで頭打ちになって小さく見えてしまうため（高さはいつも使い切る） */
 /* 枠は付けない（画像だけを置く）。背景が明るい映像でも沈まないよう、
-   影だけ薄く落とす */
+   影だけ薄く落とす。
+   大きさは画像ごとに JS（_adTopFit）が決める。ここの値は読み込み前の見た目 */
 .ov-adtop{
   position:fixed;right:20px;top:20px;z-index:35;
-  display:none;align-items:center;justify-content:center;
-  width:auto;max-width:460px;height:116px;
+  display:none;align-items:flex-start;justify-content:flex-end;
+  width:auto;height:auto;max-width:460px;max-height:230px;
   transform:scale(.8);transform-origin:top right;
 }
 .ov-adtop.on{display:flex}
-.ov-adtop img{height:100%;width:auto;max-width:100%;
+.ov-adtop img{height:116px;width:auto;max-width:460px;max-height:230px;
   object-fit:contain;display:block;
   filter:drop-shadow(0 2px 7px rgba(0,0,0,.55))}
 .ov-adtop img.fade{animation:adTopIn .45s ease}
@@ -1123,12 +1124,30 @@ function applyTicker(on){
 // 複数枚あるときは切替間隔（0のときは10秒）ごとに入れ替える。
 var _adTopIndex = 0;
 var _adTopTimer = null;
+
+// 大きさは「見た目の面積」でそろえる。
+// 枠の高さを決め打ちにすると、横長のロゴばかり大きくなり、正方形や縦長のロゴが
+// 小さく見えてしまう。同じ面積になる幅と高さを縦横比から求め、はみ出さないよう
+// 上限で頭を押さえる。枠を描いていないので、余った場所は見えない。
+var ADTOP_AREA = 52000, ADTOP_MAX_W = 460, ADTOP_MAX_H = 230;
+function _adTopFit(img){
+  var nw = img.naturalWidth||0, nh = img.naturalHeight||0;
+  if(!nw || !nh) return;
+  var ar = nw/nh;
+  var w = Math.sqrt(ADTOP_AREA*ar), h = w/ar;
+  if(w > ADTOP_MAX_W){ w = ADTOP_MAX_W; h = w/ar; }
+  if(h > ADTOP_MAX_H){ h = ADTOP_MAX_H; w = h*ar; }
+  img.style.width  = Math.round(w)+'px';
+  img.style.height = Math.round(h)+'px';
+}
+
 function _adTopPaint(){
   var box=g('ov-adtop'), img=g('ov-adtop-img');
   if(!box||!img) return;
   if(!_adTop.length){ box.classList.remove('on'); return; }
   img.onerror=function(){ box.classList.remove('on'); };
   img.onload=function(){
+    _adTopFit(img);
     box.classList.add('on');
     // 切り替わったことが分かるように軽く出し直す
     img.classList.remove('fade'); void img.offsetWidth; img.classList.add('fade');
