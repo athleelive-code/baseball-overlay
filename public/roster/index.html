@@ -352,6 +352,10 @@ body.locked .row{cursor:default}
 /* 並び順。この番号の順に、右上の切替・ティッカー・クーリングへ並ぶ */
 .ad-no{font-size:13px;font-weight:800;color:#888;width:16px;text-align:center;flex-shrink:0;
   font-variant-numeric:tabular-nums}
+/* どの画像か見分けられるようにファイル名を出す。長いときは末尾を省略 */
+.ad-name{font-size:12px;font-weight:600;color:#ddd;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ad-name.none{color:#777;font-weight:400;font-style:italic}
 .ad-move{display:flex;gap:3px;margin-left:auto;flex-shrink:0}
 .ad-move .btn{font-size:12px;padding:6px 9px;line-height:1;margin:0}
 .ad-move .btn[disabled]{opacity:.3;cursor:default}
@@ -3271,7 +3275,7 @@ function _adLoad(){
   _adCfg.slots = (_adCfg.slots||[])
     .filter(function(s){ return BUNDLED.indexOf(String(s.src||''))<0; })
     .map(function(s){
-      return { src:s.src||'', on:s.on!==false, where:_adWhere(s.where) };
+      return { src:s.src||'', name:s.name||'', on:s.on!==false, where:_adWhere(s.where) };
     });
   if(typeof _adCfg.tickerSpeed!=='number') _adCfg.tickerSpeed = 40;
   _adSave();
@@ -3319,6 +3323,9 @@ function _renderAdSlots(){
       +'<span class="ad-no">'+(i+1)+'</span>'
       +'<img src="'+esc(s.src||'')+'" alt="" class="ad-thumb" onerror="this.style.opacity=.2">'
       +'<div class="ad-body">'
+        +'<div class="ad-name'+(s.name?'':' none')+'" title="'+esc(s.name||'')+'">'
+          +esc(s.name || (s.src ? '（ファイル名なし）' : '画像が未選択です'))
+        +'</div>'
         +'<div class="ad-row1">'
           +'<label class="btn" style="font-size:12px;padding:7px 10px;cursor:pointer;margin:0">画像を選ぶ'
             +'<input type="file" accept="image/*" style="display:none" onchange="adPickFile('+i+',this)"></label>'
@@ -3404,8 +3411,9 @@ function adPickFile(i, input){
   if(!f || !_adCfg.slots[i]) return;
   _adShrink(f).then(function(src){
     if(!_adCfg.slots[i]) return;
-    _adCfg.slots[i].src = src;
-    _adCfg.slots[i].on  = true;
+    _adCfg.slots[i].src  = src;
+    _adCfg.slots[i].name = f.name || '';   // どの画像か分かるようファイル名を覚える
+    _adCfg.slots[i].on   = true;
     _sendAdCfg(); _renderAdSlots();
     toast('広告を差し替えました');
   }).catch(function(){ toast('画像を読み込めませんでした'); });
@@ -3421,9 +3429,9 @@ function adAddFiles(input){
     return _adShrink(f).catch(function(){ return ''; });
   })).then(function(srcs){
     var ok=0;
-    srcs.forEach(function(src){
+    srcs.forEach(function(src, k){
       if(!src) return;
-      _adCfg.slots.push({ src:src, on:true, where:_adWhere() });
+      _adCfg.slots.push({ src:src, name:(files[k] && files[k].name) || '', on:true, where:_adWhere() });
       ok++;
     });
     _sendAdCfg(); _renderAdSlots();
