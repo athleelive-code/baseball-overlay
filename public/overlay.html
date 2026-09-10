@@ -206,11 +206,10 @@ body.has-ticker .ov-bat-wrap{bottom:142px}
   background:linear-gradient(90deg,rgba(4,10,18,0),rgba(4,10,18,.86) 22%,rgba(4,10,18,.9));
 }
 .ov-cool.on{display:flex}
-/* クーリング中は打者表示・右上の広告・ティッカーを引っ込める。
-   スコア表はそのまま残す（終わると自動で戻る） */
+/* クーリング中は打者表示と右上の広告を引っ込める。
+   スコア表とティッカーはそのまま残す（終わると自動で戻る） */
 body.cooling .ov-adtop,
-body.cooling .ov-bat-wrap,
-body.cooling .ov-ticker{ opacity:0; pointer-events:none; transition:opacity .4s ease }
+body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4s ease }
 .ov-cool-t{
   font-size:26px;font-weight:800;letter-spacing:7px;color:#bdf0ff;
   text-shadow:0 2px 14px rgba(0,0,0,.7);padding-left:7px;
@@ -1079,6 +1078,7 @@ try{
 var _coolEndsAt = 0;
 var _coolTick = null;
 var _coolScoreWasOpen = false;   // クーリング前からスコア表が開いていたか
+var _coolTickerWas    = false;   // クーリング前からティッカーが流れていたか
 function _coolFmt(sec){
   var m=Math.floor(sec/60), s=sec%60;
   return m+':'+(s<10?'0':'')+s;
@@ -1099,17 +1099,24 @@ function applyCooling(c){
   document.body.classList.toggle('cooling', on);   // 打者表示などを引っ込める
   if(on){
     _coolEndsAt = c.endsAt;
-    // 始まるときだけスコア表のイニングを開く。クーリング中は開いたまま残す
+    // 始まるときだけ、スコア表のイニングを開いてティッカーを流し始める。
+    // どちらもクーリング中はそのまま残す
     if(!box.classList.contains('on')){
       _coolScoreWasOpen = !!document.querySelector('.ov-ist-slide.open');
+      _coolTickerWas    = _tickerOn;
       showScoreBig(null, 0);        // 0 = 自動で閉じない
+      applyTicker(true);
     }
     box.classList.add('on');
     _coolPaint();
     if(!_coolTick) _coolTick=setInterval(_coolPaint, 500);
   }else{
     _coolEndsAt = 0;
-    if(box.classList.contains('on') && !_coolScoreWasOpen) hideScoreBig();
+    // 開く前の状態に戻す
+    if(box.classList.contains('on')){
+      if(!_coolScoreWasOpen) hideScoreBig();
+      applyTicker(_coolTickerWas);
+    }
     box.classList.remove('on');
     if(_coolTick){ clearInterval(_coolTick); _coolTick=null; }
   }
