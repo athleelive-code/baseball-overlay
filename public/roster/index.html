@@ -2205,7 +2205,9 @@ function clearLog(){
   _gameLog=[];
   _saveLog();
   renderLog();
-  if(kind==='result' && typeof renderFieldPane==='function') renderFieldPane();
+  renderAll();                       // 各行の打歴チップを消す
+  if(typeof renderFieldPane==='function') renderFieldPane();
+  toast('打席記録を消去しました');
 }
 
 function _saveLog(){

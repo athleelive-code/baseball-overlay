@@ -3503,8 +3503,11 @@ function startNameEdit(team, e){
       const val = input.value.trim() || current;
       disp.textContent = val;
       input.replaceWith(disp);
-      try{ localStorage.setItem('bb_'+team, val); }catch(e){}
+      // 保存は bb_state（saveState）に一本化する。ドロワーの入力欄とラベルも揃える
+      if(typeof _fillTeamNameInputs==='function') _fillTeamNameInputs(team, val);
+      if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
       broadcast();
+      saveState();
     };
     input.onkeydown = e=>{ if(e.key==='Enter') input.blur(); };
     disp.replaceWith(input);
@@ -3517,12 +3520,12 @@ function cancelNameEdit(){
 }
 
 // ── チーム名読み込み ───────────────────────────────────────────────────────────
+// 以前はここで localStorage の bb_away / bb_home からチーム名を復元していたが、
+// bb_state（12時間で失効）と二重管理になり、期限切れの後でも前の試合のチーム名が
+// 復活してしまっていた。復元は restoreState() の bb_state に一本化し、旧キーは消す。
 (function(){
   ['away','home'].forEach(t=>{
-    try{
-      const v = localStorage.getItem('bb_'+t);
-      if(v) document.getElementById('name-'+t).textContent = v;
-    }catch(e){}
+    try{ localStorage.removeItem('bb_'+t); }catch(e){}
   });
 })();
 
