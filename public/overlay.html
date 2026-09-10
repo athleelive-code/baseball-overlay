@@ -28,7 +28,8 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   border:1px solid rgba(255,255,255,.15);
   border-radius:8px;overflow:hidden;
   display:inline-flex;flex-direction:column;
-  width:calc(27% - 10px);   /* 打者エリアと同じくらいの幅 */
+  /* R/H/E の列が入ったぶん、チーム名の欄を確保するため少し広げている */
+  width:calc(30% - 10px);
   min-width:230px;
   max-width:calc(45% - 10px);
   transition:width .5s ease,max-width .5s ease;
@@ -71,14 +72,18 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 /* R（得点）と H（安打数）。イニング表と同じく、見出しは先攻行にだけ付けて
    上下の桁が縦にそろうようにする */
 .ov-total-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  flex-shrink:0;width:60px;padding:0 6px}
+  flex-shrink:0;width:56px;padding:0 6px}
 .ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
-.ov-tot-cap{font-size:13px;font-weight:700;line-height:1;padding:1px 4px;
-  color:rgba(255,255,255,.45);align-self:stretch;text-align:center;
-  border-bottom:1px solid rgba(255,255,255,.15)}
-/* 安打数は得点より一段控えめに。得点が主役 */
-.ov-h-cell{width:48px}
-.ov-h-num{font-size:22px;color:rgba(255,255,255,.72)}
+.ov-tot-cap{font-size:15px;font-weight:800;line-height:1;padding:1px 4px;
+  color:rgba(255,255,255,.72);align-self:stretch;text-align:center;letter-spacing:1px;
+  border-bottom:1px solid rgba(255,255,255,.22)}
+/* 得点（R）が主役。地の色を少し起こして、安打数（H）と一目で見分けられるようにする */
+.ov-r-cell{background:rgba(255,255,255,.09)}
+.ov-r-cell .ov-tot-cap{color:#fff}
+/* 安打数（H）と失策（E）は一段控えめに */
+.ov-h-cell,.ov-e-cell{width:44px}
+.ov-h-cell .ov-tot-cap,.ov-e-cell .ov-tot-cap{color:rgba(255,255,255,.55);font-weight:700}
+.ov-h-num{font-size:22px;color:rgba(255,255,255,.62)}
 .ov-total-num{font-size:28px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 
 /* スコア表（イニング別） - スコアブロック下に */
@@ -352,15 +357,18 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
         <div class="ov-ist-wrap ov-ist-slide">
           <table class="ov-ist-table" style="height:100%"><tbody id="ov-ist-body-away"></tbody></table>
         </div>
-        <!-- 得点 -->
-        <div class="ov-total-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+        <!-- R=得点 H=安打 E=失策。見出しはイニング番号と同じく先攻行にだけ付ける -->
+        <div class="ov-total-cell ov-r-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
           <span class="ov-tot-cap">R</span>
           <span class="ov-total-num" id="ov-score-away">0</span>
         </div>
-        <!-- 安打数。イニング番号と同じく、見出しは先攻行にだけ付ける -->
         <div class="ov-total-cell ov-h-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
           <span class="ov-tot-cap">H</span>
           <span class="ov-total-num ov-h-num" id="ov-hits-away">0</span>
+        </div>
+        <div class="ov-total-cell ov-e-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+          <span class="ov-tot-cap">E</span>
+          <span class="ov-total-num ov-h-num" id="ov-errs-away">0</span>
         </div>
       </div>
       <!-- 後攻行 -->
@@ -375,12 +383,14 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
         <div class="ov-ist-wrap ov-ist-slide">
           <table class="ov-ist-table" style="height:100%"><tbody id="ov-ist-body-home"></tbody></table>
         </div>
-        <!-- 得点 -->
-        <div class="ov-total-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+        <div class="ov-total-cell ov-r-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
           <span class="ov-total-num" id="ov-score-home">0</span>
         </div>
         <div class="ov-total-cell ov-h-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
           <span class="ov-total-num ov-h-num" id="ov-hits-home">0</span>
+        </div>
+        <div class="ov-total-cell ov-e-cell" style="flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)">
+          <span class="ov-total-num ov-h-num" id="ov-errs-home">0</span>
         </div>
       </div>
     </div>
@@ -584,6 +594,19 @@ function _teamHits(list, team){
   }
   return n;
 }
+// 失策（E）は守っていた側に付く。打者が失策で出塁した記録なので、
+// その打席で攻撃していたチームの相手が失策を犯したことになる。
+// ※記録できるのは打者の打球にまつわる失策だけ。走者への送球ミスなどは数に入らない
+function _teamErrors(list, team){
+  if(!Array.isArray(list)) return 0;
+  var other = (team==='away') ? 'home' : 'away';
+  var n=0;
+  for(var i=0;i<list.length;i++){
+    var x=list[i];
+    if(x && x.atkTeam===other && x.label==='失策') n++;
+  }
+  return n;
+}
 function histShort(l){ return HIST_JA[l] || l; }
 
 function renderDefBadges(roster){
@@ -696,6 +719,7 @@ function applyState(s){
   // チームエンブレム（スコア表・打者ブロック）
   _lastTop = isTop;
   _paintTeamLogos();
+  _fitTeamNames();          // 長いチーム名は文字を小さくして必ず全部出す
 
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
@@ -705,6 +729,8 @@ function applyState(s){
   var paList = (_histResults!==null) ? _histResults : (Array.isArray(s.paResults)?s.paResults:[]);
   set('ov-hits-away', _teamHits(paList,'away'));
   set('ov-hits-home', _teamHits(paList,'home'));
+  set('ov-errs-away', _teamErrors(paList,'away'));
+  set('ov-errs-home', _teamErrors(paList,'home'));
 
   // イニングスコア表（先攻行は番号行つき2行、後攻行は1行）
   [[g('ov-ist-body-away'),asc,true],[g('ov-ist-body-home'),hsc,false]].forEach(function(pair){
@@ -988,8 +1014,35 @@ function applyTeamCfg(d){
 }
 function _setLogoImg(id, src){
   var e=g(id); if(!e) return;
-  if(src){ e.src=src; e.style.display=''; }
+  if(src){
+    e.src=src; e.style.display='';
+    // ロゴが入るとチーム名の欄が狭くなる。読み込み後にもう一度はかり直す
+    e.onload=function(){ _fitTeamNames(true); };
+  }
   else { e.removeAttribute('src'); e.style.display='none'; }
+}
+
+// チーム名は「…」で切らず、収まるまで文字を小さくして必ず全部見せる。
+// 先攻・後攻でちぐはぐにならないよう、両方に小さいほうの大きさを使う。
+// 毎回の配信で測り直すと重いので、文字か欄の幅が変わったときだけ測る。
+function _fitTeamNames(force){
+  var a=g('ov-aname'), h=g('ov-hname');
+  if(!a||!h||!a.parentNode) return;
+  var lw=function(id){ var e=g(id); return (e && e.style.display!=='none') ? Math.round(e.offsetWidth) : 0; };
+  var key=a.textContent+'|'+h.textContent+'|'+Math.round(a.parentNode.clientWidth)+'|'+lw('ov-alogo')+'|'+lw('ov-hlogo');
+  if(!force && a.getAttribute('data-fit')===key) return;
+  a.setAttribute('data-fit', key);
+  var over=function(){ return a.scrollWidth>a.clientWidth+0.5 || h.scrollWidth>h.clientWidth+0.5; };
+  var logos=[g('ov-alogo'), g('ov-hlogo')];
+  var setLogoMax=function(v){ logos.forEach(function(e){ if(e) e.style.maxWidth=v; }); };
+
+  setLogoMax('');                       // まずロゴを既定の大きさに戻して測る
+  var MAXP=24, MINP=11, p=MAXP;
+  a.style.fontSize=p+'px'; h.style.fontSize=p+'px';
+  while(p>MINP && over()){ p--; a.style.fontSize=p+'px'; h.style.fontSize=p+'px'; }
+  // 文字を最小まで小さくしても入らないときは、ロゴを譲らせる。
+  // 名前が切れるより、ロゴが小さいほうがましなため
+  for(var pct=32; pct>=12 && over(); pct-=4){ setLogoMax(pct+'%'); }
 }
 function _paintTeamLogos(){
   _setLogoImg('ov-alogo', _teamLogos.away);
@@ -1017,10 +1070,14 @@ var _adRotTimer = null;
 try{
   var _ac = JSON.parse(localStorage.getItem('bb_adcfg')||'null');
   if(_ac){
-    // スコア表の横の広告は廃止したので _ac.score / _ac.images は読み込まない
     if(Array.isArray(_ac.ticker)) _adTicker=_ac.ticker;
     if(Array.isArray(_ac.cool))   _adCool=_ac.cool;
-    if(Array.isArray(_ac.top))    _adTop=_ac.top;
+    if(Array.isArray(_ac.top)){ _adTop=_ac.top; }
+    else {
+      // 右上の枠ができる前に保存した設定。スコア表用だった画像を右上に回す
+      var _lg = Array.isArray(_ac.score) ? _ac.score : _ac.images;
+      if(Array.isArray(_lg) && _lg.length) _adTop=_lg;
+    }
     if(typeof _ac.sec==='number') _adSec=_ac.sec;
     if(typeof _ac.rotate==='number') _adRotate=_ac.rotate;
     if(typeof _ac.tickerSpeed==='number') _adTickerSpeed=_ac.tickerSpeed; }
@@ -1074,10 +1131,16 @@ function applyCooling(c){
 }
 
 function applyAdCfg(d){
-  // スコア表の横の広告は廃止（d.score / d.images は無視する）
   if(Array.isArray(d.ticker)) _adTicker = d.ticker.slice();
   if(Array.isArray(d.cool))   _adCool   = d.cool.slice();
-  if(Array.isArray(d.top))    _adTop    = d.top.slice();
+  if(Array.isArray(d.top)){
+    _adTop = d.top.slice();
+  }else{
+    // 「右上」を知らない古いメンバー管理からの設定。スコア表用に選ばれていた
+    // 画像を右上に回す。開き直していない端末でもスポンサーが消えないように
+    var legacy = Array.isArray(d.score) ? d.score : (Array.isArray(d.images) ? d.images : null);
+    if(legacy && legacy.length) _adTop = legacy.slice();
+  }
   if(typeof d.sec==='number') _adSec = d.sec;
   if(typeof d.rotate==='number') _adRotate = d.rotate;
   if(typeof d.tickerSpeed==='number') _adTickerSpeed = d.tickerSpeed;
@@ -1195,6 +1258,8 @@ function showScoreBig(state, sec){
   var sc=document.querySelector('.ov-score');
   if(sc) sc.classList.add('expanded');
   document.querySelectorAll('.ov-ist-slide').forEach(function(el){ el.classList.add('open'); });
+  // 30a430cb30f330b08868304c958b304f306830c130fc30e0540d306e6b04304c72ed304f306a308b306e3067300130b930e930a430c9304c7d42308f30633066304b30896e2c308a76f43059
+  setTimeout(function(){ _fitTeamNames(true); }, 560);
   _startAdRotate();
   // 広告の表示秒数（_adSec）が設定されていればそちらを優先
   var showSec = (_adSec>0) ? _adSec : sec;
@@ -1212,6 +1277,7 @@ function hideScoreBig(){
   var sc=document.querySelector('.ov-score');
   if(sc) sc.classList.remove('expanded');
   document.querySelectorAll('.ov-ist-slide').forEach(function(el){ el.classList.remove('open'); });
+  setTimeout(function(){ _fitTeamNames(true); }, 560);
   var ad=g('ov-ad-area'); if(ad) ad.classList.remove('open');
 }
 
