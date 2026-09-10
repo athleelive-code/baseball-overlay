@@ -1079,6 +1079,7 @@ var _coolEndsAt = 0;
 var _coolTick = null;
 var _coolScoreWasOpen = false;   // クーリング前からスコア表が開いていたか
 var _coolTickerWas    = false;   // クーリング前からティッカーが流れていたか
+var _coolHoldScore    = false;   // クーリング中はスコア表を閉じさせない
 function _coolFmt(sec){
   var m=Math.floor(sec/60), s=sec%60;
   return m+':'+(s<10?'0':'')+s;
@@ -1104,7 +1105,8 @@ function applyCooling(c){
     if(!box.classList.contains('on')){
       _coolScoreWasOpen = !!document.querySelector('.ov-ist-slide.open');
       _coolTickerWas    = _tickerOn;
-      showScoreBig(null, 0);        // 0 = 自動で閉じない
+      _coolHoldScore    = true;     // クーリングが終わるまで閉じさせない
+      showScoreBig(null, 0);
       applyTicker(true);
     }
     box.classList.add('on');
@@ -1114,9 +1116,11 @@ function applyCooling(c){
     _coolEndsAt = 0;
     // 開く前の状態に戻す
     if(box.classList.contains('on')){
-      if(!_coolScoreWasOpen) hideScoreBig();
+      _coolHoldScore = false;
+      if(!_coolScoreWasOpen) hideScoreBig(true);
       applyTicker(_coolTickerWas);
     }
+    _coolHoldScore = false;
     box.classList.remove('on');
     if(_coolTick){ clearInterval(_coolTick); _coolTick=null; }
   }
@@ -1279,13 +1283,16 @@ function showScoreBig(state, sec){
   // 広告の表示秒数（_adSec）が設定されていればそちらを優先
   var showSec = (_adSec>0) ? _adSec : sec;
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
-  if(showSec>0){
+  // クーリング中は開きっぱなしにするので、閉じるタイマーは持たせない
+  if(showSec>0 && !_coolHoldScore){
     _scoreDispTimer=setTimeout(function(){ hideScoreBig(); }, showSec*1000);
   }
 }
 
 
-function hideScoreBig(){
+// クーリング中は閉じない。閉じてよいのはクーリングを抜けるときだけ（force）
+function hideScoreBig(force){
+  if(_coolHoldScore && !force) return;
   if(_scoreDispTimer){clearTimeout(_scoreDispTimer);_scoreDispTimer=null;}
   if(_hrCloseTimer){clearTimeout(_hrCloseTimer);_hrCloseTimer=null;}
   _stopAdRotate();
