@@ -537,7 +537,7 @@ body.gamemin .gm-hide{display:none!important}
 <!-- 進行バー：クーリングタイムなど、試合の合間の操作 -->
 <div id="assist-bar" style="padding:0 12px 10px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;gap:10px;align-items:stretch">
   <button id="btn-cooling" onclick="toggleCooling()" style="flex:1;background:#123040;border:3px solid #2a6a8a;border-radius:12px;color:#8fd8f0;font-size:24px;font-weight:800;padding:16px 6px;cursor:pointer;line-height:1.2;white-space:nowrap">
-    ❄ クーリングタイム
+    ❄ クーリング 5分
   </button>
   <div id="cooling-left" style="display:none;flex:0 0 auto;align-items:center;justify-content:center;padding:0 20px;background:#0f2430;border:3px solid #2a6a8a;border-radius:12px;color:#bdf0ff;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px">5:00</div>
 </div>
@@ -844,6 +844,16 @@ body.gamemin .gm-hide{display:none!important}
       <button id="btn-def-rec" onclick="toggleDefRec()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:26px;font-weight:700;padding:14px;cursor:pointer">
         ⚾ 打球の記録 OFF
       </button>
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">クーリング</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">大会の規定に合わせて長さを決めます。開始すると「ただいまより◯分間のクーリングを開始します」と読み上げ、オーバーレイにカウントダウンが出ます</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button onclick="adjCoolingMin(-1)" style="flex:0 0 80px;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:34px;padding:10px;cursor:pointer">－</button>
+        <span id="cool-min-val" style="flex:1;text-align:center;font-size:40px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums">5</span>
+        <span style="font-size:24px;color:#888">分</span>
+        <button onclick="adjCoolingMin(1)" style="flex:0 0 80px;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:34px;padding:10px;cursor:pointer">＋</button>
+      </div>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">回終了時のアナウンス</div>
@@ -1692,9 +1702,21 @@ function _setTicker(on){
 // 残り時間は「終了時刻」を状態に載せて各画面が自分で計算する。
 // ローカルのタイマーで数えると、オーバーレイを読み込み直したときにズレるため。
 // 回・得点・カウント・走者などの試合状態は一切変更しない。
-var COOLING_SEC = 300;                      // 5分
+var _coolingMin = 5;                        // 既定5分。大会に合わせて設定で変えられる
+try{ var _cm=localStorage.getItem('bb_cooling_min'); if(_cm!=null) _coolingMin=Math.max(1,Math.min(30,Number(_cm)||5)); }catch(e){}
 var _cooling = { on:false, endsAt:0 };
 var _coolingTick = null;
+
+function adjCoolingMin(d){
+  _coolingMin = Math.max(1, Math.min(30, _coolingMin + d));
+  try{ localStorage.setItem('bb_cooling_min', _coolingMin); }catch(e){}
+  _refreshCoolingMinUI();
+  _refreshCoolingUI();
+}
+function _refreshCoolingMinUI(){
+  var v=document.getElementById('cool-min-val');
+  if(v) v.textContent=_coolingMin;
+}
 
 function _coolingRemain(){
   if(!_cooling.on) return 0;
@@ -1708,7 +1730,7 @@ function _refreshCoolingUI(){
   var b=document.getElementById('btn-cooling');
   var l=document.getElementById('cooling-left');
   if(b){
-    b.textContent = _cooling.on ? '❄ クーリングタイム終了' : '❄ クーリングタイム';
+    b.textContent = _cooling.on ? '❄ クーリング終了' : ('❄ クーリング '+_coolingMin+'分');
     b.style.background  = _cooling.on ? '#3a1a1a' : '#123040';
     b.style.borderColor = _cooling.on ? '#8a3a3a' : '#2a6a8a';
     b.style.color       = _cooling.on ? '#ff9a9a' : '#8fd8f0';
@@ -1729,13 +1751,16 @@ function _coolingStartTick(){
 function _coolingStopTick(){
   if(_coolingTick){ clearInterval(_coolingTick); _coolingTick=null; }
 }
+function _coolingSayText(min){ return 'ただいまより'+min+'分間のクーリングを開始します。'; }
+
 function startCooling(){
   _cooling.on = true;
-  _cooling.endsAt = Date.now() + COOLING_SEC*1000;
+  _cooling.endsAt = Date.now() + _coolingMin*60*1000;
   _refreshCoolingUI();
   _coolingStartTick();
   broadcast(); saveState();
-  toastMsg('クーリングタイム開始 — 場内放送をお願いします');
+  if(_annOn) _speakAs(_coolingSayText(_coolingMin), _ttsVoice, _ttsStyle, _annRate);
+  toastMsg('クーリング開始（'+_coolingMin+'分）');
 }
 function stopCooling(auto){
   _cooling.on = false;
@@ -1743,12 +1768,12 @@ function stopCooling(auto){
   _coolingStopTick();
   _refreshCoolingUI();
   broadcast(); saveState();
-  toastMsg(auto ? 'クーリングタイム終了（5分経過）' : 'クーリングタイムを終了しました');
+  toastMsg(auto ? 'クーリング終了（時間経過）' : 'クーリングを終了しました');
 }
 function toggleCooling(){
   if(_cooling.on){ stopCooling(false); }
   else{
-    if(!confirm('クーリングタイムを開始しますか？（5分）')) return;
+    if(!confirm('クーリングを開始しますか？（'+_coolingMin+'分）\nアナウンスがONなら開始を読み上げます')) return;
     startCooling();
   }
 }
@@ -4074,6 +4099,7 @@ function openSettingsDrawer(){
     if(typeof _refreshTtsLabel==='function') _refreshTtsLabel();
     if(typeof _refreshPitchAutoBtn==='function') _refreshPitchAutoBtn();
     if(typeof _refreshScoreAutoBtn==='function') _refreshScoreAutoBtn();
+    if(typeof _refreshCoolingMinUI==='function') _refreshCoolingMinUI();
     if(typeof _refreshDefRecBtn==='function') _refreshDefRecBtn();
     if(typeof _updatePitchDisp==='function') _updatePitchDisp();
   }
@@ -4709,6 +4735,15 @@ function applyPcEdit(s){
       if(typeof s.coaches.away==='string') _coaches.away=s.coaches.away;
       if(typeof s.coaches.home==='string') _coaches.home=s.coaches.home;
     }
+    // クーリング（ROSTER から開始・終了された場合に取り込む）
+    if(s.cooling && typeof s.cooling.on==='boolean'){
+      var _cOn=s.cooling.on, _cEnd=s.cooling.endsAt||0;
+      if(_cOn!==_cooling.on || _cEnd!==_cooling.endsAt){
+        _cooling.on=_cOn; _cooling.endsAt=_cEnd;
+        _refreshCoolingUI();
+        if(_cooling.on) _coolingStartTick(); else _coolingStopTick();
+      }
+    }
     // 読み仮名（アナウンスの読み上げに使う）
     if(s.teamYomi){
       if(typeof s.teamYomi.away==='string') _teamYomi.away=s.teamYomi.away;
@@ -5298,6 +5333,8 @@ function restoreState(){
 _initAutoHide();
 _initTeamColors();
 _initScoreDispSec();
+_refreshCoolingMinUI();
+_refreshCoolingUI();
 renderSB();
 restoreState(); // 最後に復元（renderSB後）
 </script>

@@ -185,6 +185,19 @@ body.locked .row{cursor:default}
   font-size:16px;font-weight:800;padding:10px 20px;cursor:pointer;white-space:nowrap;transition:.12s}
 .fp-next:hover{background:#e0203e}
 .fp-next:active{transform:scale(.96)}
+/* クーリング */
+.fp-cool{background:#123040;border:2px solid #2a6a8a;border-radius:9px;color:#8fd8f0;
+  font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-cool:hover{background:#17405a}
+.fp-cool.on{background:#3a1a1a;border-color:#8a3a3a;color:#ff9a9a}
+.cool-adj{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#aaa}
+.cool-adj .btn{padding:5px 9px;font-size:14px}
+#cool-min-val{font-size:17px;font-weight:800;color:#fff;min-width:22px;text-align:center;
+  font-variant-numeric:tabular-nums}
+.cool-unit{color:#888;font-size:12px}
+.cool-left{display:inline-flex;align-items:center;padding:0 14px;background:#0f2430;
+  border:2px solid #2a6a8a;border-radius:9px;color:#bdf0ff;font-size:20px;font-weight:800;
+  font-variant-numeric:tabular-nums;letter-spacing:1px}
 .fp-res{font-size:12px;font-weight:700;padding:3px 7px;border-radius:5px;
   background:#242426;color:#8a8a8c;border:1px solid #303032;white-space:nowrap;cursor:pointer}
 .fp-res:hover{background:#2e2e30;color:#ccc}
@@ -512,6 +525,14 @@ body.locked .row{cursor:default}
 <div class="top-actbar">
   <button class="fp-next" onclick="goNextBatterPC()">▶ 次打者</button>
   <button class="fp-pit" onclick="openPitcherInfo()">📊 投手情報</button>
+  <span style="flex:1"></span>
+  <span class="cool-adj">
+    <button class="btn" onclick="adjCoolingMin(-1)" title="クーリングを短く">－</button>
+    <span id="cool-min-val">5</span><span class="cool-unit">分</span>
+    <button class="btn" onclick="adjCoolingMin(1)" title="クーリングを長く">＋</button>
+  </span>
+  <button class="fp-cool" id="btn-cooling" onclick="toggleCooling()">❄ クーリング 5分</button>
+  <span class="cool-left" id="cooling-left" style="display:none">5:00</span>
 </div>
 
 <div class="wrap">
@@ -1187,6 +1208,7 @@ function pushState(){
     hnm: teamNames.home || lr.hnm || '',
     gameTitle: (document.getElementById('hdr-game-title')||{}).value || lr.gameTitle || '',
     coaches: { away:coaches.away, home:coaches.home },
+    cooling: (typeof _cooling!=='undefined') ? { on:_cooling.on, endsAt:_cooling.endsAt } : undefined,
     teamYomi:  (typeof teamYomi!=='undefined')  ? { away:teamYomi.away,  home:teamYomi.home }  : undefined,
     coachYomi: (typeof coachYomi!=='undefined') ? { away:coachYomi.away, home:coachYomi.home } : undefined,
     awayColor: (typeof _teamColorsPC!=='undefined' ? _teamColorsPC.away : undefined),
@@ -1712,6 +1734,15 @@ function applyRemote(s){
       var _tnh=document.getElementById('tname-home');
       if(_tnh && document.activeElement!==_tnh) _tnh.value=teamNames.home;
     }
+    // クーリング（コントローラー等が開始・終了した場合に追従）
+    if(s.cooling && typeof s.cooling.on==='boolean' && typeof _cooling!=='undefined'){
+      var _cOn = s.cooling.on, _cEnd = s.cooling.endsAt || 0;
+      if(_cOn !== _cooling.on || _cEnd !== _cooling.endsAt){
+        _cooling.on = _cOn; _cooling.endsAt = _cEnd;
+        _refreshCoolingUI();
+        if(_cooling.on) _coolingStartTick(); else _coolingStopTick();
+      }
+    }
     // 読み仮名（他端末で入れたものを取り込む）
     if(s.teamYomi && typeof teamYomi!=='undefined'){
       if(typeof s.teamYomi.away==='string') teamYomi.away=s.teamYomi.away;
@@ -1845,6 +1876,77 @@ function onCoachName(team){
     lastRemote.coaches[team] = coaches[team];
   }
   pushState();
+}
+
+// ── クーリング ────────────────────────────────────────────────────────────
+// コントローラーと同じ操作をこちらからもできるようにする。
+// 残り時間は「終了時刻」を _pcEdit で送り、コントローラーが _ctl で配り直す。
+var _coolingMin = 5;
+try{ var _cm=localStorage.getItem('bb_cooling_min'); if(_cm!=null) _coolingMin=Math.max(1,Math.min(30,Number(_cm)||5)); }catch(e){}
+var _cooling = { on:false, endsAt:0 };
+var _coolingTick = null;
+
+function _coolingRemain(){
+  if(!_cooling.on) return 0;
+  return Math.max(0, Math.ceil((_cooling.endsAt - Date.now())/1000));
+}
+function _fmtMMSS(sec){
+  var m=Math.floor(sec/60), s=sec%60;
+  return m+':'+(s<10?'0':'')+s;
+}
+function adjCoolingMin(d){
+  _coolingMin = Math.max(1, Math.min(30, _coolingMin + d));
+  try{ localStorage.setItem('bb_cooling_min', _coolingMin); }catch(e){}
+  _refreshCoolingUI();
+}
+function _refreshCoolingUI(){
+  var v=document.getElementById('cool-min-val');
+  if(v) v.textContent=_coolingMin;
+  var b=document.getElementById('btn-cooling');
+  if(b){
+    b.textContent = _cooling.on ? '❄ クーリング終了' : ('❄ クーリング '+_coolingMin+'分');
+    b.classList.toggle('on', _cooling.on);
+  }
+  var l=document.getElementById('cooling-left');
+  if(l){
+    l.style.display = _cooling.on ? 'inline-flex' : 'none';
+    if(_cooling.on) l.textContent = _fmtMMSS(_coolingRemain());
+  }
+}
+function _coolingStartTick(){
+  if(_coolingTick) clearInterval(_coolingTick);
+  _coolingTick = setInterval(function(){
+    if(!_cooling.on){ _coolingStopTick(); return; }
+    if(_coolingRemain() <= 0){ stopCooling(true); return; }
+    _refreshCoolingUI();
+  }, 500);
+}
+function _coolingStopTick(){
+  if(_coolingTick){ clearInterval(_coolingTick); _coolingTick=null; }
+}
+function startCooling(){
+  _cooling.on = true;
+  _cooling.endsAt = Date.now() + _coolingMin*60*1000;
+  _refreshCoolingUI();
+  _coolingStartTick();
+  pushState();
+  if(_annOn) _speakAs('ただいまより'+_coolingMin+'分間のクーリングを開始します。', _ttsVoice, _ttsStyle, _annRate);
+  toast('クーリング開始（'+_coolingMin+'分）');
+}
+function stopCooling(auto){
+  _cooling.on = false;
+  _cooling.endsAt = 0;
+  _coolingStopTick();
+  _refreshCoolingUI();
+  pushState();
+  toast(auto ? 'クーリング終了（時間経過）' : 'クーリングを終了しました');
+}
+function toggleCooling(){
+  if(_cooling.on){ stopCooling(false); }
+  else{
+    if(!confirm('クーリングを開始しますか？（'+_coolingMin+'分）\nアナウンスがONなら開始を読み上げます')) return;
+    startCooling();
+  }
 }
 
 // ── 読み仮名（チーム名・監督名） ──────────────────────────────────────────
@@ -3908,6 +4010,7 @@ _loadLog();
 _adLoad();
 _renderTeamLogoUI();
 _renderTeamColorUI();
+_refreshCoolingUI();
 _initTTS();
 connectWS();
 setWsUI(false);
