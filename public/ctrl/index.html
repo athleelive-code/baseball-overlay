@@ -114,11 +114,6 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   font-size:19px;font-weight:700;color:#7a7a7c;letter-spacing:1px;
   flex-shrink:0;white-space:nowrap;
 }
-.atk-tag{
-  font-size:18px;font-weight:800;letter-spacing:2px;
-  background:var(--gold);color:#111;border-radius:20px;padding:3px 12px;
-  flex-shrink:0;white-space:nowrap;
-}
 .team-name-disp{
   color:#fff;font-size:clamp(32px,10vw,52px);font-weight:700;
   width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
@@ -497,7 +492,6 @@ body.gamemin .gm-hide{display:none!important}
     <div class="team-row" onclick="setTop(true)">
       <div class="team-ind active" id="ind-away"></div>
       <span class="side-tag" id="side-away">1塁側</span>
-      <span class="atk-tag" id="atk-away">攻撃中</span>
       <div class="team-name-disp" id="name-away"
         ontouchstart="startNameEdit('away',event)" ontouchend="cancelNameEdit()"
         onmousedown="startNameEdit('away',event)" onmouseup="cancelNameEdit()" onmouseleave="cancelNameEdit()">先攻</div>
@@ -505,7 +499,6 @@ body.gamemin .gm-hide{display:none!important}
     <div class="team-row" onclick="setTop(false)">
       <div class="team-ind" id="ind-home"></div>
       <span class="side-tag" id="side-home">3塁側</span>
-      <span class="atk-tag" id="atk-home" style="display:none"></span>
       <div class="team-name-disp" id="name-home"
         ontouchstart="startNameEdit('home',event)" ontouchend="cancelNameEdit()"
         onmousedown="startNameEdit('home',event)" onmouseup="cancelNameEdit()" onmouseleave="cancelNameEdit()">後攻</div>
@@ -4469,17 +4462,12 @@ function setFirstBat(side){
   renderRosters(); updateSelects(); refreshSCDisplay(); renderSB(); broadcast(); saveState();
   _syncTeamNameInputs();
 }
-// チーム行の「3塁側 / 1塁側」と「攻撃中」の表示、ドロワーのタブ名を更新する
+// チーム行の「3塁側 / 1塁側」表示と、ドロワーのタブ名・並びを更新する
+// （攻撃中かどうかの表示は ROSTER のメンバー表だけで行う）
 function _refreshSideLabels(){
   ['away','home'].forEach(function(slot){
     var el=document.getElementById('side-'+slot);
     if(el) el.textContent=_sideOf(slot);
-    var at=document.getElementById('atk-'+slot);
-    if(at){
-      var isAtk = (slot==='away') === !!st.top;
-      at.textContent = isAtk ? '攻撃中' : '';
-      at.style.display = isAtk ? 'inline-block' : 'none';
-    }
   });
   // 選手登録ドロワーのタブは左を3塁側にそろえる
   var ta=document.getElementById('rtab-away-btn'), th=document.getElementById('rtab-home-btn');
