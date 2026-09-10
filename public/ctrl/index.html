@@ -1926,11 +1926,19 @@ function _refreshCoolingUI(){
     if(_cooling.on) l.textContent = _fmtMMSS(_coolingRemain());
   }
 }
+// 終了10秒前の予告を流したかどうか。1回のクーリングにつき1度だけ読む
+var _coolingSoonSaid = false;
 function _coolingStartTick(){
   if(_coolingTick) clearInterval(_coolingTick);
   _coolingTick = setInterval(function(){
     if(!_cooling.on){ _coolingStopTick(); return; }
-    if(_coolingRemain() <= 0){ stopCooling(true); return; }   // 5分経過で自動終了
+    var left = _coolingRemain();
+    // 残り10秒で予告。読み上げに数秒かかるので、終わる前に流し切れるようここで出す
+    if(!_coolingSoonSaid && left > 0 && left <= 10){
+      _coolingSoonSaid = true;
+      if(_annOn) _speakAs(_coolingSoonText(), _ttsVoice, _ttsStyle, _annRate);
+    }
+    if(left <= 0){ stopCooling(true); return; }   // 時間経過で自動終了
     _refreshCoolingUI();
   }, 500);
 }
@@ -1938,9 +1946,11 @@ function _coolingStopTick(){
   if(_coolingTick){ clearInterval(_coolingTick); _coolingTick=null; }
 }
 function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
+function _coolingSoonText(){ return '間もなく試合開始です。'; }
 
 function startCooling(){
   _cooling.on = true;
+  _coolingSoonSaid = false;
   _cooling.endsAt = Date.now() + _coolingMin*60*1000;
   _refreshCoolingUI();
   _coolingStartTick();
@@ -1950,6 +1960,7 @@ function startCooling(){
 }
 function stopCooling(auto){
   _cooling.on = false;
+  _coolingSoonSaid = false;
   _cooling.endsAt = 0;
   _coolingStopTick();
   _refreshCoolingUI();

@@ -258,12 +258,21 @@ let lastStateAt = 0;
 // 復帰用キャッシュの有効期限（12時間）。これより古い状態は「前の試合」とみなして配らない。
 const LAST_STATE_TTL = 12 * 60 * 60 * 1000;
 
+// スポンサー画像とチームロゴはサーバーに預かる。
+// これがないと、設定した端末（メンバー管理）を開いている間しか他の画面に届かず、
+// 別の端末で開いたオーバーレイには何も出ない。試合をまたいで残しておきたいので
+// 有効期限は付けない（サーバーが眠って起き直したときは消える）。
+let lastAdCfg = null;
+let lastTeamCfg = null;
+
 wss.on('connection', (ws, req) => {
   // 接続直後に、十分新しい _ctl 状態があれば全クライアントへ復帰用に送る。
   // 古い（前の試合の）状態は送らない → 各画面は先攻/後攻の初期表示のまま始まる。
   if (lastState && (Date.now() - lastStateAt) < LAST_STATE_TTL) {
     ws.send(lastState);
   }
+  if (lastAdCfg)   ws.send(lastAdCfg);
+  if (lastTeamCfg) ws.send(lastTeamCfg);
 
   ws.on('message', (data) => {
     const text = data.toString();
@@ -273,6 +282,12 @@ wss.on('connection', (ws, req) => {
     try {
       const d = JSON.parse(text);
       if (d && d._ctl === true) { lastState = text; lastStateAt = Date.now(); }
+      if (d && d._adcfg)   lastAdCfg   = text;
+      if (d && d._teamcfg) lastTeamCfg = text;
+      // 問い合わせには、預かっているものをその場で返す。
+      // （設定した端末が閉じていても届くようにする。中継もそのまま続ける）
+      if (d && d._req === 'adcfg'   && lastAdCfg)   ws.send(lastAdCfg);
+      if (d && d._req === 'teamcfg' && lastTeamCfg) ws.send(lastTeamCfg);
     } catch(e) {}
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) client.send(text);

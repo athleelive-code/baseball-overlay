@@ -218,6 +218,29 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
   background:rgba(255,255,255,.94);border-radius:8px;padding:8px 14px;
 }
 .ov-cool-note{font-size:15px;color:rgba(255,255,255,.5);letter-spacing:2px}
+/* 残り10秒。読み上げと合わせて、色で再開が近いことを知らせる */
+.ov-cool.soon .ov-cool-n{color:#ffd24a}
+.ov-cool.soon .ov-cool-note{color:rgba(255,210,74,.95)}
+
+/* ── 右上：常時表示のスポンサー枠 ── */
+/* スコア表と同じ意匠・同じ縮小率。
+   枠の幅は画像に合わせて伸び縮みさせる。幅を決め打ちにすると、正方形の画像だけ
+   高さで頭打ちになって小さく見えてしまうため（高さはいつも使い切る） */
+.ov-adtop{
+  position:fixed;right:20px;top:20px;z-index:35;
+  display:none;align-items:center;justify-content:center;
+  width:auto;max-width:460px;height:116px;padding:8px;
+  background:rgba(8,12,24,.7);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:8px;overflow:hidden;
+  transform:scale(.8);transform-origin:top right;
+}
+.ov-adtop.on{display:flex}
+.ov-adtop img{height:100%;width:auto;max-width:100%;
+  object-fit:contain;display:block}
+.ov-adtop img.fade{animation:adTopIn .45s ease}
+@keyframes adTopIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){ .ov-adtop img.fade{animation:none} }
 
 /* ── 右下：打者＋打順スライドアップ ── */
 .ov-bat-wrap{
@@ -405,6 +428,9 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
 </div>
 
 <!-- 右下：打者（ロゴ帯＋打順＋守備位置＋氏名ルビ＋背番号）＋打順スライドアップ -->
+<!-- 右上：常時表示のスポンサー枠（画像が1枚も割り当てられていないときは出さない） -->
+<div class="ov-adtop" id="ov-adtop"><img id="ov-adtop-img" alt=""></div>
+
 <!-- イニング交代中に流れるスポンサーティッカー -->
 <div class="ov-ticker" id="ov-ticker">
   <div class="ov-tk-track" id="ov-ticker-track"></div>
@@ -941,7 +967,10 @@ var _lastTop = true;
 // ── 広告ローテーション ─────────────────────────────
 // 既定は public フォルダの ad1〜3.png。ROSTER の設定で差し替え・秒数・間隔を変更できる。
 var _adCool = [];
-var _adImages = ['ad1.png','ad2.png','ad3.png'];
+var _adTop = [];        // 右上の常時表示枠
+var _adTicker = [];     // 最下部を流れるティッカー
+var _adTickerSpeed = 40;
+var _adImages = [];     // スコア表の横の広告は廃止（枠だけ残してある）
 var _adSec = 0;        // 0 = スコア表示の秒数に従う
 var _adRotate = 0;     // 0 = 1回の表示で1枚のみ。>0 なら N 秒ごとに切替
 var _adIndex = 0;
@@ -950,10 +979,10 @@ var _adRotTimer = null;
 try{
   var _ac = JSON.parse(localStorage.getItem('bb_adcfg')||'null');
   if(_ac){
-    var _sc = Array.isArray(_ac.score) ? _ac.score : _ac.images;
-    if(Array.isArray(_sc)&&_sc.length) _adImages=_sc;
+    // スコア表の横の広告は廃止したので _ac.score / _ac.images は読み込まない
     if(Array.isArray(_ac.ticker)) _adTicker=_ac.ticker;
     if(Array.isArray(_ac.cool))   _adCool=_ac.cool;
+    if(Array.isArray(_ac.top))    _adTop=_ac.top;
     if(typeof _ac.sec==='number') _adSec=_ac.sec;
     if(typeof _ac.rotate==='number') _adRotate=_ac.rotate;
     if(typeof _ac.tickerSpeed==='number') _adTickerSpeed=_ac.tickerSpeed; }
@@ -973,6 +1002,8 @@ function _coolPaint(){
   if(!box) return;
   var left = Math.max(0, Math.ceil((_coolEndsAt - Date.now())/1000));
   if(n) n.textContent=_coolFmt(left);
+  // 残り10秒からは色を変えて、再開が近いことを見て分かるようにする
+  box.classList.toggle('soon', left>0 && left<=10);
   if(left<=0) applyCooling({on:false});
 }
 function applyCooling(c){
@@ -981,9 +1012,9 @@ function applyCooling(c){
   if(!box) return;
   if(on){
     _coolEndsAt = c.endsAt;
-    // クーリングタイム専用に選ばれたスポンサー（無ければスコア表用を流用）
+    // クーリングタイムに出すスポンサー（設定で「クーリング」を選んだ画像）
     var ads=g('ov-cool-ads');
-    var list = _adCool.length ? _adCool : _adImages;
+    var list = _adCool;
     if(ads){
       ads.innerHTML='';
       list.slice(0,4).forEach(function(src){
@@ -1005,18 +1036,18 @@ function applyCooling(c){
 }
 
 function applyAdCfg(d){
-  // score は新しい形。無ければ images（旧形式）を使う
-  var sc = Array.isArray(d.score) ? d.score : (Array.isArray(d.images) ? d.images : null);
-  if(sc) _adImages = sc.slice();                              // 空配列＝広告なし
+  // スコア表の横の広告は廃止（d.score / d.images は無視する）
   if(Array.isArray(d.ticker)) _adTicker = d.ticker.slice();
   if(Array.isArray(d.cool))   _adCool   = d.cool.slice();
+  if(Array.isArray(d.top))    _adTop    = d.top.slice();
   if(typeof d.sec==='number') _adSec = d.sec;
   if(typeof d.rotate==='number') _adRotate = d.rotate;
   if(typeof d.tickerSpeed==='number') _adTickerSpeed = d.tickerSpeed;
   _adIndex = 0;
   _tickerBuild();
+  _adTopStart();
   try{ localStorage.setItem('bb_adcfg', JSON.stringify({
-    images:_adImages, score:_adImages, ticker:_adTicker, cool:_adCool,
+    ticker:_adTicker, cool:_adCool, top:_adTop,
     sec:_adSec, rotate:_adRotate, tickerSpeed:_adTickerSpeed
   })); }catch(e){}
 }
@@ -1025,8 +1056,6 @@ function applyAdCfg(d){
 // イニング交代で流し始め、次の回のイニングコールで止める。
 // 止めるときはアニメーションを一時停止するだけなので、次に出したとき
 // 前回消えた位置から続きが流れる。
-var _adTicker = [];
-var _adTickerSpeed = 40;
 var _tickerOn = false;
 function _tickerBuild(){
   var track=g('ov-ticker-track');
@@ -1050,6 +1079,39 @@ function applyTicker(on){
   document.body.classList.toggle('has-ticker', on);
   // 位置を保つため、止めるときは paused にするだけ（再構築しない）
   track.style.animationPlayState = on ? 'running' : 'paused';
+}
+
+// ── 右上：常時表示のスポンサー枠 ───────────────────────
+// 「出す場所」で右上を選んだ画像だけを、ずっと出しっぱなしにする。
+// 複数枚あるときは切替間隔（0のときは10秒）ごとに入れ替える。
+var _adTopIndex = 0;
+var _adTopTimer = null;
+function _adTopPaint(){
+  var box=g('ov-adtop'), img=g('ov-adtop-img');
+  if(!box||!img) return;
+  if(!_adTop.length){ box.classList.remove('on'); return; }
+  img.onerror=function(){ box.classList.remove('on'); };
+  img.onload=function(){
+    box.classList.add('on');
+    // 切り替わったことが分かるように軽く出し直す
+    img.classList.remove('fade'); void img.offsetWidth; img.classList.add('fade');
+  };
+  img.src=_adTop[_adTopIndex % _adTop.length];
+  _adTopIndex++;
+}
+function _adTopStart(){
+  if(_adTopTimer){ clearInterval(_adTopTimer); _adTopTimer=null; }
+  _adTopIndex=0;
+  if(!_adTop.length){
+    var box=g('ov-adtop');
+    if(box) box.classList.remove('on');
+    return;
+  }
+  _adTopPaint();
+  if(_adTop.length>1){
+    var sec = _adRotate>0 ? _adRotate : 10;
+    _adTopTimer=setInterval(_adTopPaint, sec*1000);
+  }
 }
 
 function _showNextAd(){
@@ -1164,8 +1226,10 @@ function connectWS(){
   }catch(e){_wsTimer=setTimeout(connectWS,3000);}
 }
 connectWS();
-// localStorage にキャッシュ済みのエンブレムを先に反映（コントローラー未接続でも出す）
+// localStorage にキャッシュ済みのエンブレム・スポンサーを先に反映
+// （コントローラー未接続でも、前回の設定のまま出しておく）
 try{ _paintTeamLogos(); }catch(e){}
+try{ _tickerBuild(); _adTopStart(); }catch(e){}
 </script>
 
 </body>

@@ -919,9 +919,10 @@ body.locked .row{cursor:default}
       <div class="set-lbl">スポンサー表示</div>
       <div class="note" style="margin-bottom:10px">
         スポンサー画像はここで一括管理します。1枚ごとに「出す場所」を選べます。オーバーレイに即反映されます。<br>
+        <b style="color:#8ac0ff">右上（常時）</b>＝画面右上に出しっぱなし。複数枚なら切替間隔ごとに入れ替え（0のときは10秒）<br>
         <b style="color:#8ac0ff">ティッカー</b>＝イニング交代中に画面最下部を流れる
-        <b style="color:#8ac0ff">スコア表</b>＝スコア拡大表示のとき表の横
-        <b style="color:#8ac0ff">クーリング</b>＝クーリングタイム中の全画面
+        <b style="color:#8ac0ff">クーリング</b>＝クーリングタイム中の全画面<br>
+        設定した画像はサーバーが預かるので、この端末を閉じても他の画面に出続けます。
       </div>
       <div id="ad-slots"></div>
       <div style="display:flex;gap:14px;margin-top:12px">
@@ -3240,12 +3241,13 @@ function _refreshTapBtns(){
 
 // ── 広告バナー設定 ────────────────────────────────────────────────────────
 // スポンサー画像は1か所で管理し、スロットごとに「どこに出すか」を選ぶ。
-// where.score  … スコア拡大表示のとき、イニングスコア表の横
+// where.top    … 画面右上に出しっぱなし（複数枚あれば切替間隔ごとに入れ替え）
 // where.ticker … イニング交代中、オーバーレイ最下部を流れるティッカー
 // where.cool   … クーリングタイム中の全画面表示
+// ※「スコア表の横」は廃止。以前の設定に残っていても無視する
 function _adWhere(w){
   w = w || {};
-  return { score: w.score!==false, ticker: w.ticker!==false, cool: w.cool!==false };
+  return { top: w.top!==false, ticker: w.ticker!==false, cool: w.cool!==false };
 }
 var _adCfg = {
   slots:[{src:'ad1.png',on:true},{src:'ad2.png',on:true},{src:'ad3.png',on:true}],
@@ -3275,12 +3277,12 @@ function _sendAdCfg(){
       .filter(function(s){ return s.on && s.src && _adWhere(s.where)[key]; })
       .map(function(s){ return s.src; });
   };
-  var score=pick('score');
   if(ws && ws.readyState===1){
     try{ ws.send(JSON.stringify({
       _adcfg:true,
-      images: score,                 // 旧オーバーレイ互換（スコア表内）
-      score:  score,
+      images: [],                    // スコア表内の広告は廃止（旧オーバーレイ互換）
+      score:  [],
+      top:    pick('top'),
       ticker: pick('ticker'),
       cool:   pick('cool'),
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
@@ -3292,7 +3294,7 @@ function _sendAdCfg(){
 function _renderAdSlots(){
   var box=document.getElementById('ad-slots');
   if(!box) return;
-  var WHERE=[['ticker','ティッカー'],['score','スコア表'],['cool','クーリング']];
+  var WHERE=[['top','右上（常時）'],['ticker','ティッカー'],['cool','クーリング']];
   box.innerHTML=_adCfg.slots.map(function(s,i){
     var w=_adWhere(s.where);
     var chips=WHERE.map(function(p){
