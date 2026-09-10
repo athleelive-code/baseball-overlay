@@ -318,6 +318,23 @@ body.locked .row{cursor:default}
 .subbar .btn.sub-def{background:#3a2f14;border-color:#c8a02e;color:#f0d48a}
 .subbar .btn.sub-def:hover{background:#4a3c1c}
 
+/* スポンサー設定のスロット */
+.ad-slot{display:flex;gap:10px;background:#242426;border:1px solid #333;border-radius:9px;padding:9px;margin-bottom:7px}
+.ad-slot.off{opacity:.45}
+.ad-thumb{width:96px;height:44px;object-fit:contain;background:#fff;border:1px solid #3a3a3c;border-radius:5px;flex-shrink:0}
+.ad-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.ad-row1{display:flex;align-items:center;gap:9px}
+.ad-on{font-size:13px;color:#ccc;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.ad-wheres{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ad-wlbl{font-size:10px;color:#777;letter-spacing:.5px;flex-shrink:0}
+.ad-w{
+  display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;
+  color:#8a8a8c;background:#1c1c1e;border:1px solid #3a3a3c;border-radius:20px;
+  padding:4px 10px;cursor:pointer;white-space:nowrap;
+}
+.ad-w.on{background:rgba(58,140,220,.18);border-color:rgba(58,140,220,.55);color:#8ac0ff}
+.ad-w input{margin:0;width:12px;height:12px}
+
 /* モーダル */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;
   align-items:center;justify-content:center;padding:24px}
@@ -819,8 +836,13 @@ body.locked .row{cursor:default}
     </div>
 
     <div class="set-sec">
-      <div class="set-lbl">広告バナー（スコア表示時）</div>
-      <div class="note" style="margin-bottom:8px">スコア拡大表示のときにイニングスコア表の横に出ます。オーバーレイに即反映されます</div>
+      <div class="set-lbl">スポンサー表示</div>
+      <div class="note" style="margin-bottom:10px">
+        スポンサー画像はここで一括管理します。1枚ごとに「出す場所」を選べます。オーバーレイに即反映されます。<br>
+        <b style="color:#8ac0ff">ティッカー</b>＝イニング交代中に画面最下部を流れる
+        <b style="color:#8ac0ff">スコア表</b>＝スコア拡大表示のとき表の横
+        <b style="color:#8ac0ff">クーリング</b>＝クーリングタイム中の全画面
+      </div>
       <div id="ad-slots"></div>
       <div style="display:flex;gap:14px;margin-top:12px">
         <div style="flex:1">
@@ -839,7 +861,16 @@ body.locked .row{cursor:default}
             <button class="btn" style="flex:0 0 46px;padding:9px" onclick="adjAd('rotate',1)">＋</button>
           </div>
         </div>
+        <div style="flex:1">
+          <div class="set-lbl">ティッカー1周（秒）</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="btn" style="flex:0 0 46px;padding:9px" onclick="adjAd('tickerSpeed',-1)">－</button>
+            <span id="ad-tspd-val" style="flex:1;text-align:center;font-size:20px;font-weight:700">40</span>
+            <button class="btn" style="flex:0 0 46px;padding:9px" onclick="adjAd('tickerSpeed',1)">＋</button>
+          </div>
+        </div>
       </div>
+      <div class="note" style="margin-top:6px">上の2つはスコア表内の表示用です。ティッカーは1周の秒数が小さいほど速く流れます</div>
       <button class="btn" style="width:100%;font-size:13px;padding:10px;margin-top:10px" onclick="adAddSlot()">＋ スロットを追加</button>
     </div>
 
@@ -2871,44 +2902,96 @@ function openSettings(){
 }
 
 // ── 広告バナー設定 ────────────────────────────────────────────────────────
-var _adCfg = { slots:[{src:'ad1.png',on:true},{src:'ad2.png',on:true},{src:'ad3.png',on:true}], sec:0, rotate:0 };
+// スポンサー画像は1か所で管理し、スロットごとに「どこに出すか」を選ぶ。
+// where.score  … スコア拡大表示のとき、イニングスコア表の横
+// where.ticker … イニング交代中、オーバーレイ最下部を流れるティッカー
+// where.cool   … クーリングタイム中の全画面表示
+function _adWhere(w){
+  w = w || {};
+  return { score: w.score!==false, ticker: w.ticker!==false, cool: w.cool!==false };
+}
+var _adCfg = {
+  slots:[{src:'ad1.png',on:true},{src:'ad2.png',on:true},{src:'ad3.png',on:true}],
+  sec:0, rotate:0, tickerSpeed:40
+};
 function _adLoad(){
   try{
     var v=JSON.parse(localStorage.getItem('bb_adcfg_edit')||'null');
     if(v && Array.isArray(v.slots)){ _adCfg=v; }
   }catch(e){}
+  // 「どこに出すか」が無い古い設定は、全部の場所に出す扱いで補う
+  _adCfg.slots = (_adCfg.slots||[]).map(function(s){
+    return { src:s.src||'', on:s.on!==false, where:_adWhere(s.where) };
+  });
+  if(typeof _adCfg.tickerSpeed!=='number') _adCfg.tickerSpeed = 40;
 }
 function _adSave(){
   try{ localStorage.setItem('bb_adcfg_edit', JSON.stringify(_adCfg)); }catch(e){}
 }
 function _sendAdCfg(){
   _adSave();
-  var images=_adCfg.slots.filter(function(s){ return s.on && s.src; }).map(function(s){ return s.src; });
+  var pick=function(key){
+    return _adCfg.slots
+      .filter(function(s){ return s.on && s.src && _adWhere(s.where)[key]; })
+      .map(function(s){ return s.src; });
+  };
+  var score=pick('score');
   if(ws && ws.readyState===1){
-    try{ ws.send(JSON.stringify({ _adcfg:true, images:images, sec:_adCfg.sec||0, rotate:_adCfg.rotate||0 })); }catch(e){}
+    try{ ws.send(JSON.stringify({
+      _adcfg:true,
+      images: score,                 // 旧オーバーレイ互換（スコア表内）
+      score:  score,
+      ticker: pick('ticker'),
+      cool:   pick('cool'),
+      sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
+      tickerSpeed:_adCfg.tickerSpeed||40
+    })); }catch(e){}
   }
 }
 function _renderAdSlots(){
   var box=document.getElementById('ad-slots');
   if(!box) return;
+  var WHERE=[['ticker','ティッカー'],['score','スコア表'],['cool','クーリング']];
   box.innerHTML=_adCfg.slots.map(function(s,i){
-    return '<div style="display:flex;align-items:center;gap:8px;background:#f4f4f4;border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:6px">'
-      +'<img src="'+esc(s.src||'')+'" alt="" style="width:90px;height:40px;object-fit:contain;background:#fff;border:1px solid #e0e0e0;border-radius:4px" onerror="this.style.opacity=.25">'
-      +'<label class="btn" style="flex:0 0 auto;font-size:12px;padding:8px 10px;cursor:pointer">画像を選ぶ'
-        +'<input type="file" accept="image/*" style="display:none" onchange="adPickFile('+i+',this)"></label>'
-      +'<label style="flex:1;font-size:13px;display:flex;align-items:center;gap:5px"><input type="checkbox" '+(s.on?'checked':'')+' onchange="adToggle('+i+')"> 表示</label>'
-      +'<button class="btn btn-red" style="flex:0 0 auto;font-size:12px;padding:8px 10px" onclick="adDelSlot('+i+')">✕</button>'
-      +'</div>';
+    var w=_adWhere(s.where);
+    var chips=WHERE.map(function(p){
+      return '<label class="ad-w'+(w[p[0]]?' on':'')+'">'
+        +'<input type="checkbox" '+(w[p[0]]?'checked':'')+' onchange="adWhereToggle('+i+',\''+p[0]+'\')">'
+        +p[1]+'</label>';
+    }).join('');
+    return '<div class="ad-slot'+(s.on?'':' off')+'">'
+      +'<img src="'+esc(s.src||'')+'" alt="" class="ad-thumb" onerror="this.style.opacity=.2">'
+      +'<div class="ad-body">'
+        +'<div class="ad-row1">'
+          +'<label class="btn" style="font-size:12px;padding:7px 10px;cursor:pointer;margin:0">画像を選ぶ'
+            +'<input type="file" accept="image/*" style="display:none" onchange="adPickFile('+i+',this)"></label>'
+          +'<label class="ad-on"><input type="checkbox" '+(s.on?'checked':'')+' onchange="adToggle('+i+')"> 使う</label>'
+          +'<button class="btn btn-red" style="font-size:12px;padding:7px 10px;margin-left:auto" onclick="adDelSlot('+i+')">✕</button>'
+        +'</div>'
+        +'<div class="ad-wheres"><span class="ad-wlbl">出す場所</span>'+chips+'</div>'
+      +'</div>'
+    +'</div>';
   }).join('') || '<div class="note">スロットがありません</div>';
   var sv=document.getElementById('ad-sec-val'); if(sv) sv.textContent=_adCfg.sec||0;
   var rv=document.getElementById('ad-rotate-val'); if(rv) rv.textContent=_adCfg.rotate||0;
+  var tv=document.getElementById('ad-tspd-val'); if(tv) tv.textContent=_adCfg.tickerSpeed||40;
 }
 function adToggle(i){ if(_adCfg.slots[i]){ _adCfg.slots[i].on=!_adCfg.slots[i].on; _sendAdCfg(); _renderAdSlots(); } }
+function adWhereToggle(i,key){
+  var s=_adCfg.slots[i]; if(!s) return;
+  s.where=_adWhere(s.where);
+  s.where[key]=!s.where[key];
+  _sendAdCfg(); _renderAdSlots();
+}
 function adDelSlot(i){ _adCfg.slots.splice(i,1); _sendAdCfg(); _renderAdSlots(); }
-function adAddSlot(){ _adCfg.slots.push({src:'',on:true}); _renderAdSlots(); }
+function adAddSlot(){ _adCfg.slots.push({src:'',on:true,where:_adWhere()}); _renderAdSlots(); }
 function adjAd(key,d){
-  var step = (key==='sec') ? 1 : 1;
-  _adCfg[key] = Math.max(0, Math.min(60, (_adCfg[key]||0) + d*step));
+  if(key==='tickerSpeed'){
+    // 1周にかかる秒数。小さいほど速い
+    _adCfg.tickerSpeed = Math.max(10, Math.min(180, (_adCfg.tickerSpeed||40) + d*5));
+  }else{
+    _adCfg[key] = Math.max(0, Math.min(60, (_adCfg[key]||0) + d));
+  }
   _sendAdCfg(); _renderAdSlots();
 }
 function adPickFile(i, input){

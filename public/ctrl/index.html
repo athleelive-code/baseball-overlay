@@ -1583,6 +1583,7 @@ function _pitchAdd(n){
   var id=_curPitcherId();
   if(!id) return;
   if(n>0){
+    _setTicker(false);   // 1球目が入ったらティッカーを止める（コール忘れの保険）
     _pitchLog.push({ pid:id, inn:st.inn, top:st.top });
   }else{
     // 直近のその投手の1球を取り消す
@@ -1672,6 +1673,19 @@ function _refreshPitchAutoBtn(){
   b.style.background  = _pitchAutoCall ? '#1a3a1a' : '#2c2c2e';
   b.style.borderColor = _pitchAutoCall ? '#3a6a2a' : '#444';
   b.style.color       = _pitchAutoCall ? '#86c867' : '#999';
+}
+
+// ── スポンサーティッカー ──────────────────────────────────────────────────
+// スリーアウトで回が終わったら流し始め、次の回のイニングコールで止める。
+// コールを忘れたときのために、その回の1球目が入った時点でも止める。
+// オーバーレイ側はアニメーションを一時停止するだけなので、次に出したときは
+// 前回消えた位置から続きが流れる。
+var _ticker = { on:false };
+function _setTicker(on){
+  on = !!on;
+  if(_ticker.on === on) return;
+  _ticker.on = on;
+  broadcast();
 }
 
 // ── クーリングタイム ──────────────────────────────────────────────────────
@@ -2027,6 +2041,7 @@ function _coachSay(team){
 }
 
 function announceCurrentInning(){
+  _setTicker(false);   // 次の回のコールと同時にティッカーを終了する
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var team = _teamSay(st.top ? 'away' : 'home');
   var txt = st.inn+'回'+(st.top?'おもて':'うら')+'、'+team+'の攻撃は';
@@ -3471,6 +3486,7 @@ function nextInn(){
   updateSelects();
 
   if(_scoreDispSec>0){ _pendingShowScore='show'; _scoreOverlayVisible=true; _refreshScoreBtn(); _armScoreAutoHide(); }
+  _ticker.on = true;          // イニング交代中はスポンサーを流す（下の broadcast で配る）
   broadcast();
 }
 
@@ -4789,6 +4805,7 @@ function applyRemoteState(s){
     if(typeof s.showBSO==='boolean') _bsoVisible=s.showBSO;
     if(typeof s.scoreDispSec==='number') _scoreDispSec=s.scoreDispSec;
     if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
+    if(s.ticker && typeof s.ticker.on==='boolean') _ticker.on = s.ticker.on;
     // クーリングタイム（他のコントローラーが開始／終了した場合に追従）
     if(s.cooling && typeof s.cooling.on==='boolean'){
       _cooling.on = s.cooling.on;
@@ -5128,6 +5145,7 @@ function _doBroadcast(){
     gameTitle:_getGameTitle(),
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
+    ticker:{on:_ticker.on},
     teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
     coachYomi:{away:_coachYomi.away,home:_coachYomi.home},
     abPitch:_abPitchCount(), abFoul:_abFoulCount(), abBallSeq:_abBallSeqCalc(),
@@ -5179,6 +5197,7 @@ function saveState(){
       gameTitle:_getGameTitle(),
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
+    ticker:{on:_ticker.on},
     teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
     coachYomi:{away:_coachYomi.away,home:_coachYomi.home},
       savedAt:Date.now()
