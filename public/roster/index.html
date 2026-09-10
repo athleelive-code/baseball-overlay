@@ -200,9 +200,6 @@ body.locked .row{cursor:default}
   font-size:13px;padding:6px 9px;outline:none}
 .ry-inp:focus{border-color:#666;background:#2c2c2e}
 .ry-inp::placeholder{color:#555}
-.ry-sep{color:#4a4a4c;font-size:10px;flex-shrink:0}
-.ry-prev{font-size:15px;color:#dfe8e2;white-space:nowrap}
-.ry-prev rt{font-size:10px;color:#8ac0ff;letter-spacing:.4px;font-weight:700}
 
 .fp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,30%);gap:8px;padding:8px;align-items:start}
 .fp-field{width:100%;height:auto;display:block}
@@ -237,20 +234,16 @@ body.locked .row{cursor:default}
 .team-hd .team-name-inp{order:1;flex:1 1 150px;width:auto;min-width:150px}
 .team-hd .team-badge{order:2}
 .team-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0}
-/* チームロゴ枠：プレビュー＝設定、右上✕＝削除、右に強調色スウォッチ。すべて枠内に集約 */
+/* チームロゴ枠：ロゴを押すと「追加」または「削除」。右に強調色スウォッチ */
 .tlogo-box{display:flex;align-items:center;gap:10px;padding:5px 8px;background:#242426;
   border:1px solid #333;border-radius:8px;flex-shrink:0}
 .tlogo-prev-wrap{position:relative;display:inline-flex;flex-shrink:0}
-.tlogo-prev-wrap>label{display:inline-flex;cursor:pointer}
+.tlogo-tap{display:inline-flex;background:none;border:none;padding:0;cursor:pointer}
 .tlogo-prev{width:42px;height:42px;object-fit:contain;border-radius:5px;background:#1c1c1e;
   border:1px dashed #4a4a4a}
 .tlogo-prev[src]{border-style:solid;border-color:#333}
 .tlogo-set-hint{position:absolute;left:0;right:0;bottom:-13px;font-size:8px;color:#777;text-align:center;
   line-height:1;pointer-events:none}
-.tlogo-x{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;
-  border:1px solid #8a3a3a;background:#3a1a1a;color:#ff8888;font-size:11px;line-height:1;
-  cursor:pointer;display:none;align-items:center;justify-content:center;padding:0}
-.tlogo-x:hover{background:#5a2020;color:#fff}
 .tlogo-clr-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
 .tlogo-clr{position:relative;width:34px;height:34px;border-radius:6px;border:1px solid #555;
   cursor:pointer;overflow:hidden;display:block}
@@ -259,7 +252,10 @@ body.locked .row{cursor:default}
 .tlogo-cap{font-size:9px;color:#888;line-height:1}
 .badge-away{background:rgba(200,16,46,.18);color:#ff8090;border:1px solid rgba(200,16,46,.4)}
 .badge-home{background:rgba(26,86,160,.22);color:#8ab4ff;border:1px solid rgba(26,86,160,.5)}
-.coach-inp{flex:0 1 150px;background:#242426;border:1px solid #333;border-radius:7px;
+/* 監督：入力は氏名だけ。前に「監督」を添えて 監督 ◯◯ と読めるようにする */
+.coach-wrap{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto}
+.coach-label{font-size:12px;color:#777;font-weight:600;white-space:nowrap}
+.coach-inp{flex:0 1 130px;min-width:90px;background:#242426;border:1px solid #333;border-radius:7px;
   color:#9a9a9c;font-size:12px;font-weight:500;padding:7px 9px;outline:none}
 .coach-inp:focus{border-color:#555;color:#fff}
 .coach-inp::placeholder{color:#555;font-weight:400}
@@ -502,12 +498,11 @@ body.locked .row{cursor:default}
       <input class="team-name-inp" id="tname-away" placeholder="チーム名" oninput="onTeamName('away')">
       <div class="tlogo-box">
         <div class="tlogo-prev-wrap">
-          <label title="タップでロゴを設定">
+          <button type="button" class="tlogo-tap" onclick="tapTeamLogo('away')" title="タップでロゴを追加／削除">
             <img class="tlogo-prev" id="tlogo-away-prev" alt="">
-            <input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('away',event)">
-          </label>
-          <span class="tlogo-set-hint">ロゴ</span>
-          <button type="button" class="tlogo-x" id="tlogo-away-x" onclick="clearTeamLogo('away')" title="ロゴを削除">✕</button>
+          </button>
+          <input type="file" id="tlogo-away-file" accept="image/*" style="display:none" onchange="pickTeamLogo('away',event)">
+          <span class="tlogo-set-hint" id="tlogo-away-hint">追加</span>
         </div>
         <div class="tlogo-clr-wrap">
           <label class="tlogo-clr" id="tclr-away-lbl" title="チーム強調色">
@@ -523,7 +518,7 @@ body.locked .row{cursor:default}
       <button class="btn sub-def" onclick="openSub('away','守備交代')">守備交代</button>
     </div>
     <div class="tools">
-      <input class="coach-inp" id="coach-away" placeholder="監督名" oninput="onCoachName('away')">
+      <span class="coach-wrap"><span class="coach-label">監督</span><input class="coach-inp" id="coach-away" placeholder="氏名" oninput="onCoachName('away')"></span>
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
         <input type="file" accept="image/*" style="display:none" onchange="onScan(event,'away')">
       </label>
@@ -555,12 +550,11 @@ body.locked .row{cursor:default}
       <input class="team-name-inp" id="tname-home" placeholder="チーム名" oninput="onTeamName('home')">
       <div class="tlogo-box">
         <div class="tlogo-prev-wrap">
-          <label title="タップでロゴを設定">
+          <button type="button" class="tlogo-tap" onclick="tapTeamLogo('home')" title="タップでロゴを追加／削除">
             <img class="tlogo-prev" id="tlogo-home-prev" alt="">
-            <input type="file" accept="image/*" style="display:none" onchange="pickTeamLogo('home',event)">
-          </label>
-          <span class="tlogo-set-hint">ロゴ</span>
-          <button type="button" class="tlogo-x" id="tlogo-home-x" onclick="clearTeamLogo('home')" title="ロゴを削除">✕</button>
+          </button>
+          <input type="file" id="tlogo-home-file" accept="image/*" style="display:none" onchange="pickTeamLogo('home',event)">
+          <span class="tlogo-set-hint" id="tlogo-home-hint">追加</span>
         </div>
         <div class="tlogo-clr-wrap">
           <label class="tlogo-clr" id="tclr-home-lbl" title="チーム強調色">
@@ -576,7 +570,7 @@ body.locked .row{cursor:default}
       <button class="btn sub-def" onclick="openSub('home','守備交代')">守備交代</button>
     </div>
     <div class="tools">
-      <input class="coach-inp" id="coach-home" placeholder="監督名" oninput="onCoachName('home')">
+      <span class="coach-wrap"><span class="coach-label">監督</span><input class="coach-inp" id="coach-home" placeholder="氏名" oninput="onCoachName('home')"></span>
       <label class="btn btn-scan" style="margin:0">📷 写真スキャン
         <input type="file" accept="image/*" style="display:none" onchange="onScan(event,'home')">
       </label>
@@ -962,79 +956,6 @@ function posOptions(sel){
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(m){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
 
-// ── ローマ字ルビのプレビュー（overlay.html と同じ変換） ────────────────────
-function _spaceName(n){
-  n=String(n||'').trim();
-  if(!n || /[ 　]/.test(n)) return n;
-  if(n.length>=3 && n.length<=5) return n.slice(0,2)+' '+n.slice(2);
-  return n;
-}
-function _romajiRuby(name, yomi){
-  yomi=String(yomi||'').trim();
-  if(!yomi) return '';
-  if(!/[ 　]/.test(yomi)){
-    var kanji=String(name||'').replace(/[ 　]/g,'');
-    var sIdx=_spaceName(name).indexOf(' ');
-    if(sIdx>0 && kanji.length>0){
-      var cut=Math.round(yomi.length * sIdx / kanji.length);
-      if(cut>0 && cut<yomi.length) yomi=yomi.slice(0,cut)+' '+yomi.slice(cut);
-    }
-  }
-  return _kanaToRomaji(yomi);
-}
-function _kanaToRomaji(src){
-  if(!src) return '';
-  var s=String(src).replace(/[ァ-ヶ]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); });
-  var M={
-    'きゃ':'kya','きゅ':'kyu','きょ':'kyo','しゃ':'sha','しゅ':'shu','しょ':'sho',
-    'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','にゃ':'nya','にゅ':'nyu','にょ':'nyo',
-    'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','みゃ':'mya','みゅ':'myu','みょ':'myo',
-    'りゃ':'rya','りゅ':'ryu','りょ':'ryo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
-    'じゃ':'ja','じゅ':'ju','じょ':'jo','びゃ':'bya','びゅ':'byu','びょ':'byo',
-    'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
-    'あ':'a','い':'i','う':'u','え':'e','お':'o',
-    'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
-    'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
-    'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
-    'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
-    'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
-    'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
-    'や':'ya','ゆ':'yu','よ':'yo',
-    'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
-    'わ':'wa','ゐ':'i','ゑ':'e','を':'o','ん':'n',
-    'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
-    'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
-    'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
-    'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
-    'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
-    'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o','ゃ':'ya','ゅ':'yu','ょ':'yo','ゎ':'wa','ゔ':'vu'
-  };
-  var out='', i=0;
-  while(i<s.length){
-    var ch=s.charAt(i), two=s.substr(i,2);
-    if(ch==='っ'){
-      var nx=M[s.substr(i+1,2)]||M[s.charAt(i+1)]||'';
-      if(nx) out+=nx.charAt(0);
-      i++; continue;
-    }
-    if(ch==='ー'){ out+=(out.slice(-1)||''); i++; continue; }
-    if(ch===' '||ch==='　'){ out+=' '; i++; continue; }
-    if(M[two]){ out+=M[two]; i+=2; continue; }
-    if(M[ch]){ out+=M[ch]; i++; continue; }
-    out+=ch; i++;
-  }
-  out=out.replace(/ou/g,'o').replace(/oo/g,'o').replace(/uu/g,'u');
-  var w=out.split(/\s+/).filter(Boolean)
-    .map(function(x){ return x.charAt(0).toUpperCase()+x.slice(1); });
-  if(w.length===2) w.reverse();   // 「姓 名」→「名 姓」
-  return w.join(' ');
-}
-function _ryPreview(inp){
-  var w=inp.closest('.row-yomi'); if(!w) return;
-  var rt=w.querySelector('.ry-prev rt'); if(!rt) return;
-  rt.textContent=_romajiRuby(w.getAttribute('data-name')||'', inp.value) || '—';
-}
-
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -1084,12 +1005,10 @@ function render(team){
         +'<button class="mini" onclick="toggleBench(\''+team+'\','+p.id+')">'+(p.order?'控':'出')+'</button>'
         +'<button class="mini del" onclick="delPlayer(\''+team+'\','+p.id+')">✕</button>'
       +'</div>'
-      +'<div class="row-yomi" data-name="'+esc(p.name||'')+'">'
+      +'<div class="row-yomi">'
       +  '<span class="ry-lbl">フリガナ</span>'
       +  '<input class="ry-inp" value="'+esc(p.yomi||'')+'" placeholder="ヤマダ タロウ" '
-      +     'oninput="_ryPreview(this)" onchange="edit(\''+team+'\','+p.id+',\'yomi\',this.value)">'
-      +  '<span class="ry-sep">▶</span>'
-      +  '<ruby class="ry-prev">'+esc(p.name||'')+'<rt>'+esc(_romajiRuby(p.name, p.yomi)||'—')+'</rt></ruby>'
+      +     'onchange="edit(\''+team+'\','+p.id+',\'yomi\',this.value)">'
       +'</div>'
       +'<div class="row-hist">'+hist+'</div>'
     +'</div>';
@@ -1326,18 +1245,25 @@ function reorder(team,fromId,toId){
 const LS_KEY='bb_team_rosters';
 function readStore(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ return {}; } }
 function writeStore(o){ try{ localStorage.setItem(LS_KEY,JSON.stringify(o)); }catch(e){} }
-// 保存エントリは旧＝選手配列そのまま／新＝{players,coach}。どちらでも読めるようにする
+// 保存エントリは 旧＝選手配列そのまま／新＝{players,coach,logo,color}。
+// コントローラーと同じ localStorage 'bb_team_rosters' を使うので、どちらの形でも読めるようにする
 function _storePlayers(v){ return Array.isArray(v) ? v : (v && Array.isArray(v.players) ? v.players : []); }
-function _storeCoach(v){ return (v && !Array.isArray(v) && typeof v.coach==='string') ? v.coach : ''; }
+function _storeField(v, key){ return (v && !Array.isArray(v) && typeof v[key]==='string') ? v[key] : ''; }
+function _storeCoach(v){ return _storeField(v,'coach'); }
 
 function saveTeam(team){
   const name=(teamNames[team]||'').trim();
   if(!name){ toast('先にチーム名を入力してください'); return; }
   if(!rosters[team].length){ toast('選手が登録されていません'); return; }
   const store=readStore();
-  store[name]={ players:JSON.parse(JSON.stringify(rosters[team])), coach:(coaches[team]||'').trim() };
+  store[name]={
+    players: JSON.parse(JSON.stringify(rosters[team])),   // 打順・背番号・氏名・フリガナ・守備・敬称
+    coach:   (coaches[team]||'').trim(),
+    logo:    (typeof _teamLogos!=='undefined' ? (_teamLogos[team]||'') : ''),
+    color:   (typeof _teamColorsPC!=='undefined' ? (_teamColorsPC[team]||'') : '')
+  };
   writeStore(store);
-  toast('「'+name+'」を保存しました');
+  toast('「'+name+'」を保存しました（選手・監督・ロゴ・強調色）');
 }
 
 let loadTarget=null;
@@ -1372,6 +1298,19 @@ function applyLoad(enc){
   coaches[loadTarget]=_c;
   var _cEl=document.getElementById('coach-'+loadTarget);
   if(_cEl) _cEl.value=_c;
+  // ロゴ（保存されているときだけ差し替え。無い保存データでは今のロゴを消さない）
+  var _lg=_storeField(store[key],'logo');
+  if(_lg && typeof _teamLogos!=='undefined'){
+    _teamLogos[loadTarget]=_lg;
+    _saveTeamLogos(); _sendTeamCfg(); _renderTeamLogoUI();
+  }
+  // 強調色
+  var _cl=_storeField(store[key],'color');
+  if(_cl && typeof _teamColorsPC!=='undefined'){
+    _teamColorsPC[loadTarget]=_cl;
+    try{ localStorage.setItem('bb_clr_'+loadTarget, _cl); }catch(e){}
+    _renderTeamColorUI();
+  }
   render(loadTarget); push();
   closeModal('load-mask');
   toast('「'+key+'」を読み込みました');
@@ -1384,14 +1323,31 @@ function delSaved(enc){
   loadTeam(loadTarget);
 }
 
+// ファイルを端末にダウンロードさせる。
+// ・<a> を DOM に入れてから click しないと動かないブラウザがある
+// ・revokeObjectURL を即座に呼ぶとダウンロードが始まる前に取り消されてしまう
+function _downloadBlob(blob, filename){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download=filename; a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){
+    try{ document.body.removeChild(a); }catch(e){}
+    URL.revokeObjectURL(url);
+  }, 2000);
+}
+
 function exportJSON(){
   const store=readStore();
+  const n=Object.keys(store).length;
+  if(!n){ toast('保存されたチームがありません'); return; }
   const blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
   const d=new Date();
   const ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  a.href=URL.createObjectURL(blob); a.download='bb_rosters_'+ymd+'.json';
-  a.click(); URL.revokeObjectURL(a.href);
+  const fn='bb_rosters_'+ymd+'.json';
+  _downloadBlob(blob, fn);
+  toast(n+'チームを書き出しました：'+fn);
 }
 
 function importJSON(e){
@@ -2286,9 +2242,19 @@ function _renderTeamLogoUI(){
     if(img){
       if(_teamLogos[t]){ img.src=_teamLogos[t]; } else { img.removeAttribute('src'); }
     }
-    var x=document.getElementById('tlogo-'+t+'-x');
-    if(x) x.style.display = _teamLogos[t] ? 'flex' : 'none';
+    var hint=document.getElementById('tlogo-'+t+'-hint');
+    if(hint) hint.textContent = _teamLogos[t] ? '削除' : '追加';
   });
+}
+// ロゴをタップ：未設定なら画像を選ぶ、設定済みなら確認して削除
+function tapTeamLogo(side){
+  var label = (side==='away') ? '先攻' : '後攻';
+  if(_teamLogos[side]){
+    if(confirm(label+'のロゴを削除しますか？')) clearTeamLogo(side);
+    return;
+  }
+  var f=document.getElementById('tlogo-'+side+'-file');
+  if(f) f.click();
 }
 function pickTeamLogo(team, ev){
   var f = ev && ev.target && ev.target.files && ev.target.files[0];
@@ -2398,13 +2364,11 @@ function exportLog(){
       +' '+g.score+']');
   });
   var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
-  var a=document.createElement('a');
   var d=new Date();
   var ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  a.href=URL.createObjectURL(blob);
-  a.download='game_log_'+ymd+'.txt';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  var fn='game_log_'+ymd+'.txt';
+  _downloadBlob(blob, fn);
+  toast('記録を書き出しました：'+fn);
 }
 
 // ── 打席結果の編集 ────────────────────────────────────────────────────────

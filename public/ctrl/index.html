@@ -896,14 +896,14 @@ body.gamemin .gm-hide{display:none!important}
   <div id="dtab-roster" style="display:none">
     <div class="drawer-sec">
       <div class="drawer-sec-t">1塁側チーム</div>
-      <input id="teamname-away" type="text" placeholder="チーム名を入力" value=""
-        oninput="document.getElementById('name-away').textContent=this.value||'先攻'"
+      <input class="teamname-inp" data-side="away" type="text" placeholder="チーム名を入力" value=""
+        oninput="onTeamNameInput('away',this)" onchange="commitTeamName()"
         style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('away')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('away')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
       </div>
-      <div id="saved-roster-away" style="display:none;margin-bottom:10px"></div>
+      <div class="saved-roster-panel" data-side="away" style="display:none;margin-bottom:10px"></div>
       <label for="scan-file-away" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:8px;text-align:center">📷 写真からオーダー表を読み取る</label>
       <input type="file" id="scan-file-away" accept="image/*" style="display:none" onchange="onScanFile(event,'away')"/>
       <label for="csv-file-away" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #444;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📄 CSV/Excelから読み込む</label>
@@ -920,14 +920,14 @@ body.gamemin .gm-hide{display:none!important}
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">3塁側チーム</div>
-      <input id="teamname-home" type="text" placeholder="チーム名を入力" value=""
-        oninput="document.getElementById('name-home').textContent=this.value||'後攻'"
+      <input class="teamname-inp" data-side="home" type="text" placeholder="チーム名を入力" value=""
+        oninput="onTeamNameInput('home',this)" onchange="commitTeamName()"
         style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('home')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('home')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
       </div>
-      <div id="saved-roster-home" style="display:none;margin-bottom:10px"></div>
+      <div class="saved-roster-panel" data-side="home" style="display:none;margin-bottom:10px"></div>
       <label for="scan-file-home" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #555;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:8px;text-align:center">📷 写真からオーダー表を読み取る</label>
       <input type="file" id="scan-file-home" accept="image/*" style="display:none" onchange="onScanFile(event,'home')"/>
       <label for="csv-file-home" style="display:block;width:100%;background:#2c2c2e;border:2px dashed #444;border-radius:12px;color:#aaa;font-size:36px;padding:20px;cursor:pointer;margin-bottom:12px;text-align:center">📄 CSV/Excelから読み込む</label>
@@ -977,14 +977,14 @@ body.gamemin .gm-hide{display:none!important}
   <div id="rtab-away">
     <div class="drawer-sec">
       <div class="drawer-sec-t">1塁側チーム</div>
-      <input id="teamname-away" type="text" placeholder="チーム名を入力" value=""
-        oninput="document.getElementById('name-away').textContent=this.value||'先攻'"
+      <input class="teamname-inp" data-side="away" type="text" placeholder="チーム名を入力" value=""
+        oninput="onTeamNameInput('away',this)" onchange="commitTeamName()"
         style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('away')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('away')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
       </div>
-      <div id="saved-roster-away" style="display:none;margin-bottom:10px"></div>
+      <div class="saved-roster-panel" data-side="away" style="display:none;margin-bottom:10px"></div>
       <label for="scan-file-away-r" style="display:block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#ccc;font-size:28px;font-weight:600;padding:14px;cursor:pointer;text-align:center;margin-bottom:8px">
         📷 写真からオーダー表を読み取る
         <input type="file" id="scan-file-away-r" accept="image/*" style="display:none" onchange="onScanFile(event,'away')"/>
@@ -1000,14 +1000,14 @@ body.gamemin .gm-hide{display:none!important}
   <div id="rtab-home" style="display:none">
     <div class="drawer-sec">
       <div class="drawer-sec-t">3塁側チーム</div>
-      <input id="teamname-home" type="text" placeholder="チーム名を入力" value=""
-        oninput="document.getElementById('name-home').textContent=this.value||'後攻'"
+      <input class="teamname-inp" data-side="home" type="text" placeholder="チーム名を入力" value=""
+        oninput="onTeamNameInput('home',this)" onchange="commitTeamName()"
         style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:30px;padding:14px 16px;outline:none;margin-bottom:12px"/>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <button onclick="saveTeamRoster('home')" style="flex:1;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:28px;font-weight:600;padding:12px;cursor:pointer">💾 保存</button>
         <button onclick="loadTeamRosterUI('home')" style="flex:1;background:#1a1a3a;border:1px solid #3a3a8a;border-radius:10px;color:#8888ee;font-size:28px;font-weight:600;padding:12px;cursor:pointer">📂 呼び出し</button>
       </div>
-      <div id="saved-roster-home" style="display:none;margin-bottom:10px"></div>
+      <div class="saved-roster-panel" data-side="home" style="display:none;margin-bottom:10px"></div>
       <label for="scan-file-home-r" style="display:block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#ccc;font-size:28px;font-weight:600;padding:14px;cursor:pointer;text-align:center;margin-bottom:8px">
         📷 写真からオーダー表を読み取る
         <input type="file" id="scan-file-home-r" accept="image/*" style="display:none" onchange="onScanFile(event,'home')"/>
@@ -3706,9 +3706,8 @@ function confirmScan(){
     var newName=nEl.value.trim();
     var nameEl=document.getElementById('name-'+team);
     if(nameEl) nameEl.textContent=newName;
-    // 選手登録ドロワーの入力欄にも反映する
-    var tnEl=document.getElementById('teamname-'+team);
-    if(tnEl) tnEl.value=newName;
+    // 選手登録ドロワーの入力欄（設定ドロワー側・👤ドロワー側の両方）にも反映する
+    _fillTeamNameInputs(team, newName);
   }
   if(cEl) _coaches[team]=cEl.value.trim();
 
@@ -3733,6 +3732,45 @@ function closeScan(){
   _scanTeam=null; _scanPlayers=[];
 }
 
+// ── チーム名（設定ドロワー／👤ドロワーのどちらの欄も同じ1つの値を編集する） ──
+// 正体は画面の #name-away / #name-home。ここが配信の aab / hnm になり、
+// ROSTER・オーバーレイ・localStorage すべてに伝わる。
+function _teamNameInputs(side){
+  return Array.prototype.slice.call(
+    document.querySelectorAll('.teamname-inp[data-side="'+side+'"]'));
+}
+// 入力欄すべてに値を入れる（'先攻'/'後攻' は未設定扱いで空にする）
+function _fillTeamNameInputs(side, val){
+  var def = (side==='away') ? '先攻' : '後攻';
+  var v = (!val || val===def) ? '' : val;
+  _teamNameInputs(side).forEach(function(el){
+    if(document.activeElement!==el) el.value=v;
+  });
+}
+// 現在の #name-away / #name-home を入力欄へ反映
+function _syncTeamNameInputs(){
+  ['away','home'].forEach(function(side){
+    var el=document.getElementById('name-'+side);
+    _fillTeamNameInputs(side, el ? el.textContent : '');
+  });
+}
+// 入力中：画面のチーム名と、もう一方のドロワーの入力欄をその場で揃える
+function onTeamNameInput(side, el){
+  var def = (side==='away') ? '先攻' : '後攻';
+  var v = el.value;
+  var nameEl=document.getElementById('name-'+side);
+  if(nameEl) nameEl.textContent = v || def;
+  _teamNameInputs(side).forEach(function(o){ if(o!==el) o.value=v; });
+  if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
+}
+// 入力確定（フォーカスを外す／Enter）：ここで初めて全端末へ配信＋端末に保存する
+function commitTeamName(){
+  if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
+  if(typeof renderSB==='function') renderSB();
+  broadcast();
+  saveState();
+}
+
 // ── DRAWER TABS ──────────────────────────────────────────────────────────────
 function switchRosterTab(side){
   document.getElementById('rtab-away').style.display=side==='away'?'':'none';
@@ -3741,13 +3779,8 @@ function switchRosterTab(side){
   document.getElementById('rtab-away-btn').style.color=side==='away'?'#fff':'#888';
   document.getElementById('rtab-home-btn').style.background=side==='home'?'#3a3a3c':'transparent';
   document.getElementById('rtab-home-btn').style.color=side==='home'?'#fff':'#888';
-  // チーム名入力欄に現在値を反映
-  var tnAway=document.getElementById('teamname-away');
-  var tnHome=document.getElementById('teamname-home');
-  var curAway=document.getElementById('name-away').textContent;
-  var curHome=document.getElementById('name-home').textContent;
-  if(tnAway) tnAway.value=(curAway==='先攻')?'':curAway;
-  if(tnHome) tnHome.value=(curHome==='後攻')?'':curHome;
+  // チーム名入力欄に現在値を反映（どちらのドロワーの欄も揃える）
+  _syncTeamNameInputs();
   // ロスター一覧を表示
   renderRosterInDrawer(side);
 }
@@ -3779,7 +3812,7 @@ function switchDrawerTab(tab){
   document.getElementById('dtab-roster-btn').style.background = tab==='roster'?'#3a3a3c':'transparent';
   document.getElementById('dtab-roster-btn').style.color      = tab==='roster'?'#fff':'#888';
   document.getElementById('dtab-roster-btn').style.fontSize   = '36px';
-  if(tab==='roster') renderRosters();
+  if(tab==='roster'){ renderRosters(); _syncTeamNameInputs(); }
 }
 
 // ── ROSTER ────────────────────────────────────────────────────────────────────
@@ -3887,6 +3920,7 @@ function openSettingsDrawer(){
   if(e) e.textContent=st.maxInn;
   _updateAutoHideDisp();
   _updateScoreDispSecUI();
+  _syncTeamNameInputs();
   if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
   if(typeof _refreshAudioHereBtn==='function') _refreshAudioHereBtn();
   if(typeof _refreshAnnBtn==='function'){
@@ -3939,6 +3973,11 @@ function _getRosterStore(){
 function _setRosterStore(obj){
   try{ localStorage.setItem(ROSTER_STORE_KEY,JSON.stringify(obj)); }catch(e){}
 }
+// 保存エントリは 旧＝選手配列そのまま／新＝{players,coach,logo,color}。
+// ROSTER 画面と同じ 'bb_team_rosters' を共有するので、どちらの形でも読めるようにする
+function _storePlayers(v){ return Array.isArray(v) ? v : (v && Array.isArray(v.players) ? v.players : []); }
+function _storeField(v, key){ return (v && !Array.isArray(v) && typeof v[key]==='string') ? v[key] : ''; }
+
 function saveTeamRoster(side){
   var nameEl=document.getElementById('name-'+side);
   var teamName=nameEl?nameEl.textContent.trim():'';
@@ -3946,27 +3985,40 @@ function saveTeamRoster(side){
     teamName=prompt('保存するチーム名を入力してください',teamName||'');
     if(!teamName) return;
     if(nameEl) nameEl.textContent=teamName;
+    _fillTeamNameInputs(side, teamName);
   }
   var roster=JSON.parse(JSON.stringify(rosters[side]));
   if(!roster.length){ alert('選手が登録されていません'); return; }
   var store=_getRosterStore();
-  store[teamName]=roster;
+  store[teamName]={
+    players: roster,                                  // 打順・背番号・氏名・フリガナ・守備
+    coach:   (_coaches[side]||'').trim(),
+    logo:    (typeof _teamLogos!=='undefined' ? (_teamLogos[side]||'') : ''),
+    color:   (typeof _teamColors!=='undefined' ? (_teamColors[side]||'') : '')
+  };
   _setRosterStore(store);
-  alert('"'+teamName+'" のメンバー（'+roster.length+'名）を保存しました');
+  alert('"'+teamName+'" を保存しました（選手'+roster.length+'名・監督・ロゴ・強調色）');
+}
+// 保存済みチームの一覧パネル。設定ドロワー側と👤ドロワー側の両方に同じものを描く
+function _savedRosterPanels(side){
+  return Array.prototype.slice.call(
+    document.querySelectorAll('.saved-roster-panel[data-side="'+side+'"]'));
 }
 function loadTeamRosterUI(side){
   var store=_getRosterStore();
   var keys=Object.keys(store);
-  var panel=document.getElementById('saved-roster-'+side);
-  if(!panel) return;
+  var panels=_savedRosterPanels(side);
+  if(!panels.length) return;
   if(!keys.length){
-    panel.style.display='block';
-    panel.innerHTML='<div style="font-size:24px;color:#666;padding:8px">保存済みチームはありません</div>';
+    panels.forEach(function(panel){
+      panel.style.display='block';
+      panel.innerHTML='<div style="font-size:24px;color:#666;padding:8px">保存済みチームはありません</div>';
+    });
     return;
   }
   var rows='';
   keys.forEach(function(k){
-    var cnt=store[k].length;
+    var cnt=_storePlayers(store[k]).length;
     var ek=encodeURIComponent(k);
     rows+='<div style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:8px;padding:8px 12px">'
       +'<button data-side="'+side+'" data-key="'+ek+'" class="_roster-load-btn" style="flex:1;background:#007aff;border:none;border-radius:8px;color:#fff;font-size:26px;font-weight:600;padding:10px;cursor:pointer">'+k+'（'+cnt+'名）</button>'
@@ -3975,33 +4027,57 @@ function loadTeamRosterUI(side){
   });
   var html='<div style="font-size:22px;color:#888;margin-bottom:8px">保存済みチームを選択</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px">'+rows+'</div>'
-    +'<button id="_roster-close-'+side+'" style="width:100%;background:#2c2c2e;border:none;border-radius:8px;color:#888;font-size:24px;padding:10px;margin-top:8px;cursor:pointer">閉じる</button>';
-  panel.innerHTML=html;
-  panel.style.display='block';
-  // イベントバインド
-  panel.querySelectorAll('._roster-load-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){ applyTeamRoster(btn.dataset.side,btn.dataset.key); });
+    +'<button class="_roster-close-btn" style="width:100%;background:#2c2c2e;border:none;border-radius:8px;color:#888;font-size:24px;padding:10px;margin-top:8px;cursor:pointer">閉じる</button>';
+  panels.forEach(function(panel){
+    panel.innerHTML=html;
+    panel.style.display='block';
+    // イベントバインド
+    panel.querySelectorAll('._roster-load-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){ applyTeamRoster(btn.dataset.side,btn.dataset.key); });
+    });
+    panel.querySelectorAll('._roster-del-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){ deleteTeamRoster(btn.dataset.key,btn.dataset.side); });
+    });
+    var closeBtn=panel.querySelector('._roster-close-btn');
+    if(closeBtn) closeBtn.addEventListener('click',function(){
+      _savedRosterPanels(side).forEach(function(p){ p.style.display='none'; });
+    });
   });
-  panel.querySelectorAll('._roster-del-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){ deleteTeamRoster(btn.dataset.key,btn.dataset.side); });
-  });
-  var closeBtn=document.getElementById('_roster-close-'+side);
-  if(closeBtn) closeBtn.addEventListener('click',function(){ panel.style.display='none'; });
 }
 function applyTeamRoster(side,encodedName){
   var teamName=decodeURIComponent(encodedName);
   var store=_getRosterStore();
-  var roster=store[teamName];
-  if(!roster||!roster.length){ alert('メンバーが見つかりません'); return; }
+  var entry=store[teamName];
+  var roster=_storePlayers(entry);
+  if(!roster.length){ alert('メンバーが見つかりません'); return; }
   if(!confirm('"'+teamName+'"（'+roster.length+'名）を'+(side==='away'?'先攻':'後攻')+'に読み込みますか？現在の選手データは上書きされます。')){ return; }
   rosters[side]=JSON.parse(JSON.stringify(roster));
   var nameEl=document.getElementById('name-'+side);
   if(nameEl) nameEl.textContent=teamName;
   var clrLbl=document.getElementById('clr-'+side+'-lbl');
   if(clrLbl) clrLbl.textContent=teamName;
-  renderRosters(); updateSelects(); broadcast();
-  var panel=document.getElementById('saved-roster-'+side);
-  if(panel) panel.style.display='none';
+  _fillTeamNameInputs(side, teamName);
+  // 監督名
+  var _c=_storeField(entry,'coach');
+  if(_c) _coaches[side]=_c;
+  // ロゴ（保存されているときだけ差し替え）
+  var _lg=_storeField(entry,'logo');
+  if(_lg && typeof _teamLogos!=='undefined'){
+    _teamLogos[side]=_lg;
+    if(typeof _saveTeamLogos==='function') _saveTeamLogos();
+    if(typeof _sendTeamCfg==='function') _sendTeamCfg();
+    if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
+  }
+  // 強調色
+  var _cl=_storeField(entry,'color');
+  if(_cl && typeof _teamColors!=='undefined'){
+    _teamColors[side]=_cl;
+    try{ localStorage.setItem('bb_clr_'+side, _cl); }catch(e){}
+    var ci=document.getElementById('color-'+side); if(ci) ci.value=_cl;
+    var ch=document.getElementById('color-'+side+'-hex'); if(ch) ch.textContent=_cl;
+  }
+  renderRosters(); updateSelects(); broadcast(); saveState();
+  _savedRosterPanels(side).forEach(function(p){ p.style.display='none'; });
 }
 function deleteTeamRoster(encodedName,side){
   var teamName=decodeURIComponent(encodedName);
@@ -4025,19 +4101,28 @@ function exportRosters(){
   };
   var json=JSON.stringify(data,null,2);
   var blob=new Blob([json],{type:'application/json'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
   var dt=new Date();
   var fname='bb_rosters_'
     +dt.getFullYear()
     +String(dt.getMonth()+1).padStart(2,'0')
     +String(dt.getDate()).padStart(2,'0')
     +'.json';
-  a.href=url; a.download=fname;
+  _downloadBlob(blob, fname);
+  if(typeof toastMsg==='function') toastMsg('書き出しました：'+fname);
+}
+
+// ファイルを端末にダウンロードさせる。
+// revokeObjectURL を即座に呼ぶとダウンロードが始まる前に取り消されるので遅らせる
+function _downloadBlob(blob, filename){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download=filename; a.style.display='none';
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(function(){
+    try{ document.body.removeChild(a); }catch(e){}
+    URL.revokeObjectURL(url);
+  }, 2000);
 }
 
 function importRosters(e){
@@ -4196,6 +4281,7 @@ function setFirstBat(side){
   _benchAssigned=true;
   document.getElementById('firstbat-modal').style.display='none';
   renderRosters(); updateSelects(); refreshSCDisplay(); renderSB(); broadcast(); saveState();
+  _syncTeamNameInputs();
 }
 function openFirstBatModal(){
   document.getElementById('firstbat-modal').style.display='flex';
@@ -4228,7 +4314,8 @@ function swapTeams(){
   if(ci_a&&ci_h){const tv=ci_a.value;ci_a.value=ci_h.value;ci_h.value=tv;}
   if(ch_a&&ch_h){const tv=ch_a.textContent;ch_a.textContent=ch_h.textContent;ch_h.textContent=tv;}
   // 再描画
-  renderRosters(); updateSelects(); refreshSCDisplay(); renderSB(); broadcast();
+  renderRosters(); updateSelects(); refreshSCDisplay(); renderSB(); broadcast(); saveState();
+  _syncTeamNameInputs();
 }
 
 // ── YouTubeチャプター記録 ────────────────────────────────────────────────────
@@ -4380,12 +4467,9 @@ function saveGameFile(){
   var dt=new Date();
   var ymd=dt.getFullYear()+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getDate()).padStart(2,'0');
   var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='game_'+ymd+'_'+name+'.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toastMsg('試合データを保存しました');
+  var fname='game_'+ymd+'_'+name+'.json';
+  _downloadBlob(blob, fname);
+  toastMsg('試合データを保存しました：'+fname);
 }
 
 function loadGameFile(e){
@@ -4476,6 +4560,13 @@ function applyPcEdit(s){
     var na=document.getElementById('name-away'), nh=document.getElementById('name-home');
     if(na&&s.aab) na.textContent=s.aab;
     if(nh&&s.hnm) nh.textContent=s.hnm;
+    if(typeof _syncTeamNameInputs==='function') _syncTeamNameInputs();
+
+    // 監督名（ROSTER で入力・呼び出したものを取り込む）
+    if(s.coaches){
+      if(typeof s.coaches.away==='string') _coaches.away=s.coaches.away;
+      if(typeof s.coaches.home==='string') _coaches.home=s.coaches.home;
+    }
 
     if(typeof s.gameTitle==='string'){
       var gt=document.getElementById('game-title');
@@ -5265,6 +5356,7 @@ function restoreState(){
     const nh=document.getElementById('name-home');
     if(na&&snap.nameAway) na.textContent=snap.nameAway;
     if(nh&&snap.nameHome) nh.textContent=snap.nameHome;
+    if(typeof _syncTeamNameInputs==='function') _syncTeamNameInputs();
 
     // 再描画
     renderSB();
