@@ -4052,7 +4052,8 @@ function _lineupText(team){
     var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
     var nm = String(p.yomi || p.name || '').trim();
     if(!nm) return '';
-    return p.order + '番、' + (pl ? pl + '、' : '') + nm + _hon(p);
+    // 打者アナウンスと同じ並び（打順、守備位置、氏名、背番号）
+    return p.order + '番、' + (pl ? pl + '、' : '') + nm + _hon(p) + (p.num ? '、背番号' + p.num : '');
   }).filter(Boolean);
   if(!lines.length) return '';
   var cs = _coachSay(team);

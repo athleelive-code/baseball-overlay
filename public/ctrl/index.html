@@ -2861,7 +2861,7 @@ function announceCurrentInning(){
 // ── スタメン発表／守備紹介 ───────────────────────────────────────────────
 // team: 'away'=先攻, 'home'=後攻。読み上げは「コールの声」（_ttsVoice）を使う。
 
-// 打順どおりの文言（背番号なし）「◯◯のスタメン…。1番、ショート、やまだくん。2番、…」
+// 打順どおりの文言「◯◯のスタメン…。1番、ショート、やまだくん、背番号6。2番、…」
 function _lineupText(team){
   var roster = (rosters[team] || []).filter(function(p){ return p.order; })
     .sort(function(a,b){ return Number(a.order) - Number(b.order); });
@@ -2871,7 +2871,8 @@ function _lineupText(team){
     var pl = POS_YOMI[String(p.pos)] || POS_YOMI[posLabel(p.pos)] || '';
     var nm = String(p.yomi || p.name || '').trim();
     if(!nm) return '';
-    return p.order + '番、' + (pl ? pl + '、' : '') + nm + _hon(p);
+    // 打者アナウンスと同じ並び（打順、守備位置、氏名、背番号）
+    return p.order + '番、' + (pl ? pl + '、' : '') + nm + _hon(p) + (p.num ? '、背番号' + p.num : '');
   }).filter(Boolean);
   if(!lines.length) return '';
   var cs = _coachSay(team);
