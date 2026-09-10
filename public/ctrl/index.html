@@ -852,6 +852,25 @@ body.gamemin .gm-hide{display:none!important}
       </button>
     </div>
     <div class="drawer-sec">
+      <div class="drawer-sec-t">配信専用音声</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">
+        場内アナウンスとは別に、配信視聴者だけに流す音声です。球場のスピーカーからは流れません。<br>
+        <b style="color:#c8a8ff">配信機器に繋いだ端末</b>（メンバー管理を開いているPCなど）で下のスイッチを ON にしてください。
+        コントローラー1台だけで運用するときは、この機能は使えません（音声の出口が1つしかないため）。
+      </div>
+      <button id="btn-audio-stream" onclick="toggleAudioStream()"
+        style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:24px;font-weight:700;padding:14px;cursor:pointer;margin-bottom:10px">
+        🔇 この端末で配信音声を鳴らす：OFF
+      </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="streamSponsor()" style="flex:1 1 46%;background:#2a1e3a;border:1px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer">📣 提供読み上げ</button>
+        <button onclick="streamScore()"   style="flex:1 1 46%;background:#2a1e3a;border:1px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer">📊 試合状況</button>
+        <button onclick="streamCooling()" style="flex:1 1 46%;background:#2a1e3a;border:1px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer">❄ クーリング案内</button>
+        <button onclick="streamFree()"    style="flex:1 1 46%;background:#2a1e3a;border:1px solid #5a3a8a;border-radius:10px;color:#c8a8ff;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer">✎ 自由入力</button>
+      </div>
+      <div style="font-size:18px;color:#666;margin-top:8px">声は「実況の声」の設定を使います</div>
+    </div>
+    <div class="drawer-sec">
       <div class="drawer-sec-t">クーリング</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">大会の規定に合わせて長さを決めます。開始すると「ただいまより◯分間のクーリングを開始します」と読み上げ、オーバーレイにカウントダウンが出ます</div>
       <div style="display:flex;align-items:center;gap:14px">
@@ -1757,7 +1776,7 @@ function _coolingStartTick(){
 function _coolingStopTick(){
   if(_coolingTick){ clearInterval(_coolingTick); _coolingTick=null; }
 }
-function _coolingSayText(min){ return 'ただいまより'+min+'分間のクーリングを開始します。'; }
+function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
 
 function startCooling(){
   _cooling.on = true;
@@ -1940,14 +1959,11 @@ function _playSeq(urls){
   nx();
 }
 
-function _speakAs(text, voice, style, rate, _recv){
-  if((!_annOn && !_recv) || !text) return;
-  _setHudText(text);
-  if(!_audioHere && !_recv){ _sendSay(text, voice||_ttsVoice, style||_ttsStyle, rate); return; }
-  var rt = (typeof rate==='number') ? rate : _annRate;
+// 実際に音を鳴らす部分。場内・配信のどちらからも使う
+function _ttsPlay(text, voice, style, rate){
   if(!_ttsReady){ _speakLocal(text); return; }
   var chunks = (text.length > 190) ? _splitForTts(text, 180) : [text];
-  Promise.all(chunks.map(function(c){ return _ttsFetch1(c, voice, style, rt); }))
+  Promise.all(chunks.map(function(c){ return _ttsFetch1(c, voice, style, rate); }))
     .then(function(urls){ _playSeq(urls); })
     .catch(function(e){
       console.warn('[TTS]', e && e.message);
@@ -1956,6 +1972,70 @@ function _speakAs(text, voice, style, rate, _recv){
       else if(typeof toast==='function') toast('音声生成エラー '+_m2);
       _speakLocal(text);
     });
+}
+
+function _speakAs(text, voice, style, rate, _recv){
+  if((!_annOn && !_recv) || !text) return;
+  _setHudText(text);
+  if(!_audioHere && !_recv){ _sendSay(text, voice||_ttsVoice, style||_ttsStyle, rate); return; }
+  _ttsPlay(text, voice, style, (typeof rate==='number') ? rate : _annRate);
+}
+
+// ── 配信専用音声 ──────────────────────────────────────────────────────────
+// 場内アナウンスとは別系統。配信視聴者だけに向けた音声を、配信機器に繋いだ
+// 端末（メンバー管理を開いているPCなど）から鳴らす。
+// 場内アナウンスの ON/OFF や再生端末の設定には影響しない。
+// 声は実況用（_cmtVoice）を使い、場内の声と区別する。
+var _audioStream = false;
+try{ var _as=localStorage.getItem('bb_audio_stream'); if(_as!=null) _audioStream=(_as==='1'); }catch(e){}
+function toggleAudioStream(){
+  _audioStream = !_audioStream;
+  try{ localStorage.setItem('bb_audio_stream', _audioStream?'1':'0'); }catch(e){}
+  _refreshAudioStreamBtn();
+}
+function _refreshAudioStreamBtn(){
+  var b=document.getElementById('btn-audio-stream');
+  if(!b) return;
+  b.textContent = _audioStream ? '📡 この端末で配信音声を鳴らす：ON' : '🔇 この端末で配信音声を鳴らす：OFF';
+  b.style.background  = _audioStream ? '#2a1e3a' : '#2c2c2e';
+  b.style.borderColor = _audioStream ? '#5a3a8a' : '#444';
+  b.style.color       = _audioStream ? '#c8a8ff' : '#999';
+}
+function _sendSayStream(text){
+  try{ if(ws && ws.readyState===1) ws.send(JSON.stringify({ _sayStream:true, text:text })); }catch(e){}
+}
+// 配信専用の読み上げ。鳴らす端末でなければ他端末へ回す
+function speakStream(text, _recv){
+  if(!text) return;
+  if(!_audioStream && !_recv){ _sendSayStream(text); return; }
+  _setHudText(text);
+  _ttsPlay(text, _cmtVoice, _cmtStyle, _cmtRate);
+}
+
+// スポンサーの提供読み上げ文（ROSTER のスポンサー設定から届く）
+var _sponsorText = '';
+
+// 定型の配信音声
+function streamSponsor(){
+  var t=(_sponsorText||'').trim();
+  if(!t){ alert('メンバー管理のスポンサー設定で「提供の読み上げ文」を入れてください'); return; }
+  speakStream(t);
+}
+function streamScore(){
+  var at=scores.away.reduce(function(x,v){ return x+(typeof v==='number'?v:0); },0);
+  var ht=scores.home.reduce(function(x,v){ return x+(typeof v==='number'?v:0); },0);
+  var an=_teamSay('away'), hn=_teamSay('home');
+  var t = st.inn+'回'+(st.top?'おもて':'うら')+'、'
+        + an+'が'+at+'点、'+hn+'が'+ht+'点。'
+        + (at===ht ? '同点です。' : ((at>ht?an:hn)+'がリードしています。'));
+  speakStream(t);
+}
+function streamCooling(){
+  speakStream('ただいまクーリングタイム中です。まもなく試合を再開します。');
+}
+function streamFree(){
+  var t=prompt('配信視聴者へ読み上げる内容を入力してください', '');
+  if(t && t.trim()) speakStream(t.trim());
 }
 
 // 現在の状況をまとめて読み上げる
@@ -4107,6 +4187,7 @@ function openSettingsDrawer(){
     if(typeof _refreshPitchAutoBtn==='function') _refreshPitchAutoBtn();
     if(typeof _refreshScoreAutoBtn==='function') _refreshScoreAutoBtn();
     if(typeof _refreshCoolingMinUI==='function') _refreshCoolingMinUI();
+    if(typeof _refreshAudioStreamBtn==='function') _refreshAudioStreamBtn();
     if(typeof _refreshDefRecBtn==='function') _refreshDefRecBtn();
     if(typeof _updatePitchDisp==='function') _updatePitchDisp();
   }
@@ -4996,6 +5077,10 @@ function connectWS(){
       }
       // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
       if(s && s._say){ if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true); return; }
+      // 配信専用音声。配信機器に繋いだ端末だけが鳴らす
+      if(s && s._sayStream){ if(_audioStream && s.text) speakStream(s.text, true); return; }
+      // スポンサーの提供読み上げ文（ROSTER の設定から）
+      if(s && s._adcfg){ if(typeof s.sponsorText==='string') _sponsorText=s.sponsorText; return; }
       // 球速だけのメッセージは保持だけして送り返さない
       if(s && s._spd){ _speed=s.speed; return; }
       // PC版からの部分更新（選手・表示など。カウントには触れない）

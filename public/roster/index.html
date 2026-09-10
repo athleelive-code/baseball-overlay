@@ -303,6 +303,7 @@ body.locked .row{cursor:default}
 .btn{background:#2c2c2e;border:1px solid #3a3a3c;border-radius:8px;color:#ddd;font-size:13px;
   font-weight:600;padding:9px 12px;cursor:pointer;white-space:nowrap;transition:.15s}
 .btn:hover{background:#3a3a3c}
+.stream-btn.on{background:#2a1e3a;border-color:#5a3a8a;color:#c8a8ff}
 .btn-scan{background:#1a2a3a;border-color:#3a5a8a;color:#8fc0ff}
 .btn-save{background:#1a3a1a;border-color:#3a6a2a;color:#86c867}
 .btn-load{background:#1a1a3a;border-color:#3a3a8a;color:#9a9aff}
@@ -769,6 +770,17 @@ body.locked .row{cursor:default}
     </div>
 
     <div class="set-sec">
+      <div class="set-lbl">配信専用音声</div>
+      <div class="note" style="margin-bottom:8px">
+        場内アナウンスとは別系統です。球場のスピーカーからは流れません。<br>
+        <b style="color:#c8a8ff">この端末を配信機器に繋いでいる場合だけ</b> ON にしてください。
+        コントローラーの設定にある「提供読み上げ」などが、この端末から鳴ります。
+      </div>
+      <button class="btn stream-btn" id="btn-audio-stream" onclick="toggleAudioStream()"
+        style="width:100%;font-size:15px;padding:12px">🔇 この端末で配信音声を鳴らす：OFF</button>
+    </div>
+
+    <div class="set-sec">
       <div class="set-lbl">試合前アナウンス</div>
       <div class="note" style="margin-bottom:8px">「アナウンス ON」のときに使えます。押すと確認ウインドウが出ます</div>
       <div class="note" style="margin-bottom:4px">スタメン発表（試合開始前・打順どおり）</div>
@@ -924,6 +936,11 @@ body.locked .row{cursor:default}
         </div>
       </div>
       <div class="note" style="margin-top:6px">上の2つはスコア表内の表示用です。ティッカーは1周の秒数が小さいほど速く流れます</div>
+      <div class="set-lbl" style="margin-top:14px">提供の読み上げ文（配信専用音声）</div>
+      <div class="note" style="margin-bottom:6px">コントローラーの「📣 提供読み上げ」で、この文を配信視聴者へ読み上げます。場内には流れません</div>
+      <textarea id="ad-sponsor-text" oninput="onSponsorText()" rows="3"
+        placeholder="この試合は、◯◯商店、△△工務店の提供でお送りします。"
+        style="width:100%;background:#252527;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;padding:10px;outline:none;resize:vertical;font-family:inherit;line-height:1.7"></textarea>
       <button class="btn" style="width:100%;font-size:13px;padding:10px;margin-top:10px" onclick="adAddSlot()">＋ スロットを追加</button>
     </div>
 
@@ -1712,6 +1729,8 @@ function connectWS(){
       }
       // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
       if(s && s._say){ if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true); return; }
+      // 配信専用音声。配信機器に繋いだ端末だけが鳴らす
+      if(s && s._sayStream){ if(_audioStream && s.text) speakStream(s.text, true); return; }
       if(!s||s._ctl!==true) return;
       applyRemote(s);
     };
@@ -2045,7 +2064,7 @@ function startCooling(){
   _refreshCoolingUI();
   _coolingStartTick();
   pushState();
-  if(_annOn) _speakAs('ただいまより'+_coolingMin+'分間のクーリングを開始します。', _ttsVoice, _ttsStyle, _annRate);
+  if(_annOn) _speakAs('只今より'+_coolingMin+'分間のクーリングタイムを開始します。', _ttsVoice, _ttsStyle, _annRate);
   toast('クーリング開始（'+_coolingMin+'分）');
 }
 function stopCooling(auto){
@@ -3161,7 +3180,8 @@ function _sendAdCfg(){
       ticker: pick('ticker'),
       cool:   pick('cool'),
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
-      tickerSpeed:_adCfg.tickerSpeed||40
+      tickerSpeed:_adCfg.tickerSpeed||40,
+      sponsorText:_adCfg.sponsorText||''
     })); }catch(e){}
   }
 }
@@ -3192,8 +3212,15 @@ function _renderAdSlots(){
   var sv=document.getElementById('ad-sec-val'); if(sv) sv.textContent=_adCfg.sec||0;
   var rv=document.getElementById('ad-rotate-val'); if(rv) rv.textContent=_adCfg.rotate||0;
   var tv=document.getElementById('ad-tspd-val'); if(tv) tv.textContent=_adCfg.tickerSpeed||40;
+  var st=document.getElementById('ad-sponsor-text');
+  if(st && document.activeElement!==st) st.value=_adCfg.sponsorText||'';
 }
 function adToggle(i){ if(_adCfg.slots[i]){ _adCfg.slots[i].on=!_adCfg.slots[i].on; _sendAdCfg(); _renderAdSlots(); } }
+function onSponsorText(){
+  var el=document.getElementById('ad-sponsor-text');
+  _adCfg.sponsorText = el ? el.value : '';
+  _sendAdCfg();
+}
 function adWhereToggle(i,key){
   var s=_adCfg.slots[i]; if(!s) return;
   s.where=_adWhere(s.where);
@@ -3844,14 +3871,11 @@ function _playSeq(urls){
   next();
 }
 
-function _speakAs(text, voice, style, rate, _recv){
-  if((!_annOn && !_recv) || !text) return;
-  _setHudText(text);
-  if(!_audioHere && !_recv){ _sendSay(text, voice||_ttsVoice, style||_ttsStyle, rate); return; }
-  var rt = (typeof rate==='number') ? rate : _annRate;
+// 実際に音を鳴らす部分。場内・配信のどちらからも使う
+function _ttsPlay(text, voice, style, rate){
   if(!_ttsReady){ _speakLocal(text); return; }
   var chunks = (text.length > 190) ? _splitForTts(text, 180) : [text];
-  Promise.all(chunks.map(function(c){ return _ttsFetch1(c, voice, style, rt); }))
+  Promise.all(chunks.map(function(c){ return _ttsFetch1(c, voice, style, rate); }))
     .then(function(urls){ _playSeq(urls); })
     .catch(function(e){
       console.warn('[TTS]', e && e.message);
@@ -3860,6 +3884,38 @@ function _speakAs(text, voice, style, rate, _recv){
       else if(typeof toast==='function') toast('音声生成エラー '+_m2);
       _speakLocal(text);
     });
+}
+
+function _speakAs(text, voice, style, rate, _recv){
+  if((!_annOn && !_recv) || !text) return;
+  _setHudText(text);
+  if(!_audioHere && !_recv){ _sendSay(text, voice||_ttsVoice, style||_ttsStyle, rate); return; }
+  _ttsPlay(text, voice, style, (typeof rate==='number') ? rate : _annRate);
+}
+
+// ── 配信専用音声 ──────────────────────────────────────────────────────────
+// 場内アナウンスとは別系統。この端末を配信機器に繋いでいるなら ON にする。
+var _audioStream = false;
+try{ var _as=localStorage.getItem('bb_audio_stream'); if(_as!=null) _audioStream=(_as==='1'); }catch(e){}
+function toggleAudioStream(){
+  _audioStream = !_audioStream;
+  try{ localStorage.setItem('bb_audio_stream', _audioStream?'1':'0'); }catch(e){}
+  _refreshAudioStreamBtn();
+}
+function _refreshAudioStreamBtn(){
+  var b=document.getElementById('btn-audio-stream');
+  if(!b) return;
+  b.textContent = _audioStream ? '📡 この端末で配信音声を鳴らす：ON' : '🔇 この端末で配信音声を鳴らす：OFF';
+  b.classList.toggle('on', _audioStream);
+}
+function speakStream(text, _recv){
+  if(!text) return;
+  if(!_audioStream && !_recv){
+    try{ if(ws && ws.readyState===1) ws.send(JSON.stringify({ _sayStream:true, text:text })); }catch(e){}
+    return;
+  }
+  _setHudText(text);
+  _ttsPlay(text, _cmtVoice, _cmtStyle, _cmtRate);
 }
 
 // 現在の状況をまとめて読み上げる
@@ -4126,6 +4182,7 @@ _adLoad();
 _renderTeamLogoUI();
 _renderTeamColorUI();
 _refreshCoolingUI();
+_refreshAudioStreamBtn();
 _applySideLayout();
 _initTTS();
 connectWS();
