@@ -234,6 +234,9 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
   width:100%;height:126px;object-fit:contain;display:block;
   background:rgba(255,255,255,.94);border-radius:8px;padding:10px 16px;
 }
+.ov-cool-ads.fade{animation:coolAdIn .5s ease}
+@keyframes coolAdIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){ .ov-cool-ads.fade{animation:none} }
 .ov-cool-note{font-size:15px;color:rgba(255,255,255,.5);letter-spacing:2px}
 /* 残り10秒。読み上げと合わせて、色で再開が近いことを知らせる */
 .ov-cool.soon .ov-cool-n{color:#ffd24a}
@@ -1113,22 +1116,10 @@ function applyCooling(c){
   if(!box) return;
   if(on){
     _coolEndsAt = c.endsAt;
-    // クーリングタイムに出すスポンサー（設定で「クーリング」を選んだ画像）
-    // 枠の幅はすべて同じにそろえ、多いときは自動で2段に分ける
-    var ads=g('ov-cool-ads');
-    var list = _adCool.slice(0,8);
-    if(ads){
-      ads.innerHTML='';
-      list.forEach(function(src){
-        var im=document.createElement('img'); im.src=src; im.alt='';
-        ads.appendChild(im);
-      });
-      var per = (list.length<=4) ? list.length : Math.ceil(list.length/2);
-      ads.style.gridTemplateColumns = 'repeat('+Math.max(1,per)+', minmax(0,320px))';
-    }
+    _coolAdsStart();
     // スポンサーが1枚も無いときは見出しも出さない
     var th=g('ov-cool-thanks');
-    if(th) th.style.display = list.length ? 'flex' : 'none';
+    if(th) th.style.display = _adCool.length ? 'flex' : 'none';
     box.classList.add('on');
     _coolPaint();
     if(!_coolTick) _coolTick=setInterval(_coolPaint, 500);
@@ -1136,7 +1127,52 @@ function applyCooling(c){
     _coolEndsAt = 0;
     box.classList.remove('on');
     if(_coolTick){ clearInterval(_coolTick); _coolTick=null; }
+    _coolAdsStop();
   }
+}
+
+// クーリング中のスポンサー。1画面に収まらない枚数のときは切り替えて全部見せる。
+// ページごとの枚数をそろえて、切り替わっても並びが崩れないようにする。
+var COOL_PER_PAGE = 6;               // 1画面に出す上限（3列2段）
+var _coolAdPage = 0, _coolAdTimer = null;
+function _coolAdPages(){
+  var n=_adCool.length;
+  if(!n) return [];
+  var pages=Math.ceil(n/COOL_PER_PAGE);
+  var per=Math.ceil(n/pages);        // 端数を散らして各ページの枚数をそろえる
+  var out=[];
+  for(var i=0;i<n;i+=per) out.push(_adCool.slice(i,i+per));
+  return out;
+}
+function _coolAdsPaint(){
+  var ads=g('ov-cool-ads');
+  if(!ads) return;
+  var pages=_coolAdPages();
+  if(!pages.length){ ads.innerHTML=''; return; }
+  if(_coolAdPage>=pages.length) _coolAdPage=0;
+  var page=pages[_coolAdPage];
+  ads.innerHTML='';
+  page.forEach(function(src){
+    var im=document.createElement('img'); im.src=src; im.alt='';
+    ads.appendChild(im);
+  });
+  var per=(page.length<=4) ? page.length : Math.ceil(page.length/2);
+  ads.style.gridTemplateColumns='repeat('+Math.max(1,per)+', minmax(0,320px))';
+  if(pages.length>1){          // 切り替わったことが分かるように軽く出し直す
+    ads.classList.remove('fade'); void ads.offsetWidth; ads.classList.add('fade');
+  }
+}
+function _coolAdsStart(){
+  _coolAdsStop();
+  _coolAdPage=0;
+  _coolAdsPaint();
+  if(_coolAdPages().length>1){
+    var sec=(_adRotate>0) ? _adRotate : 8;   // 設定の切替間隔。0なら8秒
+    _coolAdTimer=setInterval(function(){ _coolAdPage++; _coolAdsPaint(); }, sec*1000);
+  }
+}
+function _coolAdsStop(){
+  if(_coolAdTimer){ clearInterval(_coolAdTimer); _coolAdTimer=null; }
 }
 
 function applyAdCfg(d){
