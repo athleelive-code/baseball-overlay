@@ -49,12 +49,17 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-inn-tb span{font-size:20px;font-weight:700;color:rgba(255,255,255,.25);line-height:1}
 .ov-inn-tb span.active{color:#fff}
 .ov-teams{display:flex;flex-direction:column;flex:1;border-left:1px solid rgba(255,255,255,.1)}
-.ov-team-row{display:flex;align-items:center;flex:1;padding:6px 10px;gap:4px}
+/* チーム名の欄は共通の幅を確保する。
+   ・縮まない（shrink:0）ので、イニング表が開いても名前が隠れない
+   ・先攻・後攻で同じ基準幅なので、上下でイニングの桁が縦に揃う
+   ・閉じているときは余白を吸って右端まで伸びる（grow:1） */
+.ov-team-row{display:flex;align-items:center;flex:1 0 240px;padding:6px 10px;gap:4px}
 .ov-team-row:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
 .ov-team-ind{width:3px;border-radius:1px;align-self:stretch;background:rgba(255,255,255,.1);flex-shrink:0}
 .ov-team-ind.active{background:var(--red)}
 .ov-team-logo{height:26px;width:auto;max-width:44px;object-fit:contain;flex-shrink:0}
-.ov-team-name{font-size:24px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;max-width:15em}
+/* 名前は確保した欄の中で収まるようにする。長すぎるときだけ末尾を省略 */
+.ov-team-name{font-size:24px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0}
 .ov-totals{display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid rgba(255,255,255,.1)}
 .ov-total-cell{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:60px;padding:4px 6px}
 .ov-total-cell:first-child{border-bottom:1px solid rgba(255,255,255,.08)}
@@ -62,8 +67,10 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 
 /* スコア表（イニング別） - スコアブロック下に */
 .ov-ist-block{border-top:1px solid rgba(255,255,255,.08)}
-.ov-ist-slide{flex:0 1 auto;max-width:0;overflow:hidden;opacity:0;transition:max-width .5s ease,opacity .4s ease;border-left:1px solid rgba(255,255,255,.08)}
-.ov-ist-slide.open{max-width:600px;opacity:1}
+/* イニング表は閉じているときは幅ゼロ。開くと残りの幅を使って伸びる。
+   チーム名側は縮まないので、名前を残したままイニングだけがスライドで出てくる */
+.ov-ist-slide{flex:0 1 0%;min-width:0;max-width:0;overflow:hidden;opacity:0;transition:max-width .5s ease,opacity .4s ease,flex-grow .5s ease;border-left:1px solid rgba(255,255,255,.08)}
+.ov-ist-slide.open{flex:1 1 auto;max-width:600px;opacity:1}
 .ov-ad-slide{flex:0 1 auto;max-width:0;overflow:hidden;opacity:0;transition:max-width .5s ease,opacity .4s ease;display:flex;align-items:center}
 .ov-ad-slide.open{max-width:300px;opacity:1;margin-left:auto}
 .ov-ad-slide{position:relative}
