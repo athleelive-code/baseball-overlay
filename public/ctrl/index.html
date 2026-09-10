@@ -1800,10 +1800,7 @@ function _scoreInningText(inn, top){
   var team = top ? 'away' : 'home';
   var n = scores[team][inn-1];
   if(typeof n!=='number' || n<=0) return '';
-  var at = scores.away.reduce(function(x,v){ return x + (typeof v==='number'?v:0); }, 0);
-  var ht = scores.home.reduce(function(x,v){ return x + (typeof v==='number'?v:0); }, 0);
-  return 'この回、'+_teamSay(team)+'、'+n+'点。'
-       + 'ただいまのスコアは、'+_teamSay('away')+at+'点、'+_teamSay('home')+ht+'点です。';
+  return 'この回の'+_teamSay(team)+'の得点は'+n+'点です。';
 }
 
 // 回終了時のアナウンス。得点は _scoreAutoCall、投球数は _pitchAutoCall で切り替え。
