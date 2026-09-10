@@ -940,31 +940,6 @@ body.locked .row{cursor:default}
     </div>
 
     <div class="set-sec">
-      <div class="set-lbl">クーリング中のBGM</div>
-      <div class="note" style="margin-bottom:10px">
-        クーリングタイムの間だけ流します。<b style="color:#8ac0ff">音を鳴らす端末</b>で登録してください。<br>
-        曲を登録しなければ、既定では何も鳴りません。<br>
-        <b style="color:#c8a8ff">配信に乗るので、曲は著作権の心配がないものを使ってください</b>
-      </div>
-      <div id="bgm-name" style="font-size:14px;color:#777;background:#242426;border:1px solid #3a3a3c;border-radius:8px;padding:10px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未登録</div>
-      <button class="btn" id="btn-bgm-chime" style="width:100%;font-size:14px;padding:12px;margin-bottom:8px" onclick="toggleBgmChime()">🔔 曲が無いときチャイム OFF</button>
-      <div style="display:flex;gap:8px">
-        <label class="btn" style="flex:2;font-size:14px;padding:12px;text-align:center;cursor:pointer;margin:0">
-          曲を選ぶ<input type="file" accept="audio/*" style="display:none" onchange="bgmPick(this)">
-        </label>
-        <button class="btn" id="bgm-test" style="flex:1;font-size:14px;padding:12px" onclick="bgmTest()">▶ 試聴</button>
-        <button class="btn btn-red" id="bgm-del" style="flex:0 0 62px;font-size:14px;padding:12px;display:none" onclick="bgmClear()">削除</button>
-      </div>
-      <div class="set-lbl" style="margin-top:12px">音量</div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn" style="flex:0 0 46px;padding:9px" onclick="adjBgmVol(-0.05)">－</button>
-        <span id="bgm-vol-val" style="flex:1;text-align:center;font-size:20px;font-weight:700">35%</span>
-        <button class="btn" style="flex:0 0 46px;padding:9px" onclick="adjBgmVol(0.05)">＋</button>
-      </div>
-      <div class="note" style="margin-top:6px">アナウンスが入る間は自動で音量を下げます</div>
-    </div>
-
-    <div class="set-sec">
       <div class="set-lbl">スポンサー表示</div>
       <div class="note" style="margin-bottom:10px">
         スポンサー画像はここで一括管理します。1枚ごとに「出す場所」を選べます。オーバーレイに即反映されます。<br>
@@ -1812,11 +1787,7 @@ function connectWS(){
       }
       // 他端末からのアナウンス中継。音声再生先がこの端末なら鳴らす
       if(s && s._say){
-        if(_audioHere && s.text){
-          // BGMが流れている間は声が埋もれるので、その間だけ下げる
-          if(typeof _bgmDuck==='function'){ _bgmDuck(true); setTimeout(function(){ _bgmDuck(false); }, 7000); }
-          _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true);
-        }
+        if(_audioHere && s.text) _speakAs(s.text, s.voice||'', s.style||'', (typeof s.rate==='number'?s.rate:_annRate), true);
         return;
       }
       // 配信専用音声。配信機器に繋いだ端末だけが鳴らす
@@ -2184,209 +2155,9 @@ function stopSiren(){
   _sirenNodes=null;
 }
 
-// ── クーリング中のBGM ─────────────────────────────────────────────────────
-// 曲を登録してあればそれを流す。無ければその場で穏やかな環境音を作って流す。
-// 鳴らすのは「この端末で音声を再生する」がONの端末だけ。コントローラー側と同じ作り。
-var _bgmVol = 0.35;
-try{ var _bv=localStorage.getItem('bb_bgm_vol'); if(_bv!=null) _bgmVol=Math.max(0,Math.min(1,Number(_bv))); }catch(e){}
-var _bgmChime = false;   // 曲が無いときにチャイムを流すか。既定は鳴らさない
-try{ var _bc=localStorage.getItem('bb_bgm_chime'); if(_bc!=null) _bgmChime=(_bc==='1'); }catch(e){}
-var _bgmName = '';
-try{ _bgmName = localStorage.getItem('bb_bgm_name') || ''; }catch(e){}
-var _bgmBlob = null, _bgmUrl = '', _bgmEl = null, _bgmFade = null, _bgmSynth = null, _bgmOn = false;
-
-function _bgmDB(){
-  return new Promise(function(res){
-    try{
-      var rq=indexedDB.open('athleelive_bgm',1);
-      rq.onupgradeneeded=function(){ var db=rq.result; if(!db.objectStoreNames.contains('files')) db.createObjectStore('files'); };
-      rq.onsuccess=function(){ res(rq.result); };
-      rq.onerror=function(){ res(null); };
-    }catch(e){ res(null); }
-  });
-}
-function _bgmPut(blob){ return _bgmDB().then(function(db){ if(!db) return; try{ db.transaction('files','readwrite').objectStore('files').put(blob,'cool'); }catch(e){} }); }
-function _bgmGet(){ return _bgmDB().then(function(db){ if(!db) return null; return new Promise(function(res){
-  try{ var rq=db.transaction('files','readonly').objectStore('files').get('cool');
-       rq.onsuccess=function(){ res(rq.result||null); }; rq.onerror=function(){ res(null); };
-  }catch(e){ res(null); } }); }); }
-function _bgmDel(){ return _bgmDB().then(function(db){ if(!db) return; try{ db.transaction('files','readwrite').objectStore('files').delete('cool'); }catch(e){} }); }
-
-function _bgmInit(){
-  _bgmGet().then(function(b){
-    if(b){ _bgmBlob=b; try{ _bgmUrl=URL.createObjectURL(b); }catch(e){} }
-    _refreshBgmUI();
-  });
-}
-function bgmPick(input){
-  var f = input.files && input.files[0];
-  input.value='';
-  if(!f) return;
-  _bgmBlob=f; _bgmName=f.name||'';
-  try{ if(_bgmUrl) URL.revokeObjectURL(_bgmUrl); _bgmUrl=URL.createObjectURL(f); }catch(e){}
-  try{ localStorage.setItem('bb_bgm_name', _bgmName); }catch(e){}
-  _bgmPut(f);
-  _refreshBgmUI();
-  toast('BGMを登録しました');
-}
-function bgmClear(){
-  if(!confirm('登録したBGMを削除しますか？\n（削除すると環境音に切り替わります）')) return;
-  _bgmStop();
-  _bgmBlob=null; _bgmName='';
-  try{ if(_bgmUrl) URL.revokeObjectURL(_bgmUrl); }catch(e){}
-  _bgmUrl='';
-  try{ localStorage.removeItem('bb_bgm_name'); }catch(e){}
-  _bgmDel();
-  _refreshBgmUI();
-}
-function bgmTest(){
-  if(_bgmOn){ _bgmStop(); _refreshBgmUI(); return; }
-  var sa=_audioHere, sc=_bgmChime;
-  _audioHere=true; if(!_bgmUrl) _bgmChime=true;   // 試聴はこの端末で、設定に関わらず鳴らす
-  _bgmStart();
-  _audioHere=sa; _bgmChime=sc;
-  _refreshBgmUI();
-}
-function toggleBgmChime(){
-  _bgmChime=!_bgmChime;
-  try{ localStorage.setItem('bb_bgm_chime', _bgmChime?'1':'0'); }catch(e){}
-  _refreshBgmUI();
-}
-function adjBgmVol(d){
-  _bgmVol=Math.max(0, Math.min(1, Math.round((_bgmVol+d)*100)/100));
-  try{ localStorage.setItem('bb_bgm_vol', _bgmVol); }catch(e){}
-  if(_bgmOn){ if(_bgmEl && !_bgmEl.paused) _bgmFadeTo(_bgmVol, 200); _bgmDuck(false); }
-  _refreshBgmUI();
-}
-function _refreshBgmUI(){
-  var n=document.getElementById('bgm-name');
-  if(n){
-    n.textContent = _bgmName ? _bgmName : (_bgmBlob ? '登録済み' : '未登録');
-    n.style.color = (_bgmName||_bgmBlob) ? '#ddd' : '#777';
-  }
-  var d=document.getElementById('bgm-del'); if(d) d.style.display = _bgmBlob ? '' : 'none';
-  var v=document.getElementById('bgm-vol-val'); if(v) v.textContent = Math.round(_bgmVol*100)+'%';
-  var t=document.getElementById('bgm-test'); if(t) t.textContent = _bgmOn ? '⏹ 試聴を止める' : '▶ 試聴';
-  var c=document.getElementById('btn-bgm-chime');
-  if(c){
-    _tapBtnPaint(c, _bgmChime, '🔔 曲が無いときチャイム ON', '🔔 曲が無いときチャイム OFF');
-    c.style.display = _bgmBlob ? 'none' : '';
-  }
-}
-
-function _bgmFadeTo(target, ms, done){
-  if(_bgmFade){ clearInterval(_bgmFade); _bgmFade=null; }
-  if(!_bgmEl){ if(done) done(); return; }
-  var from=_bgmEl.volume, steps=Math.max(1,Math.round(ms/60)), i=0;
-  _bgmFade=setInterval(function(){
-    i++;
-    try{ _bgmEl.volume=Math.max(0,Math.min(1, from+(target-from)*(i/steps))); }catch(e){}
-    if(i>=steps){ clearInterval(_bgmFade); _bgmFade=null; if(done) done(); }
-  }, 60);
-}
-function _bgmStartFile(){
-  if(!_bgmUrl) return false;
-  if(!_bgmEl){ _bgmEl=new Audio(); _bgmEl.loop=true; }
-  try{
-    _bgmEl.src=_bgmUrl; _bgmEl.volume=0;
-    var pr=_bgmEl.play(); if(pr&&pr.catch) pr.catch(function(){});
-  }catch(e){ return false; }
-  _bgmFadeTo(_bgmVol, 2500);
-  return true;
-}
-// 曲が無いときに流す音。
-// 音を伸ばしっぱなしにすると唸りに聞こえるので、鳴らさない時間を挟んで、
-// オルゴールのような減衰する音を1つずつ置いていく。
-// 音階は5音（ペンタトニック）なので、どの順に出しても濁らない。
-var BGM_SCALE = [523.25, 587.33, 659.25, 783.99, 880.00,
-                 1046.50, 1174.66, 1318.51];
-function _bgmBell(ctx, out, freq, at, vel){
-  var o=ctx.createOscillator(), g=ctx.createGain();
-  o.type='sine'; o.frequency.setValueAtTime(freq, at);
-  g.gain.setValueAtTime(0.0001, at);
-  g.gain.linearRampToValueAtTime(vel, at+0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001, at+3.4);
-  var o2=ctx.createOscillator(), g2=ctx.createGain();
-  o2.type='sine'; o2.frequency.setValueAtTime(freq*2, at);
-  g2.gain.setValueAtTime(0.0001, at);
-  g2.gain.linearRampToValueAtTime(vel*0.22, at+0.02);
-  g2.gain.exponentialRampToValueAtTime(0.0001, at+1.6);
-  o.connect(g); g.connect(out);
-  o2.connect(g2); g2.connect(out);
-  o.start(at); o.stop(at+3.6);
-  o2.start(at); o2.stop(at+1.8);
-}
-function _bgmStartSynth(){
-  try{
-    var AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC) return false;
-    if(!_sirenCtx) _sirenCtx=new AC();
-    var ctx=_sirenCtx;
-    if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
-    var out=ctx.createGain();
-    out.gain.setValueAtTime(_bgmVol*0.5, ctx.currentTime);
-    var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3200;
-    out.connect(lp); lp.connect(ctx.destination);
-    var prev=-1;
-    var tick=function(){
-      if(!_bgmSynth) return;
-      var i; do{ i=Math.floor(Math.random()*BGM_SCALE.length); }while(i===prev && BGM_SCALE.length>1);
-      prev=i;
-      _bgmBell(ctx, out, BGM_SCALE[i], ctx.currentTime+0.02, 0.20);
-      if(Math.random()<0.35){
-        var j=Math.min(BGM_SCALE.length-1, i+2);
-        _bgmBell(ctx, out, BGM_SCALE[j], ctx.currentTime+0.14, 0.12);
-      }
-      _bgmSynth.timer=setTimeout(tick, 1900+Math.random()*1600);
-    };
-    _bgmSynth={ ctx:ctx, out:out, timer:null };
-    tick();
-    return true;
-  }catch(e){ return false; }
-}
-function _bgmStopSynth(){
-  if(!_bgmSynth) return;
-  try{
-    if(_bgmSynth.timer) clearTimeout(_bgmSynth.timer);
-    var s=_bgmSynth, t=s.ctx.currentTime;
-    s.out.gain.cancelScheduledValues(t);
-    s.out.gain.setValueAtTime(s.out.gain.value, t);
-    s.out.gain.linearRampToValueAtTime(0.0001, t+1.2);
-  }catch(e){}
-  _bgmSynth=null;
-}
-function _bgmStart(){
-  if(_bgmOn || !_audioHere) return;
-  // 曲があればそれを流す。無いときは、チャイムを流す設定のときだけ鳴らす
-  if(_bgmUrl){ _bgmOn=true; if(!_bgmStartFile()){ _bgmOn=false; return; } }
-  else if(_bgmChime){ _bgmOn=true; if(!_bgmStartSynth()){ _bgmOn=false; return; } }
-  else return;
-  _refreshBgmUI();
-}
-function _bgmStop(){
-  if(!_bgmOn) return;
-  _bgmOn=false;
-  if(_bgmEl && !_bgmEl.paused) _bgmFadeTo(0, 1800, function(){ try{ _bgmEl.pause(); }catch(e){} });
-  _bgmStopSynth();
-  _refreshBgmUI();
-}
-// アナウンスの間は音楽を下げて、声を聞き取りやすくする
-function _bgmDuck(on){
-  if(!_bgmOn) return;
-  if(_bgmEl && !_bgmEl.paused) _bgmFadeTo(on ? _bgmVol*0.22 : _bgmVol, 500);
-  if(_bgmSynth){
-    try{
-      var t=_bgmSynth.ctx.currentTime;
-      _bgmSynth.out.gain.cancelScheduledValues(t);
-      _bgmSynth.out.gain.setValueAtTime(_bgmSynth.out.gain.value, t);
-      _bgmSynth.out.gain.linearRampToValueAtTime(on ? _bgmVol*0.12 : _bgmVol*0.5, t+0.5);
-    }catch(e){}
-  }
-}
-
 // 読み上げる文言。コントローラー側と同じにしておくこと（音声の使い回しが効く）
 function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
-function _coolingSoonText(){ return '間もなく試合再開です、クーリングタイムを終了します。'; }
+function _coolingSoonText(){ return '間もなく試合再開です。クーリングタイムを終了します。'; }
 
 function _coolingRemain(){
   if(!_cooling.on) return 0;
@@ -2418,7 +2189,6 @@ function _refreshCoolingUI(){
 }
 function _coolingStartTick(){
   if(_coolingTick) clearInterval(_coolingTick);
-  if(typeof _bgmStart==='function') _bgmStart();
   _coolingTick = setInterval(function(){
     if(!_cooling.on){ _coolingStopTick(); return; }
     if(_coolingRemain() <= 0){ stopCooling(true); return; }
@@ -2427,7 +2197,6 @@ function _coolingStartTick(){
 }
 function _coolingStopTick(){
   if(_coolingTick){ clearInterval(_coolingTick); _coolingTick=null; }
-  if(typeof _bgmStop==='function') _bgmStop();
 }
 function startCooling(){
   _cooling.on = true;
@@ -4786,7 +4555,6 @@ _refreshAudioStreamBtn();
 _refreshTapBtns();
 _refreshWakeBtn();
 _wakeAcquire();
-_bgmInit();
 _refreshSirenBtn();
 _applySideLayout();
 _initTTS();

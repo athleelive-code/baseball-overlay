@@ -976,32 +976,6 @@ body.gamemin .gm-hide{display:none!important}
       </div>
     </div>
     <div class="drawer-sec">
-      <div class="drawer-sec-t">クーリング中のBGM</div>
-      <div style="font-size:20px;color:#666;margin-bottom:10px">
-        クーリングタイムの間だけ流します。<b style="color:#8ac0ff">音を鳴らす端末</b>で登録してください。<br>
-        曲を登録しなければ、既定では何も鳴りません。<br>
-        <b style="color:#c8a8ff">配信に乗るので、曲は著作権の心配がないものを使ってください</b>
-      </div>
-      <div id="bgm-name" style="font-size:22px;color:#777;background:#242426;border:1px solid #3a3a3c;border-radius:10px;padding:12px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未登録</div>
-      <button id="btn-bgm-chime" onclick="toggleBgmChime()" style="width:100%;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#999;font-size:22px;font-weight:700;padding:13px;cursor:pointer;margin-bottom:8px">
-        🔔 曲が無いときチャイム OFF
-      </button>
-      <div style="display:flex;gap:8px">
-        <label style="flex:2;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ddd;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer;text-align:center;margin:0">
-          曲を選ぶ<input type="file" accept="audio/*" style="display:none" onchange="bgmPick(this)">
-        </label>
-        <button id="bgm-test" onclick="bgmTest()" style="flex:1;background:#1a2a3a;border:1px solid #3a5a8a;border-radius:10px;color:#8ab4ff;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer">▶ 試聴</button>
-        <button id="bgm-del" onclick="bgmClear()" style="flex:0 0 66px;background:#3a1a1a;border:1px solid #8a3a3a;border-radius:10px;color:#ff9a9a;font-size:22px;font-weight:700;padding:14px 6px;cursor:pointer;display:none">削除</button>
-      </div>
-      <div style="font-size:20px;color:#888;margin:12px 0 6px">音量</div>
-      <div style="display:flex;align-items:center;gap:14px">
-        <button onclick="adjBgmVol(-0.05)" style="flex:0 0 80px;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:34px;padding:10px;cursor:pointer">－</button>
-        <span id="bgm-vol-val" style="flex:1;text-align:center;font-size:34px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums">35%</span>
-        <button onclick="adjBgmVol(0.05)" style="flex:0 0 80px;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#ccc;font-size:34px;padding:10px;cursor:pointer">＋</button>
-      </div>
-      <div style="font-size:18px;color:#666;margin-top:6px">アナウンスが入る間は自動で音量を下げます</div>
-    </div>
-    <div class="drawer-sec">
       <div class="drawer-sec-t">回終了時のアナウンス</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">スリーアウトで回が変わったときに読み上げます。得点が0の回は読み上げません</div>
       <button id="btn-score-auto" onclick="toggleScoreAuto()" style="width:100%;background:#1a3a1a;border:1px solid #3a6a2a;border-radius:10px;color:#86c867;font-size:24px;font-weight:700;padding:14px;cursor:pointer">
@@ -2153,214 +2127,6 @@ function stopSiren(){
   _sirenNodes=null;
 }
 
-// ── クーリング中のBGM ─────────────────────────────────────────────────────
-// 曲を登録してあればそれを流す。無ければその場で穏やかな環境音を作って流す。
-// 鳴らすのは「この端末で音声を再生する」がONの端末だけ。
-// 曲は大きいので localStorage ではなく IndexedDB に置く（Blob のまま持つ）。
-var _bgmVol = 0.35;
-try{ var _bv=localStorage.getItem('bb_bgm_vol'); if(_bv!=null) _bgmVol=Math.max(0,Math.min(1,Number(_bv))); }catch(e){}
-var _bgmChime = false;   // 曲が無いときにチャイムを流すか。既定は鳴らさない
-try{ var _bc=localStorage.getItem('bb_bgm_chime'); if(_bc!=null) _bgmChime=(_bc==='1'); }catch(e){}
-var _bgmName = '';
-try{ _bgmName = localStorage.getItem('bb_bgm_name') || ''; }catch(e){}
-var _bgmBlob = null, _bgmUrl = '', _bgmEl = null, _bgmFade = null, _bgmSynth = null, _bgmOn = false;
-
-function _bgmDB(){
-  return new Promise(function(res){
-    try{
-      var rq=indexedDB.open('athleelive_bgm',1);
-      rq.onupgradeneeded=function(){ var db=rq.result; if(!db.objectStoreNames.contains('files')) db.createObjectStore('files'); };
-      rq.onsuccess=function(){ res(rq.result); };
-      rq.onerror=function(){ res(null); };
-    }catch(e){ res(null); }
-  });
-}
-function _bgmPut(blob){ return _bgmDB().then(function(db){ if(!db) return; try{ db.transaction('files','readwrite').objectStore('files').put(blob,'cool'); }catch(e){} }); }
-function _bgmGet(){ return _bgmDB().then(function(db){ if(!db) return null; return new Promise(function(res){
-  try{ var rq=db.transaction('files','readonly').objectStore('files').get('cool');
-       rq.onsuccess=function(){ res(rq.result||null); }; rq.onerror=function(){ res(null); };
-  }catch(e){ res(null); } }); }); }
-function _bgmDel(){ return _bgmDB().then(function(db){ if(!db) return; try{ db.transaction('files','readwrite').objectStore('files').delete('cool'); }catch(e){} }); }
-
-function _bgmInit(){
-  _bgmGet().then(function(b){
-    if(b){ _bgmBlob=b; try{ _bgmUrl=URL.createObjectURL(b); }catch(e){} }
-    _refreshBgmUI();
-  });
-}
-function bgmPick(input){
-  var f = input.files && input.files[0];
-  input.value='';
-  if(!f) return;
-  _bgmBlob=f; _bgmName=f.name||'';
-  try{ if(_bgmUrl) URL.revokeObjectURL(_bgmUrl); _bgmUrl=URL.createObjectURL(f); }catch(e){}
-  try{ localStorage.setItem('bb_bgm_name', _bgmName); }catch(e){}
-  _bgmPut(f);
-  _refreshBgmUI();
-  toastMsg('BGMを登録しました');
-}
-function bgmClear(){
-  if(!confirm('登録したBGMを削除しますか？\n（削除すると環境音に切り替わります）')) return;
-  _bgmStop();
-  _bgmBlob=null; _bgmName='';
-  try{ if(_bgmUrl) URL.revokeObjectURL(_bgmUrl); }catch(e){}
-  _bgmUrl='';
-  try{ localStorage.removeItem('bb_bgm_name'); }catch(e){}
-  _bgmDel();
-  _refreshBgmUI();
-}
-function bgmTest(){
-  if(_bgmOn){ _bgmStop(); _refreshBgmUI(); return; }
-  var sa=_audioHere, sc=_bgmChime;
-  _audioHere=true; if(!_bgmUrl) _bgmChime=true;   // 試聴はこの端末で、設定に関わらず鳴らす
-  _bgmStart();
-  _audioHere=sa; _bgmChime=sc;
-  _refreshBgmUI();
-}
-function toggleBgmChime(){
-  _bgmChime=!_bgmChime;
-  try{ localStorage.setItem('bb_bgm_chime', _bgmChime?'1':'0'); }catch(e){}
-  _refreshBgmUI();
-}
-function adjBgmVol(d){
-  _bgmVol=Math.max(0, Math.min(1, Math.round((_bgmVol+d)*100)/100));
-  try{ localStorage.setItem('bb_bgm_vol', _bgmVol); }catch(e){}
-  if(_bgmOn){ if(_bgmEl && !_bgmEl.paused) _bgmFadeTo(_bgmVol, 200); _bgmDuck(false); }
-  _refreshBgmUI();
-}
-function _refreshBgmUI(){
-  var n=document.getElementById('bgm-name');
-  if(n){
-    n.textContent = _bgmName ? _bgmName : (_bgmBlob ? '登録済み' : '未登録');
-    n.style.color = (_bgmName||_bgmBlob) ? '#ddd' : '#777';
-  }
-  var d=document.getElementById('bgm-del'); if(d) d.style.display = _bgmBlob ? '' : 'none';
-  var v=document.getElementById('bgm-vol-val'); if(v) v.textContent = Math.round(_bgmVol*100)+'%';
-  var t=document.getElementById('bgm-test'); if(t) t.textContent = _bgmOn ? '⏹ 試聴を止める' : '▶ 試聴';
-  var c=document.getElementById('btn-bgm-chime');
-  if(c){
-    c.textContent = _bgmChime ? '🔔 曲が無いときチャイム ON' : '🔔 曲が無いときチャイム OFF';
-    c.style.background  = _bgmChime ? '#1a3a1a' : '#2c2c2e';
-    c.style.borderColor = _bgmChime ? '#3a6a2a' : '#444';
-    c.style.color       = _bgmChime ? '#86c867' : '#999';
-    c.style.display     = _bgmBlob ? 'none' : '';
-  }
-}
-
-function _bgmFadeTo(target, ms, done){
-  if(_bgmFade){ clearInterval(_bgmFade); _bgmFade=null; }
-  if(!_bgmEl){ if(done) done(); return; }
-  var from=_bgmEl.volume, steps=Math.max(1,Math.round(ms/60)), i=0;
-  _bgmFade=setInterval(function(){
-    i++;
-    try{ _bgmEl.volume=Math.max(0,Math.min(1, from+(target-from)*(i/steps))); }catch(e){}
-    if(i>=steps){ clearInterval(_bgmFade); _bgmFade=null; if(done) done(); }
-  }, 60);
-}
-function _bgmStartFile(){
-  if(!_bgmUrl) return false;
-  if(!_bgmEl){ _bgmEl=new Audio(); _bgmEl.loop=true; }
-  try{
-    _bgmEl.src=_bgmUrl; _bgmEl.volume=0;
-    var pr=_bgmEl.play(); if(pr&&pr.catch) pr.catch(function(){});
-  }catch(e){ return false; }
-  _bgmFadeTo(_bgmVol, 2500);
-  return true;
-}
-// 曲が無いときに流す音。
-// 音を伸ばしっぱなしにすると唸りに聞こえるので、鳴らさない時間を挟んで、
-// オルゴールのような減衰する音を1つずつ置いていく。
-// 音階は5音（ペンタトニック）なので、どの順に出しても濁らない。
-var BGM_SCALE = [523.25, 587.33, 659.25, 783.99, 880.00,   // C5 D5 E5 G5 A5
-                 1046.50, 1174.66, 1318.51];                // C6 D6 E6
-function _bgmBell(ctx, out, freq, at, vel){
-  var o=ctx.createOscillator(), g=ctx.createGain();
-  o.type='sine'; o.frequency.setValueAtTime(freq, at);
-  // 立ち上がりは速く、余韻は長く。鐘に近い形
-  g.gain.setValueAtTime(0.0001, at);
-  g.gain.linearRampToValueAtTime(vel, at+0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001, at+3.4);
-  // 倍音をひとつ足して硬さを出す
-  var o2=ctx.createOscillator(), g2=ctx.createGain();
-  o2.type='sine'; o2.frequency.setValueAtTime(freq*2, at);
-  g2.gain.setValueAtTime(0.0001, at);
-  g2.gain.linearRampToValueAtTime(vel*0.22, at+0.02);
-  g2.gain.exponentialRampToValueAtTime(0.0001, at+1.6);
-  o.connect(g); g.connect(out);
-  o2.connect(g2); g2.connect(out);
-  o.start(at); o.stop(at+3.6);
-  o2.start(at); o2.stop(at+1.8);
-}
-function _bgmStartSynth(){
-  try{
-    var AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC) return false;
-    if(!_sirenCtx) _sirenCtx=new AC();
-    var ctx=_sirenCtx;
-    if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
-    var out=ctx.createGain();
-    out.gain.setValueAtTime(_bgmVol*0.5, ctx.currentTime);
-    var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3200;
-    out.connect(lp); lp.connect(ctx.destination);
-    var prev=-1;
-    var tick=function(){
-      if(!_bgmSynth) return;
-      // 同じ音が続かないように選ぶ
-      var i; do{ i=Math.floor(Math.random()*BGM_SCALE.length); }while(i===prev && BGM_SCALE.length>1);
-      prev=i;
-      _bgmBell(ctx, out, BGM_SCALE[i], ctx.currentTime+0.02, 0.20);
-      // たまに三度上を重ねて和音にする
-      if(Math.random()<0.35){
-        var j=Math.min(BGM_SCALE.length-1, i+2);
-        _bgmBell(ctx, out, BGM_SCALE[j], ctx.currentTime+0.14, 0.12);
-      }
-      _bgmSynth.timer=setTimeout(tick, 1900+Math.random()*1600);
-    };
-    _bgmSynth={ ctx:ctx, out:out, timer:null };
-    tick();
-    return true;
-  }catch(e){ return false; }
-}
-function _bgmStopSynth(){
-  if(!_bgmSynth) return;
-  try{
-    if(_bgmSynth.timer) clearTimeout(_bgmSynth.timer);
-    var s=_bgmSynth, t=s.ctx.currentTime;
-    s.out.gain.cancelScheduledValues(t);
-    s.out.gain.setValueAtTime(s.out.gain.value, t);
-    s.out.gain.linearRampToValueAtTime(0.0001, t+1.2);
-  }catch(e){}
-  _bgmSynth=null;
-}
-function _bgmStart(){
-  if(_bgmOn || !_audioHere) return;
-  // 曲があればそれを流す。無いときは、チャイムを流す設定のときだけ鳴らす
-  if(_bgmUrl){ _bgmOn=true; if(!_bgmStartFile()){ _bgmOn=false; return; } }
-  else if(_bgmChime){ _bgmOn=true; if(!_bgmStartSynth()){ _bgmOn=false; return; } }
-  else return;
-  _refreshBgmUI();
-}
-function _bgmStop(){
-  if(!_bgmOn) return;
-  _bgmOn=false;
-  if(_bgmEl && !_bgmEl.paused) _bgmFadeTo(0, 1800, function(){ try{ _bgmEl.pause(); }catch(e){} });
-  _bgmStopSynth();
-  _refreshBgmUI();
-}
-// アナウンスの間は音楽を下げて、声を聞き取りやすくする
-function _bgmDuck(on){
-  if(!_bgmOn) return;
-  if(_bgmEl && !_bgmEl.paused) _bgmFadeTo(on ? _bgmVol*0.22 : _bgmVol, 500);
-  if(_bgmSynth){
-    try{
-      var t=_bgmSynth.ctx.currentTime;
-      _bgmSynth.out.gain.cancelScheduledValues(t);
-      _bgmSynth.out.gain.setValueAtTime(_bgmSynth.out.gain.value, t);
-      _bgmSynth.out.gain.linearRampToValueAtTime(on ? _bgmVol*0.12 : _bgmVol*0.5, t+0.5);
-    }catch(e){}
-  }
-}
-
 // ── 試合開始フロー ────────────────────────────────────────────────────────
 // 自動で全部やってしまわず、一段ずつオペレーターが押して進める。
 // 次にやる段だけ明るく出し、済んだ段は沈めて、どこまで進んだかを見せる。
@@ -2679,18 +2445,13 @@ function _refreshCoolingUI(){
 var _coolingSoonSaid = false;
 function _coolingStartTick(){
   if(_coolingTick) clearInterval(_coolingTick);
-  if(typeof _bgmStart==='function') _bgmStart();
   _coolingTick = setInterval(function(){
     if(!_cooling.on){ _coolingStopTick(); return; }
     var left = _coolingRemain();
     // 残り30秒で予告
     if(!_coolingSoonSaid && left > 0 && left <= 30){
       _coolingSoonSaid = true;
-      if(_annOn){
-        // 声が埋もれないよう、その間だけ音楽を下げる
-        if(typeof _bgmDuck==='function'){ _bgmDuck(true); setTimeout(function(){ _bgmDuck(false); }, 7000); }
-        _speakAs(_coolingSoonText(), _ttsVoice, _ttsStyle, _annRate);
-      }
+      if(_annOn) _speakAs(_coolingSoonText(), _ttsVoice, _ttsStyle, _annRate);
     }
     if(left <= 0){ stopCooling(true); return; }   // 時間経過で自動終了
     _refreshCoolingUI();
@@ -2698,10 +2459,9 @@ function _coolingStartTick(){
 }
 function _coolingStopTick(){
   if(_coolingTick){ clearInterval(_coolingTick); _coolingTick=null; }
-  if(typeof _bgmStop==='function') _bgmStop();
 }
 function _coolingSayText(min){ return '只今より'+min+'分間のクーリングタイムを開始します。'; }
-function _coolingSoonText(){ return '間もなく試合再開です、クーリングタイムを終了します。'; }
+function _coolingSoonText(){ return '間もなく試合再開です。クーリングタイムを終了します。'; }
 
 function startCooling(){
   _cooling.on = true;
@@ -6489,7 +6249,6 @@ _refreshAssist();
 _refreshTapBtns();
 _refreshWakeBtn();
 _wakeAcquire();
-_bgmInit();
 _refreshSirenBtn();
 _gsBuildSteps();
 renderSB();
