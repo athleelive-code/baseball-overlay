@@ -197,77 +197,29 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 body.has-ticker .ov-bat-wrap{bottom:142px}
 .ov-bat-wrap{transition:opacity .3s, bottom .35s ease}
 
-/* ── クーリングタイム：中央のカウントダウン＋専用スポンサー ── */
-/* 画面の右半分だけを使う。左半分は素通しにして、ベンチの様子を映せるようにする。
-   境目は帯にせず、左へ向かって薄くなるようにして映像となじませる */
+/* 右端の上下中央にタイマーだけを出す。画面の大半は素通しにして、
+   ベンチの様子を映せるようにする。スコア表はイニングを開いたまま残す */
 .ov-cool{
-  position:fixed;left:50%;right:0;top:0;bottom:0;z-index:60;display:none;
-  align-items:center;justify-content:center;flex-direction:column;gap:18px;
-  padding:22px 26px 26px;
-  background:linear-gradient(90deg,rgba(4,10,18,0),rgba(4,10,18,.9) 16%,rgba(4,10,18,.93));
+  position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:60;display:none;
+  flex-direction:column;align-items:center;gap:6px;
+  padding:26px 30px 22px;border-radius:16px 0 0 16px;
+  background:linear-gradient(90deg,rgba(4,10,18,0),rgba(4,10,18,.86) 22%,rgba(4,10,18,.9));
 }
 .ov-cool.on{display:flex}
-/* クーリング中は他の表示を引っ込める（終わると自動で戻る） */
-body.cooling .ov-score,
+/* クーリング中は打者表示・右上の広告・ティッカーを引っ込める。
+   スコア表はそのまま残す（終わると自動で戻る） */
 body.cooling .ov-adtop,
 body.cooling .ov-bat-wrap,
 body.cooling .ov-ticker{ opacity:0; pointer-events:none; transition:opacity .4s ease }
-/* 上部に今のイニングスコア */
-.ov-cool-sb{width:100%;max-width:660px;overflow-x:auto}
-.ov-cool-sb table{border-collapse:collapse;width:100%;table-layout:fixed}
-.ov-cool-sb th,.ov-cool-sb td{
-  text-align:center;padding:5px 2px;font-size:20px;font-weight:700;
-  color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums;
-  border-bottom:1px solid rgba(255,255,255,.12);
-}
-.ov-cool-sb th{font-size:14px;font-weight:800;color:rgba(255,255,255,.5)}
-.ov-cool-sb .tm{text-align:left;font-size:19px;width:150px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ov-cool-sb .cur{color:#ffd24a}
-.ov-cool-sb .rr{font-size:24px;font-weight:900;color:#fff;background:rgba(255,255,255,.08)}
-.ov-cool-sb .hh{color:rgba(255,255,255,.6)}
 .ov-cool-t{
-  font-size:30px;font-weight:800;letter-spacing:8px;color:#bdf0ff;
-  text-shadow:0 2px 14px rgba(0,0,0,.7);padding-left:8px;
+  font-size:26px;font-weight:800;letter-spacing:7px;color:#bdf0ff;
+  text-shadow:0 2px 14px rgba(0,0,0,.7);padding-left:7px;
 }
-/* 試合名。クーリング中も何の試合か分かるように添える */
-.ov-cool-title{
-  font-size:22px;font-weight:700;color:rgba(255,255,255,.75);
-  letter-spacing:1px;text-align:center;max-width:100%;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.ov-cool-title:empty{display:none}
 .ov-cool-n{
-  font-size:120px;font-weight:900;line-height:1;color:#fff;
+  font-size:132px;font-weight:900;line-height:1;color:#fff;
   font-variant-numeric:tabular-nums;letter-spacing:4px;
   text-shadow:0 6px 30px rgba(0,0,0,.75);
 }
-/* スポンサーの上に添えるクレジット見出し。両側に細い罫を引く */
-.ov-cool-thanks{
-  display:flex;align-items:center;gap:26px;
-  width:min(560px,96%);margin-top:2px;
-}
-.ov-cool-thanks::before,.ov-cool-thanks::after{
-  content:'';flex:1;height:1px;background:rgba(255,255,255,.3);
-}
-.ov-cool-thanks span{
-  font-size:26px;font-weight:600;letter-spacing:7px;
-  color:rgba(255,255,255,.88);white-space:nowrap;padding-left:7px;
-  font-family:"Helvetica Neue",Arial,sans-serif;
-}
-/* スポンサーの枠はすべて同じ大きさ。段組みは枚数に応じて JS が決める
-   （4枚までは1段、5枚以上は2段） */
-.ov-cool-ads{
-  display:grid;gap:16px;justify-content:center;align-items:center;
-  max-width:100%;margin-top:2px;
-}
-.ov-cool-ads img{
-  width:100%;height:104px;object-fit:contain;display:block;
-  background:rgba(255,255,255,.94);border-radius:8px;padding:10px 16px;
-}
-.ov-cool-ads.fade{animation:coolAdIn .5s ease}
-@keyframes coolAdIn{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){ .ov-cool-ads.fade{animation:none} }
 .ov-cool-note{font-size:15px;color:rgba(255,255,255,.5);letter-spacing:2px}
 /* 残り30秒。読み上げと合わせて、色で再開が近いことを知らせる */
 .ov-cool.soon .ov-cool-n{color:#ffd24a}
@@ -509,15 +461,11 @@ body.cooling .ov-ticker{ opacity:0; pointer-events:none; transition:opacity .4s 
 </div>
 
 <!-- クーリングタイム（試合状態には影響しない表示専用） -->
-<!-- クーリングタイム。画面の右半分だけを使う。
-     左半分はベンチの様子を映すために空けておく -->
+<!-- クーリングタイム。右端の上下中央にタイマーだけを出す。
+     スコア表はイニングを開いたまま残し、画面の大半はベンチの様子に使う -->
 <div class="ov-cool" id="ov-cool">
-  <div class="ov-cool-title" id="ov-cool-title"></div>
-  <div class="ov-cool-sb" id="ov-cool-sb"></div>
   <div class="ov-cool-t">クーリングタイム中</div>
   <div class="ov-cool-n" id="ov-cool-n">5:00</div>
-  <div class="ov-cool-thanks" id="ov-cool-thanks"><span>Special Thanks</span></div>
-  <div class="ov-cool-ads" id="ov-cool-ads"></div>
   <div class="ov-cool-note">まもなく試合を再開します</div>
 </div>
 
@@ -771,14 +719,6 @@ function applyState(s){
 
   // 安打数（H）。打歴は ROSTER から来た _hist を正とし、無ければコントローラーの記録を使う
   var paList = (_histResults!==null) ? _histResults : (Array.isArray(s.paResults)?s.paResults:[]);
-  // クーリング画面で使う内容を控えておく（クーリング中は配信が来ないため）
-  _coolInfo = {
-    title:(s.gameTitle||''), inn:inn, top:isTop, n:n,
-    aName:(s.aab||'先攻'), hName:(s.hnm||'後攻'),
-    asc:asc.slice(), hsc:hsc.slice(), at:at, ht:ht,
-    ah:_teamHits(paList,'away'), hh:_teamHits(paList,'home'),
-    ae:_teamErrors(paList,'away'), he:_teamErrors(paList,'home')
-  };
   set('ov-hits-away', _teamHits(paList,'away'));
   set('ov-hits-home', _teamHits(paList,'home'));
   set('ov-errs-away', _teamErrors(paList,'away'));
@@ -1109,7 +1049,6 @@ var _lastTop = true;
 
 // ── 広告ローテーション ─────────────────────────────
 // 既定は public フォルダの ad1〜3.png。ROSTER の設定で差し替え・秒数・間隔を変更できる。
-var _adCool = [];
 var _adTop = [];        // 右上の常時表示枠
 var _adTicker = [];     // 最下部を流れるティッカー
 var _adTickerSpeed = 40;
@@ -1123,7 +1062,6 @@ try{
   var _ac = JSON.parse(localStorage.getItem('bb_adcfg')||'null');
   if(_ac){
     if(Array.isArray(_ac.ticker)) _adTicker=_ac.ticker;
-    if(Array.isArray(_ac.cool))   _adCool=_ac.cool;
     if(Array.isArray(_ac.top)){ _adTop=_ac.top; }
     else {
       // 右上の枠ができる前に保存した設定。スコア表用だった画像を右上に回す
@@ -1140,6 +1078,7 @@ try{
 // ローカルに秒数を持たないので、読み込み直しても残り時間がズレない。
 var _coolEndsAt = 0;
 var _coolTick = null;
+var _coolScoreWasOpen = false;   // クーリング前からスコア表が開いていたか
 function _coolFmt(sec){
   var m=Math.floor(sec/60), s=sec%60;
   return m+':'+(s<10?'0':'')+s;
@@ -1153,103 +1092,31 @@ function _coolPaint(){
   box.classList.toggle('soon', left>0 && left<=30);
   if(left<=0) applyCooling({on:false});
 }
-// クーリング画面の上に出す、いまのイニングスコア
-var _coolInfo = null;
-function _coolScoreBuild(){
-  var el=g('ov-cool-sb');
-  if(!el) return;
-  var d=_coolInfo;
-  if(!d){ el.innerHTML=''; return; }
-  var esc=function(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); };
-  var cell=function(v){ return v===null||v===undefined ? '' : (v==='x' ? '×' : String(v)); };
-  var head='<tr><th class="tm"></th>';
-  for(var i=1;i<=d.n;i++) head+='<th'+(i===d.inn?' class="cur"':'')+'>'+i+'</th>';
-  head+='<th>R</th><th>H</th><th>E</th></tr>';
-  var row=function(name, sc, r, h, e, isBat){
-    var s='<tr><td class="tm'+(isBat?' cur':'')+'">'+esc(name)+'</td>';
-    for(var i=0;i<d.n;i++) s+='<td>'+cell(sc[i])+'</td>';
-    s+='<td class="rr">'+r+'</td><td class="hh">'+h+'</td><td class="hh">'+e+'</td></tr>';
-    return s;
-  };
-  el.innerHTML='<table>'+head
-    + row(d.aName, d.asc, d.at, d.ah, d.ae, d.top)
-    + row(d.hName, d.hsc, d.ht, d.hh, d.he, !d.top)
-    + '</table>';
-  var t=g('ov-cool-title');
-  if(t) t.textContent = d.title || '';
-}
-
 function applyCooling(c){
   var on = !!(c && c.on && c.endsAt);
   var box=g('ov-cool');
   if(!box) return;
-  document.body.classList.toggle('cooling', on);   // 他の表示を引っ込める
+  document.body.classList.toggle('cooling', on);   // 打者表示などを引っ込める
   if(on){
     _coolEndsAt = c.endsAt;
-    // 組み直すのは始まるときだけ。毎回の配信でやると切り替えが先頭に戻ってしまう
-    if(!box.classList.contains('on')){ _coolAdsStart(); _coolScoreBuild(); }
+    // 始まるときだけスコア表のイニングを開く。クーリング中は開いたまま残す
+    if(!box.classList.contains('on')){
+      _coolScoreWasOpen = !!document.querySelector('.ov-ist-slide.open');
+      showScoreBig(null, 0);        // 0 = 自動で閉じない
+    }
     box.classList.add('on');
     _coolPaint();
     if(!_coolTick) _coolTick=setInterval(_coolPaint, 500);
   }else{
     _coolEndsAt = 0;
+    if(box.classList.contains('on') && !_coolScoreWasOpen) hideScoreBig();
     box.classList.remove('on');
     if(_coolTick){ clearInterval(_coolTick); _coolTick=null; }
-    _coolAdsStop();
   }
-}
-
-// クーリング中のスポンサー。1画面に収まらない枚数のときは切り替えて全部見せる。
-// ページごとの枚数をそろえて、切り替わっても並びが崩れないようにする。
-var COOL_PER_PAGE = 4;               // 1画面に出す上限（右半分なので2列2段）
-var _coolAdPage = 0, _coolAdTimer = null;
-function _coolAdPages(){
-  var n=_adCool.length;
-  if(!n) return [];
-  var pages=Math.ceil(n/COOL_PER_PAGE);
-  var per=Math.ceil(n/pages);        // 端数を散らして各ページの枚数をそろえる
-  var out=[];
-  for(var i=0;i<n;i+=per) out.push(_adCool.slice(i,i+per));
-  return out;
-}
-function _coolAdsPaint(){
-  var ads=g('ov-cool-ads');
-  if(!ads) return;
-  var pages=_coolAdPages();
-  if(!pages.length){ ads.innerHTML=''; return; }
-  if(_coolAdPage>=pages.length) _coolAdPage=0;
-  var page=pages[_coolAdPage];
-  ads.innerHTML='';
-  page.forEach(function(src){
-    var im=document.createElement('img'); im.src=src; im.alt='';
-    ads.appendChild(im);
-  });
-  // 右半分に収めるため、横は最大2列
-  var per=Math.min(2, page.length);
-  ads.style.gridTemplateColumns='repeat('+Math.max(1,per)+', minmax(0,260px))';
-  if(pages.length>1){          // 切り替わったことが分かるように軽く出し直す
-    ads.classList.remove('fade'); void ads.offsetWidth; ads.classList.add('fade');
-  }
-}
-function _coolAdsStart(){
-  _coolAdsStop();
-  _coolAdPage=0;
-  _coolAdsPaint();
-  // スポンサーが1枚も無いときは見出しも出さない
-  var th=g('ov-cool-thanks');
-  if(th) th.style.display = _adCool.length ? 'flex' : 'none';
-  if(_coolAdPages().length>1){
-    var sec=(_adRotate>0) ? _adRotate : 8;   // 設定の切替間隔。0なら8秒
-    _coolAdTimer=setInterval(function(){ _coolAdPage++; _coolAdsPaint(); }, sec*1000);
-  }
-}
-function _coolAdsStop(){
-  if(_coolAdTimer){ clearInterval(_coolAdTimer); _coolAdTimer=null; }
 }
 
 function applyAdCfg(d){
   if(Array.isArray(d.ticker)) _adTicker = d.ticker.slice();
-  if(Array.isArray(d.cool))   _adCool   = d.cool.slice();
   if(Array.isArray(d.top)){
     _adTop = d.top.slice();
   }else{
@@ -1264,12 +1131,8 @@ function applyAdCfg(d){
   _adIndex = 0;
   _tickerBuild();
   _adTopStart();
-  // クーリング表示中に設定が届くことがある（オーバーレイを開いた直後など、
-  // 試合状態のほうが先に来る）。出しっぱなしにせず、その場で組み直す
-  var _cb=g('ov-cool');
-  if(_cb && _cb.classList.contains('on')) _coolAdsStart();
   try{ localStorage.setItem('bb_adcfg', JSON.stringify({
-    ticker:_adTicker, cool:_adCool, top:_adTop,
+    ticker:_adTicker, top:_adTop,
     sec:_adSec, rotate:_adRotate, tickerSpeed:_adTickerSpeed
   })); }catch(e){}
 }

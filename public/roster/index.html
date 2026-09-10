@@ -944,8 +944,7 @@ body.locked .row{cursor:default}
       <div class="note" style="margin-bottom:10px">
         スポンサー画像はここで一括管理します。1枚ごとに「出す場所」を選べます。オーバーレイに即反映されます。<br>
         <b style="color:#8ac0ff">右上（常時）</b>＝画面右上に出しっぱなし。複数枚なら切替間隔ごとに入れ替え（0のときは10秒）<br>
-        <b style="color:#8ac0ff">ティッカー</b>＝イニング交代中に画面最下部を流れる
-        <b style="color:#8ac0ff">クーリング</b>＝クーリングタイム中の全画面<br>
+        <b style="color:#8ac0ff">ティッカー</b>＝イニング交代中に画面最下部を流れる<br>
         設定した画像はサーバーが預かるので、この端末を閉じても他の画面に出続けます。
       </div>
       <div id="ad-slots"></div>
@@ -3415,11 +3414,10 @@ function _refreshTapBtns(){
 // スポンサー画像は1か所で管理し、スロットごとに「どこに出すか」を選ぶ。
 // where.top    … 画面右上に出しっぱなし（複数枚あれば切替間隔ごとに入れ替え）
 // where.ticker … イニング交代中、オーバーレイ最下部を流れるティッカー
-// where.cool   … クーリングタイム中の全画面表示
 // ※「スコア表の横」は廃止。以前の設定に残っていても無視する
 function _adWhere(w){
   w = w || {};
-  return { top: w.top!==false, ticker: w.ticker!==false, cool: w.cool!==false };
+  return { top: w.top!==false, ticker: w.ticker!==false };
 }
 var _adCfg = {
   slots:[],                    // 既定は空。画像を選んで追加してもらう
@@ -3453,9 +3451,9 @@ function _adSave(){
 // 自分に設定があるときは触らない（登録した端末の内容を勝手に書き換えない）
 function _adIngest(d){
   if(!d || _adCfg.slots.length) return;
-  var lists={ top:d.top||[], ticker:d.ticker||[], cool:d.cool||[] };
+  var lists={ top:d.top||[], ticker:d.ticker||[] };
   var order=[], seen={};
-  ['top','ticker','cool'].forEach(function(k){
+  ['top','ticker'].forEach(function(k){
     (lists[k]||[]).forEach(function(src){
       if(src && !seen[src]){ seen[src]=true; order.push(src); }
     });
@@ -3464,8 +3462,7 @@ function _adIngest(d){
   _adCfg.slots = order.map(function(src){
     return { src:src, name:'', on:true, where:{
       top:    lists.top.indexOf(src)>=0,
-      ticker: lists.ticker.indexOf(src)>=0,
-      cool:   lists.cool.indexOf(src)>=0
+      ticker: lists.ticker.indexOf(src)>=0
     }};
   });
   if(typeof d.sec==='number') _adCfg.sec=d.sec;
@@ -3490,7 +3487,6 @@ function _sendAdCfg(){
       score:  [],
       top:    pick('top'),
       ticker: pick('ticker'),
-      cool:   pick('cool'),
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
       tickerSpeed:_adCfg.tickerSpeed||40,
       sponsorText:_adCfg.sponsorText||''
@@ -3500,7 +3496,7 @@ function _sendAdCfg(){
 function _renderAdSlots(){
   var box=document.getElementById('ad-slots');
   if(!box) return;
-  var WHERE=[['top','右上（常時）'],['ticker','ティッカー'],['cool','クーリング']];
+  var WHERE=[['top','右上（常時）'],['ticker','ティッカー']];
   box.innerHTML=_adCfg.slots.map(function(s,i){
     var w=_adWhere(s.where);
     var chips=WHERE.map(function(p){
