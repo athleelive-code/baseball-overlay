@@ -3250,7 +3250,7 @@ function _adWhere(w){
   return { top: w.top!==false, ticker: w.ticker!==false, cool: w.cool!==false };
 }
 var _adCfg = {
-  slots:[{src:'ad1.png',on:true},{src:'ad2.png',on:true},{src:'ad3.png',on:true}],
+  slots:[],                    // 既定は空。画像を選んで追加してもらう
   sec:0, rotate:0, tickerSpeed:40
 };
 function _adLoad(){
@@ -3258,11 +3258,17 @@ function _adLoad(){
     var v=JSON.parse(localStorage.getItem('bb_adcfg_edit')||'null');
     if(v && Array.isArray(v.slots)){ _adCfg=v; }
   }catch(e){}
+  // 昔おまけで入れていた ad1〜3.png は削除済み。端末に残っている設定から
+  // 取り除いて、関係のない広告が誤って出ないようにする
+  var BUNDLED=['ad1.png','ad2.png','ad3.png'];
   // 「どこに出すか」が無い古い設定は、全部の場所に出す扱いで補う
-  _adCfg.slots = (_adCfg.slots||[]).map(function(s){
-    return { src:s.src||'', on:s.on!==false, where:_adWhere(s.where) };
-  });
+  _adCfg.slots = (_adCfg.slots||[])
+    .filter(function(s){ return BUNDLED.indexOf(String(s.src||''))<0; })
+    .map(function(s){
+      return { src:s.src||'', on:s.on!==false, where:_adWhere(s.where) };
+    });
   if(typeof _adCfg.tickerSpeed!=='number') _adCfg.tickerSpeed = 40;
+  _adSave();
 }
 function _adSave(){
   // 枚数を増やすと画像の合計が端末の保存容量を超えることがある。

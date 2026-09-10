@@ -298,11 +298,14 @@ body.has-ticker .ov-bat-wrap{bottom:78px}
   align-items:center;justify-content:center;gap:5px;padding:8px 16px;flex-shrink:0;min-width:62px;transition:background .3s}
 .ov-bat-order-cap{font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.75);line-height:1}
 .ov-bat-order-num{font-size:38px;font-weight:800;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-.ov-b-inner{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+.ov-b-inner{display:flex;flex-direction:column;align-items:stretch;justify-content:center;
   padding:8px 18px;gap:5px;flex:1;min-width:0;border-left:1px solid rgba(255,255,255,.1)}
 /* フォントは下詰めで揃える。狭い画面でも枠からはみ出さないよう、あふれたら
    氏名側を詰める（背番号は縮めない） */
-.ov-b-line1{display:flex;align-items:flex-end;gap:26px;min-width:0;overflow:hidden;max-width:100%}
+/* 守備位置・氏名・背番号を横いっぱいに均等に配る。gap は詰まったときの最小間隔。
+   フォントは下詰めで揃える。あふれたら氏名側を詰める（背番号は縮めない） */
+.ov-b-line1{display:flex;align-items:flex-end;justify-content:space-between;
+  gap:26px;width:100%;min-width:0;overflow:hidden}
 @keyframes ovBSwap{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
 .ov-b-line1.swap{animation:ovBSwap .34s cubic-bezier(.2,.7,.2,1) both}
 .ov-b-pos{font-size:28px;font-weight:800;color:#fff;flex-shrink:0;white-space:nowrap;line-height:1}
