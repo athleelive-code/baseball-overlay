@@ -244,8 +244,9 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
 .ov-adtop img.fade{animation:adTopIn .45s ease}
 @keyframes adTopIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){ .ov-adtop img.fade{animation:none} }
-/* 全部同時に出すとき。横2列、3枚以上は縮小して2段。最後の段は右端に寄せる */
-.ov-adtop-grid{display:none;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+/* 全部同時に出すとき。画面の上端に1列で横に並べ、右端から詰める */
+.ov-adtop.all{max-width:none}
+.ov-adtop-grid{display:none;flex-wrap:nowrap;justify-content:flex-end;gap:12px}
 .ov-adtop.all .ov-adtop-grid{display:flex}
 .ov-adtop.all #ov-adtop-img{display:none}
 .ov-adtop-cell{display:flex;align-items:center;justify-content:center;flex:0 0 auto}
@@ -1059,6 +1060,7 @@ var _adTicker = [];     // 最下部を流れるティッカー
 var _adTickerSpeed = 40;
 var _adAt = 0;          // 広告設定の最終更新時刻。これより古い設定は受け取らない
 var _adTopMode = 'rotate';   // 右上の出し方。rotate=1枚ずつ切り替え / all=全部同時
+var _adTopScale = 1;         // 右上の大きさ（倍率）。設定の「右上の広告の大きさ」
 var _adImages = [];     // スコア表の横の広告は廃止（枠だけ残してある）
 var _adSec = 0;        // 0 = スコア表示の秒数に従う
 var _adRotate = 0;     // 0 = 1回の表示で1枚のみ。>0 なら N 秒ごとに切替
@@ -1071,6 +1073,7 @@ try{
     if(Array.isArray(_ac.ticker)) _adTicker=_ac.ticker;
     if(typeof _ac.at==='number') _adAt=_ac.at;
     if(_ac.topMode==='all'||_ac.topMode==='rotate') _adTopMode=_ac.topMode;
+    if(typeof _ac.topScale==='number') _adTopScale=_ac.topScale;
     if(Array.isArray(_ac.top)){ _adTop=_ac.top; }
     else {
       // 右上の枠ができる前に保存した設定。スコア表用だった画像を右上に回す
@@ -1154,11 +1157,12 @@ function applyAdCfg(d){
   if(typeof d.rotate==='number') _adRotate = d.rotate;
   if(typeof d.tickerSpeed==='number') _adTickerSpeed = d.tickerSpeed;
   if(d.topMode==='all'||d.topMode==='rotate') _adTopMode = d.topMode;
+  if(typeof d.topScale==='number') _adTopScale = Math.max(0.5, Math.min(2, d.topScale));
   _adIndex = 0;
   _tickerBuild();
   _adTopStart();
   try{ localStorage.setItem('bb_adcfg', JSON.stringify({
-    ticker:_adTicker, top:_adTop, at:_adAt, topMode:_adTopMode,
+    ticker:_adTicker, top:_adTop, at:_adAt, topMode:_adTopMode, topScale:_adTopScale,
     sec:_adSec, rotate:_adRotate, tickerSpeed:_adTickerSpeed
   })); }catch(e){}
 }
@@ -1256,6 +1260,7 @@ function _adTopStart(){
   if(_adTopTimer){ clearInterval(_adTopTimer); _adTopTimer=null; }
   _adTopIndex=0;
   var box=g('ov-adtop');
+  if(box) box.style.transform='scale('+(0.8*_adTopScale)+')';   // 設定の大きさを反映（標準は .8 倍）
   if(!_adTop.length){
     if(box){ box.classList.remove('on'); box.classList.remove('all'); }
     return;
@@ -1269,18 +1274,28 @@ function _adTopStart(){
     _adTopTimer=setInterval(_adTopPaint, sec*1000);
   }
 }
-// 全部同時に並べる。2枚なら横に2つ。3枚以上は縮小して2段にし、
-// 入りきらない分は列を増やす（3〜4枚=2列、5〜6枚=3列…）。
-// 枠の大きさは1枚ずつのときと同じ上限（幅460）に収める
+// 1列に並べられる幅（オーバーレイの縮小前の単位）。左上のスコア表がイニングを
+// 開いて広がったときにも重ならないよう、広がったときの右端を基準にする
+function _adTopRowMax(){
+  var W = window.innerWidth || 1920;
+  var scoreRight = 20 + Math.max(0, W*0.45 - 10) * 0.8;   // .ov-score.expanded の右端
+  var avail = (W - 20 - scoreRight - 24) / (0.8*_adTopScale);   // 右上の枠は .8×大きさ で描かれる
+  return Math.max(300, Math.min(1800, Math.floor(avail)));
+}
+// 画面の大きさが変わったら並べ直す（OBS のソースの大きさを変えたときなど）
+window.addEventListener('resize', function(){
+  var b=g('ov-adtop');
+  if(b && b.classList.contains('all')) _adTopGrid();
+});
+// 全部同時に並べる。画面の上端に1列で横に並べ、右端から左へ詰める。
+// 入りきらないときは全部を同じだけ縮めて、1列のまま収める
 function _adTopGrid(){
   var box=g('ov-adtop'), grid=g('ov-adtop-grid');
   if(!box||!grid) return;
-  var n=_adTop.length, GAP=10;
-  var rows = (n<=2) ? 1 : 2;
-  var cols = Math.ceil(n/rows);
-  var cellW = Math.min(225, Math.floor((ADTOP_MAX_W - GAP*(cols-1))/cols));
-  var cellH = (rows===1) ? 120 : Math.min(100, Math.round(cellW*0.6));
-  grid.style.width = (cols*cellW + (cols-1)*GAP)+'px';
+  var n=_adTop.length, GAP=12;
+  var cellW = Math.min(240, Math.floor((_adTopRowMax() - GAP*(n-1))/n));
+  var cellH = Math.min(116, Math.round(cellW*0.5));
+  grid.style.width = (n*cellW + (n-1)*GAP)+'px';
   grid.innerHTML = '';
   _adTop.forEach(function(src){
     var cell=document.createElement('div');

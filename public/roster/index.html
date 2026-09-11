@@ -999,7 +999,13 @@ body.locked .row{cursor:default}
         <button class="btn adsel" id="ad-topmode-rotate" style="flex:1;font-size:14px;padding:11px" onclick="adTopMode('rotate')">1枚ずつ切り替え</button>
         <button class="btn adsel" id="ad-topmode-all" style="flex:1;font-size:14px;padding:11px" onclick="adTopMode('all')">全部同時に表示</button>
       </div>
-      <div class="note" style="margin-top:5px">全部同時は横2列。3枚以上は縮小して2段に並べます</div>
+      <div class="note" style="margin-top:5px">全部同時は画面の上端に1列で横に並べます。入りきらないときは全部を縮めて収めます</div>
+      <div class="set-lbl" style="margin-top:12px">右上の広告の大きさ</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn" style="flex:0 0 46px;padding:9px" onclick="adjAd('topScale',-1)">－</button>
+        <span id="ad-tscale-val" style="flex:1;text-align:center;font-size:20px;font-weight:700">100%</span>
+        <button class="btn" style="flex:0 0 46px;padding:9px" onclick="adjAd('topScale',1)">＋</button>
+      </div>
     </div>
 
     <div class="modal-acts">
@@ -3539,6 +3545,7 @@ function _adIngest(d){
   if(typeof d.rotate==='number') _adCfg.rotate=d.rotate;
   if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
   if(d.topMode==='all'||d.topMode==='rotate') _adCfg.topMode=d.topMode;
+  if(typeof d.topScale==='number') _adCfg.topScale=Math.max(0.5, Math.min(2, d.topScale));
   if(typeof d.sponsorText==='string') _adCfg.sponsorText=d.sponsorText;
   _adSave();
   _renderAdSlots();
@@ -3569,6 +3576,7 @@ function _sendAdCfg(asIs){
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
       tickerSpeed:_adCfg.tickerSpeed||40,
       topMode:(_adCfg.topMode==='all' ? 'all' : 'rotate'),   // 右上の出し方
+      topScale:(Number(_adCfg.topScale)||1),                  // 右上の大きさ
       sponsorText:_adCfg.sponsorText||''
     })); }catch(e){}
   }
@@ -3613,6 +3621,7 @@ function _renderAdSlots(){
   var mR=document.getElementById('ad-topmode-rotate'), mA=document.getElementById('ad-topmode-all');
   if(mR) mR.classList.toggle('on', !_allMode);
   if(mA) mA.classList.toggle('on',  _allMode);
+  var ts=document.getElementById('ad-tscale-val'); if(ts) ts.textContent=Math.round((Number(_adCfg.topScale)||1)*100)+'%';
   var st=document.getElementById('ad-sponsor-text');
   if(st && document.activeElement!==st) st.value=_adCfg.sponsorText||'';
   var cnt=document.getElementById('ad-count');
@@ -3649,6 +3658,11 @@ function adTopMode(m){
   _sendAdCfg(); _renderAdSlots();
 }
 function adjAd(key,d){
+  if(key==='topScale'){
+    // 右上の広告の大きさ（倍率）。0.5〜2.0倍を0.1刻み
+    _adCfg.topScale = Math.max(0.5, Math.min(2, Math.round(((Number(_adCfg.topScale)||1) + d*0.1)*10)/10));
+    _sendAdCfg(); _renderAdSlots(); return;
+  }
   if(key==='tickerSpeed'){
     // 1周にかかる秒数。小さいほど速い
     _adCfg.tickerSpeed = Math.max(10, Math.min(180, (_adCfg.tickerSpeed||40) + d*5));

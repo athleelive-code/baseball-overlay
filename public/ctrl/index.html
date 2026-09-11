@@ -603,10 +603,6 @@ body.gamemin .gm-hide{display:none!important}
   </table>
 </div>
 
-<!-- ティッカー（スポンサー）を手動で流す／止める。ふだんはイニング交代で自動 -->
-<div style="padding:8px 12px 0;background:#0a0a0a">
-  <button id="btn-ticker" onclick="toggleTickerManual()" style="width:100%;background:#242426;border:3px solid #444;border-radius:12px;color:#ddd;font-size:24px;font-weight:800;padding:14px 6px;cursor:pointer">📣 ティッカーを流す</button>
-</div>
 <!-- イニングスコア表示・イニングコール -->
 <div style="padding:8px 12px 12px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;gap:10px">
   <button onclick="showScoreOverlay()" class="gm-hide" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:12px;color:#aaaaff;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15">
@@ -628,6 +624,8 @@ body.gamemin .gm-hide{display:none!important}
   <button id="btn-cooling" onclick="toggleCooling()" style="flex:1;background:#123040;border:3px solid #2a6a8a;border-radius:12px;color:#8fd8f0;font-size:24px;font-weight:800;padding:16px 6px;cursor:pointer;line-height:1.2;white-space:nowrap">
     ❄ クーリング 5分
   </button>
+  <!-- ティッカー（スポンサー）を手動で流す／止める。ふだんはイニング交代で自動 -->
+  <button id="btn-ticker" onclick="toggleTickerManual()" style="flex:1;background:#242426;border:3px solid #444;border-radius:12px;color:#ddd;font-size:22px;font-weight:800;padding:16px 6px;cursor:pointer;line-height:1.2">📣 ティッカーを流す</button>
   <div id="cooling-left" style="display:none;flex:0 0 auto;align-items:center;justify-content:center;padding:0 20px;background:#0f2430;border:3px solid #2a6a8a;border-radius:12px;color:#bdf0ff;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px">5:00</div>
 </div>
 
@@ -1015,7 +1013,13 @@ body.gamemin .gm-hide{display:none!important}
         <button class="adbtn adsel" id="ad-topmode-rotate" style="flex:1;font-size:20px;padding:13px" onclick="adTopMode('rotate')">1枚ずつ切り替え</button>
         <button class="adbtn adsel" id="ad-topmode-all" style="flex:1;font-size:20px;padding:13px" onclick="adTopMode('all')">全部同時に表示</button>
       </div>
-      <div style="font-size:17px;color:#666;margin-top:5px">全部同時は横2列。3枚以上は縮小して2段に並べます</div>
+      <div style="font-size:17px;color:#666;margin-top:5px">全部同時は画面の上端に1列で横に並べます。入りきらないときは全部を縮めて収めます</div>
+      <div style="font-size:18px;color:#888;margin:14px 0 5px">右上の広告の大きさ</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="adbtn" style="flex:0 0 64px;font-size:26px;padding:10px" onclick="adjAd('topScale',-1)">－</button>
+        <span id="ad-tscale-val" style="flex:1;text-align:center;font-size:28px;font-weight:700;color:#fff">100%</span>
+        <button class="adbtn" style="flex:0 0 64px;font-size:26px;padding:10px" onclick="adjAd('topScale',1)">＋</button>
+      </div>
       <div style="display:flex;gap:12px;margin-top:14px">
         <div style="flex:1">
           <div style="font-size:18px;color:#888;margin-bottom:5px">表示秒数（0=自動）</div>
@@ -2284,6 +2288,7 @@ function _adIngest(d){
   if(typeof d.rotate==='number') _adCfg.rotate=d.rotate;
   if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
   if(d.topMode==='all'||d.topMode==='rotate') _adCfg.topMode=d.topMode;
+  if(typeof d.topScale==='number') _adCfg.topScale=Math.max(0.5, Math.min(2, d.topScale));
   if(typeof d.sponsorText==='string') _adCfg.sponsorText=d.sponsorText;
   _adSave();
   _renderAdSlots();
@@ -2314,6 +2319,7 @@ function _sendAdCfg(asIs){
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
       tickerSpeed:_adCfg.tickerSpeed||40,
       topMode:(_adCfg.topMode==='all' ? 'all' : 'rotate'),   // 右上の出し方
+      topScale:(Number(_adCfg.topScale)||1),                  // 右上の大きさ
       sponsorText:_adCfg.sponsorText||''
     })); }catch(e){}
   }
@@ -2358,6 +2364,7 @@ function _renderAdSlots(){
   var mR=document.getElementById('ad-topmode-rotate'), mA=document.getElementById('ad-topmode-all');
   if(mR) mR.classList.toggle('on', !_allMode);
   if(mA) mA.classList.toggle('on',  _allMode);
+  var ts=document.getElementById('ad-tscale-val'); if(ts) ts.textContent=Math.round((Number(_adCfg.topScale)||1)*100)+'%';
   var st=document.getElementById('ad-sponsor-text');
   if(st && document.activeElement!==st) st.value=_adCfg.sponsorText||'';
   var cnt=document.getElementById('ad-count');
@@ -2394,6 +2401,11 @@ function adTopMode(m){
   _sendAdCfg(); _renderAdSlots();
 }
 function adjAd(key,d){
+  if(key==='topScale'){
+    // 右上の広告の大きさ（倍率）。0.5〜2.0倍を0.1刻み
+    _adCfg.topScale = Math.max(0.5, Math.min(2, Math.round(((Number(_adCfg.topScale)||1) + d*0.1)*10)/10));
+    _sendAdCfg(); _renderAdSlots(); return;
+  }
   if(key==='tickerSpeed'){
     // 1周にかかる秒数。小さいほど速い
     _adCfg.tickerSpeed = Math.max(10, Math.min(180, (_adCfg.tickerSpeed||40) + d*5));
@@ -2775,7 +2787,7 @@ function _hasTickerAds(){
 function _refreshTickerBtn(){
   var b=document.getElementById('btn-ticker');
   if(!b) return;
-  b.textContent = _ticker.on ? '📣 ティッカーを止める（流れています）' : '📣 ティッカーを流す';
+  b.textContent = _ticker.on ? '📣 ティッカー停止' : '📣 ティッカーを流す';
   b.style.background  = _ticker.on ? '#3a2a10' : '#242426';
   b.style.borderColor = _ticker.on ? '#c8901e' : '#444';
   b.style.color       = _ticker.on ? '#ffcf6a' : '#ddd';
