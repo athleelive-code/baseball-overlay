@@ -1304,6 +1304,8 @@ function pushState(){
     gameTitle: (document.getElementById('hdr-game-title')||{}).value || lr.gameTitle || '',
     coaches: { away:coaches.away, home:coaches.home },
     cooling: (typeof _cooling!=='undefined') ? { on:_cooling.on, endsAt:_cooling.endsAt } : undefined,
+    // 分数はこの端末で変えたときだけ送る（古い値でコントローラーを上書きしないため）
+    coolingMin: (typeof _takeCoolingMinEdit==='function') ? _takeCoolingMinEdit() : undefined,
     firstBatSide: (typeof _firstBatSide!=='undefined') ? _firstBatSide : undefined,
     teamYomi:  (typeof teamYomi!=='undefined')  ? { away:teamYomi.away,  home:teamYomi.home }  : undefined,
     coachYomi: (typeof coachYomi!=='undefined') ? { away:coachYomi.away, home:coachYomi.home } : undefined,
@@ -1853,6 +1855,15 @@ function applyRemote(s){
         try{ localStorage.setItem('bb_firstbat_side', _firstBatSide); }catch(e){}
       }
     }
+    // クーリングの分数はコントローラーの値にそろえる（端末ごとにばらばらにしない）。
+    // この端末で変えたばかりでまだ送っていないときは、そちらを優先する
+    if(typeof s.coolingMin==='number' && s.coolingMin>=1 && s.coolingMin<=30
+       && s.coolingMin!==_coolingMin && !_coolingMinDirty){
+      _coolingMin = s.coolingMin;
+      try{ localStorage.setItem('bb_cooling_min', _coolingMin); }catch(e){}
+      _refreshCoolingUI();
+      if(typeof _warmFixedVoices==='function') _warmFixedVoices();
+    }
     // クーリング（コントローラー等が開始・終了した場合に追従）
     if(s.cooling && typeof s.cooling.on==='boolean' && typeof _cooling!=='undefined'){
       var _cOn = s.cooling.on, _cEnd = s.cooling.endsAt || 0;
@@ -2166,11 +2177,22 @@ function _fmtMMSS(sec){
   var m=Math.floor(sec/60), s=sec%60;
   return m+':'+(s<10?'0':'')+s;
 }
+// 分数はコントローラーを正として全端末でそろえる。
+// この端末で変えたときだけ印を付けてコントローラーへ送り、ふだんは受け取る側に回る
+var _coolingMinDirty = false;
 function adjCoolingMin(d){
   _coolingMin = Math.max(1, Math.min(30, _coolingMin + d));
   try{ localStorage.setItem('bb_cooling_min', _coolingMin); }catch(e){}
   _refreshCoolingUI();
   if(typeof _warmFixedVoices==='function') _warmFixedVoices();  // 分数が変われば文言も変わる
+  _coolingMinDirty = true;
+  pushState();
+}
+// 送る内容を組むときに呼ぶ。変えていれば値を返して印を消す。変えていなければ送らない
+function _takeCoolingMinEdit(){
+  if(!_coolingMinDirty) return undefined;
+  _coolingMinDirty = false;
+  return _coolingMin;
 }
 function _refreshCoolingUI(){
   var v=document.getElementById('cool-min-val');

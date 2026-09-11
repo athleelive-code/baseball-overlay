@@ -2706,6 +2706,18 @@ function adjCoolingMin(d){
   _refreshCoolingMinUI();
   _refreshCoolingUI();
   if(typeof _warmFixedVoices==='function') _warmFixedVoices();  // 分数が変われば文言も変わる
+  broadcast();                 // 分数は全端末でそろえる（コントローラーが正）
+}
+// 他の端末から届いた分数を採用する。同じ値なら何もしない
+function _adoptCoolingMin(n){
+  n=Number(n);
+  if(!(n>=1 && n<=30) || n===_coolingMin) return false;
+  _coolingMin=n;
+  try{ localStorage.setItem('bb_cooling_min', _coolingMin); }catch(e){}
+  _refreshCoolingMinUI();
+  _refreshCoolingUI();
+  if(typeof _warmFixedVoices==='function') _warmFixedVoices();
+  return true;
 }
 function _refreshCoolingMinUI(){
   var v=document.getElementById('cool-min-val');
@@ -5859,6 +5871,8 @@ function applyPcEdit(s){
         _refreshSideLabels();
       }
     }
+    // クーリングの分数（ROSTER で変えたときだけ届く）。最後に配り直すので全端末がそろう
+    if(typeof s.coolingMin==='number') _adoptCoolingMin(s.coolingMin);
     // クーリング（ROSTER から開始・終了された場合に取り込む）
     if(s.cooling && typeof s.cooling.on==='boolean'){
       var _cOn=s.cooling.on, _cEnd=s.cooling.endsAt||0;
@@ -5976,6 +5990,8 @@ function applyRemoteState(s){
         _refreshSideLabels();
       }
     }
+    // クーリングの分数（他のコントローラーで変えた場合に追従）
+    if(typeof s.coolingMin==='number') _adoptCoolingMin(s.coolingMin);
     // クーリングタイム（他のコントローラーが開始／終了した場合に追従）
     if(s.cooling && typeof s.cooling.on==='boolean'){
       _cooling.on = s.cooling.on;
@@ -6393,6 +6409,7 @@ function _doBroadcast(){
     gameTitle:_getGameTitle(),
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
+    coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
     ticker:{on:_ticker.on},
     firstBatSide:_firstBatSide,
     teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
@@ -6446,6 +6463,7 @@ function saveState(){
       gameTitle:_getGameTitle(),
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
+    coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
     ticker:{on:_ticker.on},
     firstBatSide:_firstBatSide,
     teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
