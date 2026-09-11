@@ -241,6 +241,10 @@ body.locked .row{cursor:default}
   font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .fp-ge.hint{border-color:#e0405a;color:#fff;box-shadow:0 0 0 3px rgba(224,64,90,.45)}
 .fp-ge.ended{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
+/* 配信開始（YouTubeチャプターの 0:00）。セット済みは緑 */
+.fp-stream{background:#10243a;border:2px solid #2a6a9a;border-radius:9px;color:#9fd0ff;
+  font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-stream.set{background:#16261a;border-color:#3f8a3f;color:#bff0bf}
 .rf-step{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#242426;
   border:2px solid #3a3a3c;border-radius:10px;color:#ddd;padding:11px 12px;margin-top:8px;cursor:pointer;
   font-size:15px;font-weight:800}
@@ -562,6 +566,7 @@ body.locked .row{cursor:default}
       oninput="onGameTitlePC()" autocomplete="off">
     <input id="hdr-game-yomi" type="text" placeholder="試合名の読み（アナウンス用）"
       oninput="onGameYomiPC()" autocomplete="off">
+    <button class="fp-stream" id="btn-rstream" onclick="rStreamNow()" title="配信を始めたときに押す（YouTubeチャプターの 0:00）">📡 配信開始</button>
     <button class="fp-gs" onclick="rgsOpen()">▶ 試合開始</button>
     <button class="fp-ge" id="btn-rge" onclick="rgeOpen()">🏁 試合終了</button>
   </div>
@@ -2950,6 +2955,15 @@ function _flowReq(o){
 function _rfEsc(s){
   return String(s==null?'':s).replace(/[<>&"]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; });
 }
+// 「📡 配信開始」：配信を始めたときに押す。時刻はコントローラーが持つ（YouTubeチャプターの 0:00）
+function rStreamNow(){
+  var st=lastRemote && lastRemote.streamStart;
+  if(st){
+    var d=new Date(st), cur=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    if(!confirm('配信開始は '+cur+' にセット済みです。\n今に変更しますか？')) return;
+  }
+  if(_flowReq({ _req:'streamStart', at:Date.now() })) toast('配信開始をセットしました（YouTubeチャプターの 0:00）');
+}
 function rgsOpen(){
   if(!_flowReq({ _req:'gsOpen' })) return;   // 前の試合の進行が残っていれば、コントローラーが最初に戻す
   _rgsRender();
@@ -3068,6 +3082,14 @@ function _rflowRefresh(){
   var m1=document.getElementById('rgs-mask'); if(m1 && m1.classList.contains('open')) _rgsRender();
   var m2=document.getElementById('rge-mask'); if(m2 && m2.classList.contains('open')) _rgeRender();
   _refreshAdTopBtn();   // メイン広告ボタンの表示もそろえる
+  // 配信開始ボタンに、コントローラーが持っている時刻を出す
+  var sb=document.getElementById('btn-rstream');
+  if(sb && lastRemote){
+    var sst=lastRemote.streamStart;
+    if(sst){ var sd=new Date(sst); sb.textContent='📡 配信 '+String(sd.getHours()).padStart(2,'0')+':'+String(sd.getMinutes()).padStart(2,'0')+'〜'; }
+    else sb.textContent='📡 配信開始';
+    sb.classList.toggle('set', !!sst);
+  }
   var b=document.getElementById('btn-rge'); if(!b || !lastRemote) return;
   var ge=lastRemote.gameEnd||{}, t=_rgeTotals();
   // 最終回が終わって判断待ち、または最終回以降の裏で後攻がリード＝光らせて知らせる（自動では終えない）

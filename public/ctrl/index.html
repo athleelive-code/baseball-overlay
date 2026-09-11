@@ -135,6 +135,10 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   font-size:22px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
 #btn-gameend.hint{animation:assistPulse 1.9s ease-in-out infinite;border-color:#e0405a;color:#fff}
 #btn-gameend.ended{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
+/* 配信開始（YouTubeチャプターの 0:00）。セット済みは緑 */
+#btn-stream{flex-shrink:0;background:#10243a;border:2px solid #2a6a9a;border-radius:10px;color:#9fd0ff;
+  font-size:22px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+#btn-stream.set{background:#16261a;border-color:#3f8a3f;color:#bff0bf}
 .ge-title{font-size:38px;font-weight:900;color:#fff;text-align:center}
 .ge-sub{font-size:20px;color:#999;text-align:center;margin:6px 0 14px}
 .ge-score{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
@@ -582,6 +586,7 @@ body.gamemin .gm-hide{display:none!important}
   <span class="gt-label">試合名</span>
   <input id="game-title" type="text" placeholder="例）第○回○○大会 準決勝"
     oninput="onGameTitle()" autocomplete="off">
+  <button id="btn-stream" onclick="streamStartNow()" title="配信を始めたときに押す（YouTubeチャプターの 0:00）">📡 配信開始</button>
   <button id="btn-gamestart" onclick="gsOpen()"
     style="flex-shrink:0;background:#3a2a10;border:2px solid #c8901e;border-radius:10px;color:#ffcf6a;
            font-size:22px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap">▶ 試合開始</button>
@@ -2874,6 +2879,11 @@ function _remoteFlowReq(s){
   if(r==='gsOpen'){ _gsBuildSteps(); if(_gsIsStale()) _gsClearProgress(); broadcast(); return true; }
   if(r==='gsMark' && s.k){ _gsBuildSteps(); _gsMark(s.k); broadcast(); return true; }
   if(r==='gsReset'){ _gsClearProgress(); broadcast(); return true; }
+  if(r==='streamStart'){
+    _setStreamStartAt(new Date(typeof s.at==='number' ? s.at : Date.now()));
+    toastMsg('メンバー管理で配信開始をセットしました');
+    return true;
+  }
   if(r==='gsDo' && (s.k==='inn1' || s.k==='inn2')){ _gsBuildSteps(); gsDo(s.k); broadcast(); return true; }
   if(r==='luShow' && (s.team==='away' || s.team==='home')){ _luShowStart(s.team, s.text||''); return true; }
   if(r==='geConfirm'){
@@ -6168,10 +6178,7 @@ function setStreamStart(){
   var parts = val.split(':');
   var d = new Date();
   d.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
-  _streamStartTime = d;
-  // 記録済みのチャプターは起きた時刻で持っているので、開始時刻を直せば全部ずれずに付け直る
-  try{ localStorage.setItem('bb_stream_start', d.getTime()); }catch(e){}
-  saveState();   // 読み込み直しても消さない
+  _setStreamStartAt(d);
   alert('配信開始時刻を ' + val + ' にセットしました');
 }
 
@@ -6203,9 +6210,31 @@ function _chapterGameStart(){
 }
 // 設定の「配信開始時刻」の欄を、覚えている時刻にそろえる
 function _refreshStreamStartInput(){
-  var inp=document.getElementById('stream-start-time'); if(!inp) return;
-  if(!_streamStartTime){ inp.value=''; return; }
-  inp.value=String(_streamStartTime.getHours()).padStart(2,'0')+':'+String(_streamStartTime.getMinutes()).padStart(2,'0');
+  var hm = _streamStartTime
+    ? String(_streamStartTime.getHours()).padStart(2,'0')+':'+String(_streamStartTime.getMinutes()).padStart(2,'0') : '';
+  var inp=document.getElementById('stream-start-time'); if(inp) inp.value=hm;
+  // 表の「📡 配信開始」ボタンにも、セットした時刻を出す
+  var b=document.getElementById('btn-stream');
+  if(b){ b.textContent = hm ? ('📡 配信 '+hm+'〜') : '📡 配信開始'; b.classList.toggle('set', !!hm); }
+}
+function _setStreamStartAt(d){
+  _streamStartTime = d;
+  // 記録済みのチャプターは起きた時刻で持っているので、開始時刻を直せば全部ずれずに付け直る
+  try{ localStorage.setItem('bb_stream_start', d.getTime()); }catch(e){}
+  _refreshStreamStartInput();
+  saveState();   // 読み込み直しても消さない
+  broadcast();   // ROSTER のボタンにも出す
+}
+// 表の「📡 配信開始」：配信を始めたときに押す（YouTubeチャプターの 0:00）
+function streamStartNow(){
+  var now=new Date();
+  var hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  if(_streamStartTime){
+    var cur=String(_streamStartTime.getHours()).padStart(2,'0')+':'+String(_streamStartTime.getMinutes()).padStart(2,'0');
+    if(!confirm('配信開始は '+cur+' にセット済みです。\n今（'+hm+'）に変更しますか？')) return;
+  }
+  _setStreamStartAt(now);
+  toastMsg('配信開始を '+hm+' にセットしました（YouTubeチャプターの 0:00）');
 }
 
 function _secToTime(sec){
@@ -7011,6 +7040,7 @@ function _doBroadcast(){
     luTeamName:_luShow.team?_geName(_luShow.team):'',
     // ROSTER にも同じ試合開始・終了フローを出すための中身
     gsView:_gsView(),
+    streamStart:(_streamStartTime ? _streamStartTime.getTime() : 0),   // 配信開始（ROSTER のボタン表示用）
     geAsk:(!_gameEnd.on && bso.o>=3) ? (_geNeedAsk()||'') : '',   // 最終回が終わって判断待ち
     geAnn:_gameEnd.on ? _geAnnText() : '',
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
