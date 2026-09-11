@@ -618,7 +618,6 @@ body.locked .row{cursor:default}
   </span>
   <button class="fp-cool" id="btn-cooling" onclick="toggleCooling()">❄ クーリング 5分</button>
   <span class="cool-left" id="cooling-left" style="display:none">5:00</span>
-  <button class="fp-siren" id="btn-siren-go" onclick="sirenNow()">🔔 サイレン</button>
   <button class="fp-ticker" id="btn-ticker" onclick="tickerNow()">📣 ティッカー</button>
   <button class="fp-ticker on" id="btn-adtop" onclick="adTopNow()">🖼 メイン広告を消す</button>
   <button class="fp-firstbat" onclick="openFirstBatPC()">⇄ 先攻選択</button>
@@ -2243,8 +2242,6 @@ function toggleSirenUse(){
 function _refreshSirenBtn(){
   var b=document.getElementById('btn-siren-use');
   if(b) _tapBtnPaint(b, _sirenUse, '🔔 サイレンを使う ON', '🔔 サイレンを使う OFF');
-  var m=document.getElementById('btn-siren-go');
-  if(m) m.style.display = _sirenUse ? '' : 'none';
 }
 // 音を鳴らす端末がこちらならここで鳴らし、そうでなければ相手へ送る
 function sirenNow(){
