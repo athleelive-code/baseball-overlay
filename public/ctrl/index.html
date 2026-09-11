@@ -43,7 +43,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   background:#131315;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;
 }
 .gt-label{
-  font-size:30px;font-weight:700;color:#888;flex-shrink:0;letter-spacing:1px;
+  font-size:30px;font-weight:700;color:#888;flex-shrink:0;letter-spacing:1px;min-width:3.2em;
 }
 #game-title{
   flex:1;min-width:0;
@@ -52,6 +52,15 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 }
 #game-title:focus{border-color:#666;background:#333}
 #game-title::placeholder{color:#555;font-weight:400}
+/* 試合名の読み（アナウンス用）。試合名の真下に並べる */
+.game-title-row.yomi{margin-top:0;border-top:none;padding-top:0}
+#game-title-yomi{
+  flex:1;min-width:0;
+  background:#2c2c2e;border:1px solid #444;border-radius:10px;
+  color:#bbb;font-size:30px;font-weight:500;padding:12px 18px;outline:none;
+}
+#game-title-yomi:focus{border-color:#666;background:#333;color:#fff}
+#game-title-yomi::placeholder{color:#555;font-weight:400}
 
 .hdr-logo{height:64px;width:auto;display:block;flex-shrink:0}
 .hdr-title{flex:1;padding-left:16px;font-size:24px;font-weight:800;color:#333;
@@ -541,6 +550,11 @@ body.gamemin .gm-hide{display:none!important}
   <button id="btn-gamestart" onclick="gsOpen()"
     style="flex-shrink:0;background:#3a2a10;border:2px solid #c8901e;border-radius:10px;color:#ffcf6a;
            font-size:22px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap">▶ 試合開始</button>
+</div>
+<div class="game-title-row yomi">
+  <span class="gt-label">読み</span>
+  <input id="game-title-yomi" type="text" placeholder="試合名の読み（アナウンス用）"
+    oninput="onGameTitleYomi(this)" autocomplete="off">
 </div>
 
 <div class="inning-area">
@@ -1561,10 +1575,26 @@ function _gameTitleSay(){
   var y=(_gameTitleYomi||'').trim();
   return y || _getGameTitle().trim();
 }
-function gsTitleYomiInput(){
-  var el=document.getElementById('gs-title-yomi');
+// メイン画面・開始フローのどちらの欄から入れても同じ値。もう一方の欄にも写す
+function onGameTitleYomi(el){
   _gameTitleYomi = el ? el.value : '';
+  _renderGameTitleYomi();
   onGameTitle();
+}
+function gsTitleYomiInput(){ onGameTitleYomi(document.getElementById('gs-title-yomi')); }
+// ROSTER から届いたとき・復元したときも、欄と開始フローの表示をそろえる
+function _setGameTitleYomi(v){
+  _gameTitleYomi = String(v||'');
+  _renderGameTitleYomi();
+}
+function _renderGameTitleYomi(){
+  ['game-title-yomi','gs-title-yomi'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el && document.activeElement!==el) el.value=_gameTitleYomi||'';
+  });
+  // 開始フローを開いていれば「開始アナウンス」の段の（読み：…）も出し直す
+  var m=document.getElementById('gs-mask');
+  if(m && m.style.display!=='none' && typeof _gsRender==='function'){ try{ _gsRender(); }catch(e){} }
 }
 function _getGameTitle(){
   var el=document.getElementById('game-title');
@@ -5832,7 +5862,7 @@ function resetEverything(){
   // 試合名
   var gt=document.getElementById('game-title');
   if(gt) gt.value='';
-  _gameTitleYomi='';
+  _setGameTitleYomi('');
 
   // 記録
   _abLog=[]; _pitchLog=[]; _lastResult=null; _speed=null; _hrInfo=null;
@@ -5920,7 +5950,7 @@ function loadGameFile(e){
       }
       var gt=document.getElementById('game-title');
       if(gt) gt.value=d.title||'';
-      _gameTitleYomi=d.titleYomi||'';
+      _setGameTitleYomi(d.titleYomi||'');
 
       var s=d.state;
       st.inn=s.inn||1; st.top=s.top!==false; st.maxInn=s.maxInn||7;
@@ -6020,7 +6050,7 @@ function applyPcEdit(s){
       if(typeof s.coachYomi.home==='string') _coachYomi.home=s.coachYomi.home;
     }
 
-    if(typeof s.gameTitleYomi==='string') _gameTitleYomi=s.gameTitleYomi;
+    if(typeof s.gameTitleYomi==='string') _setGameTitleYomi(s.gameTitleYomi);
     if(typeof s.gameTitle==='string'){
       var gt=document.getElementById('game-title');
       if(gt && document.activeElement!==gt) gt.value=s.gameTitle;
@@ -6157,7 +6187,7 @@ function applyRemoteState(s){
     }
 
     // 試合タイトル
-    if(typeof s.gameTitleYomi==='string') _gameTitleYomi=s.gameTitleYomi;
+    if(typeof s.gameTitleYomi==='string') _setGameTitleYomi(s.gameTitleYomi);
     if(typeof s.gameTitle==='string'){
       var gtEl=document.getElementById('game-title');
       if(gtEl && document.activeElement!==gtEl) gtEl.value=s.gameTitle;
@@ -6656,7 +6686,7 @@ function restoreState(){
       _coachYomi.home=snap.coachYomi.home||'';
     }
     // 試合タイトルを復元
-    if(typeof snap.gameTitleYomi==='string') _gameTitleYomi=snap.gameTitleYomi;
+    if(typeof snap.gameTitleYomi==='string') _setGameTitleYomi(snap.gameTitleYomi);
     if(typeof snap.gameTitle==='string'){
       var _gt=document.getElementById('game-title');
       if(_gt) _gt.value=snap.gameTitle;

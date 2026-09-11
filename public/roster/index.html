@@ -1864,9 +1864,12 @@ function applyRemote(s){
       _gt.value=s.gameTitle;
     }
     if(typeof s.gameTitleYomi==='string'){
-      gameTitleYomi=s.gameTitleYomi;
+      // 入力中は取り込まない（打っている途中の古い値が戻ってきて上書きしないように）
       var _gy=document.getElementById('hdr-game-yomi');
-      if(_gy && document.activeElement!==_gy) _gy.value=s.gameTitleYomi;
+      if(!_gy || document.activeElement!==_gy){
+        gameTitleYomi=s.gameTitleYomi;
+        if(_gy) _gy.value=s.gameTitleYomi;
+      }
     }
     if(s.coaches){
       ['away','home'].forEach(function(t){
