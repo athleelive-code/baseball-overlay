@@ -2640,7 +2640,7 @@ function _gsOpenText(){
   var title=_gameTitleSay();   // 読みがあれば読みで
   var a=_teamSay('away'), h=_teamSay('home');
   return 'お待たせいたしました。' + (title ? 'これより、'+title+'、' : 'これより、')
-       + a + '対' + h + 'の試合を開始いたします。';
+       + a + '、対、' + h + 'の試合を開始いたします。';   // 「対」の前後に間を入れて聞き取りやすく
 }
 // 段の見出し。どちらのベンチかも添えて取り違えを防ぐ
 function _gsLabel(s){
