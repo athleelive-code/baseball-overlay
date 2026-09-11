@@ -4839,6 +4839,8 @@ function _nextInnCore(){
   _ticker.on = true;          // イニング交代中はスポンサーを流す（下の broadcast で配る）
   _assistReset();
   _batterVisible = false;   // 打者表示は一度消し、次のコールで出し直す
+  // 打順表も閉じる（打者を消しても打順表は残せるようになったので、回をまたいで出しっぱなしにしない）
+  _batVisible = false; if(_batVisTimer){ clearTimeout(_batVisTimer); _batVisTimer=null; }
   _setBatterVisBtn();
   broadcast();
 }

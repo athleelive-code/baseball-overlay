@@ -275,6 +275,10 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
 }
 .ov-bat-panel{max-height:0;overflow:hidden;transition:max-height .45s ease;order:-1}
 .ov-bat-panel.open{max-height:400px;border-bottom:1px solid rgba(255,255,255,.08)}
+/* 打者を消しているときも打順表だけは出せる。打者の帯と打者欄だけ隠し、打順表も閉じていれば枠ごと消す */
+.ov-bat-wrap.no-batter .ov-b-brand,.ov-bat-wrap.no-batter .ov-b-area{display:none}
+.ov-bat-wrap.no-batter .ov-bat-panel.open{border-bottom:none}
+.ov-bat-wrap.no-batter:not(.lu-open){opacity:0;pointer-events:none}
 .ov-bat-hdr{padding:5px 12px;background:rgba(0,0,0,.2)}
 .ov-bat-hdr span{font-size:14px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1px}
 .ov-bat-list{padding:3px 5px 4px;display:flex;flex-direction:column;gap:1px}
@@ -969,8 +973,9 @@ function applyState(s){
   if(typeof s.showBat==='boolean' && s.showBat!==_lastCtlShowBat){ _lastCtlShowBat=s.showBat; setBatVisible(s.showBat); }
   if(typeof s.showDef==='boolean' && s.showDef!==_lastCtlShowDef){ _lastCtlShowDef=s.showDef; setDefVisible(s.showDef); }
   if(typeof s.showBatter==='boolean'){
+    // 打者の欄だけを出し入れする（打順表は「打順」ボタンで別に出せる）
     var bw=g('ov-bat-wrap');
-    if(bw){bw.style.opacity=s.showBatter?'1':'0';bw.style.pointerEvents=s.showBatter?'':'none';}
+    if(bw) bw.classList.toggle('no-batter', !s.showBatter);
   }
   if(typeof s.showPC==='boolean'){
     var pw=g('ov-pc-wrap');
@@ -1407,12 +1412,14 @@ function setBatVisible(v){
   _batVisible=v;
   var el=g('ov-bat-panel');
   if(el)el.classList.toggle('open',v);
+  var bw=g('ov-bat-wrap'); if(bw) bw.classList.toggle('lu-open',v);   // 打者を消していても打順表は見せる
   if(_batHideTimer){clearTimeout(_batHideTimer);_batHideTimer=null;}
   if(v&&_autoHideSec>0){
     _batHideTimer=setTimeout(function(){
       _batVisible=false;
       var el2=g('ov-bat-panel');
       if(el2)el2.classList.remove('open');
+      var bw2=g('ov-bat-wrap'); if(bw2) bw2.classList.remove('lu-open');
     }, _autoHideSec*1000);
   }
 }
