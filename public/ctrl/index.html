@@ -1145,7 +1145,7 @@ body.gamemin .gm-hide{display:none!important}
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">YouTubeチャプター</div>
-      <div style="font-size:20px;color:#666;margin-bottom:10px">配信開始時刻をセットすると、イニング交代のたびに記録します。試合後に概要欄へ貼り付けられます</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">開始アナウンス・1回表・イニング交代を記録します。配信開始時刻（0:00）は後からでもセット・修正できます（未セットのときは開始アナウンスの時刻を 0:00 にします）。試合後に概要欄へ貼り付けられます</div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
         <input id="stream-start-time" type="time"
           style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:28px;padding:12px;outline:none">
@@ -2815,6 +2815,8 @@ function _gsRender(){
 }
 function _gsMark(k){
   _gsDone[k]=true;
+  // 開始アナウンスを読み始めた時刻＝YouTubeチャプターの「試合開始」（ROSTER から読んだときもここを通る）
+  if(k==='open' && typeof _chapterGameStart==='function') _chapterGameStart();
   // 次にやる段は「いま押した段より下」で、まだ済んでいない一番上。
   // 飛ばした段があっても、そこへ戻らず先へ進む
   var at=_gsAt(k);
@@ -2925,10 +2927,9 @@ function gsPlayBall(){
   _assistReset();
   _gsPickLeadoff();          // 先頭打者を選んでおく（毎回選び直させない）
   // YouTubeチャプターに「1回表」を入れる（2回押しても二重にしない）
-  if(_streamStartTime){
-    if(!_chapterLog.some(function(c){ return c.label==='1回表'; })) _recordChapter('1回表');
-  }else{
-    setTimeout(function(){ toastMsg('YouTubeチャプターを残すなら、設定で配信開始時刻をセットしてください'); }, 1600);
+  if(!_chapterLog.some(function(c){ return c.label==='1回表'; })) _recordChapter('1回表');
+  if(!_streamStartTime){
+    setTimeout(function(){ toastMsg('YouTubeチャプター：配信開始時刻が未セットです。あとで設定からセットすれば、記録した分も表示できます'); }, 1600);
   }
   if(!_gameMin) toggleGameMin();
   broadcast(); saveState();
@@ -6168,19 +6169,40 @@ function setStreamStart(){
   var d = new Date();
   d.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
   _streamStartTime = d;
-  _chapterLog = [{sec:0, label:'試合開始'}];
+  // 記録済みのチャプターは起きた時刻で持っているので、開始時刻を直せば全部ずれずに付け直る
   try{ localStorage.setItem('bb_stream_start', d.getTime()); }catch(e){}
   saveState();   // 読み込み直しても消さない
   alert('配信開始時刻を ' + val + ' にセットしました');
 }
 
+// チャプターは起きた時刻（at）で持つ。配信開始時刻は後からセット・修正してもよい（表示のときに引き算する）
 function _recordChapter(label){
-  if(!_streamStartTime) return;
-  var now = new Date();
-  var diff = Math.floor((now - _streamStartTime) / 1000);
-  if(diff < 0) diff = 0;
-  _chapterLog.push({sec:diff, label:label});
+  _chapterLog.push({ at:Date.now(), label:label });
   saveState();   // 読み込み直しても消さない
+}
+// 表示用：配信開始からの経過に直して並べる。YouTube の決まりで 0:00 から始める
+function _chapterLines(){
+  if(!_streamStartTime) return [];
+  var st0=_streamStartTime.getTime();
+  var list=_chapterLog.map(function(c){
+    var at=(typeof c.at==='number') ? c.at : (st0 + (c.sec||0)*1000);   // 以前の形式（秒数）も読める
+    return { sec:Math.max(0, Math.floor((at-st0)/1000)), label:c.label };
+  });
+  list.sort(function(a,b){ return a.sec-b.sec; });
+  if(!list.length || list[0].sec>0) list.unshift({ sec:0, label:'配信開始' });
+  return list;
+}
+// 試合開始フローの「開始アナウンス」を読み始めた時刻を、チャプターの「試合開始」にする。
+// 配信開始時刻が未セットなら、この時刻を配信開始（0:00）にする（あとから設定で直せる）
+function _chapterGameStart(){
+  if(!_streamStartTime){
+    _streamStartTime = new Date();
+    try{ localStorage.setItem('bb_stream_start', _streamStartTime.getTime()); }catch(e){}
+    _refreshStreamStartInput();
+    toastMsg('YouTubeチャプター：開始アナウンスの時刻を 0:00 にしました。配信がもっと前から始まっていたら、設定で配信開始時刻を直してください');
+  }
+  if(!_chapterLog.some(function(c){ return c.label==='試合開始'; })) _recordChapter('試合開始');
+  else saveState();
 }
 // 設定の「配信開始時刻」の欄を、覚えている時刻にそろえる
 function _refreshStreamStartInput(){
@@ -6202,10 +6224,14 @@ function showChapterList(){
   var pre = document.getElementById('chapter-text');
   if(!out||!pre) return;
   if(!_chapterLog.length){
-    alert('記録がありません。配信開始時刻をセットしてから試合を進めてください。');
+    alert('記録がありません。試合を進めると、開始アナウンスやイニング交代のたびに記録されます。');
     return;
   }
-  var lines=_chapterLog.map(function(ch){ return _secToTime(ch.sec)+' '+ch.label; });
+  if(!_streamStartTime){
+    alert('配信開始時刻がセットされていません。\nセットすると表示できます（記録はしてあります）。');
+    return;
+  }
+  var lines=_chapterLines().map(function(ch){ return _secToTime(ch.sec)+' '+ch.label; });
   pre.textContent = lines.join('\n');
   out.style.display = 'block';
 }
