@@ -108,7 +108,20 @@ body{padding-bottom:40px}
 .gb-dia rect{fill:none;stroke:#888;stroke-width:2.4;transition:fill .12s}
 .gb-dia rect.on{fill:#e8c33d;stroke:#e8c33d}
 
-.gb-people{display:flex;gap:22px}
+.gb-people{display:flex;gap:14px;flex-wrap:wrap}
+/* 打者・投手のプレビュー（大きく。捕手は出さない） */
+.gb-pl{background:#1c1c1e;border:1px solid #2e2e30;border-radius:10px;padding:8px 14px 10px;min-width:250px;
+  display:flex;flex-direction:column;gap:3px}
+.gb-pl-hd{display:flex;align-items:center;gap:8px}
+.gb-pl-meta{font-size:15px;font-weight:800;color:#bbb;white-space:nowrap}
+.gb-pl-name{display:flex;align-items:baseline;gap:10px;font-size:28px;font-weight:900;color:#fff;
+  white-space:nowrap;line-height:1.15}
+.gb-pl-num{font-size:18px;font-weight:800;color:#999}
+.gb-pl-sub{font-size:14px;color:#9a9a9c;min-height:1.1em}
+.gb-pl-sub b{font-size:18px;color:#fff;font-variant-numeric:tabular-nums}
+.gb-pl-hist{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.gb-pl-hist:empty{display:none}
+.gb-pl-hist .fp-res{font-size:13px;cursor:default}
 .gb-col{display:flex;flex-direction:column;gap:5px;font-size:17px;min-width:190px}
 .gb-bt-line{display:flex;align-items:center;gap:7px;color:#eee;white-space:nowrap}
 .gb-bt-line.sub{font-size:14px;color:#8a8a8a}
@@ -572,12 +585,16 @@ body.locked .row{cursor:default}
   </svg>
 
   <div class="gb-people">
-    <div class="gb-col">
-      <div class="gb-bt-line"><span class="gb-bt-tag bat">打</span><span id="gb-batter">-</span></div>
+    <div class="gb-pl">
+      <div class="gb-pl-hd"><span class="gb-bt-tag bat">打者</span><span class="gb-pl-meta" id="gb-bat-meta"></span></div>
+      <div class="gb-pl-name"><span id="gb-batter">-</span><span class="gb-pl-num" id="gb-bat-num"></span></div>
+      <div class="gb-pl-sub" id="gb-bat-yomi"></div>
+      <div class="gb-pl-hist" id="gb-bat-hist"></div>
     </div>
-    <div class="gb-col">
-      <div class="gb-bt-line"><span class="gb-bt-tag def">投</span><span id="gb-pitcher">-</span></div>
-      <div class="gb-bt-line"><span class="gb-bt-tag def">捕</span><span id="gb-catcher">-</span></div>
+    <div class="gb-pl">
+      <div class="gb-pl-hd"><span class="gb-bt-tag def">投手</span><span class="gb-pl-meta" id="gb-pit-meta"></span></div>
+      <div class="gb-pl-name"><span id="gb-pitcher">-</span><span class="gb-pl-num" id="gb-pit-num"></span></div>
+      <div class="gb-pl-sub" id="gb-pit-sub"></div>
     </div>
   </div>
 
@@ -3266,6 +3283,43 @@ var RESULT_SHORT = {
 var REACHED = ['ヒット','二塁打','三塁打','ホームラン','失策','野選','四球','死球','打撃妨害','振り逃げ'];
 
 // 指定選手の打席結果を古い順に返す
+// 試合状況の打者・投手を大きく出す（捕手は出さない）。
+// 打者：打順・守備位置・背番号・フリガナ・今日の打席。投手：守備側チーム・背番号・球数（この回／計）・最新の球速
+function _renderPreviewPeople(s){
+  var set=function(id, html){ var el=document.getElementById(id); if(el) el.innerHTML=html; };
+  var atk=(s.top!==false)?'away':'home', def=(atk==='away')?'home':'away';
+  var ids=s.selIds||{};
+  var find=function(team,id){ return id ? (rosters[team]||[]).find(function(x){ return x.id===id; }) : null; };
+  var strip=function(t){ return String(t||'').replace(/^#\d+\s*/,'').trim(); };
+  // 打者
+  var bp=find(atk, ids.batter);
+  set('gb-batter', _rfEsc((bp ? bp.name : strip(s.batter)) || '-'));
+  set('gb-bat-num', (bp && bp.num) ? '#'+_rfEsc(bp.num) : '');
+  var bpos = bp ? ((typeof posLabel==='function') ? posLabel(bp.pos) : (bp.pos||'')) : '';
+  set('gb-bat-meta', bp ? _rfEsc((bp.order ? bp.order+'番' : '') + (bpos ? '　'+bpos : '')) : '');
+  set('gb-bat-yomi', (bp && bp.yomi) ? _rfEsc(bp.yomi) : '');
+  var res = bp ? _batterResults(atk, bp.id) : [];
+  set('gb-bat-hist', res.map(function(r){
+    var ex=r.hit||r.defense||'';
+    return '<span class="fp-res'+(r.reached?' ok':'')+'" title="'+_rfEsc(r.inn+'回'+(ex?' / '+ex:''))+'">'
+      +_rfEsc(r.label)+(ex?'<em>'+_rfEsc(ex)+'</em>':'')+'</span>';
+  }).join(''));
+  // 投手
+  var pp=find(def, ids.pitcher);
+  set('gb-pitcher', _rfEsc((pp ? pp.name : strip(s.pitcher)) || '-'));
+  set('gb-pit-num', (pp && pp.num) ? '#'+_rfEsc(pp.num) : '');
+  set('gb-pit-meta', _rfEsc(def==='away' ? (teamNames.away||s.aab||'先攻') : (teamNames.home||s.hnm||'後攻')));
+  var log=Array.isArray(s.pitchLog)?s.pitchLog:[], pid=ids.pitcher||0, pi, pt;
+  if(pid && log.length){
+    pt=log.filter(function(r){ return r && r.pid===pid; }).length;
+    pi=log.filter(function(r){ return r && r.pid===pid && r.inn===s.inn && r.top===(s.top!==false); }).length;
+  }else{
+    pt=s.pcTotal||0; pi=s.pcInn||0;
+  }
+  var sp=(s.speed && s.speed.v && !s.speed.clear && (!s.speed.pitcherId || s.speed.pitcherId===pid))
+    ? '　球速 <b>'+_rfEsc(s.speed.v)+'</b>km/h' : '';
+  set('gb-pit-sub', (pp || s.pitcher) ? ('球数 この回 <b>'+pi+'</b> ／ 計 <b>'+pt+'</b>'+sp) : '');
+}
 function _batterResults(team, id){
   if(!id) return [];
   return _gameLog.filter(function(g){
@@ -4832,11 +4886,7 @@ function renderGame(s){
 
   // 打者（次・次々打者の表示は廃止。値は overlay 用に state では保持）
   const setTxt=function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v||'-'; };
-  setTxt('gb-batter',s.batter);
-
-  // 投手・捕手
-  setTxt('gb-pitcher',s.pitcher);
-  setTxt('gb-catcher',s.catcher);
+  _renderPreviewPeople(s);   // 打者・投手を大きく、詳しく（捕手は出さない）
 
   // overlay の表示状態
   const flags=[
