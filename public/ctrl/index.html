@@ -2924,6 +2924,12 @@ function gsPlayBall(){
   _abReset(); _updateAbDisp();
   _assistReset();
   _gsPickLeadoff();          // 先頭打者を選んでおく（毎回選び直させない）
+  // YouTubeチャプターに「1回表」を入れる（2回押しても二重にしない）
+  if(_streamStartTime){
+    if(!_chapterLog.some(function(c){ return c.label==='1回表'; })) _recordChapter('1回表');
+  }else{
+    setTimeout(function(){ toastMsg('YouTubeチャプターを残すなら、設定で配信開始時刻をセットしてください'); }, 1600);
+  }
   if(!_gameMin) toggleGameMin();
   broadcast(); saveState();
   toastMsg('1回表 開始');
@@ -6164,6 +6170,7 @@ function setStreamStart(){
   _streamStartTime = d;
   _chapterLog = [{sec:0, label:'試合開始'}];
   try{ localStorage.setItem('bb_stream_start', d.getTime()); }catch(e){}
+  saveState();   // 読み込み直しても消さない
   alert('配信開始時刻を ' + val + ' にセットしました');
 }
 
@@ -6173,6 +6180,13 @@ function _recordChapter(label){
   var diff = Math.floor((now - _streamStartTime) / 1000);
   if(diff < 0) diff = 0;
   _chapterLog.push({sec:diff, label:label});
+  saveState();   // 読み込み直しても消さない
+}
+// 設定の「配信開始時刻」の欄を、覚えている時刻にそろえる
+function _refreshStreamStartInput(){
+  var inp=document.getElementById('stream-start-time'); if(!inp) return;
+  if(!_streamStartTime){ inp.value=''; return; }
+  inp.value=String(_streamStartTime.getHours()).padStart(2,'0')+':'+String(_streamStartTime.getMinutes()).padStart(2,'0');
 }
 
 function _secToTime(sec){
@@ -6247,6 +6261,7 @@ function resetEverything(){
   _paResults=[];
   _lastPitchReport=null;
   if(typeof _chapterLog!=='undefined') _chapterLog=[];
+  _streamStartTime=null; if(typeof _refreshStreamStartInput==='function') _refreshStreamStartInput();   // 次の試合は配信開始時刻をセットし直す
 
   // 画面を更新
   document.getElementById('inn-num').textContent=1;
@@ -6384,6 +6399,7 @@ function resetAll(force){
   _abLog=[]; _pitchLog=[]; _lastResult=null; _speed=null; _hrInfo=null;
   _paResults=[]; _lastPitchReport=null;
   if(typeof _chapterLog!=='undefined') _chapterLog=[];
+  _streamStartTime=null; if(typeof _refreshStreamStartInput==='function') _refreshStreamStartInput();   // 次の試合は配信開始時刻をセットし直す
   _lastBatterId.away=null; _lastBatterId.home=null;
   _newGameId();                // この合図で ROSTER の打席記録とオーバーレイの H・E も消える
   _updateAbDisp(); _updatePitchDisp();
@@ -7033,6 +7049,7 @@ function saveState(){
       nameAway:na?na.textContent:'先攻',
       nameHome:nh?nh.textContent:'後攻',
       lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
+      chap:{ start:(_streamStartTime ? _streamStartTime.getTime() : 0), log:_chapterLog },   // YouTubeチャプター
       gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra, gameId:_gameId, showHits:_showHits, showErrs:_showErrs, adTopOn:_adTopOn,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
@@ -7100,6 +7117,12 @@ function restoreState(){
     if(typeof snap.gameTitleYomi==='string') _setGameTitleYomi(snap.gameTitleYomi);
     if(snap.gameEnd && typeof snap.gameEnd==='object') _gameEnd=snap.gameEnd;   // 終わった試合は終わったまま
     if(snap.extra && typeof snap.extra==='object') _extra=snap.extra;
+    // YouTubeチャプターと配信開始時刻（読み込み直しても続きから記録する）
+    if(snap.chap && typeof snap.chap==='object'){
+      _streamStartTime = snap.chap.start ? new Date(snap.chap.start) : null;
+      _chapterLog = Array.isArray(snap.chap.log) ? snap.chap.log.slice() : [];
+      _refreshStreamStartInput();
+    }
     _geRefreshBtn();
     if(typeof snap.gameTitle==='string'){
       var _gt=document.getElementById('game-title');
