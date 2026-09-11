@@ -53,7 +53,8 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 #game-title:focus{border-color:#666;background:#333}
 #game-title::placeholder{color:#555;font-weight:400}
 /* 試合名の読み（アナウンス用）。試合名の真下に並べる */
-.game-title-row.yomi{margin-top:0;border-top:none;padding-top:0}
+/* 読みは ROSTER で入れる。コントローラーでは欄を隠し、値の受け渡しだけ残す */
+.game-title-row.yomi{display:none;margin-top:0;border-top:none;padding-top:0}
 #game-title-yomi{
   flex:1;min-width:0;
   background:#2c2c2e;border:1px solid #444;border-radius:10px;
