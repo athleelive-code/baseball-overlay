@@ -1020,6 +1020,12 @@ body.gamemin .gm-hide{display:none!important}
         <span id="ad-tscale-val" style="flex:1;text-align:center;font-size:28px;font-weight:700;color:#fff">100%</span>
         <button class="adbtn" style="flex:0 0 64px;font-size:26px;padding:10px" onclick="adjAd('topScale',1)">＋</button>
       </div>
+      <div style="font-size:18px;color:#888;margin:14px 0 5px">ティッカーの大きさ</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="adbtn" style="flex:0 0 64px;font-size:26px;padding:10px" onclick="adjAd('tickerScale',-1)">－</button>
+        <span id="ad-kscale-val" style="flex:1;text-align:center;font-size:28px;font-weight:700;color:#fff">100%</span>
+        <button class="adbtn" style="flex:0 0 64px;font-size:26px;padding:10px" onclick="adjAd('tickerScale',1)">＋</button>
+      </div>
       <div style="display:flex;gap:12px;margin-top:14px">
         <div style="flex:1">
           <div style="font-size:18px;color:#888;margin-bottom:5px">表示秒数（0=自動）</div>
@@ -2289,6 +2295,7 @@ function _adIngest(d){
   if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
   if(d.topMode==='all'||d.topMode==='rotate') _adCfg.topMode=d.topMode;
   if(typeof d.topScale==='number') _adCfg.topScale=Math.max(0.5, Math.min(2, d.topScale));
+  if(typeof d.tickerScale==='number') _adCfg.tickerScale=Math.max(0.5, Math.min(2, d.tickerScale));
   if(typeof d.sponsorText==='string') _adCfg.sponsorText=d.sponsorText;
   _adSave();
   _renderAdSlots();
@@ -2320,6 +2327,7 @@ function _sendAdCfg(asIs){
       tickerSpeed:_adCfg.tickerSpeed||40,
       topMode:(_adCfg.topMode==='all' ? 'all' : 'rotate'),   // 右上の出し方
       topScale:(Number(_adCfg.topScale)||1),                  // 右上の大きさ
+      tickerScale:(Number(_adCfg.tickerScale)||1),            // ティッカーの大きさ
       sponsorText:_adCfg.sponsorText||''
     })); }catch(e){}
   }
@@ -2365,6 +2373,7 @@ function _renderAdSlots(){
   if(mR) mR.classList.toggle('on', !_allMode);
   if(mA) mA.classList.toggle('on',  _allMode);
   var ts=document.getElementById('ad-tscale-val'); if(ts) ts.textContent=Math.round((Number(_adCfg.topScale)||1)*100)+'%';
+  var tk=document.getElementById('ad-kscale-val'); if(tk) tk.textContent=Math.round((Number(_adCfg.tickerScale)||1)*100)+'%';
   var st=document.getElementById('ad-sponsor-text');
   if(st && document.activeElement!==st) st.value=_adCfg.sponsorText||'';
   var cnt=document.getElementById('ad-count');
@@ -2401,9 +2410,9 @@ function adTopMode(m){
   _sendAdCfg(); _renderAdSlots();
 }
 function adjAd(key,d){
-  if(key==='topScale'){
-    // 右上の広告の大きさ（倍率）。0.5〜2.0倍を0.1刻み
-    _adCfg.topScale = Math.max(0.5, Math.min(2, Math.round(((Number(_adCfg.topScale)||1) + d*0.1)*10)/10));
+  if(key==='topScale' || key==='tickerScale'){
+    // 大きさ（倍率）。0.5〜2.0倍を0.1刻み（右上の広告・ティッカー）
+    _adCfg[key] = Math.max(0.5, Math.min(2, Math.round(((Number(_adCfg[key])||1) + d*0.1)*10)/10));
     _sendAdCfg(); _renderAdSlots(); return;
   }
   if(key==='tickerSpeed'){

@@ -177,7 +177,7 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
   transition:height .35s ease,opacity .3s ease;
   display:flex;align-items:center;
 }
-.ov-ticker.on{height:128px;opacity:1}
+.ov-ticker.on{height:calc(128px*var(--tk,1));opacity:1}
 .ov-tk-track{
   display:flex;align-items:center;gap:44px;
   white-space:nowrap;will-change:transform;
@@ -190,11 +190,11 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 .ov-tk-track.fit{animation:none;transform:none;width:100%;justify-content:center;padding-left:0}
 .ov-tk-item{display:inline-flex;align-items:center;flex:0 0 auto}
 .ov-tk-item img{
-  height:96px;width:auto;object-fit:contain;display:block;
+  height:calc(96px*var(--tk,1));width:auto;object-fit:contain;display:block;
   background:rgba(255,255,255,.94);border-radius:7px;padding:7px 16px;
 }
 /* ティッカーが出ている間は打者ブロックを持ち上げて重ならないようにする */
-body.has-ticker .ov-bat-wrap{bottom:142px}
+body.has-ticker .ov-bat-wrap{bottom:calc(14px + 128px*var(--tk,1))}
 .ov-bat-wrap{transition:opacity .3s, bottom .35s ease}
 
 /* 右端の上下中央にタイマーだけを出す。画面の大半は素通しにして、
@@ -1061,6 +1061,7 @@ var _adTickerSpeed = 40;
 var _adAt = 0;          // 広告設定の最終更新時刻。これより古い設定は受け取らない
 var _adTopMode = 'rotate';   // 右上の出し方。rotate=1枚ずつ切り替え / all=全部同時
 var _adTopScale = 1;         // 右上の大きさ（倍率）。設定の「右上の広告の大きさ」
+var _adTickerScale = 1;      // ティッカーの大きさ（倍率）。CSS の --tk に入れる
 var _adImages = [];     // スコア表の横の広告は廃止（枠だけ残してある）
 var _adSec = 0;        // 0 = スコア表示の秒数に従う
 var _adRotate = 0;     // 0 = 1回の表示で1枚のみ。>0 なら N 秒ごとに切替
@@ -1074,6 +1075,7 @@ try{
     if(typeof _ac.at==='number') _adAt=_ac.at;
     if(_ac.topMode==='all'||_ac.topMode==='rotate') _adTopMode=_ac.topMode;
     if(typeof _ac.topScale==='number') _adTopScale=_ac.topScale;
+    if(typeof _ac.tickerScale==='number'){ _adTickerScale=_ac.tickerScale; document.documentElement.style.setProperty('--tk', _adTickerScale); }
     if(Array.isArray(_ac.top)){ _adTop=_ac.top; }
     else {
       // 右上の枠ができる前に保存した設定。スコア表用だった画像を右上に回す
@@ -1158,11 +1160,15 @@ function applyAdCfg(d){
   if(typeof d.tickerSpeed==='number') _adTickerSpeed = d.tickerSpeed;
   if(d.topMode==='all'||d.topMode==='rotate') _adTopMode = d.topMode;
   if(typeof d.topScale==='number') _adTopScale = Math.max(0.5, Math.min(2, d.topScale));
+  if(typeof d.tickerScale==='number'){
+    _adTickerScale = Math.max(0.5, Math.min(2, d.tickerScale));
+    document.documentElement.style.setProperty('--tk', _adTickerScale);   // 帯の高さ・画像・打者表示の逃げ幅
+  }
   _adIndex = 0;
   _tickerBuild();
   _adTopStart();
   try{ localStorage.setItem('bb_adcfg', JSON.stringify({
-    ticker:_adTicker, top:_adTop, at:_adAt, topMode:_adTopMode, topScale:_adTopScale,
+    ticker:_adTicker, top:_adTop, at:_adAt, topMode:_adTopMode, topScale:_adTopScale, tickerScale:_adTickerScale,
     sec:_adSec, rotate:_adRotate, tickerSpeed:_adTickerSpeed
   })); }catch(e){}
 }
