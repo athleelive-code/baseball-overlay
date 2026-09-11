@@ -263,6 +263,7 @@ const LAST_STATE_TTL = 12 * 60 * 60 * 1000;
 // 別の端末で開いたオーバーレイには何も出ない。試合をまたいで残しておきたいので
 // 有効期限は付けない（サーバーが眠って起き直したときは消える）。
 let lastAdCfg = null;
+let lastAdCfgAt = 0;
 let lastTeamCfg = null;
 
 wss.on('connection', (ws, req) => {
@@ -282,7 +283,12 @@ wss.on('connection', (ws, req) => {
     try {
       const d = JSON.parse(text);
       if (d && d._ctl === true) { lastState = text; lastStateAt = Date.now(); }
-      if (d && d._adcfg)   lastAdCfg   = text;
+      // 広告は更新時刻（at）が新しいものだけ預かる。古い設定の端末が
+      // つながり直しても、預かっている新しい設定を上書きしない
+      if (d && d._adcfg) {
+        const at = Number(d.at) || 0;
+        if (!lastAdCfg || at >= lastAdCfgAt) { lastAdCfg = text; lastAdCfgAt = at; }
+      }
       if (d && d._teamcfg) lastTeamCfg = text;
       // 問い合わせには、預かっているものをその場で返す。
       // （設定した端末が閉じていても届くようにする。中継もそのまま続ける）

@@ -1051,6 +1051,7 @@ var _lastTop = true;
 var _adTop = [];        // 右上の常時表示枠
 var _adTicker = [];     // 最下部を流れるティッカー
 var _adTickerSpeed = 40;
+var _adAt = 0;          // 広告設定の最終更新時刻。これより古い設定は受け取らない
 var _adImages = [];     // スコア表の横の広告は廃止（枠だけ残してある）
 var _adSec = 0;        // 0 = スコア表示の秒数に従う
 var _adRotate = 0;     // 0 = 1回の表示で1枚のみ。>0 なら N 秒ごとに切替
@@ -1061,6 +1062,7 @@ try{
   var _ac = JSON.parse(localStorage.getItem('bb_adcfg')||'null');
   if(_ac){
     if(Array.isArray(_ac.ticker)) _adTicker=_ac.ticker;
+    if(typeof _ac.at==='number') _adAt=_ac.at;
     if(Array.isArray(_ac.top)){ _adTop=_ac.top; }
     else {
       // 右上の枠ができる前に保存した設定。スコア表用だった画像を右上に回す
@@ -1127,6 +1129,10 @@ function applyCooling(c){
 }
 
 function applyAdCfg(d){
+  // 古い設定（更新時刻が今のより前）は無視する。古い端末がつながり直しても巻き戻さない
+  var _at = Number(d && d.at) || 0;
+  if(_at && _at < _adAt) return;
+  if(_at) _adAt = _at;
   if(Array.isArray(d.ticker)) _adTicker = d.ticker.slice();
   if(Array.isArray(d.top)){
     _adTop = d.top.slice();
@@ -1143,7 +1149,7 @@ function applyAdCfg(d){
   _tickerBuild();
   _adTopStart();
   try{ localStorage.setItem('bb_adcfg', JSON.stringify({
-    ticker:_adTicker, top:_adTop,
+    ticker:_adTicker, top:_adTop, at:_adAt,
     sec:_adSec, rotate:_adRotate, tickerSpeed:_adTickerSpeed
   })); }catch(e){}
 }

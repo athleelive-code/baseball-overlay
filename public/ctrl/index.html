@@ -602,6 +602,10 @@ body.gamemin .gm-hide{display:none!important}
   </table>
 </div>
 
+<!-- ティッカー（スポンサー）を手動で流す／止める。ふだんはイニング交代で自動 -->
+<div style="padding:8px 12px 0;background:#0a0a0a">
+  <button id="btn-ticker" onclick="toggleTickerManual()" style="width:100%;background:#242426;border:3px solid #444;border-radius:12px;color:#ddd;font-size:24px;font-weight:800;padding:14px 6px;cursor:pointer">📣 ティッカーを流す</button>
+</div>
 <!-- イニングスコア表示・イニングコール -->
 <div style="padding:8px 12px 12px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;gap:10px">
   <button onclick="showScoreOverlay()" class="gm-hide" style="flex:1;background:#2a2a4a;border:3px solid #4a4a8a;border-radius:12px;color:#aaaaff;font-size:26px;font-weight:800;padding:26px 6px;cursor:pointer;line-height:1.15">
@@ -2234,25 +2238,41 @@ function _adSave(){
   try{ localStorage.setItem('bb_adcfg_edit', JSON.stringify(_adCfg)); }
   catch(e){ toastMsg('保存容量がいっぱいです。使わない画像を削除してください'); }
 }
-// 他の端末が登録した広告を取り込む。
-// 配信されてくるのは「出す場所ごとの画像の並び」なので、そこからスロットを組み直す。
-// 自分に設定があるときは触らない（登録した端末の内容を勝手に書き換えない）
+// 他の端末で変えた広告設定を取り込む。
+// 設定には最終更新時刻（at）が付いていて、自分のより新しいときだけ置き換える。
+// 古い設定の端末がつながり直しても、新しい設定を巻き戻さない。
+// ファイル名・使う／使わない・出す場所・並び順もそのまま受け取る。
 function _adIngest(d){
-  if(!d || _adCfg.slots.length) return;
-  var lists={ top:d.top||[], ticker:d.ticker||[] };
-  var order=[], seen={};
-  ['top','ticker'].forEach(function(k){
-    (lists[k]||[]).forEach(function(src){
-      if(src && !seen[src]){ seen[src]=true; order.push(src); }
+  if(!d) return;
+  var inAt=Number(d.at)||0, myAt=Number(_adCfg.at)||0;
+  if(Array.isArray(d.slots)){
+    if(_adCfg.slots.length && inAt<=myAt){
+      // 相手のほうが古ければ、こちらの新しい設定を配り直して全体をそろえる
+      if(inAt<myAt) _sendAdCfg(true);
+      return;
+    }
+    _adCfg.slots = d.slots.map(function(s){
+      return { src:s.src||'', name:s.name||'', on:s.on!==false, where:_adWhere(s.where) };
     });
-  });
-  if(!order.length) return;
-  _adCfg.slots = order.map(function(src){
-    return { src:src, name:'', on:true, where:{
-      top:    lists.top.indexOf(src)>=0,
-      ticker: lists.ticker.indexOf(src)>=0
-    }};
-  });
+  }else{
+    // 時刻もスロット一覧も持たない古い端末からの設定。自分に何も無いときだけ組み直す
+    if(_adCfg.slots.length) return;
+    var lists={ top:d.top||[], ticker:d.ticker||[] };
+    var order=[], seen={};
+    ['top','ticker'].forEach(function(k){
+      (lists[k]||[]).forEach(function(src){
+        if(src && !seen[src]){ seen[src]=true; order.push(src); }
+      });
+    });
+    if(!order.length) return;
+    _adCfg.slots = order.map(function(src){
+      return { src:src, name:'', on:true, where:{
+        top:    lists.top.indexOf(src)>=0,
+        ticker: lists.ticker.indexOf(src)>=0
+      }};
+    });
+  }
+  _adCfg.at = inAt;
   if(typeof d.sec==='number') _adCfg.sec=d.sec;
   if(typeof d.rotate==='number') _adCfg.rotate=d.rotate;
   if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
@@ -2261,7 +2281,10 @@ function _adIngest(d){
   _renderAdSlots();
 }
 
-function _sendAdCfg(){
+// 広告設定を配る。asIs=true は「変更ではなく、持っているものを配り直すだけ」
+// （つながったとき・問い合わせに答えるとき）。変更のときは更新時刻を進める
+function _sendAdCfg(asIs){
+  if(!asIs) _adCfg.at = Date.now();
   _adSave();
   var pick=function(key){
     return _adCfg.slots
@@ -2271,10 +2294,15 @@ function _sendAdCfg(){
   if(ws && ws.readyState===1){
     try{ ws.send(JSON.stringify({
       _adcfg:true,
+      at: Number(_adCfg.at)||0,
       images: [],                    // スコア表内の広告は廃止（旧オーバーレイ互換）
       score:  [],
-      top:    pick('top'),
+      top:    pick('top'),           // オーバーレイはこの2つを見る
       ticker: pick('ticker'),
+      // 設定画面どうしで中身をそろえるための一覧（ファイル名などを含む）
+      slots:  _adCfg.slots.map(function(s){
+        return { src:s.src||'', name:s.name||'', on:s.on!==false, where:_adWhere(s.where) };
+      }),
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
       tickerSpeed:_adCfg.tickerSpeed||40,
       sponsorText:_adCfg.sponsorText||''
@@ -2424,16 +2452,20 @@ function _adEsc(s){
 // 自動で全部やってしまわず、一段ずつオペレーターが押して進める。
 // 次にやる段だけ明るく出し、済んだ段は沈めて、どこまで進んだかを見せる。
 // 途中で閉じても進み具合は残る。
-var _gsIdx = 0, _gsDone = {};
+var _gsIdx = 0, _gsDone = {}, _gsFp = '';
 // 進み具合は12時間で捨てる。前の試合の「済み」を持ち越さないため
 // （試合状況の復帰キャッシュと同じ考え方）
+// fp はどの試合の進行かの印（両チーム名）。開いたときに別の試合なら最初からにする
 try{
   var _gsv = JSON.parse(localStorage.getItem('bb_gs')||'null');
   if(_gsv && (!_gsv.at || (Date.now()-_gsv.at) < 12*60*60*1000)){
-    _gsIdx = _gsv.i||0; _gsDone = _gsv.d||{};
+    _gsIdx = _gsv.i||0; _gsDone = _gsv.d||{}; _gsFp = _gsv.fp||'';
   }
 }catch(e){}
-function _gsSave(){ try{ localStorage.setItem('bb_gs', JSON.stringify({i:_gsIdx, d:_gsDone, at:Date.now()})); }catch(e){} }
+function _gsSave(){
+  _gsFp = _gsFingerprint();
+  try{ localStorage.setItem('bb_gs', JSON.stringify({i:_gsIdx, d:_gsDone, at:Date.now(), fp:_gsFp})); }catch(e){}
+}
 
 // 打順は「そのチームが攻める直前」、守備位置は「そのチームが守る直前」に読む。
 // 1回表は 先攻が攻め／後攻が守る、1回裏はその逆。
@@ -2471,14 +2503,32 @@ function _gsLabel(s){
   return s.t;
 }
 
-function gsOpen(){
+// fromFlow = 読み上げを終えて進行の画面に戻るとき。このときは古い進行とみなさない
+function gsOpen(fromFlow){
   var m=document.getElementById('gs-mask');
   if(!m) return;
+  if(!fromFlow && _gsIsStale()) _gsClearProgress();
   m.style.display='flex';
   // 一度でも進んでいれば進行の画面から、まっさらなら設定の確認から
   var started=false;
   for(var k in _gsDone){ if(_gsDone[k]){ started=true; break; } }
   if(started) _gsShowSteps(); else _gsShowCheck();
+}
+// どの試合の進行かを見分けるための印（両チーム名）
+function _gsFingerprint(){
+  var a=document.getElementById('name-away'), h=document.getElementById('name-home');
+  return ((a&&a.textContent)||'') + '|' + ((h&&h.textContent)||'');
+}
+// 前の試合の進み具合が残っていないか。残っていれば開いたときに最初からにする。
+// リセットせずに同じ日に次の試合を始めても、チェックが付いたままにならないように
+function _gsIsStale(){
+  var any=false, all=true;
+  GS_STEPS.forEach(function(s){ if(_gsDone[s.k]) any=true; else all=false; });
+  if(!any) return false;
+  if(all) return true;                                   // 前回の進行は最後まで済んでいる
+  if(_gsFp && _gsFp!==_gsFingerprint()) return true;     // チームが替わった
+  if(st.inn>=2) return true;                             // 試合がもう2回以降に進んでいる
+  return false;
 }
 function gsClose(){
   var m=document.getElementById('gs-mask');
@@ -2629,7 +2679,7 @@ function _gsSpeak(title, text, k, why){
   gsClose();
   confirmSpeak(title, text, _ttsVoice, _ttsStyle, _annRate, function(){
     _gsMark(k);
-    gsOpen();
+    gsOpen(true);
   });
 }
 
@@ -2688,7 +2738,29 @@ function _setTicker(on){
   on = !!on;
   if(_ticker.on === on) return;
   _ticker.on = on;
+  _refreshTickerBtn();
   broadcast();
+}
+// 手動でティッカーを流す／止める（イニング交代を待たずに広告を出したいとき）。
+// 流したあとも、次の1球やイニングコールでいつもどおり自動で止まる
+function toggleTickerManual(){
+  var turnOn = !_ticker.on;
+  if(turnOn && !_hasTickerAds()){
+    toastMsg('ティッカーに出す広告がありません。設定の「スポンサー表示」で「ティッカー」を選んでください');
+    return;
+  }
+  _setTicker(turnOn);
+}
+function _hasTickerAds(){
+  return _adCfg.slots.some(function(s){ return s.on && s.src && _adWhere(s.where).ticker; });
+}
+function _refreshTickerBtn(){
+  var b=document.getElementById('btn-ticker');
+  if(!b) return;
+  b.textContent = _ticker.on ? '📣 ティッカーを止める（流れています）' : '📣 ティッカーを流す';
+  b.style.background  = _ticker.on ? '#3a2a10' : '#242426';
+  b.style.borderColor = _ticker.on ? '#c8901e' : '#444';
+  b.style.color       = _ticker.on ? '#ffcf6a' : '#ddd';
 }
 
 // ── クーリングタイム ──────────────────────────────────────────────────────
@@ -6092,7 +6164,7 @@ function connectWS(){
       // 広告は持っているときだけ配信。無ければ要求する
       // （空データを送ると、別の端末で登録したスポンサーを消してしまう）
       if(typeof _sendAdCfg==='function'){
-        if(_adCfg.slots.length) _sendAdCfg();
+        if(_adCfg.slots.length) _sendAdCfg(true);
         else { try{ ws.send(JSON.stringify({ _req:'adcfg' })); }catch(e){} }
       }
     }, 300); };
@@ -6105,8 +6177,10 @@ function connectWS(){
       if(s && s._req==='state'){ _doBroadcast(); return; }
       // エンブレム要求には現在のエンブレムを返す
       if(s && s._req==='teamcfg'){ if(typeof _sendTeamCfg==='function') _sendTeamCfg(); return; }
+      // メンバー管理のティッカーボタン。流す／止めるはコントローラーが決めて配り直す
+      if(s && s._tickerReq){ _setTicker(!!s.on); return; }
       // 広告設定のリクエスト → 持っているときだけ送り返す
-      if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(); return; }
+      if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(true); return; }
       // 他の端末で登録された広告を取り込む（自分に何も無いときだけ）
       if(s && s._adcfg){
         if(typeof s.sponsorText==='string') _sponsorText=s.sponsorText;
@@ -6410,7 +6484,7 @@ function _doBroadcast(){
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
-    ticker:{on:_ticker.on},
+    ticker:{on:(_refreshTickerBtn(), _ticker.on)},   // 配るたびにボタンの表示もそろえる
     firstBatSide:_firstBatSide,
     teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
     coachYomi:{away:_coachYomi.away,home:_coachYomi.home},
@@ -6464,7 +6538,7 @@ function saveState(){
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
-    ticker:{on:_ticker.on},
+    ticker:{on:(_refreshTickerBtn(), _ticker.on)},   // 配るたびにボタンの表示もそろえる
     firstBatSide:_firstBatSide,
     teamYomi:{away:_teamYomi.away,home:_teamYomi.home},
     coachYomi:{away:_coachYomi.away,home:_coachYomi.home},

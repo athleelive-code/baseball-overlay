@@ -196,6 +196,10 @@ body.locked .row{cursor:default}
 .fp-siren{background:#3a2a10;border:2px solid #c8901e;border-radius:9px;color:#ffcf6a;
   font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .fp-siren:hover{background:#4a360f}
+.fp-ticker{background:#242426;border:2px solid #555;border-radius:9px;color:#ddd;
+  font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-ticker:hover{background:#2e2e30}
+.fp-ticker.on{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
 .cool-adj{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#aaa}
 .cool-adj .btn{padding:5px 9px;font-size:14px}
 #cool-min-val{font-size:17px;font-weight:800;color:#fff;min-width:22px;text-align:center;
@@ -570,6 +574,7 @@ body.locked .row{cursor:default}
   <button class="fp-cool" id="btn-cooling" onclick="toggleCooling()">❄ クーリング 5分</button>
   <span class="cool-left" id="cooling-left" style="display:none">5:00</span>
   <button class="fp-siren" id="btn-siren-go" onclick="sirenNow()">🔔 サイレン</button>
+  <button class="fp-ticker" id="btn-ticker" onclick="tickerNow()">📣 ティッカー</button>
   <button class="fp-firstbat" onclick="openFirstBatPC()">⇄ 先攻選択</button>
 </div>
 
@@ -1741,7 +1746,7 @@ function connectWS(){
         // 広告を持っているときだけ配信。持っていなければ要求する
         // （空データを送ると、別の端末で登録したスポンサーを消してしまう）
         if(typeof _sendAdCfg==='function'){
-          if(_adCfg.slots.length) _sendAdCfg();
+          if(_adCfg.slots.length) _sendAdCfg(true);
           else { try{ ws.send(JSON.stringify({ _req:'adcfg' })); }catch(e){} }
         }
         if(typeof _sendHist==='function') _sendHist();
@@ -1768,7 +1773,7 @@ function connectWS(){
       if(s && s._siren){ if(_audioHere) playSiren(s.sec||10); return; }
       // 広告設定のリクエスト → 持っているときだけ送り返す
       // （空のまま返すと、別の端末で登録したスポンサーを消してしまう）
-      if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(); return; }
+      if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(true); return; }
       // 他の端末で登録された広告を取り込む（自分に何も無いときだけ）
       if(s && s._adcfg){ _adIngest(s); return; }
       // オーバーレイからの打歴リクエスト → 現在の打席結果一覧を送り返す
@@ -1855,6 +1860,8 @@ function applyRemote(s){
         try{ localStorage.setItem('bb_firstbat_side', _firstBatSide); }catch(e){}
       }
     }
+    // ティッカーが流れているか（ボタンの表示に使う）
+    if(s.ticker && typeof s.ticker.on==='boolean'){ _tickerRemoteOn=s.ticker.on; _refreshTickerBtn(); }
     // クーリングの分数はコントローラーの値にそろえる（端末ごとにばらばらにしない）。
     // この端末で変えたばかりでまだ送っていないときは、そちらを優先する
     if(typeof s.coolingMin==='number' && s.coolingMin>=1 && s.coolingMin<=30
@@ -2112,6 +2119,24 @@ function sirenNow(){
   if(_audioHere) playSiren(10);
   else { try{ if(ws && ws.readyState===1) ws.send(JSON.stringify({ _siren:true, sec:10 })); }catch(e){} }
   toast('サイレン');
+}
+// ティッカーを手動で流す／止める。決めるのはコントローラーで、
+// 配り直された状態を受け取ってからボタンの表示が切り替わる
+var _tickerRemoteOn = false;
+function tickerNow(){
+  var turnOn = !_tickerRemoteOn;
+  if(turnOn && !_adCfg.slots.some(function(s){ return s.on && s.src && _adWhere(s.where).ticker; })){
+    toast('ティッカーに出す広告がありません。設定の「スポンサー表示」で「ティッカー」を選んでください');
+    return;
+  }
+  if(!ws || ws.readyState!==1){ toast('コントローラーにつながっていません'); return; }
+  try{ ws.send(JSON.stringify({ _tickerReq:true, on:turnOn })); }catch(e){}
+}
+function _refreshTickerBtn(){
+  var b=document.getElementById('btn-ticker');
+  if(!b) return;
+  b.textContent = _tickerRemoteOn ? '📣 ティッカー停止' : '📣 ティッカー';
+  b.classList.toggle('on', _tickerRemoteOn);
 }
 function playSiren(sec){
   sec = Math.max(3, Math.min(30, Number(sec) || 10));
@@ -3468,25 +3493,41 @@ function _adSave(){
   try{ localStorage.setItem('bb_adcfg_edit', JSON.stringify(_adCfg)); }
   catch(e){ toast('保存容量がいっぱいです。使わない画像を削除してください'); }
 }
-// 他の端末が登録した広告を取り込む。
-// 配信されてくるのは「出す場所ごとの画像の並び」なので、そこからスロットを組み直す。
-// 自分に設定があるときは触らない（登録した端末の内容を勝手に書き換えない）
+// 他の端末で変えた広告設定を取り込む。
+// 設定には最終更新時刻（at）が付いていて、自分のより新しいときだけ置き換える。
+// 古い設定の端末がつながり直しても、新しい設定を巻き戻さない。
+// ファイル名・使う／使わない・出す場所・並び順もそのまま受け取る。
 function _adIngest(d){
-  if(!d || _adCfg.slots.length) return;
-  var lists={ top:d.top||[], ticker:d.ticker||[] };
-  var order=[], seen={};
-  ['top','ticker'].forEach(function(k){
-    (lists[k]||[]).forEach(function(src){
-      if(src && !seen[src]){ seen[src]=true; order.push(src); }
+  if(!d) return;
+  var inAt=Number(d.at)||0, myAt=Number(_adCfg.at)||0;
+  if(Array.isArray(d.slots)){
+    if(_adCfg.slots.length && inAt<=myAt){
+      // 相手のほうが古ければ、こちらの新しい設定を配り直して全体をそろえる
+      if(inAt<myAt) _sendAdCfg(true);
+      return;
+    }
+    _adCfg.slots = d.slots.map(function(s){
+      return { src:s.src||'', name:s.name||'', on:s.on!==false, where:_adWhere(s.where) };
     });
-  });
-  if(!order.length) return;
-  _adCfg.slots = order.map(function(src){
-    return { src:src, name:'', on:true, where:{
-      top:    lists.top.indexOf(src)>=0,
-      ticker: lists.ticker.indexOf(src)>=0
-    }};
-  });
+  }else{
+    // 時刻もスロット一覧も持たない古い端末からの設定。自分に何も無いときだけ組み直す
+    if(_adCfg.slots.length) return;
+    var lists={ top:d.top||[], ticker:d.ticker||[] };
+    var order=[], seen={};
+    ['top','ticker'].forEach(function(k){
+      (lists[k]||[]).forEach(function(src){
+        if(src && !seen[src]){ seen[src]=true; order.push(src); }
+      });
+    });
+    if(!order.length) return;
+    _adCfg.slots = order.map(function(src){
+      return { src:src, name:'', on:true, where:{
+        top:    lists.top.indexOf(src)>=0,
+        ticker: lists.ticker.indexOf(src)>=0
+      }};
+    });
+  }
+  _adCfg.at = inAt;
   if(typeof d.sec==='number') _adCfg.sec=d.sec;
   if(typeof d.rotate==='number') _adCfg.rotate=d.rotate;
   if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
@@ -3495,7 +3536,10 @@ function _adIngest(d){
   _renderAdSlots();
 }
 
-function _sendAdCfg(){
+// 広告設定を配る。asIs=true は「変更ではなく、持っているものを配り直すだけ」
+// （つながったとき・問い合わせに答えるとき）。変更のときは更新時刻を進める
+function _sendAdCfg(asIs){
+  if(!asIs) _adCfg.at = Date.now();
   _adSave();
   var pick=function(key){
     return _adCfg.slots
@@ -3505,10 +3549,15 @@ function _sendAdCfg(){
   if(ws && ws.readyState===1){
     try{ ws.send(JSON.stringify({
       _adcfg:true,
+      at: Number(_adCfg.at)||0,
       images: [],                    // スコア表内の広告は廃止（旧オーバーレイ互換）
       score:  [],
-      top:    pick('top'),
+      top:    pick('top'),           // オーバーレイはこの2つを見る
       ticker: pick('ticker'),
+      // 設定画面どうしで中身をそろえるための一覧（ファイル名などを含む）
+      slots:  _adCfg.slots.map(function(s){
+        return { src:s.src||'', name:s.name||'', on:s.on!==false, where:_adWhere(s.where) };
+      }),
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
       tickerSpeed:_adCfg.tickerSpeed||40,
       sponsorText:_adCfg.sponsorText||''
