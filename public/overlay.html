@@ -61,6 +61,8 @@ body.game-end .ov-bat-wrap{display:none}
 /* スコア表の H・E（設定で非表示にできる） */
 body.hide-hits .ov-h-cell{display:none}
 body.hide-errs .ov-e-cell{display:none}
+/* メイン広告（右上）をコントローラー／メンバー管理で消しているとき */
+body.adtop-off .ov-adtop{display:none}
 .ov-teams{display:flex;flex-direction:column;flex:1;border-left:1px solid rgba(255,255,255,.1)}
 /* チーム名の欄は共通の幅を確保する。
    ・縮まない（shrink:0）ので、イニング表が開いても名前が隠れない
@@ -751,6 +753,7 @@ function applyState(s){
   // H・E の列は設定で出し入れ（コントローラーの設定）。チーム名の幅を測る前に切り替える
   document.body.classList.toggle('hide-hits', s.showHits===false);
   document.body.classList.toggle('hide-errs', s.showErrs===false);
+  document.body.classList.toggle('adtop-off', s.adTopOn===false);   // メイン広告（右上）を消しているとき
   _fitTeamNames();          // 長いチーム名は文字を小さくして必ず全部出す
 
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);

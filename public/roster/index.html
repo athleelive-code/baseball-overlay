@@ -207,6 +207,42 @@ body.locked .row{cursor:default}
   font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .fp-ticker:hover{background:#2e2e30}
 .fp-ticker.on{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
+/* 試合開始・終了フロー（コントローラーと同じ進行） */
+.fp-gs{background:#3a2a10;border:2px solid #c8901e;border-radius:9px;color:#ffcf6a;
+  font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-ge{background:#2a1418;border:2px solid #8a2a3a;border-radius:9px;color:#ff9aa8;
+  font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-ge.hint{border-color:#e0405a;color:#fff;box-shadow:0 0 0 3px rgba(224,64,90,.45)}
+.fp-ge.ended{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
+.rf-step{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#242426;
+  border:2px solid #3a3a3c;border-radius:10px;color:#ddd;padding:11px 12px;margin-top:8px;cursor:pointer;
+  font-size:15px;font-weight:800}
+.rf-step.next{border-color:#c8901e;background:#2e2410;color:#fff}
+.rf-step.done{opacity:.5}
+.rf-step .n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#333;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:13px}
+.rf-step.done .n{background:#2f6b2f}
+.rf-step .tx{flex:1;min-width:0}
+.rf-step .rd{display:block;font-size:12px;font-weight:600;margin-top:3px;color:#8fd08f}
+.rf-step .rd.ng{color:#ff9a9a}
+.rf-step .rd.dsc{color:#888}
+.rf-score{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.rf-team{display:flex;align-items:center;gap:10px;background:#242426;border:2px solid #3a3a3c;border-radius:10px;padding:8px 12px}
+.rf-team.win{border-color:#c8901e;background:#2e2410}
+.rf-team .nm{flex:1;min-width:0;font-size:18px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rf-team .pt{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums}
+.rf-res{text-align:center;font-size:16px;font-weight:800;color:#ffcf6a;margin-bottom:10px;min-height:1.2em}
+.rf-rs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
+.rf-rs button{background:#242426;border:2px solid #3a3a3c;border-radius:8px;color:#bbb;font-size:14px;font-weight:700;padding:9px 4px;cursor:pointer}
+.rf-rs button.on{background:#1a3a5a;border-color:#4a8ad0;color:#fff}
+.rf-big{display:block;width:100%;border-radius:10px;font-size:17px;font-weight:900;padding:13px 8px;cursor:pointer;
+  margin-top:8px;border:2px solid #444;background:#242426;color:#ddd}
+.rf-big.end{background:#5a1020;border-color:#e0405a;color:#fff;font-size:20px}
+.rf-big.go{background:#123040;border-color:#2a6a8a;color:#8fd8f0}
+.rf-big.ann{background:#1d3a1d;border-color:#3f8a3f;color:#bff0bf}
+.rf-big.save{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
+.rf-row{display:flex;gap:8px}
+.rf-row .rf-big{flex:1}
 .cool-adj{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#aaa}
 .cool-adj .btn{padding:5px 9px;font-size:14px}
 #cool-min-val{font-size:17px;font-weight:800;color:#fff;min-width:22px;text-align:center;
@@ -584,7 +620,54 @@ body.locked .row{cursor:default}
   <span class="cool-left" id="cooling-left" style="display:none">5:00</span>
   <button class="fp-siren" id="btn-siren-go" onclick="sirenNow()">🔔 サイレン</button>
   <button class="fp-ticker" id="btn-ticker" onclick="tickerNow()">📣 ティッカー</button>
+  <button class="fp-ticker on" id="btn-adtop" onclick="adTopNow()">🖼 メイン広告を消す</button>
   <button class="fp-firstbat" onclick="openFirstBatPC()">⇄ 先攻選択</button>
+  <button class="fp-gs" onclick="rgsOpen()">▶ 試合開始</button>
+  <button class="fp-ge" id="btn-rge" onclick="rgeOpen()">🏁 試合終了</button>
+</div>
+
+<!-- 試合開始フロー（ROSTER）。進行はコントローラーと共有 -->
+<div class="mask" id="rgs-mask">
+  <div class="modal" style="max-width:560px">
+    <h3>▶ 試合開始</h3>
+    <div class="note">上から順に押してください。進み具合はコントローラーと同じです</div>
+    <div id="rgs-steps"></div>
+    <div class="modal-acts">
+      <button class="btn" onclick="rgsReset()">進行をやり直す</button>
+      <span style="flex:1"></span>
+      <button class="btn" onclick="closeModal('rgs-mask')">閉じる</button>
+    </div>
+  </div>
+</div>
+<!-- 試合終了（ROSTER）。確定はコントローラーが行う -->
+<div class="mask" id="rge-mask">
+  <div class="modal" style="max-width:520px">
+    <h3 id="rge-title">試合終了？</h3>
+    <div class="note" id="rge-sub"></div>
+    <div class="rf-score" id="rge-score"></div>
+    <div class="rf-res" id="rge-res"></div>
+    <div id="rge-ask">
+      <div class="note" style="margin-bottom:6px">終了の理由（任意）</div>
+      <div class="rf-rs" id="rge-rs">
+        <button data-r="通常終了" onclick="rgePick(this)">通常終了</button>
+        <button data-r="サヨナラ" onclick="rgePick(this)">サヨナラ</button>
+        <button data-r="コールド" onclick="rgePick(this)">コールド</button>
+        <button data-r="その他" onclick="rgePick(this)">その他</button>
+      </div>
+      <button class="rf-big end" onclick="rgeConfirm()">🏁 試合終了</button>
+      <div class="rf-row" id="rge-cont"></div>
+    </div>
+    <div id="rge-after" style="display:none">
+      <div class="note" style="text-align:center">次の試合に移るまで、この試合のデータは消えません</div>
+      <button class="rf-big ann" onclick="rgeAnnounce()">🔊 試合終了アナウンス</button>
+      <button class="rf-big save" id="rge-save" onclick="rgeSave()">💾 試合データを保存</button>
+      <div class="rf-row">
+        <button class="rf-big" onclick="rgeUndo()">↩ 終了を取り消す</button>
+        <button class="rf-big" onclick="rgeNext()">次の試合へ</button>
+      </div>
+    </div>
+    <div class="modal-acts"><span style="flex:1"></span><button class="btn" onclick="closeModal('rge-mask')">閉じる</button></div>
+  </div>
 </div>
 
 <div class="wrap">
@@ -1803,6 +1886,8 @@ function connectWS(){
       // （空のまま返すと、別の端末で登録したスポンサーを消してしまう）
       if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(true); return; }
       // 他の端末で登録された広告を取り込む（自分に何も無いときだけ）
+      // コントローラーから届いた試合データ（「試合データを保存」を押したとき）
+      if(s && s._gameData){ _rgeGotData(s); return; }
       if(s && s._adcfg){ _adIngest(s); return; }
       // オーバーレイからの打歴リクエスト → 現在の打席結果一覧を送り返す
       if(s && s._req==='hist'){ if(typeof _sendHist==='function') _sendHist(); return; }
@@ -1926,6 +2011,7 @@ function applyRemote(s){
         _sendHist();
       }
     }
+    setTimeout(_rflowRefresh, 0);   // 試合開始・終了フローの表示をそろえる
     // 読み仮名（他端末で入れたものを取り込む）
     if(s.teamYomi && typeof teamYomi!=='undefined'){
       if(typeof s.teamYomi.away==='string') teamYomi.away=s.teamYomi.away;
@@ -2183,6 +2269,18 @@ function _refreshTickerBtn(){
   if(!b) return;
   b.textContent = _tickerRemoteOn ? '📣 ティッカー停止' : '📣 ティッカー';
   b.classList.toggle('on', _tickerRemoteOn);
+}
+// メイン広告（右上の常時表示）の出し入れ。決めるのはコントローラー
+function adTopNow(){
+  var on = !(lastRemote && lastRemote.adTopOn===false);
+  if(!ws || ws.readyState!==1){ toast('コントローラーにつながっていません'); return; }
+  try{ ws.send(JSON.stringify({ _adTopReq:true, on:!on })); }catch(e){}
+}
+function _refreshAdTopBtn(){
+  var b=document.getElementById('btn-adtop'); if(!b) return;
+  var on = !(lastRemote && lastRemote.adTopOn===false);
+  b.textContent = on ? '🖼 メイン広告を消す' : '🖼 メイン広告を出す';
+  b.classList.toggle('on', on);
 }
 function playSiren(sec){
   sec = Math.max(3, Math.min(30, Number(sec) || 10));
@@ -2782,6 +2880,143 @@ function _saveLog(){
   if(typeof _sendHist==='function') _sendHist();
 }
 // 打歴（打者ごとの打席結果）をオーバーレイへ配信。ROSTER の記録編集・削除もここに反映される
+// ── 試合開始・終了フロー（ROSTER） ─────────────────────────────────────────
+// 進行と試合の状態はコントローラーが持つ。ここでは表示と読み上げをして、結果をコントローラーへ知らせる
+function _flowReq(o){
+  if(!ws || ws.readyState!==1){ toast('コントローラーにつながっていません'); return false; }
+  try{ ws.send(JSON.stringify(o)); }catch(e){ return false; }
+  return true;
+}
+function _rfEsc(s){
+  return String(s==null?'':s).replace(/[<>&"]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; });
+}
+function rgsOpen(){
+  if(!_flowReq({ _req:'gsOpen' })) return;   // 前の試合の進行が残っていれば、コントローラーが最初に戻す
+  _rgsRender();
+  document.getElementById('rgs-mask').classList.add('open');
+}
+function _rgsRender(){
+  var box=document.getElementById('rgs-steps'); if(!box) return;
+  var v=lastRemote && lastRemote.gsView;
+  if(!v || !v.steps){ box.innerHTML='<div class="note">コントローラーから進行を受け取っています…</div>'; return; }
+  box.innerHTML=v.steps.map(function(s,i){
+    var cls='rf-step'+(s.done?' done':'')+(i===v.idx?' next':'');
+    var rd=s.ready ? '<span class="rd'+(s.ready.ok?'':' ng')+'">'+(s.ready.ok?'✓ ':'⚠ ')+_rfEsc(s.ready.t)+'</span>' : '';
+    return '<button class="'+cls+'" onclick="rgsDo(\''+s.k+'\')"><span class="n">'+(s.done?'✓':(i+1))+'</span>'
+         +'<span class="tx">'+_rfEsc(s.t)+(s.d?'<span class="rd dsc">'+_rfEsc(s.d)+'</span>':'')+rd+'</span></button>';
+  }).join('');
+}
+function rgsDo(k){
+  var v=lastRemote && lastRemote.gsView; if(!v) return;
+  var s=null; v.steps.forEach(function(x){ if(x.k===k) s=x; });
+  if(!s) return;
+  if(k==='siren'){ sirenNow(); _flowReq({ _req:'gsMark', k:k }); return; }
+  if(k==='inn1' || k==='inn2'){
+    // 回のコール（1回表は試合開始の切り替えも）はコントローラーで行う
+    if(_flowReq({ _req:'gsDo', k:k })){ closeModal('rgs-mask'); toast(k==='inn1' ? '1回表を開始しました' : '1回ウラをコールしました'); }
+    return;
+  }
+  if(!s.say){ toast((s.ready && s.ready.t) || '読み上げる内容がありません'); return; }
+  var titles={ open:'🔊 開始アナウンス', lu1:'🔊 先攻 打順', lu2:'🔊 後攻 打順', def1:'🔊 先攻 守備位置', def2:'🔊 後攻 守備位置' };
+  confirmSpeak(titles[k]||s.t, s.say, _ttsVoice, _ttsStyle, _annRate, function(){
+    // 打順は読み始めたらオーバーレイに打順表を出す
+    if(k==='lu1' || k==='lu2') _flowReq({ _req:'luShow', team:(k==='lu1'?'away':'home'), text:s.say });
+    _flowReq({ _req:'gsMark', k:k });
+  });
+}
+function rgsReset(){
+  if(!confirm('進行をやり直しますか？\n（試合状況やスコアはそのままです）')) return;
+  _flowReq({ _req:'gsReset' });
+}
+
+var _rgeReason='', _rgeWantData=false;
+function _rgeTotals(){
+  var r=lastRemote||{}, n=Math.max(r.maxInn||7, r.inn||1), t={ away:0, home:0 };
+  [['away','asc'],['home','hsc']].forEach(function(p){
+    (r[p[1]]||[]).slice(0,n).forEach(function(x){ if(typeof x==='number') t[p[0]]+=x; });
+  });
+  return t;
+}
+function rgeOpen(){
+  if(!lastRemote){ toast('コントローラーと未接続です'); return; }
+  var ge=lastRemote.gameEnd||{};
+  if(!ge.on) _rgeReason = lastRemote.geAsk ? '通常終了' : '';   // 手動のときは理由を決めつけない
+  _rgeRender();
+  document.getElementById('rge-mask').classList.add('open');
+}
+function _rgeRender(){
+  var r=lastRemote||{}, ge=r.gameEnd||{}, ended=!!ge.on;
+  var t=ended ? { away:ge.a, home:ge.h } : _rgeTotals();
+  var nm={ away:(teamNames.away||r.aab||'先攻'), home:(teamNames.home||r.hnm||'後攻') };
+  document.getElementById('rge-title').textContent = ended ? '🏁 試合終了' : '試合終了？';
+  document.getElementById('rge-score').innerHTML = ['away','home'].map(function(k){
+    var o=(k==='away')?'home':'away';
+    var win = ended ? (ge.winner===k) : (t[k]>t[o]);
+    return '<div class="rf-team'+(win?' win':'')+'"><span class="nm">'+_rfEsc(nm[k])+'</span><span class="pt">'+t[k]+'</span></div>';
+  }).join('');
+  document.getElementById('rge-res').textContent = ended
+    ? ((ge.winner ? nm[ge.winner]+' の勝ち' : '引き分け') + ((ge.reason && ge.reason!=='通常終了') ? '（'+ge.reason+'）' : ''))
+    : ((t.away===t.home) ? '同点' : (nm[t.away>t.home?'away':'home']+' がリード'));
+  var half=(r.inn||1)+'回'+(r.top!==false?'表':'裏'), ask=r.geAsk||'';
+  document.getElementById('rge-sub').textContent = ended ? ((ge.inn||'')+'回'+(ge.top?'表':'裏')+'で終了')
+    : (ask==='bot') ? half+'が終わりました。試合を終えるか、延長に進むかを選んでください'
+    : (ask==='top') ? half+'が終わりました。後攻がリードしています'
+    : 'いま '+half+'。サヨナラ・コールドなどで終えるときに使います';
+  var nx=(r.inn||1)+1;
+  document.getElementById('rge-cont').innerHTML = (ask==='bot')
+    ? '<button class="rf-big go" onclick="rgeContinue(\'延長\')">延長で続ける（'+nx+'回へ）</button>'
+     +'<button class="rf-big go" onclick="rgeContinue(\'タイブレーク\')">タイブレークで続ける（'+nx+'回へ）</button>'
+    : (ask==='top') ? '<button class="rf-big go" onclick="rgeContinue(\'\')">続ける（'+(r.inn||1)+'回裏へ）</button>' : '';
+  document.querySelectorAll('#rge-rs button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-r')===_rgeReason); });
+  document.getElementById('rge-ask').style.display = ended ? 'none' : '';
+  document.getElementById('rge-after').style.display = ended ? '' : 'none';
+  var sv=document.getElementById('rge-save');
+  if(sv) sv.textContent = ge.saved ? '💾 保存済み（もう一度保存する）' : '💾 試合データを保存';
+}
+function rgePick(b){ var x=b.getAttribute('data-r'); _rgeReason=(_rgeReason===x)?'':x; _rgeRender(); }
+function rgeConfirm(){ _flowReq({ _req:'geConfirm', reason:_rgeReason }); }
+function rgeContinue(kind){ if(_flowReq({ _req:'geContinue', kind:kind })) closeModal('rge-mask'); }
+function rgeAnnounce(){
+  var t=lastRemote && lastRemote.geAnn;
+  if(!t){ toast('試合終了のアナウンス文がありません'); return; }
+  confirmSpeak('🔊 試合終了アナウンス', t, _ttsVoice, _ttsStyle, _annRate);
+}
+// 試合データはコントローラーから受け取って、この端末に保存する
+function rgeSave(){ if(_flowReq({ _req:'gameData' })) _rgeWantData=true; }
+function _rgeGotData(d){
+  if(!_rgeWantData || !d || !d.data) return;   // 自分が頼んだときだけ保存する
+  _rgeWantData=false;
+  var g=d.data, tm=g.teams||{};
+  var name=(g.title || ((tm.away||'')+'_vs_'+(tm.home||'')) || 'game').replace(/[\\/:*?"<>|]/g,'_');
+  var dt=new Date(), ymd=dt.getFullYear()+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getDate()).padStart(2,'0');
+  _downloadBlob(new Blob([JSON.stringify(g,null,2)],{type:'application/json'}), 'game_'+ymd+'_'+name+'.json');
+  _flowReq({ _req:'geSaved' });
+  toast('試合データを保存しました');
+}
+function rgeUndo(){
+  if(!confirm('試合終了を取り消して、試合を続けますか？')) return;
+  if(_flowReq({ _req:'geUndo' })) closeModal('rge-mask');
+}
+function rgeNext(){
+  var ge=(lastRemote && lastRemote.gameEnd)||{};
+  if(ge.on && !ge.saved && !confirm('終わった試合のデータをまだ保存していません。\n保存せずに次の試合へ進みますか？')) return;
+  if(!confirm('スコアと試合状況をリセットして、次の試合へ進みます。\n（チーム・選手の登録はそのままです）')) return;
+  if(_flowReq({ _req:'geNext' })) closeModal('rge-mask');
+}
+// 状態が届くたびに、開いているフローを描き直し、終了ボタンの表示をそろえる
+function _rflowRefresh(){
+  var m1=document.getElementById('rgs-mask'); if(m1 && m1.classList.contains('open')) _rgsRender();
+  var m2=document.getElementById('rge-mask'); if(m2 && m2.classList.contains('open')) _rgeRender();
+  _refreshAdTopBtn();   // メイン広告ボタンの表示もそろえる
+  var b=document.getElementById('btn-rge'); if(!b || !lastRemote) return;
+  var ge=lastRemote.gameEnd||{}, t=_rgeTotals();
+  // 最終回が終わって判断待ち、または最終回以降の裏で後攻がリード＝光らせて知らせる（自動では終えない）
+  var hint=!ge.on && (!!lastRemote.geAsk ||
+    (lastRemote.top===false && (lastRemote.inn||1)>=(lastRemote.maxInn||7) && t.home>t.away));
+  b.classList.toggle('ended', !!ge.on);
+  b.classList.toggle('hint', hint);
+  b.textContent = ge.on ? '🏁 終了済み' : (hint ? '🏁 試合終了？' : '🏁 試合終了');
+}
 function _sendHist(){
   if(!ws || ws.readyState!==1) return;
   var results = _gameLog

@@ -675,6 +675,7 @@ body.gamemin .gm-hide{display:none!important}
   </button>
   <!-- ティッカー（スポンサー）を手動で流す／止める。ふだんはイニング交代で自動 -->
   <button id="btn-ticker" onclick="toggleTickerManual()" style="flex:1;background:#242426;border:3px solid #444;border-radius:12px;color:#ddd;font-size:22px;font-weight:800;padding:16px 6px;cursor:pointer;line-height:1.2">📣 ティッカーを流す</button>
+  <button id="btn-adtop" onclick="toggleAdTop()" style="flex:1;background:#3a2a10;border:3px solid #c8901e;border-radius:12px;color:#ffcf6a;font-size:22px;font-weight:800;padding:16px 6px;cursor:pointer;line-height:1.2">🖼 メイン広告を消す</button>
   <div id="cooling-left" style="display:none;flex:0 0 auto;align-items:center;justify-content:center;padding:0 20px;background:#0f2430;border:3px solid #2a6a8a;border-radius:12px;color:#bdf0ff;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px">5:00</div>
 </div>
 
@@ -2845,6 +2846,47 @@ function _gsSpeak(title, text, k, why, onStart){
   }, onStart);
 }
 
+// ROSTER に配る開始フローの中身。段の名前・準備・済み・読み上げる文言まで、ここで作って渡す
+function _gsView(){
+  _gsBuildSteps();
+  var txt={ open:_gsOpenText(), lu1:_lineupText('away'), lu2:_lineupText('home'),
+            def1:_defenseText('away'), def2:_defenseText('home') };
+  return {
+    idx:_gsIdx,
+    steps:GS_STEPS.map(function(s){
+      return { k:s.k, t:_gsLabel(s), d:s.d||'', ready:_gsReady(s.k), done:!!_gsDone[s.k], say:txt[s.k]||'' };
+    })
+  };
+}
+// ROSTER から試合開始・終了フローを進める。確認は ROSTER 側で済ませてあるので、ここでは聞き返さない
+function _remoteFlowReq(s){
+  var r=s._req;
+  if(r==='gsOpen'){ _gsBuildSteps(); if(_gsIsStale()) _gsClearProgress(); broadcast(); return true; }
+  if(r==='gsMark' && s.k){ _gsBuildSteps(); _gsMark(s.k); broadcast(); return true; }
+  if(r==='gsReset'){ _gsClearProgress(); broadcast(); return true; }
+  if(r==='gsDo' && (s.k==='inn1' || s.k==='inn2')){ _gsBuildSteps(); gsDo(s.k); broadcast(); return true; }
+  if(r==='luShow' && (s.team==='away' || s.team==='home')){ _luShowStart(s.team, s.text||''); return true; }
+  if(r==='geConfirm'){
+    if(!_gameEnd.on){ var a=(bso.o>=3) ? _geNeedAsk() : null; _geCtx=a||'manual'; _geReason=s.reason||''; geConfirm(); }
+    return true;
+  }
+  if(r==='geContinue'){
+    var c=(!_gameEnd.on && bso.o>=3) ? _geNeedAsk() : null;
+    if(c){ _geCtx=c; geContinue(s.kind||''); }
+    return true;
+  }
+  if(r==='geUndo'){ if(_gameEnd.on) _geUndoNow(); return true; }
+  if(r==='geNext'){ geClose(); resetAll(true); return true; }
+  if(r==='gameData'){ try{ ws.send(JSON.stringify({ _gameData:true, data:_collectGameData() })); }catch(e){} return true; }
+  if(r==='geSaved'){
+    if(_gameEnd.on){
+      _gameEnd.saved=true; saveState(); broadcast();
+      var gm=document.getElementById('ge-mask'); if(gm && gm.style.display!=='none') _gePaint();
+    }
+    return true;
+  }
+  return false;
+}
 function gsDo(k){
   if(k==='siren'){ sirenNow(); _gsMark(k); return; }
   if(k==='open'){ _gsSpeak('🔊 開始アナウンス', _gsOpenText(), k); return; }
@@ -2925,6 +2967,25 @@ function _refreshTickerBtn(){
   b.style.borderColor = _ticker.on ? '#c8901e' : '#444';
   b.style.color       = _ticker.on ? '#ffcf6a' : '#ddd';
 }
+// メイン広告（右上の常時表示）を出すか。コントローラーが決めて全端末・オーバーレイに配る
+var _adTopOn = true;
+try{ _adTopOn = localStorage.getItem('bb_adtop_on')!=='0'; }catch(e){}
+function _setAdTop(on){
+  _adTopOn = !!on;
+  try{ localStorage.setItem('bb_adtop_on', _adTopOn ? '1' : '0'); }catch(e){}
+  _refreshAdTopBtn();
+  broadcast();
+}
+function toggleAdTop(){ _setAdTop(!_adTopOn); }
+function _refreshAdTopBtn(){
+  var b=document.getElementById('btn-adtop');
+  if(!b) return;
+  b.textContent = _adTopOn ? '🖼 メイン広告を消す' : '🖼 メイン広告を出す';
+  b.style.background  = _adTopOn ? '#3a2a10' : '#242426';
+  b.style.borderColor = _adTopOn ? '#c8901e' : '#444';
+  b.style.color       = _adTopOn ? '#ffcf6a' : '#ddd';
+}
+_refreshAdTopBtn();
 
 // ── クーリングタイム ──────────────────────────────────────────────────────
 // 残り時間は「終了時刻」を状態に載せて各画面が自分で計算する。
@@ -5060,6 +5121,9 @@ function geSave(){
 }
 function geUndo(){
   if(!confirm('試合終了を取り消して、試合を続けますか？')) return;
+  _geUndoNow();
+}
+function _geUndoNow(){
   var m=_gameEnd.mark||{};
   if(typeof m.xHome==='number' && scores.home[m.xHome]==='x') scores.home[m.xHome]=null;
   if(typeof m.walk==='number') delete xOn['home-'+m.walk];
@@ -6295,9 +6359,9 @@ function loadGameFile(e){
   rd.readAsText(f);
 }
 
-function resetAll(){
-  // 終わった試合を保存せずに消そうとしたら、ひと声かける
-  if(_gameEnd.on && !_gameEnd.saved &&
+function resetAll(force){
+  // 終わった試合を保存せずに消そうとしたら、ひと声かける（ROSTER から来たときは向こうで確認済み）
+  if(!force && _gameEnd.on && !_gameEnd.saved &&
      !confirm('終わった試合のデータをまだ保存していません。\n保存せずにリセットしますか？')) return;
   _gameEnd={ on:false }; _extra={ kind:'', reg:0 };
   scores.away=Array(16).fill(null);
@@ -6373,6 +6437,7 @@ function applyPcEdit(s){
     if(s.gameEnd && typeof s.gameEnd==='object'){ _gameEnd=s.gameEnd; _geRefreshBtn(); }
     if(s.extra && typeof s.extra==='object') _extra=s.extra;
     _adoptGameId(s.gameId);
+    if(typeof s.adTopOn==='boolean' && s.adTopOn!==_adTopOn){ _adTopOn=s.adTopOn; _refreshAdTopBtn(); }
     if(typeof s.gameTitle==='string'){
       var gt=document.getElementById('game-title');
       if(gt && document.activeElement!==gt) gt.value=s.gameTitle;
@@ -6513,6 +6578,7 @@ function applyRemoteState(s){
     if(s.gameEnd && typeof s.gameEnd==='object'){ _gameEnd=s.gameEnd; _geRefreshBtn(); }
     if(s.extra && typeof s.extra==='object') _extra=s.extra;
     _adoptGameId(s.gameId);
+    if(typeof s.adTopOn==='boolean' && s.adTopOn!==_adTopOn){ _adTopOn=s.adTopOn; _refreshAdTopBtn(); }
     if(typeof s.gameTitle==='string'){
       var gtEl=document.getElementById('game-title');
       if(gtEl && document.activeElement!==gtEl) gtEl.value=s.gameTitle;
@@ -6592,6 +6658,8 @@ function connectWS(){
       if(s && s._req==='teamcfg'){ if(typeof _sendTeamCfg==='function') _sendTeamCfg(); return; }
       // メンバー管理のティッカーボタン。流す／止めるはコントローラーが決めて配り直す
       if(s && s._tickerReq){ _setTicker(!!s.on); return; }
+      // メンバー管理のメイン広告ボタン。出す／消すはコントローラーが決めて配り直す
+      if(s && s._adTopReq){ _setAdTop(!!s.on); return; }
       // 広告設定のリクエスト → 持っているときだけ送り返す
       if(s && s._req==='adcfg'){ if(_adCfg.slots.length) _sendAdCfg(true); return; }
       // 他の端末で登録された広告を取り込む（自分に何も無いときだけ）
@@ -6616,6 +6684,8 @@ function connectWS(){
       // 球速だけのメッセージは保持だけして送り返さない
       if(s && s._spd){ _speed=s.speed; return; }
       // PC版からの部分更新（選手・表示など。カウントには触れない）
+      // ROSTER からの試合開始・終了フローの操作
+      if(s && s._req && _remoteFlowReq(s)) return;
       if(s && s._pcEdit){ applyPcEdit(s); return; }
       if(!s||s._ctl!==true) return;   // 他コントローラーからの状態のみ受け取る
       applyRemoteState(s);
@@ -6892,12 +6962,16 @@ function _doBroadcast(){
     luTeam:_luShow.team||'',
     luRoster:_luShow.team?rosters[_luShow.team].map(p=>({...p,pos:posLabel(p.pos)||String(p.pos||'')})):null,
     luTeamName:_luShow.team?_geName(_luShow.team):'',
+    // ROSTER にも同じ試合開始・終了フローを出すための中身
+    gsView:_gsView(),
+    geAsk:(!_gameEnd.on && bso.o>=3) ? (_geNeedAsk()||'') : '',   // 最終回が終わって判断待ち
+    geAnn:_gameEnd.on ? _geAnnText() : '',
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
     awayColor:_teamColors.away,homeColor:_teamColors.home,
     scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
     autoHideSec:_autoHideSec,
     _ctl:true,
-    gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra, gameId:_gameId, showHits:_showHits, showErrs:_showErrs,
+    gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra, gameId:_gameId, showHits:_showHits, showErrs:_showErrs, adTopOn:_adTopOn,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
@@ -6951,7 +7025,7 @@ function saveState(){
       nameAway:na?na.textContent:'先攻',
       nameHome:nh?nh.textContent:'後攻',
       lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
-      gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra, gameId:_gameId, showHits:_showHits, showErrs:_showErrs,
+      gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra, gameId:_gameId, showHits:_showHits, showErrs:_showErrs, adTopOn:_adTopOn,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
