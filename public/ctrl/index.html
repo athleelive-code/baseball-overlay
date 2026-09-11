@@ -1155,6 +1155,7 @@ body.gamemin .gm-hide{display:none!important}
         <input id="stream-start-time" type="time"
           style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:28px;padding:12px;outline:none">
         <button class="drawer-btn" style="flex:0 0 150px;margin:0" onclick="setStreamStart()">セット</button>
+        <button class="drawer-btn" style="flex:0 0 150px;margin:0" onclick="if(confirm('配信開始時刻を取り消しますか？\n（記録したチャプターは残ります）')) streamStartClear()">取り消し</button>
       </div>
       <button class="drawer-btn" onclick="showChapterList()">📋 チャプターを表示</button>
       <div id="chapter-output" style="display:none;margin-top:10px">
@@ -2880,6 +2881,7 @@ function _remoteFlowReq(s){
   if(r==='gsMark' && s.k){ _gsBuildSteps(); _gsMark(s.k); broadcast(); return true; }
   if(r==='gsReset'){ _gsClearProgress(); broadcast(); return true; }
   if(r==='streamStart'){
+    if(s.clear){ streamStartClear(); return true; }   // メンバー管理で取り消し
     _setStreamStartAt(new Date(typeof s.at==='number' ? s.at : Date.now()));
     toastMsg('メンバー管理で配信開始をセットしました');
     return true;
@@ -6231,10 +6233,26 @@ function streamStartNow(){
   var hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   if(_streamStartTime){
     var cur=String(_streamStartTime.getHours()).padStart(2,'0')+':'+String(_streamStartTime.getMinutes()).padStart(2,'0');
-    if(!confirm('配信開始は '+cur+' にセット済みです。\n今（'+hm+'）に変更しますか？')) return;
+    if(confirm('配信開始は '+cur+' にセット済みです。\n今（'+hm+'）に変更しますか？')){
+      _setStreamStartAt(now);
+      toastMsg('配信開始を '+hm+' にセットし直しました');
+      return;
+    }
+    // 変更しないなら、取り消し（未セットに戻す）かを聞く。リハーサルで押してしまったとき用
+    if(confirm('では、配信開始時刻を取り消しますか？\n（未セットに戻します。記録したチャプターは残ります）')) streamStartClear();
+    return;
   }
   _setStreamStartAt(now);
   toastMsg('配信開始を '+hm+' にセットしました（YouTubeチャプターの 0:00）');
+}
+// 配信開始時刻を取り消す（未セットに戻す）。チャプターは起きた時刻で持っているので残る
+function streamStartClear(){
+  _streamStartTime = null;
+  try{ localStorage.removeItem('bb_stream_start'); }catch(e){}
+  _refreshStreamStartInput();
+  saveState();
+  broadcast();
+  toastMsg('配信開始時刻を取り消しました');
 }
 
 function _secToTime(sec){

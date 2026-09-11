@@ -2960,7 +2960,15 @@ function rStreamNow(){
   var st=lastRemote && lastRemote.streamStart;
   if(st){
     var d=new Date(st), cur=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-    if(!confirm('配信開始は '+cur+' にセット済みです。\n今に変更しますか？')) return;
+    if(confirm('配信開始は '+cur+' にセット済みです。\n今に変更しますか？')){
+      if(_flowReq({ _req:'streamStart', at:Date.now() })) toast('配信開始を今にセットし直しました');
+      return;
+    }
+    // 変更しないなら、取り消し（未セットに戻す）かを聞く。リハーサルで押してしまったとき用
+    if(confirm('では、配信開始時刻を取り消しますか？\n（未セットに戻します。記録したチャプターは残ります）')){
+      if(_flowReq({ _req:'streamStart', clear:true })) toast('配信開始時刻を取り消しました');
+    }
+    return;
   }
   if(_flowReq({ _req:'streamStart', at:Date.now() })) toast('配信開始をセットしました（YouTubeチャプターの 0:00）');
 }
