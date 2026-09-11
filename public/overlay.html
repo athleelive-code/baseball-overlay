@@ -274,13 +274,13 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
   min-width:300px;
 }
 .ov-bat-panel{max-height:0;overflow:hidden;transition:max-height .45s ease;order:-1}
-.ov-bat-panel.open{max-height:400px;border-bottom:1px solid rgba(255,255,255,.08)}
+.ov-bat-panel.open{max-height:1000px;border-bottom:1px solid rgba(255,255,255,.08)}   /* 9人（DH込みでも）全員が収まるまで縦に伸ばす */
 /* 打者を消しているときも打順表だけは出せる。打者の帯と打者欄だけ隠し、打順表も閉じていれば枠ごと消す */
 .ov-bat-wrap.no-batter .ov-b-brand,.ov-bat-wrap.no-batter .ov-b-area{display:none}
 .ov-bat-wrap.no-batter .ov-bat-panel.open{border-bottom:none}
 .ov-bat-wrap.no-batter:not(.lu-open){opacity:0;pointer-events:none}
 .ov-bat-hdr{padding:5px 12px;background:rgba(0,0,0,.2)}
-.ov-bat-hdr span{font-size:14px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1px}
+.ov-bat-hdr span{font-size:18px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1px}
 .ov-bat-list{padding:3px 5px 4px;display:flex;flex-direction:column;gap:1px}
 .ov-bat-row{display:grid;grid-template-columns:28px 44px 1fr 36px;gap:4px;align-items:center;padding:5px 8px}
 .ov-bat-row.cur{background:rgba(200,16,46,.2);border-radius:3px;border:1px solid rgba(200,16,46,.4)}
@@ -686,12 +686,13 @@ function renderBatList(roster,currentBatter,teamLabel){
     else if(i===next2Idx){ mark='▷'; box=';background:rgba(245,197,24,.07);border:1px solid rgba(245,197,24,.22)'; }
     const hot=(i===curIdx||i===nextIdx||i===next2Idx);
     const mc=(i===curIdx)?'#ff6b7d':(hot?'#f5c518':'rgba(255,255,255,.3)');
-    return `<div style="display:grid;grid-template-columns:20px 30px 46px 1fr 46px;gap:4px;align-items:center;padding:5px 7px;border-radius:3px${box}">
-      <span style="font-size:15px;color:${mc};text-align:center">${mark}</span>
-      <span style="font-size:${hot?20:17}px;color:${hot?'#fff':'rgba(255,255,255,.45)'};font-weight:${hot?800:600}">${p.order||(key==='DH'?'DH':'')}</span>
-      <span style="font-size:15px;color:${hot?'#bbb':'#777'}">#${p.num||''}</span>
-      <span style="font-size:21px;color:${hot?'#fff':'rgba(255,255,255,.75)'};font-weight:${hot?800:500};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
-      <span style="font-size:15px;font-weight:700;color:${c}">${posD}</span>
+    // 文字は大きめ（縦に伸びてよい）。9人目まで隠れないよう、パネル側の高さ上限も広げてある
+    return `<div style="display:grid;grid-template-columns:26px 40px 62px 1fr 60px;gap:6px;align-items:center;padding:7px 9px;border-radius:4px${box}">
+      <span style="font-size:20px;color:${mc};text-align:center">${mark}</span>
+      <span style="font-size:${hot?28:24}px;color:${hot?'#fff':'rgba(255,255,255,.5)'};font-weight:${hot?800:600}">${p.order||(key==='DH'?'DH':'')}</span>
+      <span style="font-size:20px;color:${hot?'#bbb':'#888'}">#${p.num||''}</span>
+      <span style="font-size:28px;color:${hot?'#fff':'rgba(255,255,255,.8)'};font-weight:${hot?800:500};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span>
+      <span style="font-size:20px;font-weight:700;color:${c}">${posD}</span>
     </div>`;
   }).join('');
 }
