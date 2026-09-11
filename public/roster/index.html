@@ -243,6 +243,10 @@ body.locked .row{cursor:default}
 .rf-big.save{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
 .rf-row{display:flex;gap:8px}
 .rf-row .rf-big{flex:1}
+/* コントローラーを「常に手前」の小窓で開く（PC のときだけ出す） */
+.fp-float{background:#1a2a44;border:2px solid #3a5a8a;border-radius:9px;color:#a8c8ff;
+  font-size:15px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.fp-float:hover{background:#22375a}
 .cool-adj{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#aaa}
 .cool-adj .btn{padding:5px 9px;font-size:14px}
 #cool-min-val{font-size:17px;font-weight:800;color:#fff;min-width:22px;text-align:center;
@@ -623,6 +627,15 @@ body.locked .row{cursor:default}
   <button class="fp-firstbat" onclick="openFirstBatPC()">⇄ 先攻選択</button>
   <button class="fp-gs" onclick="rgsOpen()">▶ 試合開始</button>
   <button class="fp-ge" id="btn-rge" onclick="rgeOpen()">🏁 試合終了</button>
+  <button class="fp-float" id="btn-ctrl-float" onclick="openCtrlFloat()" title="コントローラーをスマホ大の小窓で、ほかのアプリの上に浮かせて開く">🗗 コントローラー</button>
+  <script src="../ctrl/float.js"></script>
+  <script>
+    // タッチ端末（スマホ・タブレット）では小窓にできないので出さない
+    (function(){
+      var b=document.getElementById('btn-ctrl-float');
+      if(b && !(window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches)) b.style.display='none';
+    })();
+  </script>
 </div>
 
 <!-- 試合開始フロー（ROSTER）。進行はコントローラーと共有 -->
@@ -2879,6 +2892,18 @@ function _saveLog(){
 // 打歴（打者ごとの打席結果）をオーバーレイへ配信。ROSTER の記録編集・削除もここに反映される
 // ── 試合開始・終了フロー（ROSTER） ─────────────────────────────────────────
 // 進行と試合の状態はコントローラーが持つ。ここでは表示と読み上げをして、結果をコントローラーへ知らせる
+// コントローラーを「常に手前」の小窓で開く（このタブはメンバー管理のまま）。
+// 小窓はクリックの直後にしか開けないので、確認ダイアログは挟まない
+function openCtrlFloat(){
+  if(!window.AthleeFloat){ toast('小窓の部品を読み込めませんでした'); return; }
+  if(AthleeFloat.isOpen()){ toast('コントローラーの小窓はもう開いています'); return; }
+  AthleeFloat.open(function(){ toast('コントローラーの小窓を閉じました'); }).then(function(how){
+    if(!how){ toast('小窓を開けませんでした。ポップアップの許可を確認してください'); return; }
+    toast(how==='pip'
+      ? 'コントローラーを小窓で開きました。ほかの端末のコントローラーは閉じてください'
+      : '別ウインドウで開きました（このブラウザでは常に手前にできません）');
+  });
+}
 function _flowReq(o){
   if(!ws || ws.readyState!==1){ toast('コントローラーにつながっていません'); return false; }
   try{ ws.send(JSON.stringify(o)); }catch(e){ return false; }

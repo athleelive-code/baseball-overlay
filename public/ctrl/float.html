@@ -30,12 +30,12 @@ button:focus-visible{outline:3px solid #8fc0ff;outline-offset:2px}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" id="launcher">
   <div class="brand">Athlee<span>Live</span></div>
   <h1>コントローラーを小窓で使う</h1>
 
   <div class="view" id="v-ready">
-    <p>スマホぐらいの大きさの小窓でコントローラーを開きます。OBS など、ほかのアプリの上に常に浮いたままになります。小窓の端をドラッグすると大きさも変えられます。</p>
+    <p>スマホぐらいの大きさの小窓でコントローラーを開きます。OBS など、ほかのアプリの上に常に浮いたままになります。小窓の端をドラッグして広げると、中の表示も大きくなります。</p>
     <button class="big" onclick="openFloat()">🗗 小窓で開く</button>
     <p class="note" id="note-fallback" hidden>このブラウザでは「常に手前」にできないため、スマホ大の別ウインドウで開きます（ほかのアプリをクリックすると後ろに隠れます）。常に手前にするには Chrome か Edge を使ってください。</p>
   </div>
@@ -54,63 +54,29 @@ button:focus-visible{outline:3px solid #8fc0ff;outline-offset:2px}
 
   <p class="note">コントローラーは同時に1台だけ動かします。小窓を使っている間、このタブは入れ物になっていて、ここでは操作できません。</p>
 </div>
+<script src="float.js"></script>
 <script>
-// コントローラーを「常に手前」の小窓で開く（Chrome / Edge の Document Picture-in-Picture）。
-// 小窓の中身はコントローラーそのもの（iframe）なので、機能はスマホで開いたときと同じ。
-// 使えないブラウザでは、スマホ大の別ウインドウで開く。
-var W = 430;
-var H = Math.max(600, Math.min(900, (screen.availHeight || 900) - 80));
-var CTRL_URL = new URL('./', location.href).href;
-var _pip = null, _pop = null, _popTimer = null;
-var canPip = ('documentPictureInPicture' in window);
-if(!canPip) document.getElementById('note-fallback').hidden = false;
+// ?frame=1 … 別ウインドウで開いたとき。案内は出さず、コントローラーを縮めて入れるだけ
+if(new URLSearchParams(location.search).get('frame')==='1'){
+  document.getElementById('launcher').remove();
+  AthleeFloat.mount(window);
+}else{
+  if(!AthleeFloat.canPip) document.getElementById('note-fallback').hidden = false;
+}
 
 function show(id){
   ['v-ready','v-open','v-closed'].forEach(function(v){ document.getElementById(v).hidden = (v!==id); });
 }
-
 async function openFloat(){
-  if(canPip){
-    try{
-      _pip = await documentPictureInPicture.requestWindow({ width:W, height:H });
-      var d = _pip.document;
-      d.title = 'AthleeLive コントローラー';
-      d.body.style.cssText = 'margin:0;background:#111;overflow:hidden';
-      var f = d.createElement('iframe');
-      f.src = CTRL_URL;
-      f.allow = 'autoplay; clipboard-write; screen-wake-lock';
-      f.style.cssText = 'border:0;width:100vw;height:100vh;display:block';
-      d.body.appendChild(f);
-      // 小窓の × で閉じられたとき
-      _pip.addEventListener('pagehide', function(){ _pip = null; show('v-closed'); });
-      document.getElementById('state-msg').innerHTML =
-        '小窓で操作しています（常に手前）。<br>このタブは閉じないでください。閉じると小窓も消えます。';
-      show('v-open');
-      return;
-    }catch(e){
-      // 使えなかったときは別ウインドウで開く
-    }
-  }
-  _pop = window.open(CTRL_URL, 'athleeCtrlFloat', 'popup,width='+W+',height='+H);
-  if(!_pop){ alert('小窓を開けませんでした。ブラウザのポップアップの許可を確認してください'); return; }
-  document.getElementById('state-msg').innerHTML =
-    '別ウインドウで操作しています。<br>ほかのアプリをクリックすると、その後ろに隠れます。';
+  var how = await AthleeFloat.open(function(){ show('v-closed'); });
+  if(!how){ alert('小窓を開けませんでした。ブラウザのポップアップの許可を確認してください'); return; }
+  document.getElementById('state-msg').innerHTML = (how==='pip')
+    ? '小窓で操作しています（常に手前）。<br>このタブは閉じないでください。閉じると小窓も消えます。'
+    : '別ウインドウで操作しています。<br>ほかのアプリをクリックすると、その後ろに隠れます。';
   show('v-open');
-  if(_popTimer) clearInterval(_popTimer);
-  _popTimer = setInterval(function(){
-    if(_pop && _pop.closed){ clearInterval(_popTimer); _popTimer = null; _pop = null; show('v-closed'); }
-  }, 1000);
 }
-function closeFloat(){
-  if(_pip){ try{ _pip.close(); }catch(e){} _pip = null; }
-  if(_pop && !_pop.closed){ _pop.close(); }
-  _pop = null;
-  show('v-closed');
-}
-function backHere(){
-  closeFloat();
-  location.href = CTRL_URL;
-}
+function closeFloat(){ AthleeFloat.close(); show('v-closed'); }
+function backHere(){ AthleeFloat.close(); location.href = AthleeFloat.CTRL_URL; }
 </script>
 </body>
 </html>
