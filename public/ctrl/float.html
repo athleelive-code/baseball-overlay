@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AthleeLive コントローラー（小窓）</title>
+<meta name="theme-color" content="#c8102e">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#111;color:#eee;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:48px 24px;display:flex;flex-direction:column;gap:18px}
+.brand{font-size:28px;font-weight:900;letter-spacing:.5px}
+.brand span{color:#e0203e}
+h1{font-size:22px;font-weight:800}
+p{font-size:15px;line-height:1.7;color:#aaa}
+.view{display:flex;flex-direction:column;gap:14px}
+.big{display:block;width:100%;border:3px solid #c8901e;background:#3a2a10;color:#ffcf6a;border-radius:14px;
+  font-size:22px;font-weight:900;padding:20px 12px;cursor:pointer}
+.big:hover{background:#4a360f}
+.sub{display:block;width:100%;border:2px solid #444;background:#242426;color:#ddd;border-radius:12px;
+  font-size:16px;font-weight:800;padding:14px 12px;cursor:pointer}
+.sub:hover{background:#2e2e30}
+.note{font-size:13px;color:#777;line-height:1.7}
+.state{border:2px solid #2f6b2f;background:#16261a;color:#bff0bf;border-radius:12px;padding:14px 16px;
+  font-size:15px;font-weight:700;line-height:1.6}
+.state.warn{border-color:#8a6a2a;background:#2a2210;color:#ffe0a0}
+[hidden]{display:none!important}
+button:focus-visible{outline:3px solid #8fc0ff;outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Athlee<span>Live</span></div>
+  <h1>コントローラーを小窓で使う</h1>
+
+  <div class="view" id="v-ready">
+    <p>スマホぐらいの大きさの小窓でコントローラーを開きます。OBS など、ほかのアプリの上に常に浮いたままになります。小窓の端をドラッグすると大きさも変えられます。</p>
+    <button class="big" onclick="openFloat()">🗗 小窓で開く</button>
+    <p class="note" id="note-fallback" hidden>このブラウザでは「常に手前」にできないため、スマホ大の別ウインドウで開きます（ほかのアプリをクリックすると後ろに隠れます）。常に手前にするには Chrome か Edge を使ってください。</p>
+  </div>
+
+  <div class="view" id="v-open" hidden>
+    <div class="state" id="state-msg"></div>
+    <button class="sub" onclick="closeFloat()">小窓を閉じる</button>
+    <button class="sub" onclick="backHere()">このタブでコントローラーに戻る</button>
+  </div>
+
+  <div class="view" id="v-closed" hidden>
+    <div class="state warn">小窓を閉じました。</div>
+    <button class="big" onclick="openFloat()">🗗 もう一度小窓で開く</button>
+    <button class="sub" onclick="backHere()">このタブでコントローラーに戻る</button>
+  </div>
+
+  <p class="note">コントローラーは同時に1台だけ動かします。小窓を使っている間、このタブは入れ物になっていて、ここでは操作できません。</p>
+</div>
+<script>
+// コントローラーを「常に手前」の小窓で開く（Chrome / Edge の Document Picture-in-Picture）。
+// 小窓の中身はコントローラーそのもの（iframe）なので、機能はスマホで開いたときと同じ。
+// 使えないブラウザでは、スマホ大の別ウインドウで開く。
+var W = 430;
+var H = Math.max(600, Math.min(900, (screen.availHeight || 900) - 80));
+var CTRL_URL = new URL('./', location.href).href;
+var _pip = null, _pop = null, _popTimer = null;
+var canPip = ('documentPictureInPicture' in window);
+if(!canPip) document.getElementById('note-fallback').hidden = false;
+
+function show(id){
+  ['v-ready','v-open','v-closed'].forEach(function(v){ document.getElementById(v).hidden = (v!==id); });
+}
+
+async function openFloat(){
+  if(canPip){
+    try{
+      _pip = await documentPictureInPicture.requestWindow({ width:W, height:H });
+      var d = _pip.document;
+      d.title = 'AthleeLive コントローラー';
+      d.body.style.cssText = 'margin:0;background:#111;overflow:hidden';
+      var f = d.createElement('iframe');
+      f.src = CTRL_URL;
+      f.allow = 'autoplay; clipboard-write; screen-wake-lock';
+      f.style.cssText = 'border:0;width:100vw;height:100vh;display:block';
+      d.body.appendChild(f);
+      // 小窓の × で閉じられたとき
+      _pip.addEventListener('pagehide', function(){ _pip = null; show('v-closed'); });
+      document.getElementById('state-msg').innerHTML =
+        '小窓で操作しています（常に手前）。<br>このタブは閉じないでください。閉じると小窓も消えます。';
+      show('v-open');
+      return;
+    }catch(e){
+      // 使えなかったときは別ウインドウで開く
+    }
+  }
+  _pop = window.open(CTRL_URL, 'athleeCtrlFloat', 'popup,width='+W+',height='+H);
+  if(!_pop){ alert('小窓を開けませんでした。ブラウザのポップアップの許可を確認してください'); return; }
+  document.getElementById('state-msg').innerHTML =
+    '別ウインドウで操作しています。<br>ほかのアプリをクリックすると、その後ろに隠れます。';
+  show('v-open');
+  if(_popTimer) clearInterval(_popTimer);
+  _popTimer = setInterval(function(){
+    if(_pop && _pop.closed){ clearInterval(_popTimer); _popTimer = null; _pop = null; show('v-closed'); }
+  }, 1000);
+}
+function closeFloat(){
+  if(_pip){ try{ _pip.close(); }catch(e){} _pip = null; }
+  if(_pop && !_pop.closed){ _pop.close(); }
+  _pop = null;
+  show('v-closed');
+}
+function backHere(){
+  closeFloat();
+  location.href = CTRL_URL;
+}
+</script>
+</body>
+</html>
