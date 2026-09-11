@@ -149,6 +149,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   font-size:13px;font-weight:700;padding:8px 10px;cursor:pointer}
 .adbtn[disabled]{opacity:.3;cursor:default}
 .adbtn-red{background:#3a1a1a;border-color:#8a3a3a;color:#ff9a9a}
+.adbtn.adsel.on{background:#1a2a3a;border-color:#4a8ad0;color:#fff}
 .ad-slot{display:flex;align-items:center;gap:10px;background:#242426;border:1px solid #333;border-radius:9px;padding:9px;margin-bottom:7px}
 .ad-no{font-size:15px;font-weight:800;color:#888;width:18px;text-align:center;flex-shrink:0;
   font-variant-numeric:tabular-nums}
@@ -996,7 +997,7 @@ body.gamemin .gm-hide{display:none!important}
       <div class="drawer-sec-t">スポンサー表示</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">
         スポンサー画像はここで一括管理します。1枚ごとに「出す場所」を選べます。オーバーレイに即反映されます。<br>
-        <b style="color:#8ac0ff">右上（常時）</b>＝画面右上に出しっぱなし。複数枚なら切替間隔ごとに入れ替え（0のときは10秒）<br>
+        <b style="color:#8ac0ff">右上（常時）</b>＝画面右上に出しっぱなし。複数枚は「1枚ずつ切り替え」（切替間隔ごと・0のときは10秒）か「全部同時に表示」を下で選べます<br>
         <b style="color:#8ac0ff">ティッカー</b>＝イニング交代中に画面最下部を流れる<br>
         設定した画像はサーバーが預かるので、この端末を閉じても他の画面に出続けます。
       </div>
@@ -1009,6 +1010,12 @@ body.gamemin .gm-hide{display:none!important}
         <button class="adbtn" style="flex:1;font-size:20px;padding:14px" onclick="adAddSlot()">＋ 空のスロット</button>
       </div>
       <div id="ad-count" style="font-size:18px;color:#666;margin-top:6px"></div>
+      <div style="font-size:18px;color:#888;margin:14px 0 5px">右上（常時）の出し方</div>
+      <div style="display:flex;gap:8px">
+        <button class="adbtn adsel" id="ad-topmode-rotate" style="flex:1;font-size:20px;padding:13px" onclick="adTopMode('rotate')">1枚ずつ切り替え</button>
+        <button class="adbtn adsel" id="ad-topmode-all" style="flex:1;font-size:20px;padding:13px" onclick="adTopMode('all')">全部同時に表示</button>
+      </div>
+      <div style="font-size:17px;color:#666;margin-top:5px">全部同時は横2列。3枚以上は縮小して2段に並べます</div>
       <div style="display:flex;gap:12px;margin-top:14px">
         <div style="flex:1">
           <div style="font-size:18px;color:#888;margin-bottom:5px">表示秒数（0=自動）</div>
@@ -2276,6 +2283,7 @@ function _adIngest(d){
   if(typeof d.sec==='number') _adCfg.sec=d.sec;
   if(typeof d.rotate==='number') _adCfg.rotate=d.rotate;
   if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
+  if(d.topMode==='all'||d.topMode==='rotate') _adCfg.topMode=d.topMode;
   if(typeof d.sponsorText==='string') _adCfg.sponsorText=d.sponsorText;
   _adSave();
   _renderAdSlots();
@@ -2305,6 +2313,7 @@ function _sendAdCfg(asIs){
       }),
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
       tickerSpeed:_adCfg.tickerSpeed||40,
+      topMode:(_adCfg.topMode==='all' ? 'all' : 'rotate'),   // 右上の出し方
       sponsorText:_adCfg.sponsorText||''
     })); }catch(e){}
   }
@@ -2345,6 +2354,10 @@ function _renderAdSlots(){
   var sv=document.getElementById('ad-sec-val'); if(sv) sv.textContent=_adCfg.sec||0;
   var rv=document.getElementById('ad-rotate-val'); if(rv) rv.textContent=_adCfg.rotate||0;
   var tv=document.getElementById('ad-tspd-val'); if(tv) tv.textContent=_adCfg.tickerSpeed||40;
+  var _allMode=(_adCfg.topMode==='all');
+  var mR=document.getElementById('ad-topmode-rotate'), mA=document.getElementById('ad-topmode-all');
+  if(mR) mR.classList.toggle('on', !_allMode);
+  if(mA) mA.classList.toggle('on',  _allMode);
   var st=document.getElementById('ad-sponsor-text');
   if(st && document.activeElement!==st) st.value=_adCfg.sponsorText||'';
   var cnt=document.getElementById('ad-count');
@@ -2375,6 +2388,11 @@ function adMove(i,d){
   _sendAdCfg(); _renderAdSlots();
 }
 function adAddSlot(){ _adCfg.slots.push({src:'',on:true,where:_adWhere()}); _adSave(); _renderAdSlots(); }
+// 右上（常時）の出し方。rotate=1枚ずつ切り替え / all=全部同時に表示
+function adTopMode(m){
+  _adCfg.topMode = (m==='all') ? 'all' : 'rotate';
+  _sendAdCfg(); _renderAdSlots();
+}
 function adjAd(key,d){
   if(key==='tickerSpeed'){
     // 1周にかかる秒数。小さいほど速い

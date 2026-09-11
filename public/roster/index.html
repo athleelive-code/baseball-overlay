@@ -366,6 +366,7 @@ body.locked .row{cursor:default}
 .ad-move{display:flex;gap:3px;margin-left:auto;flex-shrink:0}
 .ad-move .btn{font-size:12px;padding:6px 9px;line-height:1;margin:0}
 .ad-move .btn[disabled]{opacity:.3;cursor:default}
+.btn.adsel.on{background:#1a2a3a;border-color:#4a8ad0;color:#fff}
 .ad-slot.off{opacity:.45}
 .ad-thumb{width:96px;height:44px;object-fit:contain;background:#fff;border:1px solid #3a3a3c;border-radius:5px;flex-shrink:0}
 .ad-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
@@ -948,7 +949,7 @@ body.locked .row{cursor:default}
       <div class="set-lbl">スポンサー表示</div>
       <div class="note" style="margin-bottom:10px">
         スポンサー画像はここで一括管理します。1枚ごとに「出す場所」を選べます。オーバーレイに即反映されます。<br>
-        <b style="color:#8ac0ff">右上（常時）</b>＝画面右上に出しっぱなし。複数枚なら切替間隔ごとに入れ替え（0のときは10秒）<br>
+        <b style="color:#8ac0ff">右上（常時）</b>＝画面右上に出しっぱなし。複数枚は「1枚ずつ切り替え」（切替間隔ごと・0のときは10秒）か「全部同時に表示」を下で選べます<br>
         <b style="color:#8ac0ff">ティッカー</b>＝イニング交代中に画面最下部を流れる<br>
         設定した画像はサーバーが預かるので、この端末を閉じても他の画面に出続けます。
       </div>
@@ -993,6 +994,12 @@ body.locked .row{cursor:default}
         <button class="btn" style="flex:1;font-size:14px;padding:12px" onclick="adAddSlot()">＋ 空のスロット</button>
       </div>
       <div class="note" id="ad-count" style="margin-top:6px"></div>
+      <div class="set-lbl" style="margin-top:12px">右上（常時）の出し方</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn adsel" id="ad-topmode-rotate" style="flex:1;font-size:14px;padding:11px" onclick="adTopMode('rotate')">1枚ずつ切り替え</button>
+        <button class="btn adsel" id="ad-topmode-all" style="flex:1;font-size:14px;padding:11px" onclick="adTopMode('all')">全部同時に表示</button>
+      </div>
+      <div class="note" style="margin-top:5px">全部同時は横2列。3枚以上は縮小して2段に並べます</div>
     </div>
 
     <div class="modal-acts">
@@ -3531,6 +3538,7 @@ function _adIngest(d){
   if(typeof d.sec==='number') _adCfg.sec=d.sec;
   if(typeof d.rotate==='number') _adCfg.rotate=d.rotate;
   if(typeof d.tickerSpeed==='number') _adCfg.tickerSpeed=d.tickerSpeed;
+  if(d.topMode==='all'||d.topMode==='rotate') _adCfg.topMode=d.topMode;
   if(typeof d.sponsorText==='string') _adCfg.sponsorText=d.sponsorText;
   _adSave();
   _renderAdSlots();
@@ -3560,6 +3568,7 @@ function _sendAdCfg(asIs){
       }),
       sec:_adCfg.sec||0, rotate:_adCfg.rotate||0,
       tickerSpeed:_adCfg.tickerSpeed||40,
+      topMode:(_adCfg.topMode==='all' ? 'all' : 'rotate'),   // 右上の出し方
       sponsorText:_adCfg.sponsorText||''
     })); }catch(e){}
   }
@@ -3600,6 +3609,10 @@ function _renderAdSlots(){
   var sv=document.getElementById('ad-sec-val'); if(sv) sv.textContent=_adCfg.sec||0;
   var rv=document.getElementById('ad-rotate-val'); if(rv) rv.textContent=_adCfg.rotate||0;
   var tv=document.getElementById('ad-tspd-val'); if(tv) tv.textContent=_adCfg.tickerSpeed||40;
+  var _allMode=(_adCfg.topMode==='all');
+  var mR=document.getElementById('ad-topmode-rotate'), mA=document.getElementById('ad-topmode-all');
+  if(mR) mR.classList.toggle('on', !_allMode);
+  if(mA) mA.classList.toggle('on',  _allMode);
   var st=document.getElementById('ad-sponsor-text');
   if(st && document.activeElement!==st) st.value=_adCfg.sponsorText||'';
   var cnt=document.getElementById('ad-count');
@@ -3630,6 +3643,11 @@ function adMove(i,d){
   _sendAdCfg(); _renderAdSlots();
 }
 function adAddSlot(){ _adCfg.slots.push({src:'',on:true,where:_adWhere()}); _adSave(); _renderAdSlots(); }
+// 右上（常時）の出し方。rotate=1枚ずつ切り替え / all=全部同時に表示
+function adTopMode(m){
+  _adCfg.topMode = (m==='all') ? 'all' : 'rotate';
+  _sendAdCfg(); _renderAdSlots();
+}
 function adjAd(key,d){
   if(key==='tickerSpeed'){
     // 1周にかかる秒数。小さいほど速い

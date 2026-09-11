@@ -244,6 +244,12 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
 .ov-adtop img.fade{animation:adTopIn .45s ease}
 @keyframes adTopIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){ .ov-adtop img.fade{animation:none} }
+/* 全部同時に出すとき。横2列、3枚以上は縮小して2段。最後の段は右端に寄せる */
+.ov-adtop-grid{display:none;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+.ov-adtop.all .ov-adtop-grid{display:flex}
+.ov-adtop.all #ov-adtop-img{display:none}
+.ov-adtop-cell{display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ov-adtop .ov-adtop-grid img{width:100%;height:100%;max-width:none;max-height:none}
 
 /* ── 右下：打者＋打順スライドアップ ── */
 .ov-bat-wrap{
@@ -452,7 +458,7 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
 
 <!-- 右下：打者（ロゴ帯＋打順＋守備位置＋氏名ルビ＋背番号）＋打順スライドアップ -->
 <!-- 右上：常時表示のスポンサー枠（画像が1枚も割り当てられていないときは出さない） -->
-<div class="ov-adtop" id="ov-adtop"><img id="ov-adtop-img" alt=""></div>
+<div class="ov-adtop" id="ov-adtop"><img id="ov-adtop-img" alt=""><div class="ov-adtop-grid" id="ov-adtop-grid"></div></div>
 
 <!-- イニング交代中に流れるスポンサーティッカー -->
 <div class="ov-ticker" id="ov-ticker">
@@ -1052,6 +1058,7 @@ var _adTop = [];        // 右上の常時表示枠
 var _adTicker = [];     // 最下部を流れるティッカー
 var _adTickerSpeed = 40;
 var _adAt = 0;          // 広告設定の最終更新時刻。これより古い設定は受け取らない
+var _adTopMode = 'rotate';   // 右上の出し方。rotate=1枚ずつ切り替え / all=全部同時
 var _adImages = [];     // スコア表の横の広告は廃止（枠だけ残してある）
 var _adSec = 0;        // 0 = スコア表示の秒数に従う
 var _adRotate = 0;     // 0 = 1回の表示で1枚のみ。>0 なら N 秒ごとに切替
@@ -1063,6 +1070,7 @@ try{
   if(_ac){
     if(Array.isArray(_ac.ticker)) _adTicker=_ac.ticker;
     if(typeof _ac.at==='number') _adAt=_ac.at;
+    if(_ac.topMode==='all'||_ac.topMode==='rotate') _adTopMode=_ac.topMode;
     if(Array.isArray(_ac.top)){ _adTop=_ac.top; }
     else {
       // 右上の枠ができる前に保存した設定。スコア表用だった画像を右上に回す
@@ -1145,11 +1153,12 @@ function applyAdCfg(d){
   if(typeof d.sec==='number') _adSec = d.sec;
   if(typeof d.rotate==='number') _adRotate = d.rotate;
   if(typeof d.tickerSpeed==='number') _adTickerSpeed = d.tickerSpeed;
+  if(d.topMode==='all'||d.topMode==='rotate') _adTopMode = d.topMode;
   _adIndex = 0;
   _tickerBuild();
   _adTopStart();
   try{ localStorage.setItem('bb_adcfg', JSON.stringify({
-    ticker:_adTicker, top:_adTop, at:_adAt,
+    ticker:_adTicker, top:_adTop, at:_adAt, topMode:_adTopMode,
     sec:_adSec, rotate:_adRotate, tickerSpeed:_adTickerSpeed
   })); }catch(e){}
 }
@@ -1246,16 +1255,43 @@ function _adTopPaint(){
 function _adTopStart(){
   if(_adTopTimer){ clearInterval(_adTopTimer); _adTopTimer=null; }
   _adTopIndex=0;
+  var box=g('ov-adtop');
   if(!_adTop.length){
-    var box=g('ov-adtop');
-    if(box) box.classList.remove('on');
+    if(box){ box.classList.remove('on'); box.classList.remove('all'); }
     return;
   }
+  // 全部同時（2枚以上のとき）。切り替えはしない
+  if(_adTopMode==='all' && _adTop.length>1){ _adTopGrid(); return; }
+  if(box) box.classList.remove('all');
   _adTopPaint();
   if(_adTop.length>1){
     var sec = _adRotate>0 ? _adRotate : 10;
     _adTopTimer=setInterval(_adTopPaint, sec*1000);
   }
+}
+// 全部同時に並べる。2枚なら横に2つ。3枚以上は縮小して2段にし、
+// 入りきらない分は列を増やす（3〜4枚=2列、5〜6枚=3列…）。
+// 枠の大きさは1枚ずつのときと同じ上限（幅460）に収める
+function _adTopGrid(){
+  var box=g('ov-adtop'), grid=g('ov-adtop-grid');
+  if(!box||!grid) return;
+  var n=_adTop.length, GAP=10;
+  var rows = (n<=2) ? 1 : 2;
+  var cols = Math.ceil(n/rows);
+  var cellW = Math.min(225, Math.floor((ADTOP_MAX_W - GAP*(cols-1))/cols));
+  var cellH = (rows===1) ? 120 : Math.min(100, Math.round(cellW*0.6));
+  grid.style.width = (cols*cellW + (cols-1)*GAP)+'px';
+  grid.innerHTML = '';
+  _adTop.forEach(function(src){
+    var cell=document.createElement('div');
+    cell.className='ov-adtop-cell';
+    cell.style.width=cellW+'px'; cell.style.height=cellH+'px';
+    var im=document.createElement('img'); im.alt=''; im.src=src;
+    cell.appendChild(im);
+    grid.appendChild(cell);
+  });
+  box.classList.add('all');
+  box.classList.add('on');
 }
 
 function _showNextAd(){
