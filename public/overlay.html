@@ -702,7 +702,7 @@ let _defVisible=false,_batVisible=false;
 let _histResults=null;
 // コントローラーから来た showDef/showBat の「前回値」。毎ブロードキャストで同じ true が来ても
 // 自動非表示したパネルを勝手に開き直さないよう、値が変化したときだけ反映する
-let _lastCtlShowDef=null,_lastCtlShowBat=null;
+let _lastCtlShowDef=null,_lastCtlShowBat=null,_lastLuTeam='';
 
 function applyState(s){
   if(!s)return;
@@ -972,11 +972,17 @@ function applyState(s){
   if(typeof s.autoHideSec==='number') _autoHideSec=s.autoHideSec;
   // 値が変わったときだけ反映（同じ true の連投で自動非表示後に開き直さない）
   if(typeof s.showBat==='boolean' && s.showBat!==_lastCtlShowBat){ _lastCtlShowBat=s.showBat; setBatVisible(s.showBat); }
+  // 打順の読み上げ中は、読み終わるまで打順表を出したままにする（自動では閉じない）
+  if(s.luTeam && s.luTeam!==_lastLuTeam){
+    setBatVisible(true);
+    if(_batHideTimer){ clearTimeout(_batHideTimer); _batHideTimer=null; }
+  }
+  _lastLuTeam = s.luTeam || '';
   if(typeof s.showDef==='boolean' && s.showDef!==_lastCtlShowDef){ _lastCtlShowDef=s.showDef; setDefVisible(s.showDef); }
   if(typeof s.showBatter==='boolean'){
     // 打者の欄だけを出し入れする（打順表は「打順」ボタンで別に出せる）
     var bw=g('ov-bat-wrap');
-    if(bw) bw.classList.toggle('no-batter', !s.showBatter);
+    if(bw) bw.classList.toggle('no-batter', !s.showBatter || !!s.luTeam);   // 打順の読み上げ中は打者の欄を隠す
   }
   if(typeof s.showPC==='boolean'){
     var pw=g('ov-pc-wrap');
@@ -997,7 +1003,9 @@ function applyState(s){
     if(defLbl)defLbl.textContent='守備配置 — '+(s.defTeam||'');
   }
   // 打順 → batRoster (攻撃側) があればそちら、なければ defRoster
-  if(s.batRoster){
+  if(s.luRoster && s.luRoster.length){
+    renderBatList(s.luRoster,'',s.luTeamName);   // 打順の読み上げ中は、読んでいるチームの打順
+  } else if(s.batRoster){
     renderBatList(s.batRoster,s.batter,s.batTeam);
   } else if(s.defRoster){
     renderBatList(s.defRoster,s.batter,s.defTeam);

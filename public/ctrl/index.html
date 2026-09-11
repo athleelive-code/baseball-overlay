@@ -2821,7 +2821,7 @@ function _gsWhyNoDefense(team){
   if(!r.length) return who+'の選手が登録されていません';
   return who+'に守備位置が入っていません。\n「👤 選手登録」で投手から順に守備位置を入れてください';
 }
-function _gsSpeak(title, text, k, why){
+function _gsSpeak(title, text, k, why, onStart){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   if(!text){ alert(why || '読み上げる内容がありません。選手登録を確認してください'); return; }
   // 読み上げ確認ウインドウが隠れないよう、いったん閉じる。
@@ -2831,14 +2831,15 @@ function _gsSpeak(title, text, k, why){
   confirmSpeak(title, text, _ttsVoice, _ttsStyle, _annRate, function(){
     _gsMark(k);
     gsOpen(true);
-  });
+  }, onStart);
 }
 
 function gsDo(k){
   if(k==='siren'){ sirenNow(); _gsMark(k); return; }
   if(k==='open'){ _gsSpeak('🔊 開始アナウンス', _gsOpenText(), k); return; }
-  if(k==='lu1'){  _gsSpeak('🔊 先攻 打順', _lineupText('away'), k, _gsWhyNoLineup('away')); return; }
-  if(k==='lu2'){  _gsSpeak('🔊 後攻 打順', _lineupText('home'), k, _gsWhyNoLineup('home')); return; }
+  // 打順は、読み始めたらそのチームの打順表をオーバーレイに出す
+  if(k==='lu1'){  _gsSpeak('🔊 先攻 打順', _lineupText('away'), k, _gsWhyNoLineup('away'), function(t){ _luShowStart('away', t); }); return; }
+  if(k==='lu2'){  _gsSpeak('🔊 後攻 打順', _lineupText('home'), k, _gsWhyNoLineup('home'), function(t){ _luShowStart('home', t); }); return; }
   if(k==='def2'){ _gsSpeak('🔊 後攻 守備位置', _defenseText('home'), k, _gsWhyNoDefense('home')); return; }
   if(k==='def1'){ _gsSpeak('🔊 先攻 守備位置', _defenseText('away'), k, _gsWhyNoDefense('away')); return; }
   if(k==='inn1' || k==='inn2'){
@@ -3306,9 +3307,9 @@ function announceSituation(){
 // 読み上げ前に内容を確認・編集する
 var _pendingSpeak = null;
 
-function confirmSpeak(title, text, voice, style, rate, after){
+function confirmSpeak(title, text, voice, style, rate, after, onStart){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
-  _pendingSpeak = { voice:voice, style:style, rate:rate, after:after };
+  _pendingSpeak = { voice:voice, style:style, rate:rate, after:after, onStart:onStart };   // onStart＝読み始めた瞬間に呼ぶ
   document.getElementById('speak-title').textContent = title;
   document.getElementById('speak-text').value = text;
   // 押したボタンを中心に開く（他のウインドウと同じ）
@@ -3328,6 +3329,7 @@ function doSpeakConfirmed(){
   var opt = _pendingSpeak;
   closeSpeakModal();
   if(!t) return;
+  if(typeof opt.onStart==='function'){ try{ opt.onStart(t); }catch(e){} }
   _speakAs(t, opt.voice, opt.style, opt.rate);
   if(typeof opt.after==='function'){ try{ opt.after(); }catch(e){} }
 }
@@ -3338,6 +3340,7 @@ function doSpeakStay(){
   if(!_pendingSpeak) return;
   var t = document.getElementById('speak-text').value.trim();
   if(!t) return;
+  if(typeof _pendingSpeak.onStart==='function'){ try{ _pendingSpeak.onStart(t); }catch(e){} }
   _speakAs(t, _pendingSpeak.voice, _pendingSpeak.style, _pendingSpeak.rate);
 }
 
@@ -3430,11 +3433,33 @@ function _defenseText(team){
 }
 
 // スタメン発表（試合開始前）
+// 打順を読み上げている間、そのチームの打順表をオーバーレイに出す。
+// 読み終わるころ（文字数から見積もった時間）に自動で閉じる。攻撃側でないチームでも出せる
+var _luShow = { team:'', timer:null };
+function _luShowStart(team, text){
+  _luShow.team = team;
+  if(_luShow.timer) clearTimeout(_luShow.timer);
+  // 目安：1秒に約6文字（読む速さの設定も反映）＋余裕3秒。最短15秒
+  var sec = Math.max(15, Math.round(String(text||'').length / (6 * (_annRate||1))) + 3);
+  _luShow.timer = setTimeout(_luShowEnd, sec*1000);
+  _batVisible = true;
+  if(_batVisTimer){ clearTimeout(_batVisTimer); _batVisTimer=null; }
+  _setBatVisBtn();
+  broadcast();
+}
+function _luShowEnd(){
+  if(_luShow.timer){ clearTimeout(_luShow.timer); _luShow.timer=null; }
+  if(!_luShow.team) return;
+  _luShow.team = '';
+  _batVisible = false; _setBatVisBtn();
+  broadcast();
+}
 function announceLineup(team){
   if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
   var t = _lineupText(team);
   if(!t){ alert('打順が登録されていません'); return; }
-  confirmSpeak(team === 'away' ? '🔊 先攻 スタメン' : '🔊 後攻 スタメン', t, _ttsVoice, _ttsStyle, _annRate);
+  confirmSpeak(team === 'away' ? '🔊 先攻 スタメン' : '🔊 後攻 スタメン', t, _ttsVoice, _ttsStyle, _annRate,
+               null, function(tx){ _luShowStart(team, tx); });
 }
 
 // 守備紹介（試合開始後）
@@ -6812,6 +6837,10 @@ function _doBroadcast(){
     showBat:_batVisible,showDef:_defVisible,showBatter:_batterVisible,showPC:_pcVisible,showBSO:_bsoVisible,
     defRoster:_defRoster,defTeam:_defTeam,
     batRoster:(()=>{const team=st.top?'away':'home';return rosters[team].map(p=>({...p,pos:posLabel(p.pos)||String(p.pos||'')}));})(),
+    // 打順の読み上げ中は、読んでいるチームの打順表を出す
+    luTeam:_luShow.team||'',
+    luRoster:_luShow.team?rosters[_luShow.team].map(p=>({...p,pos:posLabel(p.pos)||String(p.pos||'')})):null,
+    luTeamName:_luShow.team?_geName(_luShow.team):'',
     batTeam:(()=>{const team=st.top?'away':'home';const el=document.getElementById('name-'+team);return el?el.textContent:(team==='away'?'先攻':'後攻');})(),
     awayColor:_teamColors.away,homeColor:_teamColors.home,
     scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
