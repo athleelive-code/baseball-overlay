@@ -123,7 +123,7 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 /* 試合開始フロー */
 .gs-fld{margin-bottom:16px}
 .gs-lbl{font-size:19px;color:#888;margin-bottom:7px}
-#gs-title{width:100%;background:#2c2c2e;border:2px solid #444;border-radius:10px;color:#fff;
+#gs-title,#gs-title-yomi{width:100%;background:#2c2c2e;border:2px solid #444;border-radius:10px;color:#fff;
   font-size:24px;padding:12px;outline:none}
 .gs-teams{display:flex;flex-direction:column;gap:7px}
 .gs-team{display:flex;align-items:center;gap:10px;background:#242426;border:1px solid #3a3a3c;
@@ -1297,6 +1297,7 @@ body.gamemin .gm-hide{display:none!important}
       <div class="gs-fld">
         <div class="gs-lbl">試合名</div>
         <input id="gs-title" type="text" placeholder="例）第○回○○大会 準決勝" oninput="gsTitleInput()" autocomplete="off">
+        <input id="gs-title-yomi" type="text" placeholder="読み（例：だい○かい○○たいかい）※アナウンス用" oninput="gsTitleYomiInput()" autocomplete="off" style="margin-top:8px;color:#bbb">
       </div>
       <div class="gs-fld">
         <div class="gs-lbl">チーム（選手登録で変えられます）</div>
@@ -1553,6 +1554,17 @@ document.addEventListener('touchstart', function(){}, {passive:true});
 function onGameTitle(){
   broadcast();
   saveState();
+}
+// 試合名の読み（アナウンス用）。画面の表示は試合名のまま
+var _gameTitleYomi = '';
+function _gameTitleSay(){
+  var y=(_gameTitleYomi||'').trim();
+  return y || _getGameTitle().trim();
+}
+function gsTitleYomiInput(){
+  var el=document.getElementById('gs-title-yomi');
+  _gameTitleYomi = el ? el.value : '';
+  onGameTitle();
 }
 function _getGameTitle(){
   var el=document.getElementById('game-title');
@@ -2527,8 +2539,7 @@ function _gsAt(k){ for(var i=0;i<GS_STEPS.length;i++){ if(GS_STEPS[i].k===k) ret
 
 // 開始アナウンスの文言
 function _gsOpenText(){
-  var el=document.getElementById('game-title');
-  var title=(el && el.value ? el.value.trim() : '');
+  var title=_gameTitleSay();   // 読みがあれば読みで
   var a=_teamSay('away'), h=_teamSay('home');
   return 'お待たせいたしました。' + (title ? 'これより、'+title+'、' : 'これより、')
        + a + '対' + h + 'の試合を開始いたします。';
@@ -2594,6 +2605,8 @@ function _gsShowSteps(){
 function _gsFillCheck(){
   var t=document.getElementById('gs-title'), gt=document.getElementById('game-title');
   if(t && gt && document.activeElement!==t) t.value=gt.value||'';
+  var ty=document.getElementById('gs-title-yomi');
+  if(ty && document.activeElement!==ty) ty.value=_gameTitleYomi||'';
   // 表示は3塁側を左（上）に。中身の先攻／後攻はそのまま
   var third = (_firstBatSide==='3') ? 'away' : 'home';
   var first = (third==='away') ? 'home' : 'away';
@@ -2659,7 +2672,8 @@ function _gsReady(k){
   if(k==='open'){
     var el=document.getElementById('game-title');
     var t=(el && el.value ? el.value.trim() : '');
-    return { ok:true, t: t ? ('試合名：'+t) : '試合名なしで読み上げます' };
+    var y=(_gameTitleYomi||'').trim();
+    return { ok:true, t: t ? ('試合名：'+t+(y ? '（読み：'+y+'）' : '')) : '試合名なしで読み上げます' };
   }
   return null;
 }
@@ -5818,6 +5832,7 @@ function resetEverything(){
   // 試合名
   var gt=document.getElementById('game-title');
   if(gt) gt.value='';
+  _gameTitleYomi='';
 
   // 記録
   _abLog=[]; _pitchLog=[]; _lastResult=null; _speed=null; _hrInfo=null;
@@ -5844,6 +5859,7 @@ function _collectGameData(){
     ver: 1,
     savedAt: new Date().toISOString(),
     title: gt ? gt.value : '',
+    titleYomi: _gameTitleYomi||'',
     teams: {
       away: na ? na.textContent : '先攻',
       home: nh ? nh.textContent : '後攻'
@@ -5904,6 +5920,7 @@ function loadGameFile(e){
       }
       var gt=document.getElementById('game-title');
       if(gt) gt.value=d.title||'';
+      _gameTitleYomi=d.titleYomi||'';
 
       var s=d.state;
       st.inn=s.inn||1; st.top=s.top!==false; st.maxInn=s.maxInn||7;
@@ -6003,6 +6020,7 @@ function applyPcEdit(s){
       if(typeof s.coachYomi.home==='string') _coachYomi.home=s.coachYomi.home;
     }
 
+    if(typeof s.gameTitleYomi==='string') _gameTitleYomi=s.gameTitleYomi;
     if(typeof s.gameTitle==='string'){
       var gt=document.getElementById('game-title');
       if(gt && document.activeElement!==gt) gt.value=s.gameTitle;
@@ -6139,6 +6157,7 @@ function applyRemoteState(s){
     }
 
     // 試合タイトル
+    if(typeof s.gameTitleYomi==='string') _gameTitleYomi=s.gameTitleYomi;
     if(typeof s.gameTitle==='string'){
       var gtEl=document.getElementById('game-title');
       if(gtEl && document.activeElement!==gtEl) gtEl.value=s.gameTitle;
@@ -6519,7 +6538,7 @@ function _doBroadcast(){
     scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
     autoHideSec:_autoHideSec,
     _ctl:true,
-    gameTitle:_getGameTitle(),
+    gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
@@ -6573,7 +6592,7 @@ function saveState(){
       nameAway:na?na.textContent:'先攻',
       nameHome:nh?nh.textContent:'後攻',
       lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
-      gameTitle:_getGameTitle(),
+      gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
@@ -6637,6 +6656,7 @@ function restoreState(){
       _coachYomi.home=snap.coachYomi.home||'';
     }
     // 試合タイトルを復元
+    if(typeof snap.gameTitleYomi==='string') _gameTitleYomi=snap.gameTitleYomi;
     if(typeof snap.gameTitle==='string'){
       var _gt=document.getElementById('game-title');
       if(_gt) _gt.value=snap.gameTitle;

@@ -46,6 +46,13 @@ body{padding-bottom:40px}
   color:#eee;font-size:20px;font-weight:800;padding:6px 2px;outline:none;
 }
 #hdr-game-title:focus{border-bottom-color:#666}
+#hdr-game-yomi{
+  flex:0 0 100%;order:-1;margin:-22px 0 2px;
+  background:transparent;border:none;border-bottom:1px solid #2e2e30;
+  color:#aaa;font-size:15px;padding:5px 2px;outline:none;
+}
+#hdr-game-yomi:focus{border-bottom-color:#666;color:#fff}
+#hdr-game-yomi::placeholder{color:#4a4a4c}
 #hdr-game-title::placeholder{color:#4a4a4c;font-weight:500}
 .gb-inn{display:flex;flex-direction:column;align-items:center;gap:5px}
 .gb-inn-adj{display:flex;align-items:center;gap:7px}
@@ -485,6 +492,8 @@ body.locked .row{cursor:default}
 <div class="gamebar">
   <input id="hdr-game-title" type="text" placeholder="試合名を入力"
     oninput="onGameTitlePC()" autocomplete="off">
+  <input id="hdr-game-yomi" type="text" placeholder="試合名の読み（アナウンス用）"
+    oninput="onGameYomiPC()" autocomplete="off">
   <div class="gb-inn">
     <span class="gb-inn-num" id="gb-inn">1</span>
     <div class="gb-tb-sel">
@@ -1326,6 +1335,7 @@ function pushState(){
     aab: teamNames.away || lr.aab || '',
     hnm: teamNames.home || lr.hnm || '',
     gameTitle: (document.getElementById('hdr-game-title')||{}).value || lr.gameTitle || '',
+    gameTitleYomi: (typeof gameTitleYomi!=='undefined') ? gameTitleYomi : undefined,
     coaches: { away:coaches.away, home:coaches.home },
     cooling: (typeof _cooling!=='undefined') ? { on:_cooling.on, endsAt:_cooling.endsAt } : undefined,
     // 分数はこの端末で変えたときだけ送る（古い値でコントローラーを上書きしないため）
@@ -1853,6 +1863,11 @@ function applyRemote(s){
     if(_gt && typeof s.gameTitle==='string' && document.activeElement!==_gt){
       _gt.value=s.gameTitle;
     }
+    if(typeof s.gameTitleYomi==='string'){
+      gameTitleYomi=s.gameTitleYomi;
+      var _gy=document.getElementById('hdr-game-yomi');
+      if(_gy && document.activeElement!==_gy) _gy.value=s.gameTitleYomi;
+    }
     if(s.coaches){
       ['away','home'].forEach(function(t){
         coaches[t]=s.coaches[t]||'';
@@ -2326,6 +2341,13 @@ function _renderYomiInputs(){
 function onGameTitlePC(){
   if(!lastRemote) return;
   lastRemote.gameTitle = document.getElementById('hdr-game-title').value;
+  pushState();
+}
+// 試合名の読み（開始アナウンスで使う）
+var gameTitleYomi = '';
+function onGameYomiPC(){
+  var el=document.getElementById('hdr-game-yomi');
+  gameTitleYomi = el ? el.value : '';
   pushState();
 }
 
