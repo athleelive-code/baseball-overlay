@@ -117,6 +117,8 @@ body{padding-bottom:40px}
 .gb-pl-name{display:flex;align-items:baseline;gap:10px;font-size:28px;font-weight:900;color:#fff;
   white-space:nowrap;line-height:1.15}
 .gb-pl-num{font-size:18px;font-weight:800;color:#999}
+/* フリガナは氏名の上に小さく（空でも高さを取り、打者・投手の氏名の位置をそろえる） */
+.gb-pl-yomi{font-size:13px;color:#a0a0a2;letter-spacing:1px;min-height:1.1em;line-height:1.1;margin-top:2px}
 .gb-pl-sub{font-size:14px;color:#9a9a9c;min-height:1.1em}
 .gb-pl-sub b{font-size:18px;color:#fff;font-variant-numeric:tabular-nums}
 .gb-pl-hist{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
@@ -604,12 +606,13 @@ body.locked .row{cursor:default}
   <div class="gb-people">
     <div class="gb-pl">
       <div class="gb-pl-hd"><span class="gb-bt-tag bat">打者</span><span class="gb-pl-meta" id="gb-bat-meta"></span></div>
+      <div class="gb-pl-yomi" id="gb-bat-yomi"></div>
       <div class="gb-pl-name"><span id="gb-batter">-</span><span class="gb-pl-num" id="gb-bat-num"></span></div>
-      <div class="gb-pl-sub" id="gb-bat-yomi"></div>
       <div class="gb-pl-hist" id="gb-bat-hist"></div>
     </div>
     <div class="gb-pl">
       <div class="gb-pl-hd"><span class="gb-bt-tag def">投手</span><span class="gb-pl-meta" id="gb-pit-meta"></span></div>
+      <div class="gb-pl-yomi" id="gb-pit-yomi"></div>
       <div class="gb-pl-name"><span id="gb-pitcher">-</span><span class="gb-pl-num" id="gb-pit-num"></span></div>
       <div class="gb-pl-sub" id="gb-pit-sub"></div>
     </div>
@@ -3325,6 +3328,7 @@ function _renderPreviewPeople(s){
   var pp=find(def, ids.pitcher);
   set('gb-pitcher', _rfEsc((pp ? pp.name : strip(s.pitcher)) || '-'));
   set('gb-pit-num', (pp && pp.num) ? '#'+_rfEsc(pp.num) : '');
+  set('gb-pit-yomi', (pp && pp.yomi) ? _rfEsc(pp.yomi) : '');
   set('gb-pit-meta', _rfEsc(def==='away' ? (teamNames.away||s.aab||'先攻') : (teamNames.home||s.hnm||'後攻')));
   var log=Array.isArray(s.pitchLog)?s.pitchLog:[], pid=ids.pitcher||0, pi, pt;
   if(pid && log.length){
