@@ -133,6 +133,7 @@ body{padding-bottom:40px}
 /* 試合名の列：入力欄の右に 試合開始・試合終了 */
 .gb-titlerow{flex:0 0 100%;order:-1;display:flex;align-items:center;gap:10px;margin-bottom:2px}
 .gb-titlerow #hdr-game-title{flex:1 1 auto;min-width:0;order:0;margin-bottom:0}
+.gb-titlerow #hdr-game-yomi{flex:0 1 300px;min-width:120px;order:0;margin:0}   /* 試合名と試合開始の間 */
 .gb-col{display:flex;flex-direction:column;gap:5px;font-size:17px;min-width:190px}
 .gb-bt-line{display:flex;align-items:center;gap:7px;color:#eee;white-space:nowrap}
 .gb-bt-line.sub{font-size:14px;color:#8a8a8a}
@@ -557,11 +558,11 @@ body.locked .row{cursor:default}
   <div class="gb-titlerow">
     <input id="hdr-game-title" type="text" placeholder="試合名を入力"
       oninput="onGameTitlePC()" autocomplete="off">
+    <input id="hdr-game-yomi" type="text" placeholder="試合名の読み（アナウンス用）"
+      oninput="onGameYomiPC()" autocomplete="off">
     <button class="fp-gs" onclick="rgsOpen()">▶ 試合開始</button>
     <button class="fp-ge" id="btn-rge" onclick="rgeOpen()">🏁 試合終了</button>
   </div>
-  <input id="hdr-game-yomi" type="text" placeholder="試合名の読み（アナウンス用）"
-    oninput="onGameYomiPC()" autocomplete="off">
   <div class="gb-inn">
     <span class="gb-inn-num" id="gb-inn">1</span>
     <div class="gb-tb-sel">
