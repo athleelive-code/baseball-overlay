@@ -160,6 +160,9 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
 .ge-save.done{opacity:.6}
 .ge-sub2{font-size:22px;font-weight:800;padding:14px 6px}
 .ge-note{font-size:19px;color:#aaa;text-align:center;margin:0 0 4px}
+/* スコア表の H・E を出すかの切り替え */
+.she-btn.on{background:#1d3a1d;border-color:#3f8a3f;color:#bff0bf}
+.she-btn:not(.on){color:#888}
 /* 試合開始フロー */
 .gs-fld{margin-bottom:16px}
 .gs-lbl{font-size:19px;color:#888;margin-bottom:7px}
@@ -806,6 +809,14 @@ body.gamemin .gm-hide{display:none!important}
       </div>
     </div>
 
+    </div>
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">スコア表の H（安打）・E（失策）</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">オーバーレイのスコア表に出すかどうか（押すたびに切り替え）</div>
+      <div style="display:flex;gap:12px">
+        <button class="drawer-btn she-btn" id="she-h" style="flex:1;font-size:26px;font-weight:800;padding:16px 8px" onclick="toggleShowHE('h')">H（安打）　表示</button>
+        <button class="drawer-btn she-btn" id="she-e" style="flex:1;font-size:26px;font-weight:800;padding:16px 8px" onclick="toggleShowHE('e')">E（失策）　表示</button>
+      </div>
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">イニングコールで打順と守備位置を出す</div>
@@ -4881,6 +4892,36 @@ var _gameEnd  = { on:false };          // {on, reason, winner:'away'|'home'|'', 
 var _extra    = { kind:'', reg:0 };    // 延長・タイブレーク中。reg=規定の最終回
 var _geCtx    = null;                  // 確認を出した場面 'bot'|'top'|'manual'
 var _geReason = '';
+
+// 試合ごとの番号。試合リセット（次の試合）でだけ新しくなる。0＝まだ無い。
+// ROSTER の打席記録とオーバーレイの H・E は、この番号が新しくなったら前の試合の分を消す
+var _gameId = 0;
+try{ _gameId = Number(localStorage.getItem('bb_game_id_ctl'))||0; }catch(e){}
+function _newGameId(){
+  _gameId = Date.now();
+  try{ localStorage.setItem('bb_game_id_ctl', String(_gameId)); }catch(e){}
+}
+// 他のコントローラーで新しい試合になっていたら合わせる（古い番号には戻さない）
+function _adoptGameId(v){
+  if(typeof v==='number' && v>_gameId){ _gameId=v; try{ localStorage.setItem('bb_game_id_ctl', String(v)); }catch(e){} }
+}
+// スコア表の H（安打）・E（失策）を出すか。設定で切り替え、オーバーレイに配る
+var _showHits = true, _showErrs = true;
+try{ var _she=JSON.parse(localStorage.getItem('bb_show_he')||'null'); if(_she){ _showHits=(_she.h!==false); _showErrs=(_she.e!==false); } }catch(e){}
+function toggleShowHE(k){
+  if(k==='h') _showHits=!_showHits; else _showErrs=!_showErrs;
+  try{ localStorage.setItem('bb_show_he', JSON.stringify({ h:_showHits, e:_showErrs })); }catch(e){}
+  _refreshShowHEUI();
+  broadcast();
+}
+function _refreshShowHEUI(){
+  [['h',_showHits,'H（安打）'],['e',_showErrs,'E（失策）']].forEach(function(p){
+    var b=document.getElementById('she-'+p[0]); if(!b) return;
+    b.classList.toggle('on', p[1]);
+    b.textContent = p[2]+'　'+(p[1]?'表示':'非表示');
+  });
+}
+_refreshShowHEUI();
 function _geTotals(){
   var n=Math.max(st.maxInn, st.inn), t={};
   ['away','home'].forEach(function(k){
@@ -6105,6 +6146,7 @@ function resetEverything(){
   if(!confirm('チーム名・選手・試合状況・記録をすべて消去します。よろしいですか？')) return;
   if(!confirm('本当に消去しますか？　この操作は元に戻せません。')) return;
   _gameEnd={ on:false }; _extra={ kind:'', reg:0 };
+  _newGameId();
 
   // 試合状況
   scores.away=Array(16).fill(null);
@@ -6266,6 +6308,13 @@ function resetAll(){
   st.inn=1; st.top=true; st.maxInn=7; st.configMaxInn=7;
   document.getElementById('inn-num').textContent=1;
   _gsClearProgress();          // 次の試合なので試合開始フローも最初から
+  // 記録も次の試合用に空にする（ヒット数・エラー数・投球数などを持ち越さない）
+  _abLog=[]; _pitchLog=[]; _lastResult=null; _speed=null; _hrInfo=null;
+  _paResults=[]; _lastPitchReport=null;
+  if(typeof _chapterLog!=='undefined') _chapterLog=[];
+  _lastBatterId.away=null; _lastBatterId.home=null;
+  _newGameId();                // この合図で ROSTER の打席記録とオーバーレイの H・E も消える
+  _updateAbDisp(); _updatePitchDisp();
   renderSB(); renderBSO(); renderDiamond(); setTop(true); broadcast();
   closeDrawer();
 }
@@ -6323,6 +6372,7 @@ function applyPcEdit(s){
     if(typeof s.gameTitleYomi==='string') _setGameTitleYomi(s.gameTitleYomi);
     if(s.gameEnd && typeof s.gameEnd==='object'){ _gameEnd=s.gameEnd; _geRefreshBtn(); }
     if(s.extra && typeof s.extra==='object') _extra=s.extra;
+    _adoptGameId(s.gameId);
     if(typeof s.gameTitle==='string'){
       var gt=document.getElementById('game-title');
       if(gt && document.activeElement!==gt) gt.value=s.gameTitle;
@@ -6462,6 +6512,7 @@ function applyRemoteState(s){
     if(typeof s.gameTitleYomi==='string') _setGameTitleYomi(s.gameTitleYomi);
     if(s.gameEnd && typeof s.gameEnd==='object'){ _gameEnd=s.gameEnd; _geRefreshBtn(); }
     if(s.extra && typeof s.extra==='object') _extra=s.extra;
+    _adoptGameId(s.gameId);
     if(typeof s.gameTitle==='string'){
       var gtEl=document.getElementById('game-title');
       if(gtEl && document.activeElement!==gtEl) gtEl.value=s.gameTitle;
@@ -6846,7 +6897,7 @@ function _doBroadcast(){
     scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
     autoHideSec:_autoHideSec,
     _ctl:true,
-    gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra,
+    gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra, gameId:_gameId, showHits:_showHits, showErrs:_showErrs,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
@@ -6900,7 +6951,7 @@ function saveState(){
       nameAway:na?na.textContent:'先攻',
       nameHome:nh?nh.textContent:'後攻',
       lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
-      gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra,
+      gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra, gameId:_gameId, showHits:_showHits, showErrs:_showErrs,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる

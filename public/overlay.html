@@ -58,6 +58,9 @@ html,body{background:transparent;width:100%;height:100%;overflow:hidden}
 body.game-end .ov-end{display:block}
 body.game-end .ov-inn-num,body.game-end .ov-inn-tb{display:none}
 body.game-end .ov-bat-wrap{display:none}
+/* スコア表の H・E（設定で非表示にできる） */
+body.hide-hits .ov-h-cell{display:none}
+body.hide-errs .ov-e-cell{display:none}
 .ov-teams{display:flex;flex-direction:column;flex:1;border-left:1px solid rgba(255,255,255,.1)}
 /* チーム名の欄は共通の幅を確保する。
    ・縮まない（shrink:0）ので、イニング表が開いても名前が隠れない
@@ -699,7 +702,7 @@ function renderBatList(roster,currentBatter,teamLabel){
 
 let _defVisible=false,_batVisible=false;
 // 打歴：ROSTER から _hist で受け取ったらそれを正とする（null = 未受信 → s.paResults を使う）
-let _histResults=null;
+let _histResults=null, _lastGameId=0;   // _lastGameId＝最後に見た試合番号（コントローラーの試合リセットで変わる）
 // コントローラーから来た showDef/showBat の「前回値」。毎ブロードキャストで同じ true が来ても
 // 自動非表示したパネルを勝手に開き直さないよう、値が変化したときだけ反映する
 let _lastCtlShowDef=null,_lastCtlShowBat=null,_lastLuTeam='';
@@ -745,12 +748,17 @@ function applyState(s){
   // チームエンブレム（スコア表・打者ブロック）
   _lastTop = isTop;
   _paintTeamLogos();
+  // H・E の列は設定で出し入れ（コントローラーの設定）。チーム名の幅を測る前に切り替える
+  document.body.classList.toggle('hide-hits', s.showHits===false);
+  document.body.classList.toggle('hide-errs', s.showErrs===false);
   _fitTeamNames();          // 長いチーム名は文字を小さくして必ず全部出す
 
   const at=asc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   const ht=hsc.filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   set('ov-score-away',at);set('ov-score-home',ht);
 
+  // 新しい試合になったら、前の試合の打歴（ROSTER から来たもの）を捨てる。ROSTER からは空の打歴が届き直す
+  if(typeof s.gameId==='number' && s.gameId>_lastGameId){ if(_lastGameId) _histResults=null; _lastGameId=s.gameId; }
   // 安打数（H）。打歴は ROSTER から来た _hist を正とし、無ければコントローラーの記録を使う
   var paList = (_histResults!==null) ? _histResults : (Array.isArray(s.paResults)?s.paResults:[]);
   set('ov-hits-away', _teamHits(paList,'away'));

@@ -1916,6 +1916,16 @@ function applyRemote(s){
         if(_cooling.on) _coolingStartTick(); else _coolingStopTick();
       }
     }
+    // 新しい試合（コントローラーで試合リセット）になったら、前の試合の打席記録を消す。
+    // 残すとオーバーレイのヒット数・エラー数が次の試合に持ち越される
+    if(typeof s.gameId==='number' && s.gameId){
+      var _pg=0; try{ _pg=Number(localStorage.getItem('bb_game_id'))||0; }catch(e){}
+      if(s.gameId>_pg){
+        try{ localStorage.setItem('bb_game_id', String(s.gameId)); }catch(e){}
+        if(_gameLog.length){ _gameLog=[]; _saveLog(); renderLog(); }
+        _sendHist();
+      }
+    }
     // 読み仮名（他端末で入れたものを取り込む）
     if(s.teamYomi && typeof teamYomi!=='undefined'){
       if(typeof s.teamYomi.away==='string') teamYomi.away=s.teamYomi.away;
