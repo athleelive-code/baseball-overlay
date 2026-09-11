@@ -66,7 +66,7 @@ body.hide-errs .ov-e-cell{display:none}
 .ov-adtop > img,.ov-adtop > .ov-adtop-grid{
   transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease}
 body.adtop-off .ov-adtop > img,body.adtop-off .ov-adtop > .ov-adtop-grid{
-  transform:translateY(-115%);opacity:0}
+  transform:translateY(calc(-100% - 30px));opacity:0}   /* 上端から20px下げたぶんも含めて画面外まで引っ込める */
 @media (prefers-reduced-motion:reduce){ .ov-adtop > img,.ov-adtop > .ov-adtop-grid{transition:none} }
 .ov-teams{display:flex;flex-direction:column;flex:1;border-left:1px solid rgba(255,255,255,.1)}
 /* チーム名の欄は共通の幅を確保する。
@@ -251,7 +251,7 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
    影だけ薄く落とす。
    大きさは画像ごとに JS（_adTopFit）が決める。ここの値は読み込み前の見た目 */
 .ov-adtop{
-  position:fixed;right:20px;top:0;z-index:35;          /* 画面の上端に詰める */
+  position:fixed;right:20px;top:20px;z-index:35;       /* 左上のスコア表（top:20px）と上端をそろえる */
   display:none;align-items:flex-start;justify-content:flex-end;
   width:auto;height:auto;max-width:460px;max-height:230px;
   transform:scale(.8);transform-origin:top right;
