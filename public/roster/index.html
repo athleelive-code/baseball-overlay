@@ -122,6 +122,17 @@ body{padding-bottom:40px}
 .gb-pl-hist{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
 .gb-pl-hist:empty{display:none}
 .gb-pl-hist .fp-res{font-size:13px;cursor:default}
+/* 試合状況の並び：1段目＝回・スコア・BSO・ダイヤモンド …（右上）表示の切り替え
+                   2段目＝（左下）打者・投手 …（右）球速・アナウンス */
+.gb-disp{order:5;margin-left:auto;justify-content:flex-end}
+.gb-break{order:6;flex-basis:100%;height:0;margin-top:-26px}   /* ここで改行（段の間があきすぎないよう詰める） */
+.gb-people{order:7}
+/* 球速とアナウンスはひとまとまりで右側に（折り返しても右寄せのまま） */
+.gb-right{order:8;margin-left:auto;display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:flex-end}
+.gb-right .gb-spd{margin-left:0}
+/* 試合名の列：入力欄の右に 試合開始・試合終了 */
+.gb-titlerow{flex:0 0 100%;order:-1;display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.gb-titlerow #hdr-game-title{flex:1 1 auto;min-width:0;order:0;margin-bottom:0}
 .gb-col{display:flex;flex-direction:column;gap:5px;font-size:17px;min-width:190px}
 .gb-bt-line{display:flex;align-items:center;gap:7px;color:#eee;white-space:nowrap}
 .gb-bt-line.sub{font-size:14px;color:#8a8a8a}
@@ -543,8 +554,12 @@ body.locked .row{cursor:default}
 
 <!-- 試合状況（読み取り専用・コントローラーと同期） -->
 <div class="gamebar">
-  <input id="hdr-game-title" type="text" placeholder="試合名を入力"
-    oninput="onGameTitlePC()" autocomplete="off">
+  <div class="gb-titlerow">
+    <input id="hdr-game-title" type="text" placeholder="試合名を入力"
+      oninput="onGameTitlePC()" autocomplete="off">
+    <button class="fp-gs" onclick="rgsOpen()">▶ 試合開始</button>
+    <button class="fp-ge" id="btn-rge" onclick="rgeOpen()">🏁 試合終了</button>
+  </div>
   <input id="hdr-game-yomi" type="text" placeholder="試合名の読み（アナウンス用）"
     oninput="onGameYomiPC()" autocomplete="off">
   <div class="gb-inn">
@@ -584,6 +599,7 @@ body.locked .row{cursor:default}
     <rect id="gb-b1" class="gb-base" x="47" y="24" width="20" height="20" rx="4" transform="rotate(45 57 34)" />
   </svg>
 
+  <div class="gb-break"></div>
   <div class="gb-people">
     <div class="gb-pl">
       <div class="gb-pl-hd"><span class="gb-bt-tag bat">打者</span><span class="gb-pl-meta" id="gb-bat-meta"></span></div>
@@ -609,6 +625,7 @@ body.locked .row{cursor:default}
     <button class="disp-btn" onclick="openQR('ctrl/')" title="コントローラーを共有（スマホで読み取って開く）" style="display:flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;display:block"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zM13 3h8v8h-8V3zm2 2v4h4V5h-4zM13 13h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg> コントローラー</button>
   </div>
 
+  <div class="gb-right">
   <div class="gb-spd">
     <div class="spd-last empty" id="spd-last">--- <span>km/h</span></div>
     <div class="spd-type" id="spd-type-disp"></div>
@@ -625,6 +642,7 @@ body.locked .row{cursor:default}
     </div>
     <button class="ann-btn call" onclick="announceCurrentBatter()"><svg class="spk" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.06c1.5-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>打者<br>コール</button>
     <button class="ann-btn call" onclick="announceCurrentInning()"><svg class="spk" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.06c1.5-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>イニング<br>コール</button>
+  </div>
   </div>
 </div>
 
@@ -643,8 +661,6 @@ body.locked .row{cursor:default}
   <button class="fp-ticker" id="btn-ticker" onclick="tickerNow()">📣 ティッカー</button>
   <button class="fp-ticker on" id="btn-adtop" onclick="adTopNow()">🖼 メイン広告を消す</button>
   <button class="fp-firstbat" onclick="openFirstBatPC()">⇄ 先攻選択</button>
-  <button class="fp-gs" onclick="rgsOpen()">▶ 試合開始</button>
-  <button class="fp-ge" id="btn-rge" onclick="rgeOpen()">🏁 試合終了</button>
   <button class="fp-float" id="btn-ctrl-float" onclick="openCtrlFloat()" title="コントローラーをスマホ大の小窓で、ほかのアプリの上に浮かせて開く">🗗 コントローラー</button>
   <script src="../ctrl/float.js"></script>
   <script>
