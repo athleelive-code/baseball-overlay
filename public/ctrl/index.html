@@ -1145,7 +1145,7 @@ body.gamemin .gm-hide{display:none!important}
     </div>
     <div class="drawer-sec">
       <div class="drawer-sec-t">YouTubeチャプター</div>
-      <div style="font-size:20px;color:#666;margin-bottom:10px">開始アナウンス・1回表・イニング交代を記録します。配信開始時刻（0:00）は後からでもセット・修正できます（未セットのときは開始アナウンスの時刻を 0:00 にします）。試合後に概要欄へ貼り付けられます</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">配信を始めたら、配信開始時刻（0:00）をセットしてください（空のまま押すと今の時刻）。開始アナウンス・1回表・イニング交代を記録します。時刻は後から直してもチャプターは付け直ります。試合後に概要欄へ貼り付けられます</div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
         <input id="stream-start-time" type="time"
           style="flex:1;background:#2c2c2e;border:1px solid #444;border-radius:10px;color:#fff;font-size:28px;padding:12px;outline:none">
@@ -6192,17 +6192,14 @@ function _chapterLines(){
   if(!list.length || list[0].sec>0) list.unshift({ sec:0, label:'配信開始' });
   return list;
 }
-// 試合開始フローの「開始アナウンス」を読み始めた時刻を、チャプターの「試合開始」にする。
-// 配信開始時刻が未セットなら、この時刻を配信開始（0:00）にする（あとから設定で直せる）
+// 試合開始フローの「開始アナウンス」を読み始めた時刻を、チャプターの「試合開始」として記録する。
+// 0:00（配信開始時刻）は、配信を始めたときに設定でセットしてもらう（配信は開始アナウンスより前から
+// 始まっているので、ここで勝手に 0:00 にはしない）。未セットなら知らせるだけ。あとからセットしても付け直る
 function _chapterGameStart(){
-  if(!_streamStartTime){
-    _streamStartTime = new Date();
-    try{ localStorage.setItem('bb_stream_start', _streamStartTime.getTime()); }catch(e){}
-    _refreshStreamStartInput();
-    toastMsg('YouTubeチャプター：開始アナウンスの時刻を 0:00 にしました。配信がもっと前から始まっていたら、設定で配信開始時刻を直してください');
-  }
   if(!_chapterLog.some(function(c){ return c.label==='試合開始'; })) _recordChapter('試合開始');
-  else saveState();
+  if(!_streamStartTime){
+    toastMsg('YouTubeチャプター：配信開始時刻が未セットです。設定でセットしてください（あとからでも付け直ります）');
+  }
 }
 // 設定の「配信開始時刻」の欄を、覚えている時刻にそろえる
 function _refreshStreamStartInput(){
