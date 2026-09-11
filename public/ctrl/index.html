@@ -130,6 +130,36 @@ html,body{width:100%;min-height:100%;min-height:-webkit-fill-available;backgroun
   50%    { box-shadow:0 0 0 5px rgba(245,197,24,.75), 0 0 30px 0 rgba(245,197,24,.75) }
 }
 .assist-done{ opacity:.42; filter:saturate(.5) }
+/* 試合終了の確認 */
+#btn-gameend{flex-shrink:0;background:#2a1418;border:2px solid #8a2a3a;border-radius:10px;color:#ff9aa8;
+  font-size:22px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap}
+#btn-gameend.hint{animation:assistPulse 1.9s ease-in-out infinite;border-color:#e0405a;color:#fff}
+#btn-gameend.ended{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
+.ge-title{font-size:38px;font-weight:900;color:#fff;text-align:center}
+.ge-sub{font-size:20px;color:#999;text-align:center;margin:6px 0 14px}
+.ge-score{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.ge-team{display:flex;align-items:center;gap:12px;background:#242426;border:2px solid #3a3a3c;border-radius:12px;padding:10px 16px}
+.ge-team.win{border-color:#c8901e;background:#2e2410}
+.ge-tn{flex:1;min-width:0;font-size:28px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ge-pt{font-size:52px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;min-width:1.4em;text-align:right}
+.ge-result{font-size:24px;font-weight:800;color:#ffcf6a;text-align:center;margin:4px 0 14px;min-height:1.2em}
+.ge-lbl{font-size:19px;color:#888;margin-bottom:7px}
+.ge-reasons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:6px}
+.ge-rs{background:#242426;border:2px solid #3a3a3c;border-radius:10px;color:#bbb;font-size:21px;font-weight:700;padding:13px 4px;cursor:pointer}
+.ge-rs.on{background:#1a3a5a;border-color:#4a8ad0;color:#fff}
+.ge-btn{display:block;width:100%;border-radius:14px;font-size:28px;font-weight:900;padding:18px 8px;cursor:pointer;
+  margin-top:10px;border:3px solid #444;background:#242426;color:#ddd;line-height:1.25}
+.ge-btn small{font-size:19px;font-weight:700;opacity:.8}
+.ge-end{background:#5a1020;border-color:#e0405a;color:#fff;font-size:34px}
+.ge-go{background:#123040;border-color:#2a6a8a;color:#8fd8f0}
+.ge-row{display:flex;gap:10px}
+.ge-row .ge-btn{flex:1}
+.ge-later{background:transparent;border-color:#333;color:#888;font-size:22px;font-weight:700;padding:12px}
+.ge-ann{background:#1d3a1d;border-color:#3f8a3f;color:#bff0bf}
+.ge-save{background:#3a2a10;border-color:#c8901e;color:#ffcf6a}
+.ge-save.done{opacity:.6}
+.ge-sub2{font-size:22px;font-weight:800;padding:14px 6px}
+.ge-note{font-size:19px;color:#aaa;text-align:center;margin:0 0 4px}
 /* 試合開始フロー */
 .gs-fld{margin-bottom:16px}
 .gs-lbl{font-size:19px;color:#888;margin-bottom:7px}
@@ -551,6 +581,7 @@ body.gamemin .gm-hide{display:none!important}
   <button id="btn-gamestart" onclick="gsOpen()"
     style="flex-shrink:0;background:#3a2a10;border:2px solid #c8901e;border-radius:10px;color:#ffcf6a;
            font-size:22px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap">▶ 試合開始</button>
+  <button id="btn-gameend" onclick="geOpen('manual')">🏁 試合終了</button>
 </div>
 <div class="game-title-row yomi">
   <span class="gt-label">読み</span>
@@ -1300,6 +1331,42 @@ body.gamemin .gm-hide{display:none!important}
 </div>
 
 <!-- 試合開始フロー -->
+<!-- 試合終了の確認。最終回が終わったとき・「試合終了」ボタンで開く。終わらせるかはオペレーターが決める -->
+<div id="ge-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:720;
+     align-items:flex-start;justify-content:center;padding:4px;overflow-y:auto">
+  <div style="background:#1a1a1c;border:3px solid #4a4a4c;border-radius:18px;width:100%;max-width:860px;
+       padding:18px 14px 14px;margin:auto">
+    <div class="ge-title" id="ge-title">試合終了？</div>
+    <div class="ge-sub" id="ge-sub"></div>
+    <div class="ge-score">
+      <div class="ge-team" id="ge-team-away"><span class="ge-tn" id="ge-name-away"></span><span class="ge-pt" id="ge-pt-away">0</span></div>
+      <div class="ge-team" id="ge-team-home"><span class="ge-tn" id="ge-name-home"></span><span class="ge-pt" id="ge-pt-home">0</span></div>
+    </div>
+    <div class="ge-result" id="ge-result"></div>
+    <div id="ge-ask">
+      <div class="ge-lbl">終了の理由（任意）</div>
+      <div class="ge-reasons" id="ge-reasons">
+        <button class="ge-rs" data-r="通常終了" onclick="gePickReason(this)">通常終了</button>
+        <button class="ge-rs" data-r="サヨナラ" onclick="gePickReason(this)">サヨナラ</button>
+        <button class="ge-rs" data-r="コールド" onclick="gePickReason(this)">コールド</button>
+        <button class="ge-rs" data-r="その他" onclick="gePickReason(this)">その他</button>
+      </div>
+      <button class="ge-btn ge-end" onclick="geConfirm()">🏁 試合終了</button>
+      <div class="ge-row" id="ge-cont"></div>
+      <button class="ge-btn ge-later" onclick="geClose()">あとで決める（閉じる）</button>
+    </div>
+    <div id="ge-after" style="display:none">
+      <div class="ge-note">次の試合に移るまで、この試合のデータは消えません</div>
+      <button class="ge-btn ge-ann" onclick="geAnnounce()">🔊 試合終了アナウンス</button>
+      <button class="ge-btn ge-save" id="ge-save" onclick="geSave()">💾 試合データを保存</button>
+      <div class="ge-row">
+        <button class="ge-btn ge-sub2" onclick="geUndo()">↩ 終了を取り消す</button>
+        <button class="ge-btn ge-sub2" onclick="geNext()">次の試合へ</button>
+      </div>
+      <button class="ge-btn ge-later" onclick="geClose()">閉じる</button>
+    </div>
+  </div>
+</div>
 <div id="gs-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:700;
      align-items:flex-start;justify-content:center;padding:4px;overflow-y:auto">
   <div style="background:#1a1a1c;border:3px solid #4a4a4c;border-radius:18px;width:100%;max-width:860px;
@@ -4721,6 +4788,14 @@ function _snapOut(){
 }
 
 function nextInn(){
+  // 終わった試合は進めない（誤操作でイニングが動かないように、終了後の画面を出す）
+  if(_gameEnd.on){ geOpen(); return; }
+  // 最終回が終わったら自動では決めず、オペレーターに選んでもらう
+  var ask=_geNeedAsk();
+  if(ask){ geOpen(ask); return; }
+  _nextInnCore();
+}
+function _nextInnCore(){
   // 攻守交替の前に、締める回の投手・回・表裏を控える
   const _endPid = _curPitcherId();
   const _endInn = st.inn, _endTop = st.top;
@@ -4771,6 +4846,165 @@ function nextInn(){
 const st = { inn:1, top:true, maxInn:7, configMaxInn:7 };
 var _lastBatterId = { away:null, home:null }; // チーム別最終打者ID（イニング間で維持）
 const scores = { away:Array(16).fill(null), home:Array(16).fill(null) };
+
+// ── 試合終了・延長 ─────────────────────────────────────────────────────────
+// 試合の終わりはシステムが決めない。最終回が終わったら確認を出し、オペレーターが選ぶ。
+// 終わった後も「次の試合へ」を押すまでデータは消さない
+var _gameEnd  = { on:false };          // {on, reason, winner:'away'|'home'|'', a, h, inn, top, at, saved, mark}
+var _extra    = { kind:'', reg:0 };    // 延長・タイブレーク中。reg=規定の最終回
+var _geCtx    = null;                  // 確認を出した場面 'bot'|'top'|'manual'
+var _geReason = '';
+function _geTotals(){
+  var n=Math.max(st.maxInn, st.inn), t={};
+  ['away','home'].forEach(function(k){
+    t[k]=scores[k].slice(0,n).filter(function(x){ return typeof x==='number'; }).reduce(function(a,b){ return a+b; },0);
+  });
+  return t;
+}
+function _geName(k){
+  var el=document.getElementById('name-'+k);
+  return (el && el.textContent) ? el.textContent : (k==='away'?'先攻':'後攻');
+}
+// 3アウトで回が終わるとき、確認が要る場面かを返す
+function _geNeedAsk(){
+  if(_gameEnd.on || st.inn < st.configMaxInn) return null;
+  var t=_geTotals();
+  if(st.top) return (t.home > t.away) ? 'top' : null;   // 最終回の表が終わって後攻がリード
+  return 'bot';                                          // 最終回（延長の回）の裏が終わった
+}
+function _geRefreshBtn(){
+  var b=document.getElementById('btn-gameend'); if(!b) return;
+  var ended=!!(_gameEnd && _gameEnd.on);
+  // 最終回以降の裏で後攻がリード＝サヨナラかも。光らせて知らせるだけで、自動では終えない
+  var t=_geTotals();
+  var hint=!ended && !st.top && st.inn>=st.configMaxInn && t.home>t.away;
+  b.classList.toggle('ended', ended);
+  b.classList.toggle('hint', hint);
+  b.textContent = ended ? '🏁 終了済み' : (hint ? '🏁 試合終了？' : '🏁 試合終了');
+}
+function _gePaint(){
+  var ended=_gameEnd.on;
+  var t=ended ? { away:_gameEnd.a, home:_gameEnd.h } : _geTotals();
+  ['away','home'].forEach(function(k){
+    document.getElementById('ge-name-'+k).textContent=_geName(k);
+    document.getElementById('ge-pt-'+k).textContent=t[k];
+    var o=(k==='away')?'home':'away';
+    document.getElementById('ge-team-'+k).classList.toggle('win', ended ? (_gameEnd.winner===k) : (t[k]>t[o]));
+  });
+  document.getElementById('ge-ask').style.display = ended ? 'none' : '';
+  document.getElementById('ge-after').style.display = ended ? '' : 'none';
+  document.getElementById('ge-title').textContent = ended ? '🏁 試合終了' : '試合終了？';
+  var res=document.getElementById('ge-result');
+  if(ended){
+    res.textContent = (_gameEnd.winner ? _geName(_gameEnd.winner)+' の勝ち' : '引き分け')
+                    + ((_gameEnd.reason && _gameEnd.reason!=='通常終了') ? '（'+_gameEnd.reason+'）' : '');
+  }else{
+    res.textContent = (t.away===t.home) ? '同点' : (_geName(t.away>t.home?'away':'home')+' がリード');
+  }
+  var half=st.inn+'回'+(st.top?'表':'裏'), sub=document.getElementById('ge-sub');
+  if(ended) sub.textContent=_gameEnd.inn+'回'+(_gameEnd.top?'表':'裏')+'で終了';
+  else if(_geCtx==='bot') sub.textContent=half+'が終わりました。試合を終えるか、延長に進むかを選んでください';
+  else if(_geCtx==='top') sub.textContent=half+'が終わりました。後攻がリードしています';
+  else sub.textContent='いま '+half+'。サヨナラ・コールドなどで終えるときに使います';
+  var nx=st.inn+1, cont=document.getElementById('ge-cont');
+  cont.innerHTML = (_geCtx==='bot')
+    ? '<button class="ge-btn ge-go" data-k="延長" onclick="geContinue(this.dataset.k)">延長で続ける<br><small>'+nx+'回へ</small></button>'
+     +'<button class="ge-btn ge-go" data-k="タイブレーク" onclick="geContinue(this.dataset.k)">タイブレークで続ける<br><small>'+nx+'回へ</small></button>'
+    : (_geCtx==='top')
+    ? '<button class="ge-btn ge-go" data-k="" onclick="geContinue(this.dataset.k)">続ける<br><small>'+st.inn+'回裏へ</small></button>'
+    : '';
+  document.querySelectorAll('#ge-reasons .ge-rs').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-r')===_geReason);
+  });
+  var sv=document.getElementById('ge-save');
+  if(sv){
+    sv.classList.toggle('done', !!_gameEnd.saved);
+    sv.textContent = _gameEnd.saved ? '💾 保存済み（もう一度保存する）' : '💾 試合データを保存';
+  }
+}
+function geOpen(kind){
+  if(!_gameEnd.on){
+    _geCtx = kind || 'manual';
+    _geReason = (_geCtx==='manual') ? '' : '通常終了';   // 手動のときは理由を決めつけない
+  }else{
+    _geCtx = null;
+  }
+  _gePaint();
+  document.getElementById('ge-mask').style.display='flex';
+}
+function geClose(){ document.getElementById('ge-mask').style.display='none'; }
+function gePickReason(b){
+  var r=b.getAttribute('data-r');
+  _geReason = (_geReason===r) ? '' : r;
+  _gePaint();
+}
+// 「試合終了」を確定。最終スコア・勝敗を決め、オーバーレイにも終了を出す
+function geConfirm(){
+  var t=_geTotals();
+  var team=st.top?'away':'home', idx=st.inn-1, mark={};
+  if(scores[team][idx]===null) scores[team][idx]=0;          // 今の回の空欄は 0 で締める
+  if(st.top && _geCtx==='top' && scores.home[idx]===null){    // 最終回の表で終わった＝裏は×
+    scores.home[idx]='x'; mark.xHome=idx;
+  }
+  if(_geReason==='サヨナラ' && !st.top && !xOn['home-'+idx]){ // サヨナラは得点に x を添える
+    xOn['home-'+idx]=true; mark.walk=idx;
+  }
+  _gameEnd = { on:true, reason:_geReason||'', winner:(t.away>t.home?'away':(t.home>t.away?'home':'')),
+               a:t.away, h:t.home, inn:st.inn, top:st.top, at:Date.now(), saved:false, mark:mark };
+  bso.b=0; bso.s=0; bso.o=0;
+  Object.assign(bases,{1:false,2:false,3:false});
+  _batterVisible=false; if(typeof _setBatterVisBtn==='function') _setBatterVisBtn();
+  renderBSO(); renderDiamond(); renderSB();
+  _geRefreshBtn();
+  broadcast(); saveState();
+  _gePaint();                     // そのまま「終了後」の画面（アナウンス・保存）へ
+  toastMsg('試合終了を確定しました');
+}
+// 延長・タイブレーク／裏へ進む。試合は終えず、いつもの攻守交替をする
+function geContinue(kind){
+  if(_geCtx==='bot'){
+    if(!_extra.kind) _extra.reg = st.configMaxInn;   // 規定の最終回を覚えておく
+    _extra.kind = kind || '延長';
+    st.configMaxInn = Math.min(15, Math.max(st.configMaxInn, st.inn) + 1);   // 最終回の制限を1回ずつ外す
+  }
+  _geCtx=null;
+  geClose();
+  _nextInnCore();
+  saveState();
+}
+function _geAnnText(){
+  var g=_gameEnd, hi=Math.max(g.a,g.h), lo=Math.min(g.a,g.h);
+  var pre='ただいまの試合は、';
+  if(_extra.kind && g.inn>_extra.reg) pre+='延長'+g.inn+'回、';
+  if(g.reason==='コールド') pre+=g.inn+'回コールドゲーム、';
+  if(!g.winner) return pre+g.a+'対'+g.h+'の引き分けとなりました。';
+  if(g.reason==='サヨナラ') return pre+hi+'対'+lo+'をもちまして、'+_teamSay(g.winner)+'のサヨナラ勝ちとなりました。';
+  return pre+hi+'対'+lo+'をもちまして、'+_teamSay(g.winner)+'が勝ちました。';
+}
+function geAnnounce(){
+  if(!_annOn){ alert('設定でアナウンスをONにしてください'); return; }
+  _speak(_geAnnText());
+}
+function geSave(){
+  saveGameFile();
+  _gameEnd.saved=true;
+  saveState(); _gePaint();
+}
+function geUndo(){
+  if(!confirm('試合終了を取り消して、試合を続けますか？')) return;
+  var m=_gameEnd.mark||{};
+  if(typeof m.xHome==='number' && scores.home[m.xHome]==='x') scores.home[m.xHome]=null;
+  if(typeof m.walk==='number') delete xOn['home-'+m.walk];
+  _gameEnd={ on:false };
+  geClose();
+  renderSB(); broadcast(); saveState();
+  toastMsg('試合終了を取り消しました');
+}
+function geNext(){
+  if(!confirm('スコアと試合状況をリセットして、次の試合へ進みます。\n（チーム・選手の登録はそのままです）')) return;
+  geClose();
+  resetAll();
+}
 
 function setTop(isTop){
   st.top = isTop;
@@ -4837,6 +5071,7 @@ function renderTotals(){
     const el = document.getElementById('score-'+t);
     if(el) el.textContent = tot;
   });
+  if(typeof _geRefreshBtn==='function') _geRefreshBtn();   // 試合終了ボタンの表示（サヨナラの可能性など）
 }
 
 function setCurrentInn(n){ st.inn=n; document.getElementById('inn-num').textContent=n; renderSB(); broadcast(); }
@@ -5842,6 +6077,7 @@ function copyChapterText(){
 function resetEverything(){
   if(!confirm('チーム名・選手・試合状況・記録をすべて消去します。よろしいですか？')) return;
   if(!confirm('本当に消去しますか？　この操作は元に戻せません。')) return;
+  _gameEnd={ on:false }; _extra={ kind:'', reg:0 };
 
   // 試合状況
   scores.away=Array(16).fill(null);
@@ -5898,7 +6134,7 @@ function _collectGameData(){
     coaches: { away:_coaches.away, home:_coaches.home },
     rosters: { away:rosters.away, home:rosters.home },
     state: {
-      inn: st.inn, top: st.top, maxInn: st.maxInn,
+      inn: st.inn, top: st.top, maxInn: st.maxInn, gameEnd: _gameEnd, extra: _extra,
       b: bso.b, s: bso.s, o: bso.o,
       bases: { 1:bases[1], 2:bases[2], 3:bases[3] },
       scores: { away:scores.away, home:scores.home },
@@ -5955,6 +6191,8 @@ function loadGameFile(e){
 
       var s=d.state;
       st.inn=s.inn||1; st.top=s.top!==false; st.maxInn=s.maxInn||7;
+      _gameEnd=(s.gameEnd && typeof s.gameEnd==='object') ? s.gameEnd : { on:false };
+      _extra=(s.extra && typeof s.extra==='object') ? s.extra : { kind:'', reg:0 };
       bso.b=s.b||0; bso.s=s.s||0; bso.o=s.o||0;
       if(s.bases){ bases[1]=!!s.bases[1]; bases[2]=!!s.bases[2]; bases[3]=!!s.bases[3]; }
       if(s.scores){
@@ -5989,6 +6227,10 @@ function loadGameFile(e){
 }
 
 function resetAll(){
+  // 終わった試合を保存せずに消そうとしたら、ひと声かける
+  if(_gameEnd.on && !_gameEnd.saved &&
+     !confirm('終わった試合のデータをまだ保存していません。\n保存せずにリセットしますか？')) return;
+  _gameEnd={ on:false }; _extra={ kind:'', reg:0 };
   scores.away=Array(16).fill(null);
   scores.home=Array(16).fill(null);
   for(const k in xOn) delete xOn[k];
@@ -6052,6 +6294,8 @@ function applyPcEdit(s){
     }
 
     if(typeof s.gameTitleYomi==='string') _setGameTitleYomi(s.gameTitleYomi);
+    if(s.gameEnd && typeof s.gameEnd==='object'){ _gameEnd=s.gameEnd; _geRefreshBtn(); }
+    if(s.extra && typeof s.extra==='object') _extra=s.extra;
     if(typeof s.gameTitle==='string'){
       var gt=document.getElementById('game-title');
       if(gt && document.activeElement!==gt) gt.value=s.gameTitle;
@@ -6189,6 +6433,8 @@ function applyRemoteState(s){
 
     // 試合タイトル
     if(typeof s.gameTitleYomi==='string') _setGameTitleYomi(s.gameTitleYomi);
+    if(s.gameEnd && typeof s.gameEnd==='object'){ _gameEnd=s.gameEnd; _geRefreshBtn(); }
+    if(s.extra && typeof s.extra==='object') _extra=s.extra;
     if(typeof s.gameTitle==='string'){
       var gtEl=document.getElementById('game-title');
       if(gtEl && document.activeElement!==gtEl) gtEl.value=s.gameTitle;
@@ -6569,7 +6815,7 @@ function _doBroadcast(){
     scoreDispSec:_scoreDispSec,showScoreOverlay:_pendingShowScore,
     autoHideSec:_autoHideSec,
     _ctl:true,
-    gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi,
+    gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
@@ -6623,7 +6869,7 @@ function saveState(){
       nameAway:na?na.textContent:'先攻',
       nameHome:nh?nh.textContent:'後攻',
       lastBatterId:{away:_lastBatterId.away,home:_lastBatterId.home},
-      gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi,
+      gameTitle:_getGameTitle(), gameTitleYomi:_gameTitleYomi, gameEnd:_gameEnd, extra:_extra,
     coaches:{away:_coaches.away,home:_coaches.home},
     cooling:{on:_cooling.on,endsAt:_cooling.endsAt},
     coolingMin:_coolingMin,          // クーリングの分数。全端末でこの値にそろえる
@@ -6688,6 +6934,9 @@ function restoreState(){
     }
     // 試合タイトルを復元
     if(typeof snap.gameTitleYomi==='string') _setGameTitleYomi(snap.gameTitleYomi);
+    if(snap.gameEnd && typeof snap.gameEnd==='object') _gameEnd=snap.gameEnd;   // 終わった試合は終わったまま
+    if(snap.extra && typeof snap.extra==='object') _extra=snap.extra;
+    _geRefreshBtn();
     if(typeof snap.gameTitle==='string'){
       var _gt=document.getElementById('game-title');
       if(_gt) _gt.value=snap.gameTitle;
