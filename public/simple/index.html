@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<title>AthleeLive かんたんスコア</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#0d1117;color:#e6edf3;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  user-select:none;-webkit-user-select:none}
+body{max-width:520px;margin:0 auto;padding:8px 8px 20px;display:flex;flex-direction:column;gap:8px}
+button{font-family:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:10px;
+  font-size:15px;padding:10px 12px;cursor:pointer}
+button:active{background:#30363d}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:8px}
+
+/* 上のバー */
+.bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#8b949e;padding:0 4px}
+.dot{width:9px;height:9px;border-radius:50%;background:#6e7681;flex:none}
+.dot.on{background:#3fb950}
+.dot.off{background:#f85149}
+.bar .sp{flex:1}
+.bar button{font-size:12px;padding:5px 9px;border-radius:8px}
+
+/* イニング */
+.inn{display:flex;align-items:center;gap:8px}
+.inn .iv{width:46px;font-size:20px;font-weight:700;padding:8px 0}
+.innbox{flex:1;text-align:center;font-size:30px;font-weight:800;line-height:1}
+.innbox .k{font-size:15px;font-weight:600;color:#8b949e;margin-left:2px}
+.tb{width:96px;font-size:17px;font-weight:700}
+.tb.bot{background:#1a2f4a;border-color:#2d5a8a}
+.tb.top{background:#4a1a22;border-color:#8a2d3a}
+
+/* スコア */
+.srow{display:flex;align-items:center;gap:6px;padding:3px 0}
+.srow .ind{width:6px;height:30px;border-radius:3px;background:#30363d;flex:none}
+.srow.at .ind{background:#f5c518}
+.tname{flex:1;min-width:0;background:transparent;border:none;border-bottom:1px dashed #30363d;
+  color:#e6edf3;font-family:inherit;font-size:17px;font-weight:700;padding:4px 2px}
+.tname:focus{outline:none;border-bottom-color:#58a6ff}
+.total{width:44px;text-align:center;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.sbtn{width:46px;font-size:20px;font-weight:700;padding:6px 0}
+.sbtn.p{background:#1f3b26;border-color:#2ea043}
+
+/* イニングスコア表 */
+.ist{margin-top:6px;overflow-x:auto}
+.ist table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
+.ist td{border:1px solid #30363d;text-align:center;padding:2px 0;min-width:20px;color:#c9d1d9}
+.ist td.cur{background:#1f2937;color:#f5c518;font-weight:700}
+.ist tr.num td{color:#8b949e;border:none;font-size:10px}
+
+/* カウント */
+.cnts{display:flex;gap:8px}
+.cnt{flex:1;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:10px 4px;text-align:center}
+.cnt:active{background:#1f2937}
+.cnt .l{font-size:14px;font-weight:800;color:#8b949e;margin-bottom:6px}
+.cnt .d{display:flex;justify-content:center;gap:5px}
+.cnt .d i{width:17px;height:17px;border-radius:50%;background:#30363d;display:block}
+.cnt.b .d i.on{background:#3fb950}
+.cnt.s .d i.on{background:#f5c518}
+.cnt.o .d i.on{background:#f85149}
+.minus{display:flex;gap:8px}
+.minus button{flex:1;font-size:13px;padding:7px 0;color:#8b949e}
+
+/* ダイヤモンド */
+.dia{display:flex;justify-content:center;padding:2px}
+.dia svg{width:170px;height:130px}
+.dia .base{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.5);stroke-width:2}
+.dia .base.on{fill:#f5c518;stroke:#c99a0a}
+.dia .hp{fill:rgba(255,255,255,.35)}
+
+/* 操作 */
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.acts button{font-size:16px;font-weight:700;padding:14px 8px}
+#a-next{background:#1f3b26;border-color:#2ea043}
+#a-reset{color:#f85149}
+
+/* 下のURL */
+.foot{display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e}
+.foot .u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:7px 8px;font-family:ui-monospace,monospace}
+.foot button{font-size:11px;padding:7px 9px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#30363d;
+  border-radius:8px;padding:8px 14px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="dot" id="dot"></span><span id="wsmsg">接続中…</span>
+  <span class="sp"></span>
+  <button id="b-maxinn">7回制</button>
+</div>
+
+<div class="card inn">
+  <button class="iv" id="inn-dec">−</button>
+  <div class="innbox"><span id="inn-num">1</span><span class="k">回</span></div>
+  <button class="iv" id="inn-inc">＋</button>
+  <button class="tb top" id="b-tb">▲ 表</button>
+</div>
+
+<div class="card">
+  <div class="srow at" id="row-away">
+    <span class="ind"></span>
+    <input class="tname" id="name-away" value="先攻" maxlength="14" autocomplete="off">
+    <button class="sbtn" data-run="away" data-d="-1">−</button>
+    <span class="total" id="total-away">0</span>
+    <button class="sbtn p" data-run="away" data-d="1">＋</button>
+  </div>
+  <div class="srow" id="row-home">
+    <span class="ind"></span>
+    <input class="tname" id="name-home" value="後攻" maxlength="14" autocomplete="off">
+    <button class="sbtn" data-run="home" data-d="-1">−</button>
+    <span class="total" id="total-home">0</span>
+    <button class="sbtn p" data-run="home" data-d="1">＋</button>
+  </div>
+  <div class="ist" id="ist"></div>
+</div>
+
+<div class="cnts">
+  <div class="cnt b" id="cnt-b"><div class="l">B</div><div class="d" id="d-b"></div></div>
+  <div class="cnt s" id="cnt-s"><div class="l">S</div><div class="d" id="d-s"></div></div>
+  <div class="cnt o" id="cnt-o"><div class="l">O</div><div class="d" id="d-o"></div></div>
+</div>
+<div class="minus">
+  <button data-dec="b">B を戻す</button>
+  <button data-dec="s">S を戻す</button>
+  <button data-dec="o">O を戻す</button>
+</div>
+
+<div class="card dia">
+  <svg viewBox="0 0 120 92" aria-label="走者">
+    <rect class="base" id="base-2" x="51" y="8"  width="20" height="20" rx="4" transform="rotate(45 61 18)"/>
+    <rect class="base" id="base-1" x="88" y="42" width="20" height="20" rx="4" transform="rotate(45 98 52)"/>
+    <rect class="base" id="base-3" x="14" y="42" width="20" height="20" rx="4" transform="rotate(45 24 52)"/>
+    <rect class="hp" x="54" y="76" width="14" height="14" rx="3" transform="rotate(45 61 83)"/>
+  </svg>
+</div>
+
+<div class="acts">
+  <button id="a-next">次の打者</button>
+  <button id="a-change">攻守交代</button>
+  <button id="a-undo">1手戻す</button>
+  <button id="a-reset">試合リセット</button>
+</div>
+
+<div class="foot">
+  <span class="u" id="ovurl">-</span>
+  <button id="a-copy">コピー</button>
+  <button id="a-open">開く</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+var g = function(id){ return document.getElementById(id); };
+
+// ── 試合の状態（持つのはこれだけ）───────────────────────────────────────
+function newGame(keep){
+  return {
+    inn:1, top:true, maxInn:(keep && keep.maxInn) || 7,
+    b:0, s:0, o:0,
+    r:{1:false,2:false,3:false},
+    aab:(keep && keep.aab) || '先攻', hnm:(keep && keep.hnm) || '後攻',
+    asc:[0], hsc:[],
+    gameId: Date.now()
+  };
+}
+var S = newGame();
+var undoStack = [];
+
+var KEY = 'athlee-simple-v1';
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){
+  try{
+    var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if(v && typeof v.inn === 'number'){
+      S = Object.assign(newGame(), v);
+      S.r = Object.assign({1:false,2:false,3:false}, v.r || {});
+      if(!Array.isArray(S.asc)) S.asc = [0];
+      if(!Array.isArray(S.hsc)) S.hsc = [];
+    }
+  }catch(e){}
+}
+function push(){
+  undoStack.push(JSON.stringify(S));
+  if(undoStack.length > 60) undoStack.shift();
+}
+function undo(){
+  var v = undoStack.pop();
+  if(!v){ toast('戻せる操作がありません'); return; }
+  S = JSON.parse(v);
+  commit();
+}
+// 変更を確定する（描画・保存・送信）
+function commit(){ paint(); save(); broadcast(); }
+
+// ── 得点 ───────────────────────────────────────────────────────────────
+function arrOf(team){ return team === 'away' ? S.asc : S.hsc; }
+function fill(arr, i){ while(arr.length <= i) arr.push(null); }
+function addRun(team, d){
+  push();
+  var arr = arrOf(team), i = S.inn - 1;
+  fill(arr, i);
+  var cur = typeof arr[i] === 'number' ? arr[i] : 0;
+  arr[i] = Math.max(0, cur + d);
+  commit();
+}
+function total(team){
+  return arrOf(team).reduce(function(a, v){ return a + (typeof v === 'number' ? v : 0); }, 0);
+}
+// その回が始まったらマスを 0 にする（まだ打っていない回は空欄のまま）
+function openCell(){
+  var arr = arrOf(S.top ? 'away' : 'home'), i = S.inn - 1;
+  fill(arr, i);
+  if(typeof arr[i] !== 'number') arr[i] = 0;
+}
+
+// ── カウント ───────────────────────────────────────────────────────────
+function addB(){
+  push();
+  S.b++;
+  if(S.b >= 4){ walk(); S.b = 0; S.s = 0; }
+  commit();
+}
+// 四球：走者を押し出す（満塁なら1点）
+function walk(){
+  if(S.r[1] && S.r[2] && S.r[3]){
+    var arr = arrOf(S.top ? 'away' : 'home'), i = S.inn - 1;
+    fill(arr, i);
+    arr[i] = (typeof arr[i] === 'number' ? arr[i] : 0) + 1;
+  }
+  else if(S.r[1] && S.r[2]){ S.r[3] = true; }
+  else if(S.r[1]){ S.r[2] = true; }
+  else { S.r[1] = true; }
+}
+function addS(){
+  push();
+  S.s++;
+  if(S.s >= 3){ S.s = 0; S.b = 0; S.o++; if(S.o >= 3) half(); }
+  commit();
+}
+function addO(){
+  push();
+  S.o++; S.b = 0; S.s = 0;
+  if(S.o >= 3) half();
+  commit();
+}
+function dec(k){
+  push();
+  S[k] = Math.max(0, (S[k] || 0) - 1);
+  commit();
+}
+// 攻守交代（3アウトでも呼ばれる）
+function half(){
+  S.b = 0; S.s = 0; S.o = 0;
+  S.r = {1:false,2:false,3:false};
+  if(S.top){ S.top = false; } else { S.top = true; S.inn++; }
+  openCell();
+}
+
+// ── 描画 ───────────────────────────────────────────────────────────────
+function dots(box, n, max){
+  var html = '';
+  for(var i = 0; i < max; i++) html += '<i class="' + (i < n ? 'on' : '') + '"></i>';
+  if(box.innerHTML !== html) box.innerHTML = html;
+}
+function paint(){
+  g('inn-num').textContent = S.inn;
+  var tb = g('b-tb');
+  tb.textContent = S.top ? '▲ 表' : '▼ 裏';
+  tb.className = 'tb ' + (S.top ? 'top' : 'bot');
+  g('b-maxinn').textContent = S.maxInn + '回制';
+
+  if(document.activeElement !== g('name-away')) g('name-away').value = S.aab;
+  if(document.activeElement !== g('name-home')) g('name-home').value = S.hnm;
+  g('total-away').textContent = total('away');
+  g('total-home').textContent = total('home');
+  g('row-away').className = 'srow' + (S.top ? ' at' : '');
+  g('row-home').className = 'srow' + (S.top ? '' : ' at');
+
+  dots(g('d-b'), S.b, 3);
+  dots(g('d-s'), S.s, 2);
+  dots(g('d-o'), S.o, 2);
+
+  [1,2,3].forEach(function(n){
+    g('base-' + n).setAttribute('class', 'base' + (S.r[n] ? ' on' : ''));
+  });
+
+  // イニングスコア表
+  var n = Math.max(S.maxInn, S.inn);
+  var h = '<table><tr class="num">';
+  for(var i = 0; i < n; i++) h += '<td>' + (i + 1) + '</td>';
+  h += '</tr>';
+  [['away', S.asc], ['home', S.hsc]].forEach(function(pair){
+    var k = pair[0], arr = pair[1];
+    h += '<tr>';
+    for(var i = 0; i < n; i++){
+      var v = arr[i];
+      var cur = (i + 1 === S.inn) && ((k === 'away') === S.top);
+      h += '<td class="' + (cur ? 'cur' : '') + '">' + (typeof v === 'number' ? v : '') + '</td>';
+    }
+    h += '</tr>';
+  });
+  h += '</table>';
+  if(g('ist').innerHTML !== h) g('ist').innerHTML = h;
+}
+
+// ── オーバーレイへ送る（overlay.html?simple=1 が読む形）───────────────
+var ws = null;
+function broadcast(){
+  if(!ws || ws.readyState !== 1) return;
+  try{
+    ws.send(JSON.stringify({
+      _ctl:true,
+      inn:S.inn, top:S.top, maxInn:S.maxInn,
+      b:S.b, s:S.s, o:S.o,
+      r:{1:S.r[1], 2:S.r[2], 3:S.r[3]},
+      aab:S.aab, hnm:S.hnm,
+      asc:S.asc.slice(), hsc:S.hsc.slice(),
+      gameId:S.gameId,
+      // 簡易版で使わないものは、はっきり切っておく
+      showHits:false, showErrs:false, adTopOn:false,
+      showBSO:true, showBat:false, showDef:false, showBatter:false, showPC:false,
+      batter:null, pitcher:null, catcher:null,
+      paResults:[], pitchLog:[], abLog:[],
+      gameEnd:{on:false}, extra:{}, xOn:{},
+      cooling:{on:false, endsAt:0}, ticker:{on:false},
+      _simple:true
+    }));
+  }catch(e){}
+}
+function connect(){
+  var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/?simple=1';
+  try{ ws = new WebSocket(url); }
+  catch(e){ setTimeout(connect, 2000); return; }
+  ws.onopen = function(){
+    g('dot').className = 'dot on';
+    g('wsmsg').textContent = 'オーバーレイに接続';
+    broadcast();
+  };
+  ws.onclose = function(){
+    g('dot').className = 'dot off';
+    g('wsmsg').textContent = '切断（つなぎ直します）';
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = function(){};
+  ws.onmessage = function(e){
+    // オーバーレイが開いたときの「今の状態をください」にだけ答える
+    try{
+      var d = JSON.parse(e.data);
+      if(d && d._req === 'state') broadcast();
+    }catch(err){}
+  };
+}
+
+// ── 操作の割り当て ─────────────────────────────────────────────────────
+function toast(msg){
+  var t = g('toast');
+  t.textContent = msg;
+  t.className = 'toast on';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ t.className = 'toast'; }, 1600);
+}
+function tap(el, fn){
+  el.addEventListener('click', function(ev){
+    ev.preventDefault();
+    fn();
+    if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(e){} }
+  });
+}
+
+tap(g('cnt-b'), addB);
+tap(g('cnt-s'), addS);
+tap(g('cnt-o'), addO);
+Array.prototype.forEach.call(document.querySelectorAll('[data-dec]'), function(b){
+  tap(b, function(){ dec(b.getAttribute('data-dec')); });
+});
+Array.prototype.forEach.call(document.querySelectorAll('[data-run]'), function(b){
+  tap(b, function(){ addRun(b.getAttribute('data-run'), Number(b.getAttribute('data-d'))); });
+});
+[1,2,3].forEach(function(n){
+  tap(g('base-' + n), function(){ push(); S.r[n] = !S.r[n]; commit(); });
+});
+
+tap(g('inn-dec'),  function(){ push(); S.inn = Math.max(1, S.inn - 1); commit(); });
+tap(g('inn-inc'),  function(){ push(); S.inn++; openCell(); commit(); });
+tap(g('b-tb'),     function(){ push(); S.top = !S.top; openCell(); commit(); });
+tap(g('b-maxinn'), function(){ push(); S.maxInn = S.maxInn === 7 ? 9 : 7; commit(); });
+
+tap(g('a-next'),   function(){ push(); S.b = 0; S.s = 0; commit(); });
+tap(g('a-change'), function(){ push(); half(); commit(); });
+tap(g('a-undo'),   undo);
+tap(g('a-reset'),  function(){
+  if(!confirm('試合をリセットします。スコア・カウント・走者を消してよいですか？')) return;
+  push();
+  S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm});
+  commit();
+  toast('リセットしました');
+});
+
+['away','home'].forEach(function(k){
+  var el = g('name-' + k);
+  el.addEventListener('input', function(){
+    if(k === 'away') S.aab = el.value || '先攻'; else S.hnm = el.value || '後攻';
+    save(); broadcast();
+  });
+  el.addEventListener('blur', function(){ el.value = (k === 'away' ? S.aab : S.hnm); });
+});
+
+// オーバーレイのURL（OBS のブラウザソースに貼る）
+var OV = location.origin + '/overlay.html?simple=1';
+g('ovurl').textContent = OV;
+tap(g('a-copy'), function(){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(OV).then(function(){ toast('コピーしました'); }, fallbackCopy);
+  } else fallbackCopy();
+});
+function fallbackCopy(){
+  var t = document.createElement('textarea');
+  t.value = OV;
+  document.body.appendChild(t);
+  t.select();
+  try{ document.execCommand('copy'); toast('コピーしました'); }
+  catch(e){ toast('コピーできませんでした'); }
+  document.body.removeChild(t);
+}
+tap(g('a-open'), function(){ window.open(OV, '_blank'); });
+
+// 画面を消さない（対応端末だけ）
+var _wl = null;
+function wake(){
+  if(!('wakeLock' in navigator) || _wl) return;
+  navigator.wakeLock.request('screen').then(function(l){
+    _wl = l;
+    l.addEventListener('release', function(){ _wl = null; });
+  }).catch(function(){});
+}
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible') wake();
+});
+
+load();
+paint();
+connect();
+wake();
+</script>
+</body>
+</html>
