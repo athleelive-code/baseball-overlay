@@ -2,15 +2,23 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0d1117">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>AthleeLive かんたんスコア</title>
+<!-- PWA（ホーム画面に置いて全画面で使う） -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AthleeSimple">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:#0d1117;color:#e6edf3;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
   user-select:none;-webkit-user-select:none}
-body{max-width:520px;margin:0 auto;padding:8px 8px 20px;display:flex;flex-direction:column;gap:8px}
+/* ホーム画面から開いた全画面でも、上下の端に隠れないようにする */
+body{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px;
+  padding:calc(8px + env(safe-area-inset-top)) 8px calc(20px + env(safe-area-inset-bottom))}
 button{font-family:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:10px;
   font-size:15px;padding:10px 12px;cursor:pointer}
 button:active{background:#30363d}
@@ -443,6 +451,11 @@ function wake(){
 document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'visible') wake();
 });
+
+// ホーム画面に置けるように（Service Worker）
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js', {scope:'./'}).catch(function(){});
+}
 
 load();
 paint();
