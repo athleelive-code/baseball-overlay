@@ -8,7 +8,14 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+// HTML は毎回サーバーに確かめてから使わせる。
+// OBS のブラウザソースは一度読んだページを強く抱え込むので、これが無いと
+// デプロイしても古い画面が出たままになる（画像や音は今までどおりキャッシュする）
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+  }
+}));
 app.get('/', (req, res) => { res.redirect('/ctrl/'); });
 
 // 旧URLからの転送（ホーム画面に古いアイコンが残っていても開ける）
