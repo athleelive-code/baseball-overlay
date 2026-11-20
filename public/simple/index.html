@@ -77,6 +77,11 @@ button:active{background:#30363d}
 .iedit .big{font-size:1.2em;font-weight:700;padding:.25em .65em}
 .iedit .sm{font-size:.72em;padding:.5em .6em}
 
+/* オーバーレイにイニングスコアを出すボタン */
+.istbtn{width:100%;margin-top:.35em;font-size:.8em;padding:.7em 0;
+  background:#16263f;border-color:#2d4a7a;color:#9ec5ff}
+.istbtn.on{background:#2d4a7a;color:#fff}
+
 /* カウント */
 .cnts{display:flex;gap:.35em}
 .cnt{flex:1;background:#161b22;border:1px solid #30363d;border-radius:.6em;padding:.5em .2em;text-align:center}
@@ -155,6 +160,8 @@ button:active{background:#30363d}
     <button class="sm" id="ie-clear">空欄</button>
     <button class="sm" id="ie-close">閉じる</button>
   </div>
+  <!-- 得点が入ったときなどに、オーバーレイへイニングスコアを出す -->
+  <button class="istbtn" id="b-ist">📊 イニングスコアを出す</button>
 </div>
 
 <div class="cnts">
@@ -384,11 +391,31 @@ function paint(){
 
 // ── オーバーレイへ送る（overlay.html?simple=1 が読む形）───────────────
 var ws = null;
+
+// オーバーレイのイニングスコア表示。'show' / 'hide' を1回だけ送る命令として乗せる
+var IST_SEC = 10;          // 出したあと、何秒で自動的に引っ込むか
+var pendingIst = null;
+var istOn = false, istTimer = null;
+function setIst(on){
+  istOn = on;
+  var b = g('b-ist');
+  b.className = 'istbtn' + (on ? ' on' : '');
+  b.textContent = on ? '📊 イニングスコアを消す' : '📊 イニングスコアを出す';
+  if(istTimer){ clearTimeout(istTimer); istTimer = null; }
+  // オーバーレイ側が IST_SEC 秒で勝手に閉じるので、ボタンの表記も戻しておく
+  if(on && IST_SEC > 0){
+    istTimer = setTimeout(function(){ istTimer = null; setIst(false); }, IST_SEC * 1000 + 200);
+  }
+}
+
 function broadcast(){
+  var istCmd = pendingIst;
+  pendingIst = null;
   if(!ws || ws.readyState !== 1) return;
   try{
     ws.send(JSON.stringify({
       _ctl:true,
+      showScoreOverlay:istCmd, scoreDispSec:IST_SEC,
       inn:S.inn, top:S.top, maxInn:S.maxInn,
       b:S.b, s:S.s, o:S.o,
       r:{1:S.r[1], 2:S.r[2], 3:S.r[3]},
@@ -482,6 +509,14 @@ tap(g('ie-minus'), function(){ editAdd(-1); });
 tap(g('ie-plus'),  function(){ editAdd(1); });
 tap(g('ie-clear'), editClear);
 tap(g('ie-close'), function(){ EDIT = null; paint(); });
+
+// オーバーレイにイニングスコアを出す／消す
+tap(g('b-ist'), function(){
+  var on = !istOn;
+  setIst(on);
+  pendingIst = on ? 'show' : 'hide';
+  broadcast();
+});
 
 // 本体のコントローラーへ戻る。同時に開くと状態を取り合うので、この画面は閉じる
 tap(g('b-full'), function(){

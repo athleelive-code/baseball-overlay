@@ -5226,7 +5226,8 @@ function buildRow(rowId, team, n){
     let cls = 'sb-cell';
     if(isCur) cls += st.top ? ' cur-top' : ' cur-bot';
     let disp;
-    if(val===null) disp='<span style="color:#1e1e1e">－</span>';
+    // 配列が短い状態（かんたんスコアからの切り替えなど）でも undefined を出さない
+    if(val===null || val===undefined) disp='<span style="color:#1e1e1e">－</span>';
     else if(val==='x') disp='<span style="color:#555">×</span>';
     else disp=`${val}${xFlag?'<span style="color:rgba(255,90,90,.7);font-size:.7em">×</span>':''}`;
     row.innerHTML += `<td onclick="openScoreInput('${team}',${i})"><div class="${cls}">${disp}</div></td>`;
@@ -6634,6 +6635,18 @@ function applyPcEdit(s){
   _doBroadcast();
 }
 
+// 受け取ったイニングスコアを16回ぶんに揃える。
+// かんたんスコア（/simple/）は打った回ぶんしか送ってこないので、
+// そのまま入れると残りのマスが undefined になってしまう。
+function _padScores(a){
+  var out = [];
+  for(var i = 0; i < 16; i++){
+    var v = a[i];
+    out.push((typeof v === 'number' || v === 'x') ? v : null);
+  }
+  return out;
+}
+
 // ── 他デバイスからの状態を反映（複数コントローラー同時操作） ──────────────
 function applyRemoteState(s){
   _applyingRemote=true;
@@ -6648,8 +6661,8 @@ function applyRemoteState(s){
     if(s.r){ bases[1]=!!s.r[1]; bases[2]=!!s.r[2]; bases[3]=!!s.r[3]; }
 
     // スコア
-    if(Array.isArray(s.asc)) scores.away=[...s.asc];
-    if(Array.isArray(s.hsc)) scores.home=[...s.hsc];
+    if(Array.isArray(s.asc)) scores.away=_padScores(s.asc);
+    if(Array.isArray(s.hsc)) scores.home=_padScores(s.hsc);
     if(s.xOnAll){ for(var k in xOn){ delete xOn[k]; } Object.assign(xOn, s.xOnAll); }
 
     // チーム名・カラー
