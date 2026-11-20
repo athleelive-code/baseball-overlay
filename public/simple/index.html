@@ -17,10 +17,12 @@ html{height:100%}
 /* 1画面に収めたうえで、文字と押すところは画面の幅に合わせて大きくする。
    以下の寸法はぜんぶ em（下の font-size が基準）なので、
    font-size の clamp を変えると全体が揃って大きく／小さくなる */
-body{margin:0 auto;max-width:560px;height:100vh;height:100dvh;overflow-y:auto;
+body{margin:0 auto;max-width:min(100%,30em);height:100vh;height:100dvh;overflow-y:auto;
   background:#0d1117;color:#e6edf3;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-  font-size:clamp(16px,4.4vw,23px);
+  /* 幅と高さの小さいほうに合わせる。「PC版サイト」で開かれて幅が 980px 扱いに
+     なっても、文字ごと大きくなって横が余らない（上限 40px はその用）*/
+  font-size:clamp(14px,min(4.4vw,2.3vh),40px);
   user-select:none;-webkit-user-select:none;
   display:flex;flex-direction:column;gap:.3em;
   padding:calc(.25em + env(safe-area-inset-top)) .4em calc(.3em + env(safe-area-inset-bottom))}
@@ -89,7 +91,7 @@ button:active{background:#30363d}
 .minus button{flex:1;font-size:.8em;padding:.5em 0;color:#8b949e}
 
 /* ダイヤモンド（余った高さをここで吸収する）*/
-.dia{flex:1 1 auto;min-height:4.5em;display:flex;justify-content:center;align-items:center;padding:.1em}
+.dia{flex:1 1 auto;min-height:4em;display:flex;justify-content:center;align-items:center;padding:.1em}
 .dia svg{height:100%;width:100%}
 .dia .base{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.5);stroke-width:2}
 .dia .base.on{fill:#f5c518;stroke:#c99a0a}
@@ -109,11 +111,6 @@ button:active{background:#30363d}
 .toast{position:fixed;left:50%;bottom:1.2em;transform:translateX(-50%);background:#30363d;
   border-radius:.5em;padding:.5em .9em;font-size:.8em;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
-
-/* 背の低い端末では全体を少しだけ小さくして、1画面に収める */
-@media (max-height:720px){
-  body{font-size:clamp(14px,3.9vw,20px)}
-}
 </style>
 </head>
 <body>
