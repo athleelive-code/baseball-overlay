@@ -13,86 +13,107 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:#0d1117;color:#e6edf3;
+html{height:100%}
+/* 1画面に収めたうえで、文字と押すところは画面の幅に合わせて大きくする。
+   以下の寸法はぜんぶ em（下の font-size が基準）なので、
+   font-size の clamp を変えると全体が揃って大きく／小さくなる */
+body{margin:0 auto;max-width:560px;height:100vh;height:100dvh;overflow-y:auto;
+  background:#0d1117;color:#e6edf3;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-  user-select:none;-webkit-user-select:none}
-/* ホーム画面から開いた全画面でも、上下の端に隠れないようにする */
-body{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px;
-  padding:calc(8px + env(safe-area-inset-top)) 8px calc(20px + env(safe-area-inset-bottom))}
-button{font-family:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:10px;
-  font-size:15px;padding:10px 12px;cursor:pointer}
+  font-size:clamp(16px,4.4vw,23px);
+  user-select:none;-webkit-user-select:none;
+  display:flex;flex-direction:column;gap:.3em;
+  padding:calc(.25em + env(safe-area-inset-top)) .4em calc(.3em + env(safe-area-inset-bottom))}
+button{font-family:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:.5em;
+  font-size:1em;padding:.5em .6em;cursor:pointer}
 button:active{background:#30363d}
-.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:8px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:.6em;padding:.4em}
 
 /* 上のバー */
-.bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#8b949e;padding:0 4px}
-.dot{width:9px;height:9px;border-radius:50%;background:#6e7681;flex:none}
+.bar{display:flex;align-items:center;gap:.5em;font-size:.68em;color:#8b949e;padding:0 .2em}
+.dot{width:.6em;height:.6em;border-radius:50%;background:#6e7681;flex:none}
 .dot.on{background:#3fb950}
 .dot.off{background:#f85149}
 .bar .sp{flex:1}
-.bar button{font-size:12px;padding:5px 9px;border-radius:8px}
+.bar button{font-size:1em;padding:.4em .7em;border-radius:.5em}
 
 /* イニング */
-.inn{display:flex;align-items:center;gap:8px}
-.inn .iv{width:46px;font-size:20px;font-weight:700;padding:8px 0}
-.innbox{flex:1;text-align:center;font-size:30px;font-weight:800;line-height:1}
-.innbox .k{font-size:15px;font-weight:600;color:#8b949e;margin-left:2px}
-.tb{width:96px;font-size:17px;font-weight:700}
+.inn{display:flex;align-items:center;gap:.35em}
+.inn .iv{width:2.3em;font-size:1.3em;font-weight:700;padding:.35em 0}
+.innbox{flex:1;text-align:center;font-size:2.1em;font-weight:800;line-height:1}
+.innbox .k{font-size:.5em;font-weight:600;color:#8b949e;margin-left:.1em}
+.tb{width:4.3em;font-size:1.05em;font-weight:700;padding:.55em .2em}
 .tb.bot{background:#1a2f4a;border-color:#2d5a8a}
 .tb.top{background:#4a1a22;border-color:#8a2d3a}
 
 /* スコア */
-.srow{display:flex;align-items:center;gap:6px;padding:3px 0}
-.srow .ind{width:6px;height:30px;border-radius:3px;background:#30363d;flex:none}
+.srow{display:flex;align-items:center;gap:.3em;padding:.1em 0}
+.srow .ind{width:.3em;height:1.8em;border-radius:.15em;background:#30363d;flex:none}
 .srow.at .ind{background:#f5c518}
 .tname{flex:1;min-width:0;background:transparent;border:none;border-bottom:1px dashed #30363d;
-  color:#e6edf3;font-family:inherit;font-size:17px;font-weight:700;padding:4px 2px}
+  color:#e6edf3;font-family:inherit;font-size:1.05em;font-weight:700;padding:.2em .1em}
 .tname:focus{outline:none;border-bottom-color:#58a6ff}
-.total{width:44px;text-align:center;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
-.sbtn{width:46px;font-size:20px;font-weight:700;padding:6px 0}
+.total{width:2.2em;text-align:center;font-size:1.6em;font-weight:800;font-variant-numeric:tabular-nums}
+.sbtn{width:2.4em;font-size:1.35em;font-weight:700;padding:.2em 0}
 .sbtn.p{background:#1f3b26;border-color:#2ea043}
 
-/* イニングスコア表 */
-.ist{margin-top:6px;overflow-x:auto}
-.ist table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
-.ist td{border:1px solid #30363d;text-align:center;padding:2px 0;min-width:20px;color:#c9d1d9}
+/* イニングスコア表（マスを押すと、その回だけ直せる）*/
+.ist{margin-top:.25em}
+.ist table{border-collapse:collapse;width:100%;font-size:.78em;font-variant-numeric:tabular-nums}
+.ist td{border:1px solid #30363d;text-align:center;padding:.45em 0;color:#c9d1d9}
 .ist td.cur{background:#1f2937;color:#f5c518;font-weight:700}
-.ist tr.num td{color:#8b949e;border:none;font-size:10px}
+.ist td.ed{background:#2d4b2f;color:#fff;font-weight:700;border-color:#3fb950}
+.ist tr.num td{color:#8b949e;border:none;font-size:.8em;padding:0 0 .1em}
+
+/* 回を直すバー（マスを押すと出る）*/
+.iedit{display:flex;align-items:center;gap:.3em;margin-top:.35em;
+  background:#0d1117;border:1px solid #2ea043;border-radius:.5em;padding:.3em}
+.iedit[hidden]{display:none}
+.iedit .t{flex:1;min-width:0;font-size:.72em;font-weight:700;color:#86c867;padding-left:.3em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iedit .v{width:1.7em;text-align:center;font-size:1.3em;font-weight:800;font-variant-numeric:tabular-nums}
+.iedit .big{font-size:1.2em;font-weight:700;padding:.25em .65em}
+.iedit .sm{font-size:.72em;padding:.5em .6em}
 
 /* カウント */
-.cnts{display:flex;gap:8px}
-.cnt{flex:1;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:10px 4px;text-align:center}
+.cnts{display:flex;gap:.35em}
+.cnt{flex:1;background:#161b22;border:1px solid #30363d;border-radius:.6em;padding:.5em .2em;text-align:center}
 .cnt:active{background:#1f2937}
-.cnt .l{font-size:14px;font-weight:800;color:#8b949e;margin-bottom:6px}
-.cnt .d{display:flex;justify-content:center;gap:5px}
-.cnt .d i{width:17px;height:17px;border-radius:50%;background:#30363d;display:block}
+.cnt .l{font-size:.9em;font-weight:800;color:#8b949e;margin-bottom:.3em}
+.cnt .d{display:flex;justify-content:center;gap:.25em}
+.cnt .d i{width:.85em;height:.85em;border-radius:50%;background:#30363d;display:block}
 .cnt.b .d i.on{background:#3fb950}
 .cnt.s .d i.on{background:#f5c518}
 .cnt.o .d i.on{background:#f85149}
-.minus{display:flex;gap:8px}
-.minus button{flex:1;font-size:13px;padding:7px 0;color:#8b949e}
+.minus{display:flex;gap:.35em}
+.minus button{flex:1;font-size:.8em;padding:.5em 0;color:#8b949e}
 
-/* ダイヤモンド */
-.dia{display:flex;justify-content:center;padding:2px}
-.dia svg{width:170px;height:130px}
+/* ダイヤモンド（余った高さをここで吸収する）*/
+.dia{flex:1 1 auto;min-height:4.5em;display:flex;justify-content:center;align-items:center;padding:.1em}
+.dia svg{height:100%;width:100%}
 .dia .base{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.5);stroke-width:2}
 .dia .base.on{fill:#f5c518;stroke:#c99a0a}
 .dia .hp{fill:rgba(255,255,255,.35)}
 
 /* 操作 */
-.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.acts button{font-size:16px;font-weight:700;padding:14px 8px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:.35em}
+.acts button{font-size:1.05em;font-weight:700;padding:.8em .3em}
 #a-next{background:#1f3b26;border-color:#2ea043}
 #a-reset{color:#f85149}
 
 /* 下のURL */
-.foot{display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e}
+.foot{display:flex;align-items:center;gap:.3em;font-size:.6em;color:#8b949e}
 .foot .u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:7px 8px;font-family:ui-monospace,monospace}
-.foot button{font-size:11px;padding:7px 9px}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#30363d;
-  border-radius:8px;padding:8px 14px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+  background:#0d1117;border:1px solid #30363d;border-radius:.5em;padding:.6em .7em;font-family:ui-monospace,monospace}
+.foot button{font-size:1em;padding:.6em .8em}
+.toast{position:fixed;left:50%;bottom:1.2em;transform:translateX(-50%);background:#30363d;
+  border-radius:.5em;padding:.5em .9em;font-size:.8em;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
+
+/* 背の低い端末では全体を少しだけ小さくして、1画面に収める */
+@media (max-height:720px){
+  body{font-size:clamp(14px,3.9vw,20px)}
+}
 </style>
 </head>
 <body>
@@ -127,6 +148,15 @@ button:active{background:#30363d}
     <button class="sbtn p" data-run="home" data-d="1">＋</button>
   </div>
   <div class="ist" id="ist"></div>
+  <!-- マスを押すと出る。その回の得点だけを直すためのバー -->
+  <div class="iedit" id="iedit" hidden>
+    <span class="t" id="ie-label">1回表</span>
+    <button class="big" id="ie-minus">−</button>
+    <span class="v" id="ie-val">0</span>
+    <button class="big" id="ie-plus">＋</button>
+    <button class="sm" id="ie-clear">空欄</button>
+    <button class="sm" id="ie-close">閉じる</button>
+  </div>
 </div>
 
 <div class="cnts">
@@ -222,6 +252,26 @@ function addRun(team, d){
 function total(team){
   return arrOf(team).reduce(function(a, v){ return a + (typeof v === 'number' ? v : 0); }, 0);
 }
+// 直している回（イニングスコアのマスを押すと入る。試合の状態ではないので保存しない）
+var EDIT = null;   // {team:'away'|'home', i:回-1}
+function editAdd(d){
+  if(!EDIT) return;
+  push();
+  var arr = arrOf(EDIT.team);
+  fill(arr, EDIT.i);
+  var cur = typeof arr[EDIT.i] === 'number' ? arr[EDIT.i] : 0;
+  arr[EDIT.i] = Math.max(0, Math.min(99, cur + d));
+  commit();
+}
+// その回を「まだ打っていない」状態（空欄）に戻す
+function editClear(){
+  if(!EDIT) return;
+  push();
+  var arr = arrOf(EDIT.team);
+  fill(arr, EDIT.i);
+  arr[EDIT.i] = null;
+  commit();
+}
 // その回が始まったらマスを 0 にする（まだ打っていない回は空欄のまま）
 function openCell(){
   var arr = arrOf(S.top ? 'away' : 'home'), i = S.inn - 1;
@@ -311,12 +361,27 @@ function paint(){
     for(var i = 0; i < n; i++){
       var v = arr[i];
       var cur = (i + 1 === S.inn) && ((k === 'away') === S.top);
-      h += '<td class="' + (cur ? 'cur' : '') + '">' + (typeof v === 'number' ? v : '') + '</td>';
+      var ed = EDIT && EDIT.team === k && EDIT.i === i;
+      h += '<td class="' + (cur ? 'cur' : '') + (ed ? ' ed' : '') + '"' +
+           ' data-team="' + k + '" data-i="' + i + '">' +
+           (typeof v === 'number' ? v : '') + '</td>';
     }
     h += '</tr>';
   });
   h += '</table>';
   if(g('ist').innerHTML !== h) g('ist').innerHTML = h;
+
+  // 回を直すバー
+  var ie = g('iedit');
+  if(EDIT){
+    var earr = arrOf(EDIT.team), ev = earr[EDIT.i];
+    g('ie-label').textContent = (EDIT.i + 1) + '回' + (EDIT.team === 'away' ? '表' : '裏') +
+      '　' + (EDIT.team === 'away' ? S.aab : S.hnm);
+    g('ie-val').textContent = (typeof ev === 'number' ? ev : '−');
+    ie.hidden = false;
+  } else {
+    ie.hidden = true;
+  }
 }
 
 // ── オーバーレイへ送る（overlay.html?simple=1 が読む形）───────────────
@@ -399,7 +464,26 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-run]'), function(b
 tap(g('inn-dec'),  function(){ push(); S.inn = Math.max(1, S.inn - 1); commit(); });
 tap(g('inn-inc'),  function(){ push(); S.inn++; openCell(); commit(); });
 tap(g('b-tb'),     function(){ push(); S.top = !S.top; openCell(); commit(); });
-tap(g('b-maxinn'), function(){ push(); S.maxInn = S.maxInn === 7 ? 9 : 7; commit(); });
+// 6回制 → 7回制 → 9回制 → 6回制…の順に切り替える
+tap(g('b-maxinn'), function(){
+  push();
+  S.maxInn = S.maxInn >= 9 ? 6 : (S.maxInn >= 7 ? 9 : 7);
+  commit();
+});
+
+// イニングのマスを押して、その回の得点を直す
+g('ist').addEventListener('click', function(ev){
+  var td = ev.target.closest ? ev.target.closest('td[data-team]') : null;
+  if(!td) return;
+  var team = td.getAttribute('data-team'), i = Number(td.getAttribute('data-i'));
+  if(EDIT && EDIT.team === team && EDIT.i === i) EDIT = null;  // 同じマスをもう一度押したら閉じる
+  else EDIT = {team:team, i:i};
+  paint();
+});
+tap(g('ie-minus'), function(){ editAdd(-1); });
+tap(g('ie-plus'),  function(){ editAdd(1); });
+tap(g('ie-clear'), editClear);
+tap(g('ie-close'), function(){ EDIT = null; paint(); });
 
 // 本体のコントローラーへ戻る。同時に開くと状態を取り合うので、この画面は閉じる
 tap(g('b-full'), function(){
@@ -413,6 +497,7 @@ tap(g('a-undo'),   undo);
 tap(g('a-reset'),  function(){
   if(!confirm('試合をリセットします。スコア・カウント・走者を消してよいですか？')) return;
   push();
+  EDIT = null;
   S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm});
   commit();
   toast('リセットしました');
