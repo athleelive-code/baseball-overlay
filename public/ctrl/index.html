@@ -1176,6 +1176,16 @@ body.gamemin .gm-hide{display:none!important}
       </label>
     </div>
 
+    <!-- ホーム画面のアイコンから開くとアドレスバーが無いので、アドレスはここで見る -->
+    <div class="drawer-sec">
+      <div class="drawer-sec-t">アプリのアドレス</div>
+      <div style="font-size:20px;color:#666;margin-bottom:10px">ホーム画面から開くとアドレスが見えないので、ここに出します。別の端末やOBSに入れるときはコピーしてください</div>
+      <pre id="url-list" style="background:#1c1c1e;border:1px solid #333;border-radius:10px;color:#ddd;font-size:22px;line-height:1.7;padding:14px;white-space:pre-wrap;word-break:break-all"></pre>
+      <button class="drawer-btn" onclick="copyUrlList()">📄 アドレスをコピー</button>
+      <button class="drawer-btn" style="margin-top:8px;background:#1a3a1a;border-color:#3a6a2a;color:#86c867" onclick="openSimpleScore()">⚡ かんたんスコアを開く</button>
+      <div style="font-size:20px;color:#666;margin-top:10px">かんたんスコアは1画面だけの簡易版です。開くとこのコントローラーは閉じます（同時には使えません）</div>
+    </div>
+
     <div class="drawer-sec">
       <div class="drawer-sec-t">データリセット</div>
       <div style="font-size:20px;color:#666;margin-bottom:10px">試合状況だけを消すか、チーム名・選手も含めてすべて消すかを選べます</div>
@@ -5761,6 +5771,7 @@ function openSettingsDrawer(){
   const ca=document.getElementById('color-away-name');const ch=document.getElementById('color-home-name');
   if(na&&ca)ca.textContent=na.textContent;
   if(nh&&ch)ch.textContent=nh.textContent;
+  _fillUrlList();
   hideRstConfirm();
 }
 function closeDrawer(){
@@ -6295,6 +6306,50 @@ function copyChapterText(){
     document.body.removeChild(ta);
     alert('コピーしました！');
   });
+}
+
+// ホーム画面のアイコンから開くとアドレスバーが無く、URLが分からなくなるので設定に出す
+function _fillUrlList(){
+  var pre=document.getElementById('url-list');
+  if(!pre) return;
+  var o=location.origin;
+  pre.textContent =
+    'コントローラー（この画面）\n'+o+'/ctrl/\n\n'+
+    'かんたんスコア（簡易版）\n'+o+'/simple/\n\n'+
+    'オーバーレイ（OBSに貼る）\n'+o+'/overlay.html\n\n'+
+    'メンバー管理\n'+o+'/roster/';
+}
+function _copyText(text, okMsg){
+  function done(){
+    if(typeof toastMsg==='function') toastMsg(okMsg);
+    else alert(okMsg);
+  }
+  function fallback(){
+    var ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.position='fixed';
+    ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    done();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+function copyUrlList(){
+  var pre=document.getElementById('url-list');
+  if(!pre) return;
+  _copyText(pre.textContent, 'アドレスをコピーしました');
+}
+// 簡易版へ切り替える。同時に開くと状態を取り合うので、この画面は閉じる
+function openSimpleScore(){
+  if(!confirm('かんたんスコア（簡易版）に切り替えます。\nこのコントローラーは閉じます。よろしいですか？')) return;
+  location.href='/simple/';
 }
 
 // すべてを初期状態に戻す（チーム名・選手も含む）

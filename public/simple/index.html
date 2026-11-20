@@ -101,6 +101,7 @@ button:active{background:#30363d}
   <span class="dot" id="dot"></span><span id="wsmsg">接続中…</span>
   <span class="sp"></span>
   <button id="b-maxinn">7回制</button>
+  <button id="b-full">本体</button>
 </div>
 
 <div class="card inn">
@@ -399,6 +400,12 @@ tap(g('inn-dec'),  function(){ push(); S.inn = Math.max(1, S.inn - 1); commit();
 tap(g('inn-inc'),  function(){ push(); S.inn++; openCell(); commit(); });
 tap(g('b-tb'),     function(){ push(); S.top = !S.top; openCell(); commit(); });
 tap(g('b-maxinn'), function(){ push(); S.maxInn = S.maxInn === 7 ? 9 : 7; commit(); });
+
+// 本体のコントローラーへ戻る。同時に開くと状態を取り合うので、この画面は閉じる
+tap(g('b-full'), function(){
+  if(!confirm('本体のコントローラーに切り替えます。\nこの画面は閉じます。よろしいですか？')) return;
+  location.href = '/ctrl/';
+});
 
 tap(g('a-next'),   function(){ push(); S.b = 0; S.s = 0; commit(); });
 tap(g('a-change'), function(){ push(); half(); commit(); });
