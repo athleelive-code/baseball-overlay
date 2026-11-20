@@ -76,11 +76,11 @@ body.simple .ov-ad-slide{ display:none!important }
 body.simple .ov-score,
 body.simple .ov-score.expanded{ width:auto; min-width:0; max-width:none }
 /* 簡易版は打者も投手も出さず、チーム名と得点だけが主役なので通常版より大きく出す。
-   チーム名の大きさは _fitTeamNames() 側の上限（簡易版は 38px）で決まる */
-body.simple .ov-team-row{min-height:56px}
-body.simple .ov-total-cell{width:76px}
-body.simple .ov-total-num{font-size:44px}
-body.simple .ov-tot-cap{font-size:17px}
+   チーム名の大きさは _fitTeamNames() 側の上限（簡易版は 48px）で決まる */
+body.simple .ov-team-row{min-height:68px}
+body.simple .ov-total-cell{width:92px}
+body.simple .ov-total-num{font-size:56px}
+body.simple .ov-tot-cap{font-size:19px}
 /* メイン広告（右上）の出し入れはスライド。消すと上の画面外へ引っ込み、出すと上から下りてくる。
    枠（.ov-adtop）には大きさ調整の scale が付いているので、動かすのは中の画像・並びだけ */
 .ov-adtop > img,.ov-adtop > .ov-adtop-grid{
@@ -1115,7 +1115,7 @@ function _fitTeamNames(force){
   setLogoMax('');                       // まずロゴを既定の大きさに戻して測る
   // 簡易版（?simple=1）はチーム名が主役なので、上限も下限も大きくとる
   var _sim = document.body.classList.contains('simple');
-  var MAXP = _sim ? 38 : 24, MINP = _sim ? 20 : 11, p = MAXP;
+  var MAXP = _sim ? 48 : 24, MINP = _sim ? 24 : 11, p = MAXP;
   a.style.fontSize=p+'px'; h.style.fontSize=p+'px';
   while(p>MINP && over()){ p--; a.style.fontSize=p+'px'; h.style.fontSize=p+'px'; }
   // 文字を最小まで小さくしても入らないときは、ロゴを譲らせる。
