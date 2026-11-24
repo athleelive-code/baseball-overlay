@@ -118,8 +118,8 @@ label.f{display:flex;flex-direction:column;gap:.3em;font-size:.75em;color:#8b949
 
 <!-- チームのURL（?id=…）でないとき -->
 <div id="noid" class="choose" hidden>
-  <div class="note" style="font-size:1em;color:#e6edf3">大会の運営から届いた、<b>あなたのチーム専用のURL</b>を開いてください。</div>
-  <div class="note">このページのURLには、チームの印が付いていません。</div>
+  <div class="note" style="font-size:1em;color:#e6edf3" id="noid-t">大会の運営から届いた、<b>あなたのチーム専用のURL</b>を開いてください。</div>
+  <div class="note" id="noid-s">このページのURLには、チームの印が付いていません。</div>
 </div>
 
 <div id="main" hidden>
@@ -207,7 +207,7 @@ function atOrder(n){ for(var i = 0; i < T.players.length; i++) if(T.players[i].o
 function numSort(a, b){ return (Number(a.num) || 999) - (Number(b.num) || 999); }
 
 // 試合の情報（コントローラーから届く）と、大会の参加チーム一覧（かんたんスコアから届く）
-var INFO = {aab:'先攻', hnm:'後攻', aid:'', hid:'', nameMode:'sei', logo:{away:'', home:''}};
+var INFO = {aab:'先攻', hnm:'後攻', mySide:null, nameMode:'sei', logo:{away:'', home:''}};
 
 // ── 配信に出す名前 ─────────────────────────────────────────────────────
 // 大会の設定が「苗字だけ」なら、スペースの前（苗字）だけを配信に送る。フルネームは送らない。
@@ -228,7 +228,9 @@ try{ MYNAME = localStorage.getItem('athlee-team-name-' + ID) || ''; }catch(e){}
 function teamName(){ return MYNAME || (SIDE === 'home' ? INFO.hnm : SIDE === 'away' ? INFO.aab : 'チーム'); }
 // 先攻か後攻か：試合に選ばれたチームの印で見る。印がない（通常版のコントローラー）ときはチーム名で見る
 function findSide(){
-  if(INFO.aid || INFO.hid) return INFO.aid === ID ? 'away' : INFO.hid === ID ? 'home' : '';
+  // かんたんスコアで試合のチームを選んでいれば、サーバーが「自分は先攻か後攻か」だけを教えてくれる
+  if(typeof INFO.mySide === 'string') return INFO.mySide;
+  // 通常版のコントローラーのときは、チーム名で見る
   if(MYNAME && INFO.aab === MYNAME) return 'away';
   if(MYNAME && INFO.hnm === MYNAME) return 'home';
   return '';
@@ -604,7 +606,7 @@ function send(){
   try{ ws.send(JSON.stringify({_teamapp:true, id:ID, at:T.at, players:T.players})); }catch(e){}
 }
 function connect(){
-  var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/?team=1';
+  var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/?team=1&id=' + ID;
   try{ ws = new WebSocket(url); }catch(e){ setTimeout(connect, 2000); return; }
   ws.onopen = function(){
     g('dot').className = 'dot on';
@@ -630,7 +632,7 @@ function connect(){
     if(!d) return;
     if(d._ctl === true){
       INFO.aab = d.aab || '先攻'; INFO.hnm = d.hnm || '後攻';
-      INFO.aid = d.aid || ''; INFO.hid = d.hid || '';
+      INFO.mySide = typeof d.mySide === 'string' ? d.mySide : null;
       INFO.nameMode = d.nameMode === 'full' ? 'full' : 'sei';
       var side = findSide();
       if(side !== SIDE){
@@ -643,6 +645,8 @@ function connect(){
     }
     // 大会の参加チーム一覧から、自分のチーム名を取る
     if(d._teams && Array.isArray(d.list)){
+      // 大会の一覧から消された（大会が終わった）チーム：この端末の登録も消す
+      if(d.known === false){ gone(); return; }
       d.list.forEach(function(t){ if(t && t.id === ID && t.name){ MYNAME = t.name; } });
       try{ localStorage.setItem('athlee-team-name-' + ID, MYNAME); }catch(e){}
       document.title = (MYNAME || 'チーム') + '｜AthleeLive';
@@ -700,7 +704,25 @@ g('b-sec').onclick = function(){
   paint();
 };
 
-if(ID) load();
+// この端末に残っている登録が古ければ（最後の変更から60日）消す。サーバーと同じ決まり
+var KEEP_MS = 60 * 24 * 60 * 60 * 1000;
+function gone(){
+  try{
+    localStorage.removeItem(KEY());
+    localStorage.removeItem('athlee-team-name-' + ID);
+  }catch(e){}
+  ID = ''; T = {at:0, players:[]}; SIDE = ''; MYNAME = '';
+  g('noid-t').textContent = 'このURLは使えなくなりました。';
+  g('noid-s').textContent = '大会が終わったか、運営が一覧からチームを消したためです。この端末に残っていた選手の登録も消しました。';
+  closeSheet(); paint();
+}
+if(ID){
+  load();
+  if(T.at && Date.now() - T.at > KEEP_MS){
+    try{ localStorage.removeItem(KEY()); }catch(e){}
+    T = {at:0, players:[]};
+  }
+}
 paint();
 connect();
 </script>

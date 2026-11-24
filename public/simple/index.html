@@ -171,6 +171,7 @@ button:active{background:#30363d}
 .reg button{flex:none;font-size:.72em;padding:.3em .5em}
 .reg .del{color:#f85149}
 #reg-copyall{font-size:.8em}
+.wipe{font-size:.8em;color:#f85149;margin-top:var(--sep)}
 .nmode{display:flex;gap:var(--gap)}
 .nmode button{flex:1;font-size:.85em;font-weight:700}
 .nmode button.on{background:#f5c518;border-color:#f5c518;color:#111}
@@ -300,6 +301,9 @@ button:active{background:#30363d}
       <button id="reg-add">追加</button></div>
     <div id="reg-list" class="reglist"></div>
     <button id="reg-copyall">全チームのURLをまとめてコピー</button>
+    <button id="reg-wipe" class="wipe">大会終了：参加チームと選手の登録を全部消す</button>
+    <div class="note">大会が終わったら押してください。サーバーと各チームのスマホに残っている選手の登録も消えます。
+      押し忘れても、最後の変更から60日たつと自動で消えます。</div>
     <div class="note">URLと一緒に、記入用のオーダー表も送っておくと、写真からの読み取りが正確になります：
       <a href="/team/order-sheet.pdf" target="_blank" style="color:#9ec5ff">オーダー表（PDF）</a></div>
 
@@ -788,6 +792,11 @@ try{
   var _r = JSON.parse(localStorage.getItem(REG_KEY) || 'null');
   if(_r && Array.isArray(_r.list)) REG = {at:Number(_r.at) || 0, list:_r.list};
 }catch(e){}
+// 最後の変更から60日たった一覧は、この端末からも消す（サーバーと同じ決まり）
+if(REG.at && Date.now() - REG.at > 60 * 24 * 60 * 60 * 1000){
+  REG = {at:0, list:[]};
+  try{ localStorage.removeItem(REG_KEY); }catch(e){}
+}
 function teamUrl(id){ return location.origin + '/team/?id=' + id; }
 function regById(id){ for(var i = 0; i < REG.list.length; i++) if(REG.list[i].id === id) return REG.list[i]; return null; }
 function regSend(){
@@ -821,6 +830,7 @@ function paintShare(){
       '<button class="del" data-rdel="' + t.id + '">消す</button></div>';
   }).join('') : '<div class="note">まだ登録がありません</div>';
   g('reg-copyall').hidden = !REG.list.length;
+  g('reg-wipe').hidden = !REG.list.length;
   g('nm-sei').className = S.nameMode === 'full' ? '' : 'on';
   g('nm-full').className = S.nameMode === 'full' ? 'on' : '';
   ['away','home'].forEach(function(side){
@@ -864,6 +874,14 @@ g('reg-list').addEventListener('click', function(ev){
     if(S.aid === id){ S.aid = ''; } if(S.hid === id){ S.hid = ''; }
     regChanged(); commit();
   }
+});
+tap(g('reg-wipe'), function(){
+  if(!confirm('参加チームと、各チームが登録した選手を全部消します。\n各チームのURLも使えなくなります。よろしいですか？')) return;
+  if(!confirm('本当に消しますか？（元には戻せません）')) return;
+  REG.list = [];
+  S.aid = ''; S.hid = '';
+  regChanged(); commit();
+  toast('全部消しました');
 });
 tap(g('reg-copyall'), function(){
   copyText(REG.list.map(function(t){ return t.name + '\n' + teamUrl(t.id); }).join('\n\n'));
