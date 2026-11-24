@@ -132,6 +132,8 @@ button:active{background:#30363d}
 /* 試合終了 */
 .gend{display:flex;align-items:center;gap:var(--gap);border-color:#f5c518;background:#2a2410}
 .gend[hidden],.inn[hidden]{display:none}
+.gend.tie{border-color:#58a6ff;background:#102036}
+.gend.tie .gt{color:#9ec5ff}
 .gend .gt{flex:1;min-width:0;font-size:1.15em;font-weight:800;color:#f5c518}
 .gend .gs{display:block;font-size:.7em;color:#e6edf3;font-weight:700;margin-top:.15em}
 .gend button{flex:none;font-size:.8em}
@@ -173,6 +175,13 @@ button:active{background:#30363d}
 </div>
 
 <!-- 試合が終わったら、イニングの段の代わりに出す -->
+<!-- 最終回（延長の回）の裏が同点で終わったとき。延長にするか、引き分けで終えるかを選ぶ -->
+<div class="card gend tie" id="tieask" hidden>
+  <div class="gt"><span>同点です</span><span class="gs" id="tie-score"></span></div>
+  <button id="tie-extra">延長へ</button>
+  <button id="tie-draw">引き分けで終了</button>
+</div>
+
 <div class="card gend" id="gend" hidden>
   <div class="gt"><span id="ge-text">試合終了</span><span class="gs" id="ge-score"></span></div>
   <button id="ge-undo">終了を取り消す</button>
@@ -281,6 +290,7 @@ function newGame(keep){
     asc:[0], hsc:[],
     ge:{on:false, reason:''},   // 試合終了（reason は 'サヨナラ' など。ふつうの終了は空）
     xOn:{},                     // サヨナラの回に x を付ける（'home-回-1' : true）
+    tieAsk:false,               // 最終回が同点で終わり、延長か引き分けかを選んでいるところ
     gameId: Date.now()
   };
 }
@@ -351,7 +361,7 @@ function checkSayonara(){
 }
 // 3アウト・攻守交代のとき。試合が終わったら true（回は進めない）
 function checkHalfEnd(){
-  if(S.ge.on || !isFinal()) return false;
+  if(S.ge.on || S.tieAsk || !isFinal()) return false;
   var a = total('away'), h = total('home');
   if(S.top && h > a){
     var i = S.inn - 1;
@@ -361,7 +371,31 @@ function checkHalfEnd(){
     return true;
   }
   if(!S.top && a !== h){ endGame(''); return true; }
+  // 同点：大会によって延長にも引き分けにもなるので、ここでは決めずに選んでもらう
+  if(!S.top && a === h){ S.tieAsk = true; return true; }
   return false;
+}
+// 同点の確認中に、マスを直して同点でなくなったら、そのまま試合終了にする
+function settleTie(){
+  if(S.tieAsk && total('away') !== total('home')){ S.tieAsk = false; endGame(''); }
+}
+// 同点で「延長へ」：次の回の表に進む
+function tieExtra(){
+  if(!S.tieAsk) return;
+  push();
+  S.tieAsk = false;
+  S.top = true; S.inn++;
+  openCell();
+  commit();
+  toast(S.inn + '回（延長）に進みました');
+}
+// 同点で「引き分けで終了」
+function tieDraw(){
+  if(!S.tieAsk) return;
+  push();
+  S.tieAsk = false;
+  endGame('引き分け');
+  commit();
 }
 // 終了を取り消す（付けた × と x も外す）
 function unEnd(){
@@ -376,6 +410,7 @@ function unEnd(){
 }
 // 終わったあとは、うっかりカウントや得点を動かさない
 function ended(){
+  if(S.tieAsk){ toast('同点です。上の「延長へ」か「引き分けで終了」を選んでください'); return true; }
   if(!S.ge.on) return false;
   toast('試合終了しています（取り消しは上のボタン）');
   return true;
@@ -389,6 +424,7 @@ function editAdd(d){
   fill(arr, EDIT.i);
   var cur = typeof arr[EDIT.i] === 'number' ? arr[EDIT.i] : 0;
   arr[EDIT.i] = Math.max(0, Math.min(99, cur + d));
+  settleTie();
   commit();
 }
 // その回を「まだ打っていない」状態（空欄）に戻す
@@ -398,6 +434,7 @@ function editClear(){
   var arr = arrOf(EDIT.team);
   fill(arr, EDIT.i);
   arr[EDIT.i] = null;
+  settleTie();
   commit();
 }
 // その回が始まったらマスを 0 にする（まだ打っていない回は空欄のまま）
@@ -469,7 +506,9 @@ function paint(){
   fin.className = 'fin' + (S.inn > S.maxInn ? ' ex' : '');
   // 試合終了
   g('gend').hidden = !S.ge.on;
-  g('innrow').hidden = !!S.ge.on;
+  g('tieask').hidden = !S.tieAsk;
+  g('innrow').hidden = !!(S.ge.on || S.tieAsk);
+  if(S.tieAsk) g('tie-score').textContent = S.inn + '回裏終了　' + S.aab + ' ' + total('away') + ' − ' + total('home') + ' ' + S.hnm;
   if(S.ge.on){
     var ta = total('away'), th = total('home');
     g('ge-text').textContent = '試合終了' + (S.ge.reason ? '（' + S.ge.reason + '）' : '');
@@ -668,6 +707,8 @@ tap(g('b-full'), function(){
 tap(g('a-next'),   function(){ if(ended()) return; push(); S.b = 0; S.s = 0; commit(); });
 tap(g('a-change'), function(){ if(ended()) return; push(); half(); commit(); });
 tap(g('ge-undo'),  unEnd);
+tap(g('tie-extra'), tieExtra);
+tap(g('tie-draw'),  tieDraw);
 tap(g('a-undo'),   undo);
 tap(g('a-reset'),  function(){
   if(!confirm('試合をリセットします。スコア・カウント・走者を消してよいですか？')) return;
