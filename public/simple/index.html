@@ -129,7 +129,35 @@ button:active{background:#30363d}
 #a-next{background:#1f3b26;border-color:#2ea043}
 #a-reset{color:#f85149}
 
-.toast{position:fixed;left:50%;bottom:1.2em;transform:translateX(-50%);background:#30363d;
+/* 試合終了 */
+.gend{display:flex;align-items:center;gap:var(--gap);border-color:#f5c518;background:#2a2410}
+.gend[hidden],.inn[hidden]{display:none}
+.gend .gt{flex:1;min-width:0;font-size:1.15em;font-weight:800;color:#f5c518}
+.gend .gs{display:block;font-size:.7em;color:#e6edf3;font-weight:700;margin-top:.15em}
+.gend button{flex:none;font-size:.8em}
+.innbox .fin{display:block;font-size:.32em;font-weight:800;color:#f5c518;letter-spacing:.05em;margin-top:.1em}
+.innbox .fin.ex{color:#ff9f43}
+
+/* URL・QR の画面 */
+.share{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.8);overflow-y:auto;
+  padding:calc(.5em + env(safe-area-inset-top)) .5em calc(.5em + env(safe-area-inset-bottom))}
+.share[hidden]{display:none}
+.sbox{max-width:30em;margin:0 auto;background:#161b22;border:1px solid #30363d;border-radius:.6em;padding:.6em;
+  display:flex;flex-direction:column;gap:var(--gap)}
+.sh{font-size:.8em;font-weight:800;color:#8b949e;margin-top:.3em}
+.note{font-size:.68em;color:#8b949e;line-height:1.5}
+.srow2{display:flex;align-items:center;gap:var(--gap)}
+.srow2 .u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65em;
+  background:#0d1117;border:1px solid #30363d;border-radius:.5em;padding:.9em .6em;font-family:ui-monospace,monospace}
+.srow2 button{font-size:.8em}
+.qrs{display:flex;gap:var(--sep)}
+.qr{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:var(--gap)}
+.qn{font-size:.85em;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi{background:#fff;padding:.4em;border-radius:.4em;width:100%;max-width:11em}
+.qi svg{display:block;width:100%;height:auto}
+.qr button{font-size:.75em;width:100%}
+.share .close{font-size:.95em;font-weight:700;margin-top:.3em}
+.toast{position:fixed;z-index:60;left:50%;bottom:1.2em;transform:translateX(-50%);background:#30363d;
   border-radius:.5em;padding:.5em .9em;font-size:.8em;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 </style>
@@ -140,14 +168,19 @@ button:active{background:#30363d}
   <span class="dot" id="dot"></span><span class="msg" id="wsmsg">接続中…</span>
   <span class="sp"></span>
   <button id="b-maxinn">7回制</button>
-  <button id="a-copy" title="">URLコピー</button>
-  <button id="a-open">開く</button>
+  <button id="b-share">URL・QR</button>
   <button id="b-full">本体</button>
 </div>
 
-<div class="card inn">
+<!-- 試合が終わったら、イニングの段の代わりに出す -->
+<div class="card gend" id="gend" hidden>
+  <div class="gt"><span id="ge-text">試合終了</span><span class="gs" id="ge-score"></span></div>
+  <button id="ge-undo">終了を取り消す</button>
+</div>
+
+<div class="card inn" id="innrow">
   <button class="iv" id="inn-dec">−</button>
-  <div class="innbox"><span id="inn-num">1</span><span class="k">回</span></div>
+  <div class="innbox"><span id="inn-num">1</span><span class="k">回</span><span class="fin" id="inn-fin"></span></div>
   <button class="iv" id="inn-inc">＋</button>
   <button class="tb top" id="b-tb">▲ 表</button>
   <!-- 得点が入ったときなどに、オーバーレイへイニングスコアを出す。
@@ -212,8 +245,28 @@ button:active{background:#30363d}
 </div>
 
 
+<!-- URL と、チーム用アプリの QR コード -->
+<div class="share" id="share" hidden>
+  <div class="sbox">
+    <div class="sh">オーバーレイ（OBS のブラウザソースに貼る）</div>
+    <div class="srow2"><span class="u" id="ovurl"></span>
+      <button id="a-copy">コピー</button><button id="a-open">開く</button></div>
+    <div class="sh">チーム用アプリ（選手の表示）</div>
+    <div class="note">各チームのスタッフに、スマホのカメラでQRを読んでもらう。
+      選手の登録・打順・守備位置の入力と、オーバーレイへの選手表示ができる。</div>
+    <div class="qrs">
+      <div class="qr"><div class="qn" id="qr-away-n">先攻</div><div class="qi" id="qr-away"></div>
+        <button data-tcopy="away">URLコピー</button></div>
+      <div class="qr"><div class="qn" id="qr-home-n">後攻</div><div class="qi" id="qr-home"></div>
+        <button data-tcopy="home">URLコピー</button></div>
+    </div>
+    <button class="close" id="share-close">閉じる</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="/qrcode.js"></script>
 <script>
 'use strict';
 var g = function(id){ return document.getElementById(id); };
@@ -226,6 +279,8 @@ function newGame(keep){
     r:{1:false,2:false,3:false},
     aab:(keep && keep.aab) || '先攻', hnm:(keep && keep.hnm) || '後攻',
     asc:[0], hsc:[],
+    ge:{on:false, reason:''},   // 試合終了（reason は 'サヨナラ' など。ふつうの終了は空）
+    xOn:{},                     // サヨナラの回に x を付ける（'home-回-1' : true）
     gameId: Date.now()
   };
 }
@@ -242,6 +297,8 @@ function load(){
       S.r = Object.assign({1:false,2:false,3:false}, v.r || {});
       if(!Array.isArray(S.asc)) S.asc = [0];
       if(!Array.isArray(S.hsc)) S.hsc = [];
+      if(!S.ge || typeof S.ge !== 'object') S.ge = {on:false, reason:''};
+      if(!S.xOn || typeof S.xOn !== 'object') S.xOn = {};
     }
   }catch(e){}
 }
@@ -262,15 +319,66 @@ function commit(){ paint(); save(); broadcast(); }
 function arrOf(team){ return team === 'away' ? S.asc : S.hsc; }
 function fill(arr, i){ while(arr.length <= i) arr.push(null); }
 function addRun(team, d){
+  if(ended()) return;
   push();
   var arr = arrOf(team), i = S.inn - 1;
   fill(arr, i);
   var cur = typeof arr[i] === 'number' ? arr[i] : 0;
   arr[i] = Math.max(0, cur + d);
+  if(d > 0 && team === 'home' && !S.top) checkSayonara();
   commit();
 }
 function total(team){
   return arrOf(team).reduce(function(a, v){ return a + (typeof v === 'number' ? v : 0); }, 0);
+}
+
+// ── 試合終了（何回制かの設定から最終回を判断する）──────────────────────
+// ・最終回の表が終わって後攻がリード → 裏は「×」にして試合終了
+// ・最終回（延長の回）の裏が終わって点差がある → 試合終了
+// ・最終回以降の裏に後攻が勝ち越した → サヨナラで試合終了（その回の得点に x）
+// 同点なら延長へ進む。間違えたときは「終了を取り消す」か「1手戻す」
+function isFinal(){ return S.inn >= S.maxInn; }
+function endGame(reason){
+  S.ge = {on:true, reason:reason || ''};
+  S.b = 0; S.s = 0;
+}
+function checkSayonara(){
+  if(S.ge.on || S.top || !isFinal()) return;
+  if(total('home') > total('away')){
+    S.xOn['home-' + (S.inn - 1)] = true;
+    endGame('サヨナラ');
+  }
+}
+// 3アウト・攻守交代のとき。試合が終わったら true（回は進めない）
+function checkHalfEnd(){
+  if(S.ge.on || !isFinal()) return false;
+  var a = total('away'), h = total('home');
+  if(S.top && h > a){
+    var i = S.inn - 1;
+    fill(S.hsc, i);
+    S.hsc[i] = 'x';
+    endGame('');
+    return true;
+  }
+  if(!S.top && a !== h){ endGame(''); return true; }
+  return false;
+}
+// 終了を取り消す（付けた × と x も外す）
+function unEnd(){
+  if(!S.ge.on) return;
+  push();
+  var i = S.inn - 1;
+  if(S.hsc[i] === 'x') S.hsc[i] = null;
+  delete S.xOn['home-' + i];
+  S.ge = {on:false, reason:''};
+  commit();
+  toast('試合終了を取り消しました');
+}
+// 終わったあとは、うっかりカウントや得点を動かさない
+function ended(){
+  if(!S.ge.on) return false;
+  toast('試合終了しています（取り消しは上のボタン）');
+  return true;
 }
 // 直している回（イニングスコアのマスを押すと入る。試合の状態ではないので保存しない）
 var EDIT = null;   // {team:'away'|'home', i:回-1}
@@ -301,6 +409,7 @@ function openCell(){
 
 // ── カウント ───────────────────────────────────────────────────────────
 function addB(){
+  if(ended()) return;
   push();
   S.b++;
   if(S.b >= 4){ walk(); S.b = 0; S.s = 0; }
@@ -312,18 +421,21 @@ function walk(){
     var arr = arrOf(S.top ? 'away' : 'home'), i = S.inn - 1;
     fill(arr, i);
     arr[i] = (typeof arr[i] === 'number' ? arr[i] : 0) + 1;
+    if(!S.top) checkSayonara();
   }
   else if(S.r[1] && S.r[2]){ S.r[3] = true; }
   else if(S.r[1]){ S.r[2] = true; }
   else { S.r[1] = true; }
 }
 function addS(){
+  if(ended()) return;
   push();
   S.s++;
   if(S.s >= 3){ S.s = 0; S.b = 0; S.o++; if(S.o >= 3) half(); }
   commit();
 }
 function addO(){
+  if(ended()) return;
   push();
   S.o++; S.b = 0; S.s = 0;
   if(S.o >= 3) half();
@@ -338,6 +450,7 @@ function dec(k){
 function half(){
   S.b = 0; S.s = 0; S.o = 0;
   S.r = {1:false,2:false,3:false};
+  if(checkHalfEnd()) return;
   if(S.top){ S.top = false; } else { S.top = true; S.inn++; }
   openCell();
 }
@@ -350,6 +463,18 @@ function dots(box, n, max){
 }
 function paint(){
   g('inn-num').textContent = S.inn;
+  // 最終回・延長の目印
+  var fin = g('inn-fin');
+  fin.textContent = S.inn > S.maxInn ? '延長' : (S.inn === S.maxInn ? '最終回' : '');
+  fin.className = 'fin' + (S.inn > S.maxInn ? ' ex' : '');
+  // 試合終了
+  g('gend').hidden = !S.ge.on;
+  g('innrow').hidden = !!S.ge.on;
+  if(S.ge.on){
+    var ta = total('away'), th = total('home');
+    g('ge-text').textContent = '試合終了' + (S.ge.reason ? '（' + S.ge.reason + '）' : '');
+    g('ge-score').textContent = S.aab + ' ' + ta + ' − ' + th + ' ' + S.hnm;
+  }
   var tb = g('b-tb');
   tb.textContent = S.top ? '▲ 表' : '▼ 裏';
   tb.className = 'tb ' + (S.top ? 'top' : 'bot');
@@ -384,7 +509,7 @@ function paint(){
       var ed = EDIT && EDIT.team === k && EDIT.i === i;
       h += '<td class="' + (cur ? 'cur' : '') + (ed ? ' ed' : '') + '"' +
            ' data-team="' + k + '" data-i="' + i + '">' +
-           (typeof v === 'number' ? v : '') + '</td>';
+           (v === 'x' ? '×' : typeof v === 'number' ? v + (S.xOn[k + '-' + i] ? 'x' : '') : '') + '</td>';
     }
     h += '</tr>';
   });
@@ -442,7 +567,7 @@ function broadcast(){
       showBSO:true, showBat:false, showDef:false, showBatter:false, showPC:false,
       batter:null, pitcher:null, catcher:null,
       paResults:[], pitchLog:[], abLog:[],
-      gameEnd:{on:false}, extra:{}, xOn:{},
+      gameEnd:{on:!!S.ge.on, reason:S.ge.reason || ''}, extra:{}, xOn:Object.assign({}, S.xOn),
       cooling:{on:false, endsAt:0}, ticker:{on:false},
       _simple:true
     }));
@@ -540,8 +665,9 @@ tap(g('b-full'), function(){
   location.href = '/ctrl/';
 });
 
-tap(g('a-next'),   function(){ push(); S.b = 0; S.s = 0; commit(); });
-tap(g('a-change'), function(){ push(); half(); commit(); });
+tap(g('a-next'),   function(){ if(ended()) return; push(); S.b = 0; S.s = 0; commit(); });
+tap(g('a-change'), function(){ if(ended()) return; push(); half(); commit(); });
+tap(g('ge-undo'),  unEnd);
 tap(g('a-undo'),   undo);
 tap(g('a-reset'),  function(){
   if(!confirm('試合をリセットします。スコア・カウント・走者を消してよいですか？')) return;
@@ -561,17 +687,40 @@ tap(g('a-reset'),  function(){
   el.addEventListener('blur', function(){ el.value = (k === 'away' ? S.aab : S.hnm); });
 });
 
-// オーバーレイのURL（OBS のブラウザソースに貼る）
+// オーバーレイのURL（OBS のブラウザソースに貼る）と、チーム用アプリの QR
 var OV = location.origin + '/overlay.html?simple=1';
-g('a-copy').title = OV;
-tap(g('a-copy'), function(){
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(OV).then(function(){ toast('コピーしました'); }, fallbackCopy);
-  } else fallbackCopy();
+function teamUrl(t){ return location.origin + '/team/?t=' + t; }
+g('ovurl').textContent = OV;
+function openShare(){
+  g('qr-away-n').textContent = '先攻：' + S.aab;
+  g('qr-home-n').textContent = '後攻：' + S.hnm;
+  ['away','home'].forEach(function(t){
+    var box = g('qr-' + t);
+    if(box.getAttribute('data-done')) return;
+    try{
+      var q = qrcode(0, 'M');
+      q.addData(teamUrl(t));
+      q.make();
+      box.innerHTML = q.createSvgTag({cellSize:4, margin:0});
+      box.setAttribute('data-done', '1');
+    }catch(e){ box.textContent = 'QRを作れませんでした'; }
+  });
+  g('share').hidden = false;
+}
+tap(g('b-share'), openShare);
+tap(g('share-close'), function(){ g('share').hidden = true; });
+Array.prototype.forEach.call(document.querySelectorAll('[data-tcopy]'), function(b){
+  tap(b, function(){ copyText(teamUrl(b.getAttribute('data-tcopy'))); });
 });
-function fallbackCopy(){
+tap(g('a-copy'), function(){ copyText(OV); });
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ toast('コピーしました'); }, function(){ fallbackCopy(text); });
+  } else fallbackCopy(text);
+}
+function fallbackCopy(text){
   var t = document.createElement('textarea');
-  t.value = OV;
+  t.value = text;
   document.body.appendChild(t);
   t.select();
   try{ document.execCommand('copy'); toast('コピーしました'); }

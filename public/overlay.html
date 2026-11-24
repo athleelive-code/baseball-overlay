@@ -364,6 +364,46 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
 .ov-b-hist .h{font-size:18px;font-weight:800;line-height:1;padding:5px 10px;border-radius:5px;
   background:rgba(255,255,255,.14);color:rgba(255,255,255,.82);white-space:nowrap;flex-shrink:0}
 .ov-b-hist .h.reach{background:rgba(245,197,24,.92);color:#1a1400}
+
+/* ── 選手の名前（チーム用アプリから。左下）── */
+.ov-lt{position:fixed;left:20px;bottom:24px;z-index:45;display:flex;align-items:stretch;
+  min-width:560px;max-width:calc(62% - 30px);
+  background:rgba(8,12,24,.86);border:1px solid rgba(255,255,255,.15);border-left:8px solid var(--lt-col,#c8102e);
+  border-radius:8px;overflow:hidden;
+  transform:translateX(-110%);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s,bottom .35s}
+.ov-lt.on{transform:none;opacity:1}
+body.has-ticker .ov-lt{bottom:calc(128px*var(--tk,1) + 12px)}
+.lt-emb{flex:none;width:112px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);padding:8px}
+.lt-emb img{max-width:100%;max-height:96px;object-fit:contain}
+.ov-lt.nologo .lt-emb{display:none}
+.lt-body{flex:1;min-width:0;padding:10px 22px 12px 18px}
+.lt-top{display:flex;align-items:baseline;gap:18px;font-size:22px;font-weight:800;color:rgba(255,255,255,.75);white-space:nowrap}
+.lt-role{color:#f5c518}
+.lt-main{display:flex;align-items:flex-end;gap:20px;margin-top:2px}
+.lt-num{font-size:54px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.lt-num:empty{display:none}
+.lt-nmw{min-width:0;display:flex;flex-direction:column}
+.lt-ym{font-size:18px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:2px;line-height:1.2}
+.lt-ym:empty{display:none}
+.lt-nm{font-size:54px;font-weight:900;color:#fff;line-height:1.05;white-space:nowrap;letter-spacing:2px;overflow:hidden}
+
+/* ── スタメン（チーム用アプリから。画面のまん中）── */
+.ov-lu{position:fixed;left:50%;top:50%;z-index:46;width:760px;
+  transform:translate(-50%,-46%);opacity:0;pointer-events:none;transition:opacity .35s,transform .45s;
+  background:rgba(8,12,24,.9);border:1px solid rgba(255,255,255,.15);border-top:8px solid var(--lt-col,#c8102e);
+  border-radius:10px;padding:18px 26px 20px}
+.ov-lu.on{opacity:1;transform:translate(-50%,-50%)}
+.lu-hd{display:flex;align-items:center;gap:18px;margin-bottom:10px}
+.lu-hd img{height:72px;width:auto;max-width:120px;object-fit:contain}
+.ov-lu.nologo .lu-hd img{display:none}
+.lu-tn{font-size:38px;font-weight:900;color:#fff;line-height:1.15}
+.lu-cap{font-size:18px;font-weight:700;color:#f5c518;letter-spacing:3px}
+.lu-row{display:flex;align-items:center;gap:18px;padding:5px 4px;border-top:1px solid rgba(255,255,255,.1);
+  font-size:34px;font-weight:800;color:#fff;line-height:1.25}
+.lu-o{width:40px;text-align:right;color:#f5c518;font-variant-numeric:tabular-nums}
+.lu-p{width:64px;text-align:center;font-size:26px;color:rgba(255,255,255,.85);background:rgba(255,255,255,.1);border-radius:6px}
+.lu-n{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;letter-spacing:2px}
+.lu-no{width:80px;text-align:right;font-size:28px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -552,6 +592,22 @@ if(/[?&]simple=1/.test(location.search)) document.body.classList.add('simple');
       <div class="ov-b-hist" id="ov-batter-hist"></div>
     </div>
   </div>
+</div>
+
+<!-- チーム用アプリ（/team/）から出す選手の名前（左下）-->
+<div class="ov-lt" id="ov-lt">
+  <div class="lt-emb" id="lt-emb"><img id="lt-logo" alt=""></div>
+  <div class="lt-body">
+    <div class="lt-top"><span id="lt-team"></span><span class="lt-role" id="lt-role"></span></div>
+    <div class="lt-main"><span class="lt-num" id="lt-num"></span>
+      <span class="lt-nmw"><span class="lt-ym" id="lt-ym"></span><span class="lt-nm" id="lt-nm"></span></span></div>
+  </div>
+</div>
+
+<!-- チーム用アプリから出すスタメン（画面のまん中）-->
+<div class="ov-lu" id="ov-lu">
+  <div class="lu-hd"><img id="lu-logo" alt=""><div><div class="lu-tn" id="lu-tn"></div><div class="lu-cap">スターティングメンバー</div></div></div>
+  <div class="lu-list" id="lu-list"></div>
 </div>
 
 <script>
@@ -743,6 +799,7 @@ function applyState(s){
   if(!s)return;
   // 全状態（コントローラー）以外は表示に触れない（部分メッセージでカウントを消さない）
   if(s._ctl!==true) return;
+  _ltState=s;   // 選手の名前・スタメンを出すときのチーム名・色に使う
   applyCooling(s.cooling);
   applyTicker(s.ticker && s.ticker.on);
   // チームカラー適用
@@ -1075,6 +1132,61 @@ function applySpeed(sp){
   _spdTimer=setTimeout(clr, 8000);
 }
 var _scoreDispSec=0;
+
+// ── チーム用アプリ（/team/）から出す選手の名前・スタメン ──────────────────
+// チーム名・色・ロゴは、こちらが持っている試合の状態から取る（無ければ送られてきた名前）
+var _ltTimer=null, _luTimer=null, _ltState=null;
+var _POS_L={'1':'投手','2':'捕手','3':'一塁手','4':'二塁手','5':'三塁手','6':'遊撃手','7':'左翼手','8':'中堅手','9':'右翼手','DH':'指名打者'};
+var _POS_S={'1':'投','2':'捕','3':'一','4':'二','5':'三','6':'遊','7':'左','8':'中','9':'右','DH':'DH'};
+function _teamLook(team, tn){
+  var s=_ltState||{};
+  var name = team==='home' ? (s.hnm||tn||'後攻') : (s.aab||tn||'先攻');
+  var col  = team==='home' ? (s.homeColor||'#1a56a0') : (s.awayColor||'#c8102e');
+  var logo = team==='home' ? _teamLogos.home : _teamLogos.away;
+  return {name:name, col:col, logo:logo||''};
+}
+function applyLowerThird(d){
+  var el=g('ov-lt'); if(!el) return;
+  if(_ltTimer){ clearTimeout(_ltTimer); _ltTimer=null; }
+  if(!d.on || !d.p){ el.classList.remove('on'); return; }
+  var t=_teamLook(d.team, d.tn), p=d.p;
+  el.style.setProperty('--lt-col', t.col);
+  set('lt-team', t.name);
+  var role=[]; if(p.order) role.push(p.order+'番'); if(p.pos && _POS_L[p.pos]) role.push(_POS_L[p.pos]);
+  set('lt-role', role.join('　'));
+  set('lt-num', p.num ? '#'+p.num : '');
+  set('lt-ym', p.yomi||'');
+  set('lt-nm', p.name||'');
+  var img=g('lt-logo');
+  if(t.logo){ img.src=t.logo; el.classList.remove('nologo'); } else { img.removeAttribute('src'); el.classList.add('nologo'); }
+  // 長い名前は文字を小さくして収める
+  var nm=g('lt-nm'); nm.style.fontSize='';
+  el.classList.add('on');
+  for(var px=52; px>=30 && nm.scrollWidth>nm.clientWidth+1; px-=2){ nm.style.fontSize=px+'px'; }
+  var sec=Number(d.sec)||0;
+  if(sec>0) _ltTimer=setTimeout(function(){ el.classList.remove('on'); }, sec*1000);
+}
+function applyLineup(d){
+  var el=g('ov-lu'); if(!el) return;
+  if(_luTimer){ clearTimeout(_luTimer); _luTimer=null; }
+  if(!d.on || !Array.isArray(d.list)){ el.classList.remove('on'); return; }
+  var t=_teamLook(d.team, d.tn);
+  el.style.setProperty('--lt-col', t.col);
+  set('lu-tn', t.name);
+  var img=g('lu-logo');
+  if(t.logo){ img.src=t.logo; el.classList.remove('nologo'); } else { img.removeAttribute('src'); el.classList.add('nologo'); }
+  var box=g('lu-list'); box.innerHTML='';
+  d.list.forEach(function(p){
+    var row=document.createElement('div'); row.className='lu-row';
+    [['lu-o',p.order], ['lu-p',_POS_S[p.pos]||''], ['lu-n',p.name||''], ['lu-no',p.num?'#'+p.num:'']].forEach(function(c){
+      var sp=document.createElement('span'); sp.className=c[0]; sp.textContent=c[1]; row.appendChild(sp);
+    });
+    box.appendChild(row);
+  });
+  el.classList.add('on');
+  var sec=Number(d.sec)||0;
+  if(sec>0) _luTimer=setTimeout(function(){ el.classList.remove('on'); }, sec*1000);
+}
 
 // ── チームエンブレム（コントローラー設定 → _teamcfg で受信）──────────────
 var _teamLogos = { away:'', home:'' };
@@ -1501,6 +1613,9 @@ function connectWS(){
           if(d && d._adcfg){ applyAdCfg(d); return; }
           // チームエンブレム設定（コントローラーから）
           if(d && d._teamcfg){ applyTeamCfg(d); return; }
+          // チーム用アプリ（/team/）からの選手の名前・スタメン
+          if(d && d._lt){ applyLowerThird(d); return; }
+          if(d && d._lineup){ applyLineup(d); return; }
           // 打歴（ROSTER の記録が正・編集や削除も反映）
           if(d && d._hist){ _histResults = Array.isArray(d.results) ? d.results : []; if(_pendingState) applyState(_pendingState); return; }
           // 全状態（コントローラー）以外は無視。_pcEdit や _req でカウント・走者を消さない

@@ -16,7 +16,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
     if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
   }
 }));
-app.get('/', (req, res) => { res.redirect('/ctrl/'); });
+// 最初に開くのは、かんたんスコア（簡易版）。本体は /ctrl/ から
+app.get('/', (req, res) => { res.redirect('/simple/'); });
 
 // 旧URLからの転送（ホーム画面に古いアイコンが残っていても開ける）
 app.get('/controller-unified.html', (req, res) => res.redirect(301, '/ctrl/'));
@@ -272,6 +273,10 @@ const LAST_STATE_TTL = 12 * 60 * 60 * 1000;
 let lastAdCfg = null;
 let lastAdCfgAt = 0;
 let lastTeamCfg = null;
+// チーム用アプリ（/team/）で登録した選手。先攻・後攻ごとに、更新時刻（at）が新しいものだけ預かる。
+// スタッフのスマホが閉じていても、オーバーレイや別の端末が開き直したときに届くようにする
+const lastTeamApp = { away: null, home: null };
+const lastTeamAppAt = { away: 0, home: 0 };
 
 wss.on('connection', (ws, req) => {
   // 接続直後に、十分新しい _ctl 状態があれば全クライアントへ復帰用に送る。
@@ -281,6 +286,8 @@ wss.on('connection', (ws, req) => {
   }
   if (lastAdCfg)   ws.send(lastAdCfg);
   if (lastTeamCfg) ws.send(lastTeamCfg);
+  if (lastTeamApp.away) ws.send(lastTeamApp.away);
+  if (lastTeamApp.home) ws.send(lastTeamApp.home);
 
   ws.on('message', (data) => {
     const text = data.toString();
@@ -297,10 +304,20 @@ wss.on('connection', (ws, req) => {
         if (!lastAdCfg || at >= lastAdCfgAt) { lastAdCfg = text; lastAdCfgAt = at; }
       }
       if (d && d._teamcfg) lastTeamCfg = text;
+      if (d && d._teamapp && (d.team === 'away' || d.team === 'home')) {
+        const at = Number(d.at) || 0;
+        // 古い登録の端末がつながり直しても、新しい登録を上書きしない
+        if (at < lastTeamAppAt[d.team]) { ws.send(lastTeamApp[d.team]); return; }
+        lastTeamApp[d.team] = text; lastTeamAppAt[d.team] = at;
+      }
       // 問い合わせには、預かっているものをその場で返す。
       // （設定した端末が閉じていても届くようにする。中継もそのまま続ける）
       if (d && d._req === 'adcfg'   && lastAdCfg)   ws.send(lastAdCfg);
       if (d && d._req === 'teamcfg' && lastTeamCfg) ws.send(lastTeamCfg);
+      if (d && d._req === 'teamapp') {
+        if (lastTeamApp.away) ws.send(lastTeamApp.away);
+        if (lastTeamApp.home) ws.send(lastTeamApp.home);
+      }
     } catch(e) {}
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) client.send(text);
