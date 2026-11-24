@@ -52,6 +52,8 @@ input:focus,textarea:focus{outline:none;border-color:#58a6ff}
 .row .who.empty{color:#6e7681;justify-content:center}
 .who .no{flex:none;min-width:1.8em;font-weight:800;color:#9ec5ff;text-align:right;font-variant-numeric:tabular-nums}
 .who .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.who .warn{display:block;font-size:.65em;color:#f5c518;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.airnote{font-size:.72em;color:#9ec5ff;margin:.5em .2em 0;line-height:1.5}
 .who .ym{display:block;font-size:.65em;color:#8b949e;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .show{flex:none;width:3.4em;padding:0;font-size:.85em;font-weight:700;background:#16263f;border-color:#2d4a7a;color:#9ec5ff}
 .row .show.on{background:#f5c518;border-color:#f5c518;color:#111}
@@ -107,6 +109,7 @@ label.f{display:flex;flex-direction:column;gap:.3em;font-size:.75em;color:#8b949
     <div><div class="tn" id="tn">-</div><div class="tg" id="tg"></div></div>
   </div>
 
+  <div class="airnote" id="airnote"></div>
   <div class="hd">スタメン（打順）</div>
   <div class="list" id="starters"></div>
   <div style="height:var(--sep)"></div>
@@ -175,7 +178,22 @@ function atOrder(n){ for(var i = 0; i < T.players.length; i++) if(T.players[i].o
 function numSort(a, b){ return (Number(a.num) || 999) - (Number(b.num) || 999); }
 
 // 試合の情報（コントローラーから届く）と、大会の参加チーム一覧（かんたんスコアから届く）
-var INFO = {aab:'先攻', hnm:'後攻', aid:'', hid:'', logo:{away:'', home:''}};
+var INFO = {aab:'先攻', hnm:'後攻', aid:'', hid:'', nameMode:'sei', logo:{away:'', home:''}};
+
+// ── 配信に出す名前 ─────────────────────────────────────────────────────
+// 大会の設定が「苗字だけ」なら、スペースの前（苗字）だけを配信に送る。フルネームは送らない。
+// スペースがない名前は苗字と名前の区切りが分からないので、出さずに直してもらう
+function splitName(t){ return String(t || '').trim().split(/[\s　]+/).filter(Boolean); }
+function seiOnly(){ return INFO.nameMode !== 'full'; }
+function noSpace(p){ return seiOnly() && splitName(p.name).length < 2; }
+function airName(p){ return seiOnly() ? splitName(p.name)[0] || '' : String(p.name || '').trim(); }
+function airYomi(p){
+  if(!seiOnly()) return String(p.yomi || '').trim();
+  var y = splitName(p.yomi);
+  return y.length >= 2 ? y[0] : '';     // ふりがなも苗字の分だけ（区切りがなければ出さない）
+}
+// 入力のゆれをそろえる（全角スペース・続いたスペースを1つの半角スペースに）
+function tidy(t){ return String(t || '').replace(/[\s　]+/g, ' ').trim(); }
 var MYNAME = '';
 try{ MYNAME = localStorage.getItem('athlee-team-name-' + ID) || ''; }catch(e){}
 function teamName(){ return MYNAME || (SIDE === 'home' ? INFO.hnm : SIDE === 'away' ? INFO.aab : 'チーム'); }
@@ -196,6 +214,9 @@ function paint(){
   tg.textContent = SIDE ? '今の試合：' + (SIDE === 'home' ? '後攻' : '先攻') : '今の試合には出ていません（選手の登録はできます）';
   tg.className = 'tg' + (SIDE ? ' on' : '');
   g('tn').textContent = teamName();
+  g('airnote').textContent = seiOnly()
+    ? '配信には苗字だけが出ます。名前は「山田 太郎」のように、苗字と名前の間にスペースを入れてください。'
+    : '配信にはフルネームが出ます。';
   g('teambox').className = 'team ' + (SIDE || 'out');
   var lg = SIDE ? INFO.logo[SIDE] : '';
   if(lg){ g('logo').src = lg; g('logo').hidden = false; } else { g('logo').hidden = true; }
@@ -233,7 +254,8 @@ function paint(){
 function whoBtn(p){
   return '<button class="who" data-edit="' + p.id + '"><span class="no">' + esc(p.num ? '#' + p.num : '') + '</span>' +
     '<span style="min-width:0"><span class="nm">' + esc(p.name || '（名前なし）') + '</span>' +
-    (p.yomi ? '<span class="ym">' + esc(p.yomi) + '</span>' : '') + '</span></button>';
+    (noSpace(p) ? '<span class="warn">⚠ 苗字と名前の間にスペースを</span>'
+      : p.yomi ? '<span class="ym">' + esc(p.yomi) + '</span>' : '') + '</span></button>';
 }
 function showBtn(p){
   var on = LT_ON === p.id;
@@ -312,7 +334,7 @@ function editPlayer(id){
   var p = id ? byId(id) : null;
   var h = '<h3>' + (p ? '選手を直す' : '選手を追加') + '</h3>' +
     '<label class="f">背番号<input id="e-num" inputmode="numeric" maxlength="3" value="' + esc(p ? p.num : '') + '"></label>' +
-    '<label class="f">名前<input id="e-name" maxlength="16" value="' + esc(p ? p.name : '') + '" placeholder="例）山田 太郎"></label>' +
+    '<label class="f">名前（苗字と名前の間にスペース）<input id="e-name" maxlength="16" value="' + esc(p ? p.name : '') + '" placeholder="例）山田 太郎"></label>' +
     '<label class="f">ふりがな（なくてもよい）<input id="e-yomi" maxlength="24" value="' + esc(p ? p.yomi : '') + '" placeholder="例）やまだ たろう"></label>' +
     '<div class="btns"><button class="add" data-esave="' + (p ? p.id : '') + '">' + (p ? '保存' : '追加') + '</button>' +
     '<button data-close>やめる</button></div>' +
@@ -322,7 +344,7 @@ function editPlayer(id){
 }
 function savePlayer(id){
   var num = g('e-num').value.replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).trim();
-  var name = g('e-name').value.trim(), yomi = g('e-yomi').value.trim();
+  var name = tidy(g('e-name').value), yomi = tidy(g('e-yomi').value);
   if(!name && !num){ toast('背番号か名前を入れてください'); return; }
   if(id){
     var p = byId(id);
@@ -343,8 +365,8 @@ function delPlayer(id){
 // まとめて追加：1行に1人「背番号 名前 ふりがな」
 function bulk(){
   sheet('<h3>まとめて追加</h3>' +
-    '<div class="note">1行に1人ずつ「背番号 名前」と書きます（ふりがなは名前のあとに書けます）。<br>例）<br>1 山田太郎 やまだたろう<br>10 佐藤次郎</div>' +
-    '<textarea id="e-bulk" rows="8" placeholder="1 山田太郎"></textarea>' +
+    '<div class="note">1行に1人ずつ「背番号 苗字 名前」と書きます（ふりがなは名前のあとに書けます）。<br>例）<br>1 山田 太郎 やまだ たろう<br>10 佐藤 次郎</div>' +
+    '<textarea id="e-bulk" rows="8" placeholder="1 山田 太郎"></textarea>' +
     '<div class="btns"><button class="add" data-bulkok>追加する</button><button data-close>やめる</button></div>');
 }
 function bulkOk(){
@@ -355,9 +377,12 @@ function bulkOk(){
     if(!line) return;
     var m = line.match(/^#?(\d{1,3})[\s.、,:：]+(.*)$/);
     var num = m ? m[1] : '', rest = (m ? m[2] : line).trim().split(/\s+/);
-    // 最後の語がひらがな・カタカナだけなら、ふりがなとみなす
+    // 後ろに続く、ひらがな・カタカナだけの語はふりがなとみなす（「山田 太郎 やまだ たろう」）。
+    // ただし名前が全部かなの選手もいるので、前に漢字などの語が残るときだけ
+    var kana = /^[ぁ-んァ-ヶー]+$/, k = rest.length;
+    while(k > 0 && kana.test(rest[k - 1])) k--;
     var yomi = '';
-    if(rest.length > 1 && /^[ぁ-んァ-ヶー]+$/.test(rest[rest.length - 1])) yomi = rest.pop();
+    if(k > 0 && k < rest.length){ yomi = rest.slice(k).join(' '); rest = rest.slice(0, k); }
     var name = rest.join(' ');
     if(!name && !num) return;
     T.players.push({id:newId(), num:num, name:name, yomi:yomi, pos:'', order:0});
@@ -382,8 +407,9 @@ function showPlayer(id){
   if(notPlaying()) return;
   var p = byId(id);
   if(!p) return;
+  if(noSpace(p)){ toast('配信には苗字だけを出します。「' + (p.name || '') + '」の苗字と名前の間にスペースを入れてください（名前を押すと直せます）'); return; }
   sendRaw({_lt:true, team:SIDE, on:true, sec:SEC, tn:teamName(),
-    p:{num:p.num, name:p.name, yomi:p.yomi, pos:p.pos, order:p.order || 0}});
+    p:{num:p.num, name:airName(p), yomi:airYomi(p), pos:p.pos, order:p.order || 0}});
   LT_ON = id;
   clearTimeout(LT_TIMER);
   if(SEC > 0) LT_TIMER = setTimeout(function(){ LT_ON = ''; paint(); }, SEC * 1000 + 300);
@@ -403,8 +429,10 @@ function toggleLineup(){
   var list = [];
   for(var n = 1; n <= 9; n++){
     var p = atOrder(n);
-    if(p) list.push({order:n, num:p.num, name:p.name, pos:p.pos});
+    if(p) list.push({order:n, num:p.num, name:airName(p), pos:p.pos, ns:noSpace(p)});
   }
+  if(list.some(function(x){ return x.ns; })){ toast('苗字と名前の間にスペースがない選手がいます（⚠の選手）。直してから出してください'); return; }
+  list.forEach(function(x){ delete x.ns; });
   if(!list.length){ toast('先にスタメン（打順）を入れてください'); return; }
   sendRaw({_lineup:true, team:SIDE, on:true, sec:LU_SEC, tn:teamName(), list:list});
   LU_ON = true;
@@ -451,6 +479,7 @@ function connect(){
     if(d._ctl === true){
       INFO.aab = d.aab || '先攻'; INFO.hnm = d.hnm || '後攻';
       INFO.aid = d.aid || ''; INFO.hid = d.hid || '';
+      INFO.nameMode = d.nameMode === 'full' ? 'full' : 'sei';
       var side = findSide();
       if(side !== SIDE){
         // 試合から外れたら、出しているものは消しておく

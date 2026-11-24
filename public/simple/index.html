@@ -171,6 +171,9 @@ button:active{background:#30363d}
 .reg button{flex:none;font-size:.72em;padding:.3em .5em}
 .reg .del{color:#f85149}
 #reg-copyall{font-size:.8em}
+.nmode{display:flex;gap:var(--gap)}
+.nmode button{flex:1;font-size:.85em;font-weight:700}
+.nmode button.on{background:#f5c518;border-color:#f5c518;color:#111}
 .share .close{font-size:.95em;font-weight:700;margin-top:.3em}
 .toast{position:fixed;z-index:60;left:50%;bottom:1.2em;transform:translateX(-50%);background:#30363d;
   border-radius:.5em;padding:.5em .9em;font-size:.8em;opacity:0;transition:opacity .2s;pointer-events:none}
@@ -282,6 +285,14 @@ button:active{background:#30363d}
     <label class="pick2"><span>先攻</span><select id="sel-away"></select></label>
     <label class="pick2"><span>後攻</span><select id="sel-home"></select></label>
 
+    <div class="sh">配信に出す選手の名前</div>
+    <div class="note">チームのアプリで「出す」を押したとき、配信画面に出る名前です。
+      「苗字だけ」のときは、チームの人に「山田 太郎」のように苗字と名前の間にスペースを入れて登録してもらいます。</div>
+    <div class="nmode">
+      <button id="nm-sei" data-nm="sei">苗字だけ</button>
+      <button id="nm-full" data-nm="full">フルネーム</button>
+    </div>
+
     <div class="sh">大会の参加チーム</div>
     <div class="note">大会の前にチームを登録し、チームごとのURLを各チームのスタッフに送っておきます（LINEなど）。
       スタッフはそのURLで、選手・背番号を前もって入れておけます。登録は大会中ずっと残ります。</div>
@@ -315,7 +326,8 @@ function newGame(keep){
     ge:{on:false, reason:''},   // 試合終了（reason は 'サヨナラ' など。ふつうの終了は空）
     xOn:{},                     // サヨナラの回に x を付ける（'home-回-1' : true）
     tieAsk:false,               // 最終回が同点で終わり、延長か引き分けかを選んでいるところ
-    aid:(keep && keep.aid) || '', hid:(keep && keep.hid) || '',   // この試合の先攻・後攻（大会の参加チームの印）
+    aid:(keep && keep.aid) || '', hid:(keep && keep.hid) || '',
+    nameMode:(keep && keep.nameMode) || 'sei',   // 配信に出す選手名：'sei'＝苗字だけ / 'full'＝フルネーム   // この試合の先攻・後攻（大会の参加チームの印）
     gameId: Date.now()
   };
 }
@@ -623,7 +635,7 @@ function broadcast(){
       inn:S.inn, top:S.top, maxInn:S.maxInn,
       b:S.b, s:S.s, o:S.o,
       r:{1:S.r[1], 2:S.r[2], 3:S.r[3]},
-      aab:S.aab, hnm:S.hnm, aid:S.aid || '', hid:S.hid || '',
+      aab:S.aab, hnm:S.hnm, aid:S.aid || '', hid:S.hid || '', nameMode:S.nameMode === 'full' ? 'full' : 'sei',
       asc:S.asc.slice(), hsc:S.hsc.slice(),
       gameId:S.gameId,
       // 簡易版で使わないものは、はっきり切っておく
@@ -748,7 +760,7 @@ tap(g('a-reset'),  function(){
   if(!confirm('試合をリセットします。スコア・カウント・走者を消してよいですか？')) return;
   push();
   EDIT = null;
-  S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm, aid:S.aid, hid:S.hid});
+  S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm, aid:S.aid, hid:S.hid, nameMode:S.nameMode});
   commit();
   toast('リセットしました');
 });
@@ -807,6 +819,8 @@ function paintShare(){
       '<button class="del" data-rdel="' + t.id + '">消す</button></div>';
   }).join('') : '<div class="note">まだ登録がありません</div>';
   g('reg-copyall').hidden = !REG.list.length;
+  g('nm-sei').className = S.nameMode === 'full' ? '' : 'on';
+  g('nm-full').className = S.nameMode === 'full' ? 'on' : '';
   ['away','home'].forEach(function(side){
     var sel = g('sel-' + side), cur = side === 'away' ? S.aid : S.hid;
     var h = '<option value="">（一覧から選ぶ）</option>';
@@ -851,6 +865,14 @@ g('reg-list').addEventListener('click', function(ev){
 });
 tap(g('reg-copyall'), function(){
   copyText(REG.list.map(function(t){ return t.name + '\n' + teamUrl(t.id); }).join('\n\n'));
+});
+// 配信に出す選手名（苗字だけ／フルネーム）
+Array.prototype.forEach.call(document.querySelectorAll('[data-nm]'), function(b){
+  tap(b, function(){
+    S.nameMode = b.getAttribute('data-nm');
+    commit(); paintShare();
+    toast(S.nameMode === 'full' ? '配信にフルネームを出します' : '配信には苗字だけを出します');
+  });
 });
 // この試合の先攻・後攻を一覧から選ぶ（チーム名も入る）
 ['away','home'].forEach(function(side){
