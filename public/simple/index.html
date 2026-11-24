@@ -13,6 +13,12 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* ── 押すところの決まり（今後もこの値を守る）──────────────────────────
+   --tap : 押すところの最小の大きさ（縦・横とも）。指先でも押し間違えにくい 48px
+   --gap : となり合う押すところどうしの、最小のすき間
+   --sep : 役割のちがうかたまりの間（例：イニングスコアのボタンとBSO）は、さらに広くあける
+   文字が小さい端末でもこの値を下回らないように、px で決めてある */
+:root{--tap:48px;--gap:8px;--sep:16px}
 html{height:100%}
 /* 1画面に収めたうえで、文字と押すところは画面の幅に合わせて大きくする。
    以下の寸法はぜんぶ em（下の font-size が基準）なので、
@@ -24,32 +30,35 @@ body{margin:0 auto;max-width:min(100%,30em);height:100vh;height:100dvh;overflow-
      なっても、文字ごと大きくなって横が余らない（上限 40px はその用）*/
   font-size:clamp(14px,min(4.4vw,2.3vh),40px);
   user-select:none;-webkit-user-select:none;
-  display:flex;flex-direction:column;gap:.3em;
+  display:flex;flex-direction:column;gap:max(var(--gap),.3em);
   padding:calc(.25em + env(safe-area-inset-top)) .4em calc(.3em + env(safe-area-inset-bottom))}
 button{font-family:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:.5em;
-  font-size:1em;padding:.5em .6em;cursor:pointer}
+  font-size:1em;padding:.5em .6em;cursor:pointer;
+  min-height:var(--tap);min-width:var(--tap)}
 button:active{background:#30363d}
 .card{background:#161b22;border:1px solid #30363d;border-radius:.6em;padding:.4em}
 
 /* 上のバー */
-.bar{display:flex;align-items:center;gap:.5em;font-size:.68em;color:#8b949e;padding:0 .2em}
+.bar{display:flex;align-items:center;gap:max(var(--gap),.5em);font-size:.68em;color:#8b949e;padding:0 .2em}
 .dot{width:.6em;height:.6em;border-radius:50%;background:#6e7681;flex:none}
 .dot.on{background:#3fb950}
 .dot.off{background:#f85149}
+.bar .msg{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar .sp{flex:1}
-.bar button{font-size:1em;padding:.4em .7em;border-radius:.5em}
+.bar button{font-size:1em;padding:.4em .6em;border-radius:.5em;flex:none}
 
 /* イニング */
-.inn{display:flex;align-items:center;gap:.35em}
-.inn .iv{width:2.3em;font-size:1.3em;font-weight:700;padding:.35em 0}
+.inn{padding:.25em .4em;display:flex;align-items:center;gap:max(var(--gap),.35em)}
+.inn .iv{width:2em;font-size:1.3em;font-weight:700;padding:.35em 0}
 .innbox{flex:1;text-align:center;font-size:2.1em;font-weight:800;line-height:1}
 .innbox .k{font-size:.5em;font-weight:600;color:#8b949e;margin-left:.1em}
-.tb{width:4.3em;font-size:1.05em;font-weight:700;padding:.55em .2em}
+.tb{width:3.6em;font-size:1.05em;font-weight:700;padding:.4em .2em}
 .tb.bot{background:#1a2f4a;border-color:#2d5a8a}
 .tb.top{background:#4a1a22;border-color:#8a2d3a}
 
 /* スコア */
-.srow{display:flex;align-items:center;gap:.3em;padding:.1em 0}
+.srow{display:flex;align-items:center;gap:max(var(--gap),.3em);padding:.1em 0}
+.srow + .srow{margin-top:var(--gap)}
 .srow .ind{width:.3em;height:1.8em;border-radius:.15em;background:#30363d;flex:none}
 .srow.at .ind{background:#f5c518}
 .tname{flex:1;min-width:0;background:transparent;border:none;border-bottom:1px dashed #30363d;
@@ -62,13 +71,13 @@ button:active{background:#30363d}
 /* イニングスコア表（マスを押すと、その回だけ直せる）*/
 .ist{margin-top:.25em}
 .ist table{border-collapse:collapse;width:100%;font-size:.78em;font-variant-numeric:tabular-nums}
-.ist td{border:1px solid #30363d;text-align:center;padding:.45em 0;color:#c9d1d9}
+.ist td{border:1px solid #30363d;text-align:center;padding:.45em 0;color:#c9d1d9;height:var(--tap)}
 .ist td.cur{background:#1f2937;color:#f5c518;font-weight:700}
 .ist td.ed{background:#2d4b2f;color:#fff;font-weight:700;border-color:#3fb950}
-.ist tr.num td{color:#8b949e;border:none;font-size:.8em;padding:0 0 .1em}
+.ist tr.num td{color:#8b949e;border:none;font-size:.8em;padding:0 0 .1em;height:auto}
 
 /* 回を直すバー（マスを押すと出る）*/
-.iedit{display:flex;align-items:center;gap:.3em;margin-top:.35em;
+.iedit{display:flex;align-items:center;gap:max(var(--gap),.3em);margin-top:.35em;
   background:#0d1117;border:1px solid #2ea043;border-radius:.5em;padding:.3em}
 .iedit[hidden]{display:none}
 .iedit .t{flex:1;min-width:0;font-size:.72em;font-weight:700;color:#86c867;padding-left:.3em;
@@ -77,43 +86,49 @@ button:active{background:#30363d}
 .iedit .big{font-size:1.2em;font-weight:700;padding:.25em .65em}
 .iedit .sm{font-size:.72em;padding:.5em .6em}
 
-/* オーバーレイにイニングスコアを出すボタン */
-.istbtn{width:100%;margin-top:.35em;font-size:.8em;padding:.7em 0;
+/* オーバーレイにイニングスコアを出すボタン（イニングの段のいちばん右）*/
+.istbtn{flex:none;white-space:nowrap;font-size:.8em;font-weight:700;padding:.4em .2em;
   background:#16263f;border-color:#2d4a7a;color:#9ec5ff}
 .istbtn.on{background:#2d4a7a;color:#fff}
 
 /* カウント */
-.cnts{display:flex;gap:.35em}
-.cnt{flex:1;background:#161b22;border:1px solid #30363d;border-radius:.6em;padding:.5em .2em;text-align:center}
+/* カウントと走者の段（余った高さはここで吸収する）。
+   得点の段との間は、押し間違えないように広めにあける */
+.mid{flex:1 1 auto;display:flex;gap:var(--gap);margin-top:calc(var(--sep) - var(--gap))}
+.cnts{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:var(--gap)}
+.crow{display:flex;gap:var(--gap)}
+.crow button{flex:none;font-size:.8em;padding:.3em .4em;color:#8b949e}
+/* 文字（B・S・O）とドットは横に並べて、縦の場所を節約する */
+.cnt{flex:1;min-width:0;min-height:var(--tap);background:#161b22;border:1px solid #30363d;border-radius:.6em;padding:.45em .2em;
+  display:flex;align-items:center;justify-content:center;gap:.4em}
 .cnt:active{background:#1f2937}
-.cnt .l{font-size:1em;font-weight:800;color:#8b949e;margin-bottom:.35em}
+.cnt .l{font-size:1em;font-weight:800;color:#8b949e}
 .cnt .d{display:flex;justify-content:center;gap:.35em}
 /* 遠目でも見えるように、ドットは大きめ。カードの幅に収まる上限がこのあたり */
 .cnt .d i{width:1.35em;height:1.35em;border-radius:50%;background:#30363d;display:block}
 .cnt.b .d i.on{background:#3fb950}
 .cnt.s .d i.on{background:#f5c518}
 .cnt.o .d i.on{background:#f85149}
-.minus{display:flex;gap:.35em}
-.minus button{flex:1;font-size:.8em;padding:.5em 0;color:#8b949e}
 
-/* ダイヤモンド（余った高さをここで吸収する）*/
-.dia{flex:1 1 auto;min-height:4em;display:flex;justify-content:center;align-items:center;padding:.1em}
+/* ダイヤモンド */
+.dia{position:relative;flex:1 1 0;min-width:0;min-height:var(--tap);display:flex;justify-content:center;align-items:center;padding:.1em}
 .dia svg{height:100%;width:100%}
 .dia .base{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.5);stroke-width:2}
 .dia .base.on{fill:#f5c518;stroke:#c99a0a}
 .dia .hp{fill:rgba(255,255,255,.35)}
+.dia .zone{position:absolute;top:0;bottom:0;width:33.34%;min-width:0;min-height:0;
+  background:transparent;border:none;border-radius:.6em;padding:0}
+.dia .zone[data-base="3"]{left:0}
+.dia .zone[data-base="2"]{left:33.33%}
+.dia .zone[data-base="1"]{right:0}
+.dia .zone:active{background:rgba(255,255,255,.06)}
 
 /* 操作 */
-.acts{display:grid;grid-template-columns:1fr 1fr;gap:.35em}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:max(var(--gap),.35em)}
 .acts button{font-size:1.05em;font-weight:700;padding:.8em .3em}
 #a-next{background:#1f3b26;border-color:#2ea043}
 #a-reset{color:#f85149}
 
-/* 下のURL */
-.foot{display:flex;align-items:center;gap:.3em;font-size:.6em;color:#8b949e}
-.foot .u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  background:#0d1117;border:1px solid #30363d;border-radius:.5em;padding:.6em .7em;font-family:ui-monospace,monospace}
-.foot button{font-size:1em;padding:.6em .8em}
 .toast{position:fixed;left:50%;bottom:1.2em;transform:translateX(-50%);background:#30363d;
   border-radius:.5em;padding:.5em .9em;font-size:.8em;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
@@ -122,9 +137,11 @@ button:active{background:#30363d}
 <body>
 
 <div class="bar">
-  <span class="dot" id="dot"></span><span id="wsmsg">接続中…</span>
+  <span class="dot" id="dot"></span><span class="msg" id="wsmsg">接続中…</span>
   <span class="sp"></span>
   <button id="b-maxinn">7回制</button>
+  <button id="a-copy" title="">URLコピー</button>
+  <button id="a-open">開く</button>
   <button id="b-full">本体</button>
 </div>
 
@@ -133,6 +150,9 @@ button:active{background:#30363d}
   <div class="innbox"><span id="inn-num">1</span><span class="k">回</span></div>
   <button class="iv" id="inn-inc">＋</button>
   <button class="tb top" id="b-tb">▲ 表</button>
+  <!-- 得点が入ったときなどに、オーバーレイへイニングスコアを出す。
+       BSO のすぐ上にあると押し間違えるので、いちばん上のこの段に置く -->
+  <button class="istbtn" id="b-ist">📊 スコア表</button>
 </div>
 
 <div class="card">
@@ -160,19 +180,14 @@ button:active{background:#30363d}
     <button class="sm" id="ie-clear">空欄</button>
     <button class="sm" id="ie-close">閉じる</button>
   </div>
-  <!-- 得点が入ったときなどに、オーバーレイへイニングスコアを出す -->
-  <button class="istbtn" id="b-ist">📊 イニングスコアを出す</button>
 </div>
 
+<!-- 左に B・S・O（押すと1つ増える、右の「戻す」で1つ減る）、右に走者 -->
+<div class="mid">
 <div class="cnts">
-  <div class="cnt b" id="cnt-b"><div class="l">B</div><div class="d" id="d-b"></div></div>
-  <div class="cnt s" id="cnt-s"><div class="l">S</div><div class="d" id="d-s"></div></div>
-  <div class="cnt o" id="cnt-o"><div class="l">O</div><div class="d" id="d-o"></div></div>
-</div>
-<div class="minus">
-  <button data-dec="b">B を戻す</button>
-  <button data-dec="s">S を戻す</button>
-  <button data-dec="o">O を戻す</button>
+  <div class="crow"><div class="cnt b" id="cnt-b"><div class="l">B</div><div class="d" id="d-b"></div></div><button data-dec="b">戻す</button></div>
+  <div class="crow"><div class="cnt s" id="cnt-s"><div class="l">S</div><div class="d" id="d-s"></div></div><button data-dec="s">戻す</button></div>
+  <div class="crow"><div class="cnt o" id="cnt-o"><div class="l">O</div><div class="d" id="d-o"></div></div><button data-dec="o">戻す</button></div>
 </div>
 
 <div class="card dia">
@@ -182,6 +197,11 @@ button:active{background:#30363d}
     <rect class="base" id="base-3" x="14" y="42" width="20" height="20" rx="4" transform="rotate(45 24 52)"/>
     <rect class="hp" x="54" y="76" width="14" height="14" rx="3" transform="rotate(45 61 83)"/>
   </svg>
+  <!-- 塁の絵は小さいので、押すところは左・まん中・右の3つに大きく分ける -->
+  <button class="zone" data-base="3" aria-label="三塁"></button>
+  <button class="zone" data-base="2" aria-label="二塁"></button>
+  <button class="zone" data-base="1" aria-label="一塁"></button>
+</div>
 </div>
 
 <div class="acts">
@@ -191,11 +211,6 @@ button:active{background:#30363d}
   <button id="a-reset">試合リセット</button>
 </div>
 
-<div class="foot">
-  <span class="u" id="ovurl">-</span>
-  <button id="a-copy">コピー</button>
-  <button id="a-open">開く</button>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -400,7 +415,7 @@ function setIst(on){
   istOn = on;
   var b = g('b-ist');
   b.className = 'istbtn' + (on ? ' on' : '');
-  b.textContent = on ? '📊 イニングスコアを消す' : '📊 イニングスコアを出す';
+  b.textContent = on ? '📊 消す' : '📊 スコア表';
   if(istTimer){ clearTimeout(istTimer); istTimer = null; }
   // オーバーレイ側が IST_SEC 秒で勝手に閉じるので、ボタンの表記も戻しておく
   if(on && IST_SEC > 0){
@@ -482,8 +497,9 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-dec]'), function(b
 Array.prototype.forEach.call(document.querySelectorAll('[data-run]'), function(b){
   tap(b, function(){ addRun(b.getAttribute('data-run'), Number(b.getAttribute('data-d'))); });
 });
-[1,2,3].forEach(function(n){
-  tap(g('base-' + n), function(){ push(); S.r[n] = !S.r[n]; commit(); });
+Array.prototype.forEach.call(document.querySelectorAll('.zone'), function(z){
+  var n = Number(z.getAttribute('data-base'));
+  tap(z, function(){ push(); S.r[n] = !S.r[n]; commit(); });
 });
 
 tap(g('inn-dec'),  function(){ push(); S.inn = Math.max(1, S.inn - 1); commit(); });
@@ -547,7 +563,7 @@ tap(g('a-reset'),  function(){
 
 // オーバーレイのURL（OBS のブラウザソースに貼る）
 var OV = location.origin + '/overlay.html?simple=1';
-g('ovurl').textContent = OV;
+g('a-copy').title = OV;
 tap(g('a-copy'), function(){
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(OV).then(function(){ toast('コピーしました'); }, fallbackCopy);
