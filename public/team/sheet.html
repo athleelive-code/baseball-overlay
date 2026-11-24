@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>オーダー表（記入用）</title>
+<style>
+/* 印刷して手で書く用紙。写真で読み取りやすいように、欄を分けて太い線にしている */
+@page{size:A4 portrait;margin:10mm}
+*{box-sizing:border-box}
+html,body{background:#fff;color:#000}
+body{margin:0 auto;max-width:190mm;padding:8px;
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+h1{font-size:22px;margin:0 0 6px;text-align:center;letter-spacing:.3em}
+.head{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:6px;font-size:13px}
+.head div{border-bottom:1.5px solid #000;padding:8px 2px 2px;min-height:30px}
+.rules{font-size:11px;line-height:1.5;border:1px solid #000;padding:4px 8px;margin-bottom:6px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{border:1.5px solid #000;text-align:center;font-size:12px}
+th{background:#eee;padding:3px 0;font-weight:700}
+td{height:8.4mm}
+td.o{font-weight:800;font-size:14px}
+tr.sep td{border-top:3px solid #000}
+.c-o{width:9%}.c-p{width:9%}.c-n{width:10%}.c-s{width:18%}.c-m{width:18%}.c-ys{width:18%}.c-ym{width:18%}
+.bar{display:flex;gap:8px;justify-content:center;margin:10px 0}
+.bar button{font-size:16px;font-weight:700;padding:12px 20px;min-height:48px;border-radius:8px;
+  border:1px solid #333;background:#f5c518;cursor:pointer}
+@media print{.bar{display:none}body{padding:0}}
+</style>
+</head>
+<body>
+<div class="bar"><button onclick="window.print()">印刷する</button><a href="order-sheet.pdf" download><button>PDFをダウンロード</button></a></div>
+
+<h1>オーダー表</h1>
+<div class="head">
+  <div>大会名：</div>
+  <div>試合日：　　　月　　　日</div>
+  <div>チーム名：</div>
+  <div>記入者：</div>
+</div>
+<div class="rules">
+  ・<b>苗字と名前は別の欄に</b>、はっきり・大きめに書いてください（くずし字は読み間違いのもとです）<br>
+  ・守備は「投・捕・一・二・三・遊・左・中・右・DH」か番号（1〜9）で。打順のない選手は「控え」の欄へ<br>
+  ・書き直すときは二重線で消してください。スマホで撮るときは、真上から・明るい場所で
+</div>
+<table>
+  <thead><tr>
+    <th class="c-o">打順</th><th class="c-p">守備</th><th class="c-n">背番号</th>
+    <th class="c-s">苗字</th><th class="c-m">名前</th><th class="c-ys">ふりがな（苗字）</th><th class="c-ym">ふりがな（名前）</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<script>
+// 先発9人＋控え16人の行を作る
+var h = '';
+for(var i = 1; i <= 25; i++){
+  var o = i <= 9 ? String(i) : '控え';
+  h += '<tr' + (i === 10 ? ' class="sep"' : '') + '><td class="o">' + o + '</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+}
+document.getElementById('rows').innerHTML = h;
+</script>
+</body>
+</html>

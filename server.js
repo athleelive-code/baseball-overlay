@@ -8,6 +8,8 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
+// オーダー表のPDFは大きいことがあるので、読み取りの入口だけ上限を広げる（先に置く）
+app.use('/api/scan-team', express.json({ limit: '25mb' }));
 app.use(express.json({ limit: '10mb' }));
 // HTML は毎回サーバーに確かめてから使わせる。
 // OBS のブラウザソースは一度読んだページを強く抱え込むので、これが無いと
@@ -259,6 +261,97 @@ app.post('/api/comment', async (req, res) => {
     res.json({ text });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── チーム用アプリ：オーダー表（写真・PDF）から選手を読み取る ────────────────
+// 画像は AI（Anthropic 社の Claude）に送って文字を読み取る。読み取り以外には使わず、サーバーにも残さない。
+// お金がかかるので、大会に登録されたチームのURL（id）からだけ受け付け、回数にも上限を付ける
+const Anthropic = require('@anthropic-ai/sdk').default;
+let anthropic = null;
+const SCAN_LIMIT_PER_HOUR = 20;
+const scanCount = {};   // id → [受け付けた時刻, ...]
+const SCAN_SCHEMA = {
+  type: 'object',
+  properties: {
+    players: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          num:      { type: 'string', description: '背番号（数字だけ。なければ空）' },
+          sei:      { type: 'string', description: '苗字' },
+          mei:      { type: 'string', description: '名前（下の名前）。苗字と区別できなければ空' },
+          yomi_sei: { type: 'string', description: '苗字のふりがな（ひらがな。なければ空）' },
+          yomi_mei: { type: 'string', description: '名前のふりがな（ひらがな。なければ空）' },
+          order:    { type: 'string', description: '打順 1〜9。控えは空' },
+          pos:      { type: 'string', description: '守備位置の番号 1〜9 か DH。なければ空' },
+          unsure:   { type: 'boolean', description: 'この行に自信のない文字が1つでもあれば true' },
+          note:     { type: 'string', description: '自信のない文字や理由（例：「斉」か「斎」か不明）。なければ空' }
+        },
+        required: ['num', 'sei', 'mei', 'yomi_sei', 'yomi_mei', 'order', 'pos', 'unsure', 'note'],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ['players'],
+  additionalProperties: false
+};
+const SCAN_PROMPT =
+  'これは野球のオーダー表（メンバー表）です。手書きのこともあります。書かれている選手を全員読み取ってください。\n' +
+  '決まり：\n' +
+  '・苗字（sei）と名前（mei）は分けて入れる。ふりがなも苗字と名前に分ける\n' +
+  '・背番号は数字だけ。打順は先発の9人に1〜9、控えの選手は空\n' +
+  '・守備位置は番号にする：投手=1, 捕手=2, 一塁手=3, 二塁手=4, 三塁手=5, 遊撃手=6, 左翼手=7, 中堅手=8, 右翼手=9, 指名打者=DH。' +
+  '「投」「捕」「一」「遊」などの略字や、表に書かれた数字もこの番号にする\n' +
+  '・人の名前なので、似た形の漢字（斉/斎、崎/﨑、高/髙、沢/澤、辺/邊 など）や、崩れて読みにくい字は推測で決めつけない。' +
+  '少しでも迷った行は unsure を true にし、note にどの字で迷ったかを書く\n' +
+  '・二重線などで消された名前は入れない。読み取れない欄は空にする\n' +
+  '・選手以外（監督・コーチ・記録員など）は入れない';
+
+app.post('/api/scan-team', async (req, res) => {
+  try {
+    const { id, data, mimeType } = req.body || {};
+    // 登録されたチームか
+    let known = false;
+    try { known = !!(teamList && JSON.parse(teamList).list.some((t) => t && t.id === id)); } catch (e) {}
+    if (!validId(id) || !known) return res.status(403).json({ error: 'このURLでは読み取りを使えません' });
+    const okTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+    if (typeof data !== 'string' || !data || okTypes.indexOf(mimeType) < 0) {
+      return res.status(400).json({ error: '写真（JPEG・PNG）かPDFを選んでください' });
+    }
+    // 回数の上限（1チーム1時間あたり）
+    const now = Date.now();
+    scanCount[id] = (scanCount[id] || []).filter((t) => now - t < 60 * 60 * 1000);
+    if (scanCount[id].length >= SCAN_LIMIT_PER_HOUR) {
+      return res.status(429).json({ error: '読み取りの回数が多すぎます。しばらくしてからもう一度' });
+    }
+    scanCount[id].push(now);
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: '読み取りの設定（APIキー）がサーバーにありません' });
+    if (!anthropic) anthropic = new Anthropic();
+
+    const file = mimeType === 'application/pdf'
+      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } }
+      : { type: 'image', source: { type: 'base64', media_type: mimeType, data } };
+    const response = await anthropic.beta.messages.create({
+      model: 'claude-opus-5-5',
+      max_tokens: 16000,
+      // 断られたときは、別のモデルで読み直す（サーバー側の自動の代わり）
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
+      output_config: { format: { type: 'json_schema', schema: SCAN_SCHEMA } },
+      messages: [{ role: 'user', content: [file, { type: 'text', text: SCAN_PROMPT }] }]
+    });
+    if (response.stop_reason === 'refusal') return res.status(422).json({ error: '読み取れませんでした（別の写真で試してください）' });
+    if (response.stop_reason === 'max_tokens') return res.status(422).json({ error: '選手が多すぎて読み切れませんでした。ページを分けて試してください' });
+    const text = (response.content.find((b) => b.type === 'text') || {}).text || '';
+    let parsed;
+    try { parsed = JSON.parse(text); } catch (e) { return res.status(502).json({ error: '読み取りの結果がこわれていました。もう一度試してください' }); }
+    res.json({ players: Array.isArray(parsed.players) ? parsed.players : [] });
+  } catch (err) {
+    console.warn('[scan-team]', err && err.status, err && err.message);
+    const status = err && err.status === 429 ? 429 : 500;
+    res.status(status).json({ error: status === 429 ? 'AIが混み合っています。少し待ってからもう一度' : '読み取りに失敗しました' });
   }
 });
 

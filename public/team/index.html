@@ -72,6 +72,25 @@ input:focus,textarea:focus{outline:none;border-color:#58a6ff}
   border-radius:.8em .8em 0 0;padding:.8em .6em calc(.8em + env(safe-area-inset-bottom));
   display:flex;flex-direction:column;gap:var(--gap)}
 .sbox h3{margin:0 .2em .2em;font-size:1em}
+.scan{background:#2a2410;border-color:#8a7a2d;color:#f5d76e}
+/* 読み取り結果の確認 */
+.sc-card{border:1px solid #30363d;border-radius:.6em;padding:.5em;display:flex;flex-direction:column;gap:var(--gap)}
+.sc-card.unsure{border-color:#f5c518;background:#221d0b}
+.sc-card.off{opacity:.45}
+.sc-row{display:flex;gap:var(--gap);align-items:center}
+.sc-row input,.sc-row select{min-width:0;font-family:inherit;font-size:16px;color:#e6edf3;background:#0d1117;
+  border:1px solid #30363d;border-radius:.5em;padding:0 .5em;min-height:var(--tap)}
+.sc-row .num{width:4.2em;flex:none}
+.sc-row .nm{flex:1}
+.sc-row select{flex:none;width:5.2em;background:#21262d}
+.sc-row label{display:flex;align-items:center;gap:.4em;font-size:.8em;min-height:var(--tap);flex:1}
+.sc-row label input{width:1.4em;height:1.4em;min-height:0}
+.sc-warn{font-size:.72em;color:#f5c518;font-weight:700}
+.sc-opt{display:flex;align-items:center;gap:.5em;font-size:.8em;min-height:var(--tap)}
+.sc-opt input{width:1.4em;height:1.4em}
+.busy{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;
+  font-size:1.1em;font-weight:700;text-align:center;line-height:1.7;padding:1em}
+.busy[hidden]{display:none}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap)}
 .grid button{font-weight:800;padding:.5em 0}
 .grid button.cur{background:#f5c518;color:#111;border-color:#f5c518}
@@ -124,6 +143,15 @@ label.f{display:flex;flex-direction:column;gap:.3em;font-size:.75em;color:#8b949
     <button class="add" id="b-add">＋ 選手を追加</button>
     <button id="b-bulk">まとめて追加</button>
   </div>
+  <div style="height:var(--gap)"></div>
+  <button class="big scan" id="b-scan">📷 オーダー表（写真・PDF）から読み取る</button>
+  <input type="file" id="scan-file" accept="image/*,application/pdf" hidden>
+  <div class="note">
+    読み取ったあとに確認画面が出ます。<b>名前の漢字は必ず確かめてから</b>登録してください。
+    手書きでも読めますが、似た字（斉・斎、崎・﨑 など）は間違えることがあります。<br>
+    写真は文字を読み取るために AI サービス（Anthropic 社）に送られます。読み取り以外には使いません。<br>
+    記入用のオーダー表：<a href="order-sheet.pdf" target="_blank" style="color:#9ec5ff">PDF</a>／<a href="sheet.html" target="_blank" style="color:#9ec5ff">印刷用ページ</a>
+  </div>
 
   <div class="hd">使い方</div>
   <div class="note">
@@ -140,6 +168,7 @@ label.f{display:flex;flex-direction:column;gap:.3em;font-size:.75em;color:#8b949
 </div>
 
 <div class="sheet" id="sheet" hidden><div class="sbox" id="sbox"></div></div>
+<div class="busy" id="busy" hidden>📷 読み取り中…<br><span style="font-size:.75em;font-weight:400">1分ほどかかることがあります</span></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -392,6 +421,129 @@ function bulkOk(){
   if(n){ changed(); toast(n + '人を追加しました'); }
 }
 
+// ── オーダー表（写真・PDF）から読み取る ───────────────────────────────────
+// 写真は小さくしてから送る（通信量と時間を減らす）。PDF はそのまま送る
+var SCAN = [];   // 読み取った選手（確認画面で直す）
+function fileToBase64(file){
+  return new Promise(function(ok, ng){
+    var fr = new FileReader();
+    fr.onload = function(){ ok(String(fr.result).split(',')[1] || ''); };
+    fr.onerror = ng;
+    fr.readAsDataURL(file);
+  });
+}
+function shrinkImage(file){
+  return new Promise(function(ok, ng){
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      var MAX = 2400, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, MAX / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL('image/jpeg', 0.88).split(',')[1]);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); ng(new Error('この写真は開けませんでした')); };
+    img.src = url;
+  });
+}
+function scanFile(file){
+  if(!file) return;
+  var isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  if(isPdf && file.size > 18 * 1024 * 1024){ toast('PDFが大きすぎます（18MBまで）'); return; }
+  g('busy').hidden = false;
+  (isPdf ? fileToBase64(file) : shrinkImage(file)).then(function(b64){
+    return fetch('/api/scan-team', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:ID, data:b64, mimeType:isPdf ? 'application/pdf' : 'image/jpeg'})
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); });
+  }).then(function(res){
+    g('busy').hidden = true;
+    if(!res.ok){ toast(res.j.error || '読み取りに失敗しました'); return; }
+    if(!res.j.players || !res.j.players.length){ toast('選手を見つけられませんでした。明るい場所で、真上から撮ってみてください'); return; }
+    SCAN = res.j.players.map(function(p){
+      return {num:String(p.num || '').replace(/[^0-9]/g, ''), sei:tidy(p.sei), mei:tidy(p.mei),
+        yomi:tidy([p.yomi_sei, p.yomi_mei].filter(Boolean).join(' ')),
+        order:/^[1-9]$/.test(p.order) ? Number(p.order) : 0,
+        pos:POS.indexOf(String(p.pos).toUpperCase()) >= 0 ? String(p.pos).toUpperCase() : '',
+        unsure:!!p.unsure, note:tidy(p.note), use:true};
+    });
+    scanReview();
+  }).catch(function(e){
+    g('busy').hidden = true;
+    toast((e && e.message) || '読み取りに失敗しました。通信を確かめてください');
+  });
+}
+// 確認画面。⚠ の選手は特によく確かめてもらう
+function scanReview(){
+  var unsure = SCAN.filter(function(p){ return p.unsure; }).length;
+  var hasOrder = SCAN.some(function(p){ return p.order; });
+  var posOpts = function(cur){
+    return '<option value="">守備</option>' + POS.map(function(k){
+      return '<option value="' + k + '"' + (cur === k ? ' selected' : '') + '>' + POS_S[k] + '</option>'; }).join('');
+  };
+  var ordOpts = function(cur){
+    var h = '<option value="0">控え</option>';
+    for(var n = 1; n <= 9; n++) h += '<option value="' + n + '"' + (cur === n ? ' selected' : '') + '>' + n + '番</option>';
+    return h;
+  };
+  var h = '<h3>読み取った選手（' + SCAN.length + '人）</h3>' +
+    '<div class="note">名前の漢字・背番号が合っているか、1人ずつ確かめてください。直すところは、その場で書き直せます。' +
+    (unsure ? '<br><b style="color:#f5c518">⚠ 自信のない選手が ' + unsure + '人います（黄色の枠）。</b>' : '') + '</div>';
+  SCAN.forEach(function(p, i){
+    h += '<div class="sc-card' + (p.unsure ? ' unsure' : '') + (p.use ? '' : ' off') + '" id="sc-' + i + '">' +
+      (p.unsure ? '<div class="sc-warn">⚠ ' + esc(p.note || '読み取りに自信がありません') + '</div>' : '') +
+      '<div class="sc-row"><input class="num" inputmode="numeric" maxlength="3" placeholder="背番号" data-sc="' + i + '" data-k="num" value="' + esc(p.num) + '">' +
+      '<input class="nm" maxlength="8" placeholder="苗字" data-sc="' + i + '" data-k="sei" value="' + esc(p.sei) + '">' +
+      '<input class="nm" maxlength="8" placeholder="名前" data-sc="' + i + '" data-k="mei" value="' + esc(p.mei) + '"></div>' +
+      '<div class="sc-row"><input class="nm" maxlength="24" placeholder="ふりがな（例：やまだ たろう）" data-sc="' + i + '" data-k="yomi" value="' + esc(p.yomi) + '"></div>' +
+      '<div class="sc-row"><select data-sc="' + i + '" data-k="order">' + ordOpts(p.order) + '</select>' +
+      '<select data-sc="' + i + '" data-k="pos">' + posOpts(p.pos) + '</select>' +
+      '<label><input type="checkbox" data-sc="' + i + '" data-k="use"' + (p.use ? ' checked' : '') + '>登録する</label></div>' +
+      '</div>';
+  });
+  h += (hasOrder ? '<label class="sc-opt"><input type="checkbox" id="sc-useorder" checked>打順・守備位置も取り込む（今の打順は入れ替わります）</label>' : '') +
+    '<label class="sc-opt"><input type="checkbox" id="sc-replace" checked>同じ背番号の選手がいたら、上書きする</label>' +
+    '<div class="btns"><button class="add" data-scanok>この内容で登録</button><button data-close>やめる</button></div>';
+  sheet(h);
+}
+g('sbox').addEventListener('input', function(ev){
+  var el = ev.target, i = el.getAttribute('data-sc');
+  if(i === null) return;
+  var p = SCAN[Number(i)], k = el.getAttribute('data-k');
+  if(!p) return;
+  if(k === 'use'){ p.use = el.checked; g('sc-' + i).className = 'sc-card' + (p.unsure ? ' unsure' : '') + (p.use ? '' : ' off'); }
+  else if(k === 'order') p.order = Number(el.value) || 0;
+  else p[k] = el.value;
+});
+g('sbox').addEventListener('change', function(ev){
+  var el = ev.target;
+  if(el.tagName === 'SELECT' || el.type === 'checkbox') el.dispatchEvent(new Event('input', {bubbles:true}));
+});
+function scanOk(){
+  var useOrder = g('sc-useorder') ? g('sc-useorder').checked : false;
+  var replace = g('sc-replace').checked;
+  var list = SCAN.filter(function(p){ return p.use && (p.sei || p.mei || p.num); });
+  if(!list.length){ toast('登録する選手がいません'); return; }
+  // 打順を取り込むときは、今の打順をいったん空けてから入れる（打順がぶつからないように）
+  if(useOrder) T.players.forEach(function(o){ o.order = 0; });
+  var added = 0, updated = 0;
+  list.forEach(function(p){
+    var name = tidy([p.sei, p.mei].filter(Boolean).join(' ')), num = String(p.num || '').replace(/[^0-9]/g, '');
+    var same = replace && num ? T.players.filter(function(o){ return o.num === num; })[0] : null;
+    var o = same || {id:newId(), num:num, name:'', yomi:'', pos:'', order:0};
+    o.num = num; o.name = name; o.yomi = tidy(p.yomi);
+    if(useOrder){ o.order = p.order || 0; o.pos = p.pos || ''; }
+    else if(!same && p.pos) o.pos = p.pos;
+    if(same) updated++; else { T.players.push(o); added++; }
+  });
+  // 同じ打順が2人いたら、あとの人は控えへ
+  var seen = {};
+  T.players.forEach(function(o){ if(o.order){ if(seen[o.order]) o.order = 0; else seen[o.order] = 1; } });
+  closeSheet(); changed();
+  toast(added + '人を追加' + (updated ? '、' + updated + '人を上書き' : '') + 'しました');
+}
+
 // ── オーバーレイに出す ─────────────────────────────────────────────────
 var SEC = 8;           // 選手の名前を出しておく秒数（0 = 消すまで出す）
 try{ var _s = Number(localStorage.getItem('athlee-team-sec')); if(_s >= 0 && _s <= 60 && localStorage.getItem('athlee-team-sec') !== null) SEC = _s; }catch(e){}
@@ -527,10 +679,13 @@ document.addEventListener('click', function(ev){
   if((a = b.getAttribute('data-edel')) !== null) return delPlayer(a);
   if((a = b.getAttribute('data-show')) !== null) return showPlayer(a);
   if(b.hasAttribute('data-bulkok')) return bulkOk();
+  if(b.hasAttribute('data-scanok')) return scanOk();
   if(b.hasAttribute('data-close')) return closeSheet();
 });
 g('b-add').onclick = function(){ editPlayer(''); };
 g('b-bulk').onclick = bulk;
+g('b-scan').onclick = function(){ g('scan-file').value = ''; g('scan-file').click(); };
+g('scan-file').onchange = function(){ scanFile(this.files && this.files[0]); };
 g('b-lineup').onclick = toggleLineup;
 g('b-clear').onclick = function(){
   if(!confirm('登録した選手を全部消します。よろしいですか？')) return;
