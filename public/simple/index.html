@@ -152,12 +152,25 @@ button:active{background:#30363d}
 .srow2 .u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65em;
   background:#0d1117;border:1px solid #30363d;border-radius:.5em;padding:.9em .6em;font-family:ui-monospace,monospace}
 .srow2 button{font-size:.8em}
-.qrs{display:flex;gap:var(--sep)}
-.qr{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:var(--gap)}
-.qn{font-size:.85em;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.qi{background:#fff;padding:.4em;border-radius:.4em;width:100%;max-width:11em}
+.tqr{display:flex;flex-direction:column;align-items:center;gap:var(--gap);padding:.5em;
+  border:1px solid #58a6ff;border-radius:.6em;background:#0d1117}
+.tqr[hidden]{display:none}
+.qn{font-size:1em;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi{background:#fff;padding:.5em;border-radius:.4em;width:100%;max-width:13em}
 .qi svg{display:block;width:100%;height:auto}
-.qr button{font-size:.75em;width:100%}
+.tqr button{font-size:.8em;width:100%}
+.srow2 input{flex:1;min-width:0;min-height:var(--tap);font-family:inherit;font-size:16px;color:#e6edf3;
+  background:#0d1117;border:1px solid #30363d;border-radius:.5em;padding:0 .6em}
+.pick2{display:flex;align-items:center;gap:var(--gap)}
+.pick2 span{flex:none;width:2.6em;font-size:.85em;font-weight:800;color:#8b949e}
+.pick2 select{flex:1;min-width:0;min-height:var(--tap);font-family:inherit;font-size:16px;color:#e6edf3;
+  background:#21262d;border:1px solid #30363d;border-radius:.5em;padding:0 .5em}
+.reglist{display:flex;flex-direction:column;gap:var(--gap)}
+.reg{display:flex;align-items:center;gap:var(--gap)}
+.reg .n{flex:1;min-width:0;font-size:.85em;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg button{flex:none;font-size:.72em;padding:.3em .5em}
+.reg .del{color:#f85149}
+#reg-copyall{font-size:.8em}
 .share .close{font-size:.95em;font-weight:700;margin-top:.3em}
 .toast{position:fixed;z-index:60;left:50%;bottom:1.2em;transform:translateX(-50%);background:#30363d;
   border-radius:.5em;padding:.5em .9em;font-size:.8em;opacity:0;transition:opacity .2s;pointer-events:none}
@@ -170,7 +183,7 @@ button:active{background:#30363d}
   <span class="dot" id="dot"></span><span class="msg" id="wsmsg">接続中…</span>
   <span class="sp"></span>
   <button id="b-maxinn">7回制</button>
-  <button id="b-share">URL・QR</button>
+  <button id="b-share">チーム・URL</button>
   <button id="b-full">本体</button>
 </div>
 
@@ -257,18 +270,29 @@ button:active{background:#30363d}
 <!-- URL と、チーム用アプリの QR コード -->
 <div class="share" id="share" hidden>
   <div class="sbox">
+    <!-- チームのQR（「QR」を押すと出る）-->
+    <div class="tqr" id="tqr" hidden>
+      <div class="qn" id="tqr-n"></div>
+      <div class="qi" id="tqr-i"></div>
+      <button id="tqr-close">QRを閉じる</button>
+    </div>
+
+    <div class="sh">この試合のチーム</div>
+    <div class="note">下の「大会の参加チーム」から選ぶと、チーム名が入り、そのチームのアプリで選手を画面に出せるようになります。</div>
+    <label class="pick2"><span>先攻</span><select id="sel-away"></select></label>
+    <label class="pick2"><span>後攻</span><select id="sel-home"></select></label>
+
+    <div class="sh">大会の参加チーム</div>
+    <div class="note">大会の前にチームを登録し、チームごとのURLを各チームのスタッフに送っておきます（LINEなど）。
+      スタッフはそのURLで、選手・背番号を前もって入れておけます。登録は大会中ずっと残ります。</div>
+    <div class="srow2"><input id="reg-name" maxlength="14" placeholder="チーム名（例：北陵高校）" autocomplete="off">
+      <button id="reg-add">追加</button></div>
+    <div id="reg-list" class="reglist"></div>
+    <button id="reg-copyall">全チームのURLをまとめてコピー</button>
+
     <div class="sh">オーバーレイ（OBS のブラウザソースに貼る）</div>
     <div class="srow2"><span class="u" id="ovurl"></span>
       <button id="a-copy">コピー</button><button id="a-open">開く</button></div>
-    <div class="sh">チーム用アプリ（選手の表示）</div>
-    <div class="note">各チームのスタッフに、スマホのカメラでQRを読んでもらう。
-      選手の登録・打順・守備位置の入力と、オーバーレイへの選手表示ができる。</div>
-    <div class="qrs">
-      <div class="qr"><div class="qn" id="qr-away-n">先攻</div><div class="qi" id="qr-away"></div>
-        <button data-tcopy="away">URLコピー</button></div>
-      <div class="qr"><div class="qn" id="qr-home-n">後攻</div><div class="qi" id="qr-home"></div>
-        <button data-tcopy="home">URLコピー</button></div>
-    </div>
     <button class="close" id="share-close">閉じる</button>
   </div>
 </div>
@@ -291,6 +315,7 @@ function newGame(keep){
     ge:{on:false, reason:''},   // 試合終了（reason は 'サヨナラ' など。ふつうの終了は空）
     xOn:{},                     // サヨナラの回に x を付ける（'home-回-1' : true）
     tieAsk:false,               // 最終回が同点で終わり、延長か引き分けかを選んでいるところ
+    aid:(keep && keep.aid) || '', hid:(keep && keep.hid) || '',   // この試合の先攻・後攻（大会の参加チームの印）
     gameId: Date.now()
   };
 }
@@ -598,7 +623,7 @@ function broadcast(){
       inn:S.inn, top:S.top, maxInn:S.maxInn,
       b:S.b, s:S.s, o:S.o,
       r:{1:S.r[1], 2:S.r[2], 3:S.r[3]},
-      aab:S.aab, hnm:S.hnm,
+      aab:S.aab, hnm:S.hnm, aid:S.aid || '', hid:S.hid || '',
       asc:S.asc.slice(), hsc:S.hsc.slice(),
       gameId:S.gameId,
       // 簡易版で使わないものは、はっきり切っておく
@@ -620,6 +645,9 @@ function connect(){
     g('dot').className = 'dot on';
     g('wsmsg').textContent = 'オーバーレイに接続';
     broadcast();
+    // 大会の参加チーム（サーバーが起き直して忘れていても、ここから戻す）
+    if(REG.at) regSend();
+    try{ ws.send(JSON.stringify({_req:'teams'})); }catch(e){}
   };
   ws.onclose = function(){
     g('dot').className = 'dot off';
@@ -628,10 +656,16 @@ function connect(){
   };
   ws.onerror = function(){};
   ws.onmessage = function(e){
-    // オーバーレイが開いたときの「今の状態をください」にだけ答える
+    // オーバーレイが開いたときの「今の状態をください」に答える。
+    // 参加チームの一覧は、別の端末で直した新しいものだけ取り込む
     try{
       var d = JSON.parse(e.data);
       if(d && d._req === 'state') broadcast();
+      if(d && d._teams && Array.isArray(d.list) && (Number(d.at) || 0) > REG.at){
+        REG = {at:Number(d.at) || 0, list:d.list};
+        try{ localStorage.setItem(REG_KEY, JSON.stringify(REG)); }catch(e2){}
+        if(!g('share').hidden) paintShare();
+      }
     }catch(err){}
   };
 }
@@ -714,7 +748,7 @@ tap(g('a-reset'),  function(){
   if(!confirm('試合をリセットします。スコア・カウント・走者を消してよいですか？')) return;
   push();
   EDIT = null;
-  S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm});
+  S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm, aid:S.aid, hid:S.hid});
   commit();
   toast('リセットしました');
 });
@@ -728,30 +762,106 @@ tap(g('a-reset'),  function(){
   el.addEventListener('blur', function(){ el.value = (k === 'away' ? S.aab : S.hnm); });
 });
 
-// オーバーレイのURL（OBS のブラウザソースに貼る）と、チーム用アプリの QR
+// オーバーレイのURL（OBS のブラウザソースに貼る）
 var OV = location.origin + '/overlay.html?simple=1';
-function teamUrl(t){ return location.origin + '/team/?t=' + t; }
 g('ovurl').textContent = OV;
-function openShare(){
-  g('qr-away-n').textContent = '先攻：' + S.aab;
-  g('qr-home-n').textContent = '後攻：' + S.hnm;
-  ['away','home'].forEach(function(t){
-    var box = g('qr-' + t);
-    if(box.getAttribute('data-done')) return;
-    try{
-      var q = qrcode(0, 'M');
-      q.addData(teamUrl(t));
-      q.make();
-      box.innerHTML = q.createSvgTag({cellSize:4, margin:0});
-      box.setAttribute('data-done', '1');
-    }catch(e){ box.textContent = 'QRを作れませんでした'; }
-  });
-  g('share').hidden = false;
+
+// ── 大会の参加チーム（チームごとのURLを大会の前に配っておく）───────────────
+// 一覧はこの端末に保存し、サーバーにも預ける（チーム用アプリがチーム名を知るため）
+var REG = {at:0, list:[]};   // list: {id, name}
+var REG_KEY = 'athlee-simple-teams';
+try{
+  var _r = JSON.parse(localStorage.getItem(REG_KEY) || 'null');
+  if(_r && Array.isArray(_r.list)) REG = {at:Number(_r.at) || 0, list:_r.list};
+}catch(e){}
+function teamUrl(id){ return location.origin + '/team/?id=' + id; }
+function regById(id){ for(var i = 0; i < REG.list.length; i++) if(REG.list[i].id === id) return REG.list[i]; return null; }
+function regSend(){
+  if(!ws || ws.readyState !== 1) return;
+  try{ ws.send(JSON.stringify({_teams:true, at:REG.at, list:REG.list})); }catch(e){}
 }
+function regChanged(){
+  REG.at = Date.now();
+  try{ localStorage.setItem(REG_KEY, JSON.stringify(REG)); }catch(e){}
+  regSend(); paintShare();
+}
+function regAdd(){
+  var el = g('reg-name'), name = el.value.trim();
+  if(!name){ toast('チーム名を入れてください'); return; }
+  if(REG.list.some(function(t){ return t.name === name; })){ toast('同じ名前のチームがあります'); return; }
+  // 印は推測されにくいように、でたらめな英数字にする（URL を知っているチームだけが直せる）
+  var id = '';
+  while(id.length < 10) id += Math.random().toString(36).slice(2);
+  REG.list.push({id:id.slice(0, 10), name:name});
+  el.value = '';
+  regChanged();
+  toast(name + ' を追加しました');
+}
+function esc(t){ return String(t).replace(/[&<>"']/g, function(m){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+function paintShare(){
+  g('reg-list').innerHTML = REG.list.length ? REG.list.map(function(t){
+    return '<div class="reg"><span class="n">' + esc(t.name) + '</span>' +
+      '<button data-rcopy="' + t.id + '">URLコピー</button>' +
+      '<button data-rqr="' + t.id + '">QR</button>' +
+      '<button class="del" data-rdel="' + t.id + '">消す</button></div>';
+  }).join('') : '<div class="note">まだ登録がありません</div>';
+  g('reg-copyall').hidden = !REG.list.length;
+  ['away','home'].forEach(function(side){
+    var sel = g('sel-' + side), cur = side === 'away' ? S.aid : S.hid;
+    var h = '<option value="">（一覧から選ぶ）</option>';
+    REG.list.forEach(function(t){
+      h += '<option value="' + t.id + '"' + (t.id === cur ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+    });
+    sel.innerHTML = h;
+  });
+}
+function showTeamQr(id){
+  var t = regById(id);
+  if(!t) return;
+  g('tqr-n').textContent = t.name;
+  try{
+    var q = qrcode(0, 'M');
+    q.addData(teamUrl(id));
+    q.make();
+    g('tqr-i').innerHTML = q.createSvgTag({cellSize:4, margin:0});
+  }catch(e){ g('tqr-i').textContent = 'QRを作れませんでした'; }
+  g('tqr').hidden = false;
+  g('share').scrollTop = 0;
+}
+function openShare(){ paintShare(); g('tqr').hidden = true; g('share').hidden = false; }
 tap(g('b-share'), openShare);
 tap(g('share-close'), function(){ g('share').hidden = true; });
-Array.prototype.forEach.call(document.querySelectorAll('[data-tcopy]'), function(b){
-  tap(b, function(){ copyText(teamUrl(b.getAttribute('data-tcopy'))); });
+tap(g('tqr-close'), function(){ g('tqr').hidden = true; });
+tap(g('reg-add'), regAdd);
+g('reg-name').addEventListener('keydown', function(ev){ if(ev.key === 'Enter'){ ev.preventDefault(); regAdd(); } });
+g('reg-list').addEventListener('click', function(ev){
+  var b = ev.target.closest ? ev.target.closest('button') : null;
+  if(!b) return;
+  var id;
+  if((id = b.getAttribute('data-rcopy'))) copyText(teamUrl(id));
+  else if((id = b.getAttribute('data-rqr'))) showTeamQr(id);
+  else if((id = b.getAttribute('data-rdel'))){
+    var t = regById(id);
+    if(!t || !confirm(t.name + ' を一覧から消しますか？\nこのチームのURLは使えなくなります。')) return;
+    REG.list = REG.list.filter(function(o){ return o.id !== id; });
+    if(S.aid === id){ S.aid = ''; } if(S.hid === id){ S.hid = ''; }
+    regChanged(); commit();
+  }
+});
+tap(g('reg-copyall'), function(){
+  copyText(REG.list.map(function(t){ return t.name + '\n' + teamUrl(t.id); }).join('\n\n'));
+});
+// この試合の先攻・後攻を一覧から選ぶ（チーム名も入る）
+['away','home'].forEach(function(side){
+  g('sel-' + side).addEventListener('change', function(){
+    var id = this.value, t = regById(id);
+    push();
+    if(side === 'away'){ S.aid = id; if(t) S.aab = t.name; }
+    else { S.hid = id; if(t) S.hnm = t.name; }
+    commit();
+    if(t) toast((side === 'away' ? '先攻：' : '後攻：') + t.name);
+  });
 });
 tap(g('a-copy'), function(){ copyText(OV); });
 function copyText(text){

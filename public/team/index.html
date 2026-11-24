@@ -34,8 +34,12 @@ input:focus,textarea:focus{outline:none;border-color:#58a6ff}
 .team{display:flex;align-items:center;gap:.6em;margin-top:var(--gap);padding:.5em .6em;
   background:#161b22;border:1px solid #30363d;border-left:.35em solid #c8102e;border-radius:.6em}
 .team.home{border-left-color:#1a56a0}
+.team.out{border-left-color:#6e7681}
 .team img{height:2.4em;width:auto;max-width:4em;object-fit:contain}
-.team .tg{font-size:.7em;font-weight:800;color:#8b949e}
+.team .tg{font-size:.75em;font-weight:800;color:#8b949e;margin-top:.15em}
+.team .tg.on{color:#f5c518}
+.row .show.off{background:#21262d;border-color:#30363d;color:#6e7681}
+.lineup.off{background:#21262d;border-color:#30363d;color:#6e7681}
 .team .tn{font-size:1.3em;font-weight:800;line-height:1.2;word-break:break-all}
 
 /* 選手の行 */
@@ -91,17 +95,16 @@ label.f{display:flex;flex-direction:column;gap:.3em;font-size:.75em;color:#8b949
   <button id="b-sec">表示 8秒</button>
 </div>
 
-<!-- どちらのチームか決まっていないとき -->
-<div id="choose" class="choose" hidden>
-  <div class="note" style="font-size:.9em">あなたのチームを選んでください</div>
-  <button id="c-away">先攻</button>
-  <button id="c-home">後攻</button>
+<!-- チームのURL（?id=…）でないとき -->
+<div id="noid" class="choose" hidden>
+  <div class="note" style="font-size:1em;color:#e6edf3">大会の運営から届いた、<b>あなたのチーム専用のURL</b>を開いてください。</div>
+  <div class="note">このページのURLには、チームの印が付いていません。</div>
 </div>
 
 <div id="main" hidden>
   <div class="team" id="teambox">
     <img id="logo" alt="" hidden>
-    <div><div class="tg" id="tg">先攻</div><div class="tn" id="tn">-</div></div>
+    <div><div class="tn" id="tn">-</div><div class="tg" id="tg"></div></div>
   </div>
 
   <div class="hd">スタメン（打順）</div>
@@ -128,9 +131,9 @@ label.f{display:flex;flex-direction:column;gap:.3em;font-size:.75em;color:#8b949
   </div>
   <div style="height:var(--sep)"></div>
   <div class="btns">
-    <button class="danger" id="b-clear">全部消す（次の試合へ）</button>
-    <button id="b-switch">チームを選び直す</button>
+    <button class="danger" id="b-clear">選手を全部消す</button>
   </div>
+  <div class="note">登録した選手は大会中ずっと残ります。試合ごとに入れ直す必要はありません。</div>
 </div>
 
 <div class="sheet" id="sheet" hidden><div class="sbox" id="sbox"></div></div>
@@ -146,13 +149,14 @@ function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(
 var POS = ['1','2','3','4','5','6','7','8','9','DH'];
 var POS_S = {'1':'投','2':'捕','3':'一','4':'二','5':'三','6':'遊','7':'左','8':'中','9':'右','DH':'DH'};
 
-// ── どちらのチームか（URL の ?t=away / ?t=home）────────────────────────
-var TEAM = (location.search.match(/[?&]t=(away|home)/) || [])[1] || '';
-try{ if(!TEAM) TEAM = localStorage.getItem('athlee-team-side') || ''; }catch(e){}
+// ── どのチームか（URL の ?id=…。大会の前に、かんたんスコアでチームごとに作る）──
+var ID = (location.search.match(/[?&]id=([a-z0-9]{4,24})/) || [])[1] || '';
+// 今の試合でこのチームが先攻か後攻か（'away' / 'home'、出ていなければ ''）。コントローラーから届く
+var SIDE = '';
 
 // ── 選手の登録（この端末に保存し、サーバー経由でオーバーレイなどにも配る）──
 var T = {at:0, players:[]};   // players: {id, num, name, yomi, pos, order}
-var KEY = function(){ return 'athlee-team-' + TEAM; };
+var KEY = function(){ return 'athlee-team-id-' + ID; };
 function load(){
   T = {at:0, players:[]};
   try{
@@ -170,19 +174,30 @@ function byId(id){ for(var i = 0; i < T.players.length; i++) if(T.players[i].id 
 function atOrder(n){ for(var i = 0; i < T.players.length; i++) if(T.players[i].order === n) return T.players[i]; return null; }
 function numSort(a, b){ return (Number(a.num) || 999) - (Number(b.num) || 999); }
 
-// 試合の情報（コントローラーから届く）
-var INFO = {aab:'先攻', hnm:'後攻', logo:{away:'', home:''}};
-function teamName(){ return TEAM === 'home' ? INFO.hnm : INFO.aab; }
+// 試合の情報（コントローラーから届く）と、大会の参加チーム一覧（かんたんスコアから届く）
+var INFO = {aab:'先攻', hnm:'後攻', aid:'', hid:'', logo:{away:'', home:''}};
+var MYNAME = '';
+try{ MYNAME = localStorage.getItem('athlee-team-name-' + ID) || ''; }catch(e){}
+function teamName(){ return MYNAME || (SIDE === 'home' ? INFO.hnm : SIDE === 'away' ? INFO.aab : 'チーム'); }
+// 先攻か後攻か：試合に選ばれたチームの印で見る。印がない（通常版のコントローラー）ときはチーム名で見る
+function findSide(){
+  if(INFO.aid || INFO.hid) return INFO.aid === ID ? 'away' : INFO.hid === ID ? 'home' : '';
+  if(MYNAME && INFO.aab === MYNAME) return 'away';
+  if(MYNAME && INFO.hnm === MYNAME) return 'home';
+  return '';
+}
 
 // ── 画面 ───────────────────────────────────────────────────────────────
 function paint(){
-  g('choose').hidden = !!TEAM;
-  g('main').hidden = !TEAM;
-  if(!TEAM) return;
-  g('tg').textContent = TEAM === 'home' ? '後攻' : '先攻';
+  g('noid').hidden = !!ID;
+  g('main').hidden = !ID;
+  if(!ID) return;
+  var tg = g('tg');
+  tg.textContent = SIDE ? '今の試合：' + (SIDE === 'home' ? '後攻' : '先攻') : '今の試合には出ていません（選手の登録はできます）';
+  tg.className = 'tg' + (SIDE ? ' on' : '');
   g('tn').textContent = teamName();
-  g('teambox').className = 'team ' + TEAM;
-  var lg = INFO.logo[TEAM];
+  g('teambox').className = 'team ' + (SIDE || 'out');
+  var lg = SIDE ? INFO.logo[SIDE] : '';
   if(lg){ g('logo').src = lg; g('logo').hidden = false; } else { g('logo').hidden = true; }
 
   var h = '';
@@ -211,7 +226,7 @@ function paint(){
   g('bench-empty').hidden = bench.length > 0;
 
   var lb = g('b-lineup');
-  lb.className = 'big lineup' + (LU_ON ? ' on' : '');
+  lb.className = 'big lineup' + (LU_ON ? ' on' : '') + (SIDE ? '' : ' off');
   lb.textContent = LU_ON ? '📋 スタメンを消す' : '📋 スタメンを画面に出す';
   g('b-sec').textContent = SEC ? '表示 ' + SEC + '秒' : '消すまで表示';
 }
@@ -222,7 +237,7 @@ function whoBtn(p){
 }
 function showBtn(p){
   var on = LT_ON === p.id;
-  return '<button class="show' + (on ? ' on' : '') + '" data-show="' + p.id + '">' + (on ? '消す' : '出す') + '</button>';
+  return '<button class="show' + (on ? ' on' : '') + (SIDE ? '' : ' off') + '" data-show="' + p.id + '">' + (on ? '消す' : '出す') + '</button>';
 }
 
 // ── 選ぶ画面（下から出る）──────────────────────────────────────────────
@@ -356,11 +371,18 @@ function bulkOk(){
 var SEC = 8;           // 選手の名前を出しておく秒数（0 = 消すまで出す）
 try{ var _s = Number(localStorage.getItem('athlee-team-sec')); if(_s >= 0 && _s <= 60 && localStorage.getItem('athlee-team-sec') !== null) SEC = _s; }catch(e){}
 var LT_ON = '', LT_TIMER = null, LU_ON = false, LU_TIMER = null;
+// 試合に出ていないときは、画面に出さない（ほかの試合の邪魔をしない）
+function notPlaying(){
+  if(SIDE) return false;
+  toast('今の試合に出ていないので、画面には出せません');
+  return true;
+}
 function showPlayer(id){
   if(LT_ON === id){ hidePlayer(); return; }
+  if(notPlaying()) return;
   var p = byId(id);
   if(!p) return;
-  sendRaw({_lt:true, team:TEAM, on:true, sec:SEC, tn:teamName(),
+  sendRaw({_lt:true, team:SIDE, on:true, sec:SEC, tn:teamName(),
     p:{num:p.num, name:p.name, yomi:p.yomi, pos:p.pos, order:p.order || 0}});
   LT_ON = id;
   clearTimeout(LT_TIMER);
@@ -368,22 +390,23 @@ function showPlayer(id){
   paint();
 }
 function hidePlayer(){
-  sendRaw({_lt:true, team:TEAM, on:false});
+  sendRaw({_lt:true, team:SIDE, on:false});
   LT_ON = ''; clearTimeout(LT_TIMER); paint();
 }
 var LU_SEC = 15;
 function toggleLineup(){
   if(LU_ON){
-    sendRaw({_lineup:true, team:TEAM, on:false});
+    sendRaw({_lineup:true, team:SIDE, on:false});
     LU_ON = false; clearTimeout(LU_TIMER); paint(); return;
   }
+  if(notPlaying()) return;
   var list = [];
   for(var n = 1; n <= 9; n++){
     var p = atOrder(n);
     if(p) list.push({order:n, num:p.num, name:p.name, pos:p.pos});
   }
   if(!list.length){ toast('先にスタメン（打順）を入れてください'); return; }
-  sendRaw({_lineup:true, team:TEAM, on:true, sec:LU_SEC, tn:teamName(), list:list});
+  sendRaw({_lineup:true, team:SIDE, on:true, sec:LU_SEC, tn:teamName(), list:list});
   LU_ON = true;
   clearTimeout(LU_TIMER);
   LU_TIMER = setTimeout(function(){ LU_ON = false; paint(); }, LU_SEC * 1000 + 300);
@@ -397,8 +420,8 @@ function sendRaw(o){
   try{ ws.send(JSON.stringify(o)); return true; }catch(e){ return false; }
 }
 function send(){
-  if(!TEAM || !ws || ws.readyState !== 1) return;
-  try{ ws.send(JSON.stringify({_teamapp:true, team:TEAM, at:T.at, players:T.players})); }catch(e){}
+  if(!ID || !ws || ws.readyState !== 1) return;
+  try{ ws.send(JSON.stringify({_teamapp:true, id:ID, at:T.at, players:T.players})); }catch(e){}
 }
 function connect(){
   var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/?team=1';
@@ -409,7 +432,8 @@ function connect(){
     // この端末の登録を送る（サーバーがもっと新しいものを持っていれば、そちらが返ってくる）
     if(T.at) send();
     try{
-      ws.send(JSON.stringify({_req:'teamapp'}));
+      if(ID) ws.send(JSON.stringify({_req:'teamapp', id:ID}));
+      ws.send(JSON.stringify({_req:'teams'}));
       ws.send(JSON.stringify({_req:'state'}));
       ws.send(JSON.stringify({_req:'teamcfg'}));
     }catch(e){}
@@ -425,14 +449,29 @@ function connect(){
     try{ d = JSON.parse(e.data); }catch(err){ return; }
     if(!d) return;
     if(d._ctl === true){
-      var ch = (d.aab && d.aab !== INFO.aab) || (d.hnm && d.hnm !== INFO.hnm);
       INFO.aab = d.aab || '先攻'; INFO.hnm = d.hnm || '後攻';
-      if(ch) paint();
+      INFO.aid = d.aid || ''; INFO.hid = d.hid || '';
+      var side = findSide();
+      if(side !== SIDE){
+        // 試合から外れたら、出しているものは消しておく
+        if(!side){ LT_ON = ''; LU_ON = false; }
+        SIDE = side;
+      }
+      paint();
+      return;
+    }
+    // 大会の参加チーム一覧から、自分のチーム名を取る
+    if(d._teams && Array.isArray(d.list)){
+      d.list.forEach(function(t){ if(t && t.id === ID && t.name){ MYNAME = t.name; } });
+      try{ localStorage.setItem('athlee-team-name-' + ID, MYNAME); }catch(e){}
+      document.title = (MYNAME || 'チーム') + '｜AthleeLive';
+      SIDE = findSide();
+      paint();
       return;
     }
     if(d._teamcfg){ INFO.logo = {away:d.away || '', home:d.home || ''}; paint(); return; }
     // 同じチームの別の端末で直したもの（新しいときだけ取り込む）
-    if(d._teamapp && d.team === TEAM && Array.isArray(d.players) && (Number(d.at) || 0) > T.at){
+    if(d._teamapp && d.id === ID && Array.isArray(d.players) && (Number(d.at) || 0) > T.at){
       T = {at:Number(d.at) || 0, players:d.players};
       save(); paint();
     }
@@ -465,26 +504,10 @@ g('b-add').onclick = function(){ editPlayer(''); };
 g('b-bulk').onclick = bulk;
 g('b-lineup').onclick = toggleLineup;
 g('b-clear').onclick = function(){
-  if(!confirm('登録した選手を全部消します。よろしいですか？\n（次の試合で別のチームが使うとき用）')) return;
+  if(!confirm('登録した選手を全部消します。よろしいですか？')) return;
   T.players = [];
   changed();
   toast('消しました');
-};
-function choose(t){
-  TEAM = t;
-  try{ localStorage.setItem('athlee-team-side', t); }catch(e){}
-  try{ history.replaceState(null, '', '?t=' + t); }catch(e){}
-  load(); paint();
-  try{ ws && ws.readyState === 1 && ws.send(JSON.stringify({_req:'teamapp'})); }catch(e){}
-}
-g('c-away').onclick = function(){ choose('away'); };
-g('c-home').onclick = function(){ choose('home'); };
-g('b-switch').onclick = function(){
-  TEAM = '';
-  try{ localStorage.removeItem('athlee-team-side'); history.replaceState(null, '', location.pathname); }catch(e){}
-  g('c-away').textContent = '先攻：' + INFO.aab;
-  g('c-home').textContent = '後攻：' + INFO.hnm;
-  paint();
 };
 // 表示しておく秒数：8秒 → 15秒 → 消すまで → 5秒 → 8秒…
 g('b-sec').onclick = function(){
@@ -493,7 +516,7 @@ g('b-sec').onclick = function(){
   paint();
 };
 
-if(TEAM) load();
+if(ID) load();
 paint();
 connect();
 </script>

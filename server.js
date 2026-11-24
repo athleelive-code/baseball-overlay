@@ -2,6 +2,7 @@ const express = require('express');
 const { createServer } = require('http');
 const { WebSocketServer } = require('ws');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = createServer(app);
@@ -273,10 +274,35 @@ const LAST_STATE_TTL = 12 * 60 * 60 * 1000;
 let lastAdCfg = null;
 let lastAdCfgAt = 0;
 let lastTeamCfg = null;
-// チーム用アプリ（/team/）で登録した選手。先攻・後攻ごとに、更新時刻（at）が新しいものだけ預かる。
-// スタッフのスマホが閉じていても、オーバーレイや別の端末が開き直したときに届くようにする
-const lastTeamApp = { away: null, home: null };
-const lastTeamAppAt = { away: 0, home: 0 };
+// ── 大会の参加チームと、チーム用アプリ（/team/?id=…）で登録した選手 ──────────
+// 大会の前から登録しておけるように、ファイルにも書いて残す（サーバーが起き直しても戻せる）。
+// ファイルが消える環境でも、かんたんスコアとスタッフのスマホが持っている分を送り直すので戻る。
+// どちらも更新時刻（at）が新しいものだけ預かる（古い端末がつながり直しても上書きしない）
+const DATA_FILE = path.join(__dirname, 'data', 'teams.json');
+let teamList = null;          // {_teams:true, at, list:[{id, name}]} の文字列
+let teamListAt = 0;
+const teamPlayers = {};       // id → {_teamapp:true, id, at, players} の文字列
+const teamPlayersAt = {};
+try {
+  const saved = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  if (saved.teamList) { teamList = saved.teamList; teamListAt = Number(JSON.parse(teamList).at) || 0; }
+  Object.keys(saved.teamPlayers || {}).forEach((id) => {
+    teamPlayers[id] = saved.teamPlayers[id];
+    teamPlayersAt[id] = Number(JSON.parse(teamPlayers[id]).at) || 0;
+  });
+} catch (e) {}
+let saveTimer = null;
+function saveTeams() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    try {
+      fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+      fs.writeFileSync(DATA_FILE, JSON.stringify({ teamList, teamPlayers }));
+    } catch (e) { console.warn('[teams] 保存できませんでした', e.message); }
+  }, 1000);
+}
+const validId = (id) => typeof id === 'string' && /^[a-z0-9]{4,24}$/.test(id);
 
 wss.on('connection', (ws, req) => {
   // 接続直後に、十分新しい _ctl 状態があれば全クライアントへ復帰用に送る。
@@ -286,8 +312,7 @@ wss.on('connection', (ws, req) => {
   }
   if (lastAdCfg)   ws.send(lastAdCfg);
   if (lastTeamCfg) ws.send(lastTeamCfg);
-  if (lastTeamApp.away) ws.send(lastTeamApp.away);
-  if (lastTeamApp.home) ws.send(lastTeamApp.home);
+  if (teamList) ws.send(teamList);
 
   ws.on('message', (data) => {
     const text = data.toString();
@@ -304,20 +329,23 @@ wss.on('connection', (ws, req) => {
         if (!lastAdCfg || at >= lastAdCfgAt) { lastAdCfg = text; lastAdCfgAt = at; }
       }
       if (d && d._teamcfg) lastTeamCfg = text;
-      if (d && d._teamapp && (d.team === 'away' || d.team === 'home')) {
+      if (d && d._teams && Array.isArray(d.list)) {
         const at = Number(d.at) || 0;
-        // 古い登録の端末がつながり直しても、新しい登録を上書きしない
-        if (at < lastTeamAppAt[d.team]) { ws.send(lastTeamApp[d.team]); return; }
-        lastTeamApp[d.team] = text; lastTeamAppAt[d.team] = at;
+        if (at < teamListAt) { ws.send(teamList); return; }
+        teamList = text; teamListAt = at; saveTeams();
+      }
+      if (d && d._teamapp && validId(d.id) && Array.isArray(d.players)) {
+        const at = Number(d.at) || 0;
+        // 古い登録の端末がつながり直しても、新しい登録を上書きしない（新しいほうを返す）
+        if (teamPlayers[d.id] && at < teamPlayersAt[d.id]) { ws.send(teamPlayers[d.id]); return; }
+        teamPlayers[d.id] = text; teamPlayersAt[d.id] = at; saveTeams();
       }
       // 問い合わせには、預かっているものをその場で返す。
       // （設定した端末が閉じていても届くようにする。中継もそのまま続ける）
       if (d && d._req === 'adcfg'   && lastAdCfg)   ws.send(lastAdCfg);
       if (d && d._req === 'teamcfg' && lastTeamCfg) ws.send(lastTeamCfg);
-      if (d && d._req === 'teamapp') {
-        if (lastTeamApp.away) ws.send(lastTeamApp.away);
-        if (lastTeamApp.home) ws.send(lastTeamApp.home);
-      }
+      if (d && d._req === 'teams' && teamList) ws.send(teamList);
+      if (d && d._req === 'teamapp' && validId(d.id) && teamPlayers[d.id]) ws.send(teamPlayers[d.id]);
     } catch(e) {}
     wss.clients.forEach((client) => {
       if (client !== ws && client.readyState === 1) client.send(text);
