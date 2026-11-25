@@ -11,6 +11,13 @@ const wss = new WebSocketServer({ server });
 // オーダー表のPDFは大きいことがあるので、読み取りの入口だけ上限を広げる（先に置く）
 app.use('/api/scan-team', express.json({ limit: '25mb' }));
 app.use(express.json({ limit: '10mb' }));
+// 旧URLからの転送（ホーム画面に古いアイコンが残っていても開ける）。
+// 古いファイルがまだ public/ に残っているので、ファイルを返すより先にここで転送する。
+// 転送は 302（一時的）にする。301 だとブラウザが覚えてしまい、あとで変えられない
+app.get(['/controller-unified.html', '/controller.html'], (req, res) => res.redirect('/ctrl/'));
+app.get('/speed.html',              (req, res) => res.redirect('/spd/'));
+app.get('/roster-pc.html',          (req, res) => res.redirect('/roster/'));
+
 // HTML は毎回サーバーに確かめてから使わせる。
 // OBS のブラウザソースは一度読んだページを強く抱え込むので、これが無いと
 // デプロイしても古い画面が出たままになる（画像や音は今までどおりキャッシュする）
@@ -22,10 +29,6 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // 最初に開くのは、かんたんスコア（簡易版）。本体は /ctrl/ から
 app.get('/', (req, res) => { res.redirect('/simple/'); });
 
-// 旧URLからの転送（ホーム画面に古いアイコンが残っていても開ける）
-app.get('/controller-unified.html', (req, res) => res.redirect(301, '/ctrl/'));
-app.get('/speed.html',              (req, res) => res.redirect(301, '/spd/'));
-app.get('/roster-pc.html',          (req, res) => res.redirect(301, '/roster/'));
 
 // Claude API proxy エンドポイント
 app.post('/api/scan-roster', async (req, res) => {
