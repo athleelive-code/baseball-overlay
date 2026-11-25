@@ -6162,6 +6162,13 @@ function swapTeams(){
   const tmpColor=_teamColors.away;
   _teamColors.away=_teamColors.home;
   _teamColors.home=tmpColor;
+  // ロゴ（エンブレム）もチームについていく
+  const tmpLogo=_teamLogos.away;
+  _teamLogos.away=_teamLogos.home;
+  _teamLogos.home=tmpLogo;
+  _saveTeamLogos();
+  if(typeof _renderTeamLogoUI==='function') _renderTeamLogoUI();
+  _sendTeamCfg();
   const ci_a=document.getElementById('color-away');
   const ci_h=document.getElementById('color-home');
   const ch_a=document.getElementById('color-away-hex');
@@ -6318,7 +6325,8 @@ function _fillUrlList(){
     'コントローラー（この画面）\n'+o+'/ctrl/\n\n'+
     'かんたんスコア（簡易版）\n'+o+'/simple/\n\n'+
     'オーバーレイ（OBSに貼る）\n'+o+'/overlay.html\n\n'+
-    'メンバー管理\n'+o+'/roster/';
+    'メンバー管理\n'+o+'/roster/\n\n'+
+    'チーム用（選手の表示）\nチームごとのURLは、かんたんスコアの「チーム・URL」で作る';
 }
 function _copyText(text, okMsg){
   function done(){

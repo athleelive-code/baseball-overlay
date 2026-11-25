@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AthleeLive チーム用</title>
+<meta name="theme-color" content="#0d1117">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* ── 押すところの決まり（かんたんスコアと同じ。README「押すところの決まり」）──
+   --tap : 押すところの最小の大きさ（縦・横とも 48px）
+   --gap : となり合う押すところの最小のすき間
+   --sep : 役割のちがうかたまりの間 */
+:root{--tap:48px;--gap:8px;--sep:16px}
+body{margin:0 auto;max-width:34em;background:#0d1117;color:#e6edf3;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  font-size:clamp(15px,4.3vw,20px);
+  padding:calc(.4em + env(safe-area-inset-top)) .5em calc(2em + env(safe-area-inset-bottom));
+  -webkit-text-size-adjust:100%}
+button{font-family:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:.5em;
+  font-size:1em;padding:.4em .6em;cursor:pointer;min-height:var(--tap);min-width:var(--tap)}
+button:active{background:#30363d}
+input,textarea{font-family:inherit;font-size:16px;color:#e6edf3;background:#0d1117;border:1px solid #30363d;
+  border-radius:.5em;padding:.6em;min-height:var(--tap);width:100%}
+input:focus,textarea:focus{outline:none;border-color:#58a6ff}
+.hd{font-size:.8em;font-weight:800;color:#8b949e;margin:var(--sep) .2em var(--gap)}
+.note{font-size:.72em;color:#8b949e;line-height:1.55;margin:.3em .2em}
+
+/* 上のバー */
+.bar{display:flex;align-items:center;gap:var(--gap);font-size:.7em;color:#8b949e;padding:0 .2em}
+.dot{width:.7em;height:.7em;border-radius:50%;background:#6e7681;flex:none}
+.dot.on{background:#3fb950}.dot.off{background:#f85149}
+.bar .sp{flex:1}
+.team{display:flex;align-items:center;gap:.6em;margin-top:var(--gap);padding:.5em .6em;
+  background:#161b22;border:1px solid #30363d;border-left:.35em solid #c8102e;border-radius:.6em}
+.team.home{border-left-color:#1a56a0}
+.team.out{border-left-color:#6e7681}
+.team img{height:2.4em;width:auto;max-width:4em;object-fit:contain}
+.team .tg{font-size:.75em;font-weight:800;color:#8b949e;margin-top:.15em}
+.team .tg.on{color:#f5c518}
+.row .show.off{background:#21262d;border-color:#30363d;color:#6e7681}
+.lineup.off{background:#21262d;border-color:#30363d;color:#6e7681}
+.team .tn{font-size:1.3em;font-weight:800;line-height:1.2;word-break:break-all}
+
+/* 選手の行 */
+.list{display:flex;flex-direction:column;gap:var(--gap)}
+.row{display:flex;align-items:stretch;gap:var(--gap)}
+.row .ord{flex:none;width:2.6em;font-size:1.15em;font-weight:800;color:#f5c518;padding:0}
+.row .pos{flex:none;width:3em;font-weight:800;padding:0}
+.row .pos.none{color:#6e7681;font-weight:400}
+.row .who{flex:1;min-width:0;text-align:left;display:flex;align-items:center;gap:.5em;padding:.3em .6em}
+.row .who.empty{color:#6e7681;justify-content:center}
+.who .no{flex:none;min-width:1.8em;font-weight:800;color:#9ec5ff;text-align:right;font-variant-numeric:tabular-nums}
+.who .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.who .warn{display:block;font-size:.65em;color:#f5c518;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.airnote{font-size:.72em;color:#9ec5ff;margin:.5em .2em 0;line-height:1.5}
+.who .ym{display:block;font-size:.65em;color:#8b949e;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .show{flex:none;width:3.4em;padding:0;font-size:.85em;font-weight:700;background:#16263f;border-color:#2d4a7a;color:#9ec5ff}
+.row .show.on{background:#f5c518;border-color:#f5c518;color:#111}
+.big{width:100%;font-size:1.05em;font-weight:800;padding:.7em}
+.lineup{background:#16263f;border-color:#2d4a7a;color:#9ec5ff}
+.lineup.on{background:#f5c518;border-color:#f5c518;color:#111}
+.add{background:#1f3b26;border-color:#2ea043}
+.btns{display:flex;gap:var(--gap)}
+.btns>button{flex:1}
+.danger{color:#f85149}
+
+/* 下から出る選択画面 */
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sbox{width:100%;max-width:34em;max-height:88vh;overflow-y:auto;background:#161b22;border:1px solid #30363d;
+  border-radius:.8em .8em 0 0;padding:.8em .6em calc(.8em + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:var(--gap)}
+.sbox h3{margin:0 .2em .2em;font-size:1em}
+.scan{background:#2a2410;border-color:#8a7a2d;color:#f5d76e}
+/* 読み取り結果の確認 */
+.sc-card{border:1px solid #30363d;border-radius:.6em;padding:.5em;display:flex;flex-direction:column;gap:var(--gap)}
+.sc-card.unsure{border-color:#f5c518;background:#221d0b}
+.sc-card.off{opacity:.45}
+.sc-row{display:flex;gap:var(--gap);align-items:center}
+.sc-row input,.sc-row select{min-width:0;font-family:inherit;font-size:16px;color:#e6edf3;background:#0d1117;
+  border:1px solid #30363d;border-radius:.5em;padding:0 .5em;min-height:var(--tap)}
+.sc-row .num{width:4.2em;flex:none}
+.sc-row .nm{flex:1}
+.sc-row select{flex:none;width:5.2em;background:#21262d}
+.sc-row label{display:flex;align-items:center;gap:.4em;font-size:.8em;min-height:var(--tap);flex:1}
+.sc-row label input{width:1.4em;height:1.4em;min-height:0}
+.sc-warn{font-size:.72em;color:#f5c518;font-weight:700}
+.sc-opt{display:flex;align-items:center;gap:.5em;font-size:.8em;min-height:var(--tap)}
+.sc-opt input{width:1.4em;height:1.4em}
+.busy{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;
+  font-size:1.1em;font-weight:700;text-align:center;line-height:1.7;padding:1em}
+.busy[hidden]{display:none}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap)}
+.grid button{font-weight:800;padding:.5em 0}
+.grid button.cur{background:#f5c518;color:#111;border-color:#f5c518}
+.pick{display:flex;align-items:center;gap:.5em;text-align:left;width:100%}
+.pick .tag{flex:none;font-size:.75em;color:#f5c518;min-width:2.6em}
+label.f{display:flex;flex-direction:column;gap:.3em;font-size:.75em;color:#8b949e}
+.toast{position:fixed;left:50%;bottom:1.5em;transform:translateX(-50%);z-index:60;background:#30363d;
+  border-radius:.5em;padding:.6em 1em;font-size:.85em;opacity:0;transition:opacity .2s;pointer-events:none;
+  max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+
+/* 最初の画面（どちらのチームか選ぶ）*/
+.choose[hidden]{display:none}
+.choose{display:flex;flex-direction:column;gap:var(--sep);margin-top:2em}
+.choose button{font-size:1.2em;font-weight:800;padding:1em}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="dot" id="dot"></span><span id="wsmsg">接続中…</span>
+  <span class="sp"></span>
+  <button id="b-sec">表示 8秒</button>
+</div>
+
+<!-- チームのURL（?id=…）でないとき -->
+<div id="noid" class="choose" hidden>
+  <div class="note" style="font-size:1em;color:#e6edf3" id="noid-t">大会の運営から届いた、<b>あなたのチーム専用のURL</b>を開いてください。</div>
+  <div class="note" id="noid-s">このページのURLには、チームの印が付いていません。</div>
+</div>
+
+<div id="main" hidden>
+  <div class="team" id="teambox">
+    <img id="logo" alt="" hidden>
+    <div><div class="tn" id="tn">-</div><div class="tg" id="tg"></div></div>
+  </div>
+
+  <div class="airnote" id="airnote"></div>
+  <div class="hd">スタメン（打順）</div>
+  <div class="list" id="starters"></div>
+  <div style="height:var(--sep)"></div>
+  <button class="big lineup" id="b-lineup">📋 スタメンを画面に出す</button>
+
+  <div class="hd">控え</div>
+  <div class="list" id="bench"></div>
+  <div class="note" id="bench-empty">まだ控えの選手はいません</div>
+
+  <div style="height:var(--sep)"></div>
+  <div class="btns">
+    <button class="add" id="b-add">＋ 選手を追加</button>
+    <button id="b-bulk">まとめて追加</button>
+  </div>
+  <div style="height:var(--gap)"></div>
+  <button class="big scan" id="b-scan">📷 オーダー表（写真・PDF）から読み取る</button>
+  <input type="file" id="scan-file" accept="image/*,application/pdf" hidden>
+  <div class="note">
+    読み取ったあとに確認画面が出ます。<b>名前の漢字は必ず確かめてから</b>登録してください。
+    手書きでも読めますが、似た字（斉・斎、崎・﨑 など）は間違えることがあります。<br>
+    写真は文字を読み取るために AI サービス（Anthropic 社）に送られます。読み取り以外には使いません。<br>
+    記入用のオーダー表：<a href="order-sheet.pdf" target="_blank" style="color:#9ec5ff">PDF</a>／<a href="sheet.html" target="_blank" style="color:#9ec5ff">印刷用ページ</a>
+  </div>
+
+  <div class="hd">使い方</div>
+  <div class="note">
+    ・打順の数字を押す → その打順に入る選手を選ぶ（入れ替えもこれで）<br>
+    ・守備の欄を押す → 守備位置を選ぶ<br>
+    ・名前を押す → 背番号・名前を直す<br>
+    ・「出す」を押す → 配信画面の下に、その選手の名前が出ます（もう一度押すと消えます）
+  </div>
+  <div style="height:var(--sep)"></div>
+  <div class="btns">
+    <button class="danger" id="b-clear">選手を全部消す</button>
+  </div>
+  <div class="note">登録した選手は大会中ずっと残ります。試合ごとに入れ直す必要はありません。</div>
+</div>
+
+<div class="sheet" id="sheet" hidden><div class="sbox" id="sbox"></div></div>
+<div class="busy" id="busy" hidden>📷 読み取り中…<br><span style="font-size:.75em;font-weight:400">1分ほどかかることがあります</span></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+var g = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(m){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+// 守備位置。番号で持つ（1=投手 … 9=右翼手、DH=指名打者）
+var POS = ['1','2','3','4','5','6','7','8','9','DH'];
+var POS_S = {'1':'投','2':'捕','3':'一','4':'二','5':'三','6':'遊','7':'左','8':'中','9':'右','DH':'DH'};
+
+// ── どのチームか（URL の ?id=…。大会の前に、かんたんスコアでチームごとに作る）──
+var ID = (location.search.match(/[?&]id=([a-z0-9]{4,24})/) || [])[1] || '';
+// 今の試合でこのチームが先攻か後攻か（'away' / 'home'、出ていなければ ''）。コントローラーから届く
+var SIDE = '';
+
+// ── 選手の登録（この端末に保存し、サーバー経由でオーバーレイなどにも配る）──
+var T = {at:0, players:[]};   // players: {id, num, name, yomi, pos, order}
+var KEY = function(){ return 'athlee-team-id-' + ID; };
+function load(){
+  T = {at:0, players:[]};
+  try{
+    var v = JSON.parse(localStorage.getItem(KEY()) || 'null');
+    if(v && Array.isArray(v.players)) T = {at:Number(v.at) || 0, players:v.players};
+  }catch(e){}
+}
+function save(){ try{ localStorage.setItem(KEY(), JSON.stringify(T)); }catch(e){} }
+function changed(){
+  T.at = Date.now();
+  save(); send(); paint();
+}
+function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function byId(id){ for(var i = 0; i < T.players.length; i++) if(T.players[i].id === id) return T.players[i]; return null; }
+function atOrder(n){ for(var i = 0; i < T.players.length; i++) if(T.players[i].order === n) return T.players[i]; return null; }
+function numSort(a, b){ return (Number(a.num) || 999) - (Number(b.num) || 999); }
+
+// 試合の情報（コントローラーから届く）と、大会の参加チーム一覧（かんたんスコアから届く）
+var INFO = {aab:'先攻', hnm:'後攻', mySide:null, nameMode:'sei', logo:{away:'', home:''}};
+
+// ── 配信に出す名前 ─────────────────────────────────────────────────────
+// 大会の設定が「苗字だけ」なら、スペースの前（苗字）だけを配信に送る。フルネームは送らない。
+// スペースがない名前は苗字と名前の区切りが分からないので、出さずに直してもらう
+function splitName(t){ return String(t || '').trim().split(/[\s　]+/).filter(Boolean); }
+function seiOnly(){ return INFO.nameMode !== 'full'; }
+function noSpace(p){ return seiOnly() && splitName(p.name).length < 2; }
+function airName(p){ return seiOnly() ? splitName(p.name)[0] || '' : String(p.name || '').trim(); }
+function airYomi(p){
+  if(!seiOnly()) return String(p.yomi || '').trim();
+  var y = splitName(p.yomi);
+  return y.length >= 2 ? y[0] : '';     // ふりがなも苗字の分だけ（区切りがなければ出さない）
+}
+// 入力のゆれをそろえる（全角スペース・続いたスペースを1つの半角スペースに）
+function tidy(t){ return String(t || '').replace(/[\s　]+/g, ' ').trim(); }
+var MYNAME = '';
+try{ MYNAME = localStorage.getItem('athlee-team-name-' + ID) || ''; }catch(e){}
+function teamName(){ return MYNAME || (SIDE === 'home' ? INFO.hnm : SIDE === 'away' ? INFO.aab : 'チーム'); }
+// 先攻か後攻か：試合に選ばれたチームの印で見る。印がない（通常版のコントローラー）ときはチーム名で見る
+function findSide(){
+  // かんたんスコアで試合のチームを選んでいれば、サーバーが「自分は先攻か後攻か」だけを教えてくれる
+  if(typeof INFO.mySide === 'string') return INFO.mySide;
+  // 通常版のコントローラーのときは、チーム名で見る
+  if(MYNAME && INFO.aab === MYNAME) return 'away';
+  if(MYNAME && INFO.hnm === MYNAME) return 'home';
+  return '';
+}
+
+// ── 画面 ───────────────────────────────────────────────────────────────
+function paint(){
+  g('noid').hidden = !!ID;
+  g('main').hidden = !ID;
+  if(!ID) return;
+  var tg = g('tg');
+  tg.textContent = SIDE ? '今の試合：' + (SIDE === 'home' ? '後攻' : '先攻') : '今の試合には出ていません（選手の登録はできます）';
+  tg.className = 'tg' + (SIDE ? ' on' : '');
+  g('tn').textContent = teamName();
+  g('airnote').textContent = seiOnly()
+    ? '配信には苗字だけが出ます。名前は「山田 太郎」のように、苗字と名前の間にスペースを入れてください。'
+    : '配信にはフルネームが出ます。';
+  g('teambox').className = 'team ' + (SIDE || 'out');
+  var lg = SIDE ? INFO.logo[SIDE] : '';
+  if(lg){ g('logo').src = lg; g('logo').hidden = false; } else { g('logo').hidden = true; }
+
+  var h = '';
+  for(var n = 1; n <= 9; n++){
+    var p = atOrder(n);
+    h += '<div class="row">' +
+      '<button class="ord" data-ord="' + n + '">' + n + '</button>';
+    if(p){
+      h += '<button class="pos' + (p.pos ? '' : ' none') + '" data-pos="' + p.id + '">' + (p.pos ? POS_S[p.pos] : '守備') + '</button>' +
+        whoBtn(p) + showBtn(p);
+    } else {
+      h += '<button class="pos none" data-ord="' + n + '">−</button>' +
+        '<button class="who empty" data-ord="' + n + '">＋ 選手を選ぶ</button>' +
+        '<span style="width:3.4em;flex:none"></span>';
+    }
+    h += '</div>';
+  }
+  g('starters').innerHTML = h;
+
+  var bench = T.players.filter(function(p){ return !p.order; }).sort(numSort);
+  g('bench').innerHTML = bench.map(function(p){
+    return '<div class="row">' +
+      '<button class="pos' + (p.pos ? '' : ' none') + '" data-pos="' + p.id + '">' + (p.pos ? POS_S[p.pos] : '−') + '</button>' +
+      whoBtn(p) + showBtn(p) + '</div>';
+  }).join('');
+  g('bench-empty').hidden = bench.length > 0;
+
+  var lb = g('b-lineup');
+  lb.className = 'big lineup' + (LU_ON ? ' on' : '') + (SIDE ? '' : ' off');
+  lb.textContent = LU_ON ? '📋 スタメンを消す' : '📋 スタメンを画面に出す';
+  g('b-sec').textContent = SEC ? '表示 ' + SEC + '秒' : '消すまで表示';
+}
+function whoBtn(p){
+  return '<button class="who" data-edit="' + p.id + '"><span class="no">' + esc(p.num ? '#' + p.num : '') + '</span>' +
+    '<span style="min-width:0"><span class="nm">' + esc(p.name || '（名前なし）') + '</span>' +
+    (noSpace(p) ? '<span class="warn">⚠ 苗字と名前の間にスペースを</span>'
+      : p.yomi ? '<span class="ym">' + esc(p.yomi) + '</span>' : '') + '</span></button>';
+}
+function showBtn(p){
+  var on = LT_ON === p.id;
+  return '<button class="show' + (on ? ' on' : '') + (SIDE ? '' : ' off') + '" data-show="' + p.id + '">' + (on ? '消す' : '出す') + '</button>';
+}
+
+// ── 選ぶ画面（下から出る）──────────────────────────────────────────────
+function sheet(html){
+  g('sbox').innerHTML = html;
+  g('sheet').hidden = false;
+}
+function closeSheet(){ g('sheet').hidden = true; g('sbox').innerHTML = ''; }
+g('sheet').addEventListener('click', function(ev){ if(ev.target === g('sheet')) closeSheet(); });
+
+// 打順 n に入る選手を選ぶ。選んだ選手が別の打順にいたら、元の選手と入れ替える
+function pickOrder(n){
+  var cur = atOrder(n);
+  var list = T.players.slice().sort(function(a, b){
+    return (a.order || 99) - (b.order || 99) || numSort(a, b);
+  });
+  var h = '<h3>' + n + '番に入る選手</h3>';
+  if(!list.length) h += '<div class="note">先に「＋ 選手を追加」で選手を登録してください</div>';
+  list.forEach(function(p){
+    if(cur && p.id === cur.id) return;
+    h += '<button class="pick" data-pickord="' + p.id + '"><span class="tag">' + (p.order ? p.order + '番' : '控え') + '</span>' +
+      '<span class="no" style="color:#9ec5ff;font-weight:800">' + esc(p.num ? '#' + p.num : '') + '</span>' +
+      '<span>' + esc(p.name || '（名前なし）') + '</span></button>';
+  });
+  if(cur) h += '<button data-pickord="">この打順を空ける（' + esc(cur.name) + 'を控えへ）</button>';
+  h += '<button data-close>やめる</button>';
+  sheet(h);
+  ORD_TARGET = n;
+}
+var ORD_TARGET = 0;
+function setOrder(id){
+  var n = ORD_TARGET, cur = atOrder(n);
+  if(!id){ if(cur){ cur.order = 0; } }
+  else {
+    var p = byId(id);
+    if(!p) return;
+    var from = p.order || 0;
+    if(cur) cur.order = from;              // 入れ替え（控えから入ったなら、元の選手は控えへ）
+    p.order = n;
+    // 控えから入った選手は、出ていった選手の守備位置を引きつぐ
+    if(!from && cur && cur.pos && !p.pos){ p.pos = cur.pos; cur.pos = ''; }
+  }
+  closeSheet(); changed();
+}
+
+function pickPos(id){
+  var p = byId(id);
+  if(!p) return;
+  var h = '<h3>' + esc(p.name || '選手') + ' の守備位置</h3><div class="grid">';
+  POS.forEach(function(k){
+    h += '<button data-setpos="' + k + '" class="' + (p.pos === k ? 'cur' : '') + '">' + POS_S[k] + '</button>';
+  });
+  h += '</div><button data-setpos="">守備なし</button><button data-close>やめる</button>';
+  sheet(h);
+  POS_TARGET = id;
+}
+var POS_TARGET = '';
+function setPos(k){
+  var p = byId(POS_TARGET);
+  if(!p) return;
+  // 同じ守備位置にスタメンの別の選手がいたら、守備位置を入れ替える
+  if(k && p.order){
+    T.players.forEach(function(o){
+      if(o !== p && o.order && o.pos === k) o.pos = p.pos || '';
+    });
+  }
+  p.pos = k;
+  closeSheet(); changed();
+}
+
+function editPlayer(id){
+  var p = id ? byId(id) : null;
+  var h = '<h3>' + (p ? '選手を直す' : '選手を追加') + '</h3>' +
+    '<label class="f">背番号<input id="e-num" inputmode="numeric" maxlength="3" value="' + esc(p ? p.num : '') + '"></label>' +
+    '<label class="f">名前（苗字と名前の間にスペース）<input id="e-name" maxlength="16" value="' + esc(p ? p.name : '') + '" placeholder="例）山田 太郎"></label>' +
+    '<label class="f">ふりがな（なくてもよい）<input id="e-yomi" maxlength="24" value="' + esc(p ? p.yomi : '') + '" placeholder="例）やまだ たろう"></label>' +
+    '<div class="btns"><button class="add" data-esave="' + (p ? p.id : '') + '">' + (p ? '保存' : '追加') + '</button>' +
+    '<button data-close>やめる</button></div>' +
+    (p ? '<button class="danger" data-edel="' + p.id + '">この選手を消す</button>' : '');
+  sheet(h);
+  if(!p) setTimeout(function(){ try{ g('e-num').focus(); }catch(e){} }, 50);
+}
+function savePlayer(id){
+  var num = g('e-num').value.replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).trim();
+  var name = tidy(g('e-name').value), yomi = tidy(g('e-yomi').value);
+  if(!name && !num){ toast('背番号か名前を入れてください'); return; }
+  if(id){
+    var p = byId(id);
+    if(p){ p.num = num; p.name = name; p.yomi = yomi; }
+  } else {
+    T.players.push({id:newId(), num:num, name:name, yomi:yomi, pos:'', order:0});
+  }
+  closeSheet(); changed();
+  toast(id ? '保存しました' : '追加しました');
+}
+function delPlayer(id){
+  var p = byId(id);
+  if(!p || !confirm((p.name || '選手') + ' を消しますか？')) return;
+  T.players = T.players.filter(function(o){ return o.id !== id; });
+  closeSheet(); changed();
+}
+
+// まとめて追加：1行に1人「背番号 名前 ふりがな」
+function bulk(){
+  sheet('<h3>まとめて追加</h3>' +
+    '<div class="note">1行に1人ずつ「背番号 苗字 名前」と書きます（ふりがなは名前のあとに書けます）。<br>例）<br>1 山田 太郎 やまだ たろう<br>10 佐藤 次郎</div>' +
+    '<textarea id="e-bulk" rows="8" placeholder="1 山田 太郎"></textarea>' +
+    '<div class="btns"><button class="add" data-bulkok>追加する</button><button data-close>やめる</button></div>');
+}
+function bulkOk(){
+  var lines = g('e-bulk').value.split(/\n/), n = 0;
+  lines.forEach(function(line){
+    line = line.replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+               .replace(/　/g, ' ').trim();
+    if(!line) return;
+    var m = line.match(/^#?(\d{1,3})[\s.、,:：]+(.*)$/);
+    var num = m ? m[1] : '', rest = (m ? m[2] : line).trim().split(/\s+/);
+    // 後ろに続く、ひらがな・カタカナだけの語はふりがなとみなす（「山田 太郎 やまだ たろう」）。
+    // ただし名前が全部かなの選手もいるので、前に漢字などの語が残るときだけ
+    var kana = /^[ぁ-んァ-ヶー]+$/, k = rest.length;
+    while(k > 0 && kana.test(rest[k - 1])) k--;
+    var yomi = '';
+    if(k > 0 && k < rest.length){ yomi = rest.slice(k).join(' '); rest = rest.slice(0, k); }
+    var name = rest.join(' ');
+    if(!name && !num) return;
+    T.players.push({id:newId(), num:num, name:name, yomi:yomi, pos:'', order:0});
+    n++;
+  });
+  closeSheet();
+  if(n){ changed(); toast(n + '人を追加しました'); }
+}
+
+// ── オーダー表（写真・PDF）から読み取る ───────────────────────────────────
+// 写真は小さくしてから送る（通信量と時間を減らす）。PDF はそのまま送る
+var SCAN = [];   // 読み取った選手（確認画面で直す）
+function fileToBase64(file){
+  return new Promise(function(ok, ng){
+    var fr = new FileReader();
+    fr.onload = function(){ ok(String(fr.result).split(',')[1] || ''); };
+    fr.onerror = ng;
+    fr.readAsDataURL(file);
+  });
+}
+function shrinkImage(file){
+  return new Promise(function(ok, ng){
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      var MAX = 2400, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, MAX / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL('image/jpeg', 0.88).split(',')[1]);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); ng(new Error('この写真は開けませんでした')); };
+    img.src = url;
+  });
+}
+function scanFile(file){
+  if(!file) return;
+  var isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  if(isPdf && file.size > 18 * 1024 * 1024){ toast('PDFが大きすぎます（18MBまで）'); return; }
+  g('busy').hidden = false;
+  (isPdf ? fileToBase64(file) : shrinkImage(file)).then(function(b64){
+    return fetch('/api/scan-team', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:ID, data:b64, mimeType:isPdf ? 'application/pdf' : 'image/jpeg'})
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); });
+  }).then(function(res){
+    g('busy').hidden = true;
+    if(!res.ok){ toast(res.j.error || '読み取りに失敗しました'); return; }
+    if(!res.j.players || !res.j.players.length){ toast('選手を見つけられませんでした。明るい場所で、真上から撮ってみてください'); return; }
+    SCAN = res.j.players.map(function(p){
+      return {num:String(p.num || '').replace(/[^0-9]/g, ''), sei:tidy(p.sei), mei:tidy(p.mei),
+        yomi:tidy([p.yomi_sei, p.yomi_mei].filter(Boolean).join(' ')),
+        order:/^[1-9]$/.test(p.order) ? Number(p.order) : 0,
+        pos:POS.indexOf(String(p.pos).toUpperCase()) >= 0 ? String(p.pos).toUpperCase() : '',
+        unsure:!!p.unsure, note:tidy(p.note), use:true};
+    });
+    scanReview();
+  }).catch(function(e){
+    g('busy').hidden = true;
+    toast((e && e.message) || '読み取りに失敗しました。通信を確かめてください');
+  });
+}
+// 確認画面。⚠ の選手は特によく確かめてもらう
+function scanReview(){
+  var unsure = SCAN.filter(function(p){ return p.unsure; }).length;
+  var hasOrder = SCAN.some(function(p){ return p.order; });
+  var posOpts = function(cur){
+    return '<option value="">守備</option>' + POS.map(function(k){
+      return '<option value="' + k + '"' + (cur === k ? ' selected' : '') + '>' + POS_S[k] + '</option>'; }).join('');
+  };
+  var ordOpts = function(cur){
+    var h = '<option value="0">控え</option>';
+    for(var n = 1; n <= 9; n++) h += '<option value="' + n + '"' + (cur === n ? ' selected' : '') + '>' + n + '番</option>';
+    return h;
+  };
+  var h = '<h3>読み取った選手（' + SCAN.length + '人）</h3>' +
+    '<div class="note">名前の漢字・背番号が合っているか、1人ずつ確かめてください。直すところは、その場で書き直せます。' +
+    (unsure ? '<br><b style="color:#f5c518">⚠ 自信のない選手が ' + unsure + '人います（黄色の枠）。</b>' : '') + '</div>';
+  SCAN.forEach(function(p, i){
+    h += '<div class="sc-card' + (p.unsure ? ' unsure' : '') + (p.use ? '' : ' off') + '" id="sc-' + i + '">' +
+      (p.unsure ? '<div class="sc-warn">⚠ ' + esc(p.note || '読み取りに自信がありません') + '</div>' : '') +
+      '<div class="sc-row"><input class="num" inputmode="numeric" maxlength="3" placeholder="背番号" data-sc="' + i + '" data-k="num" value="' + esc(p.num) + '">' +
+      '<input class="nm" maxlength="8" placeholder="苗字" data-sc="' + i + '" data-k="sei" value="' + esc(p.sei) + '">' +
+      '<input class="nm" maxlength="8" placeholder="名前" data-sc="' + i + '" data-k="mei" value="' + esc(p.mei) + '"></div>' +
+      '<div class="sc-row"><input class="nm" maxlength="24" placeholder="ふりがな（例：やまだ たろう）" data-sc="' + i + '" data-k="yomi" value="' + esc(p.yomi) + '"></div>' +
+      '<div class="sc-row"><select data-sc="' + i + '" data-k="order">' + ordOpts(p.order) + '</select>' +
+      '<select data-sc="' + i + '" data-k="pos">' + posOpts(p.pos) + '</select>' +
+      '<label><input type="checkbox" data-sc="' + i + '" data-k="use"' + (p.use ? ' checked' : '') + '>登録する</label></div>' +
+      '</div>';
+  });
+  h += (hasOrder ? '<label class="sc-opt"><input type="checkbox" id="sc-useorder" checked>打順・守備位置も取り込む（今の打順は入れ替わります）</label>' : '') +
+    '<label class="sc-opt"><input type="checkbox" id="sc-replace" checked>同じ背番号の選手がいたら、上書きする</label>' +
+    '<div class="btns"><button class="add" data-scanok>この内容で登録</button><button data-close>やめる</button></div>';
+  sheet(h);
+}
+g('sbox').addEventListener('input', function(ev){
+  var el = ev.target, i = el.getAttribute('data-sc');
+  if(i === null) return;
+  var p = SCAN[Number(i)], k = el.getAttribute('data-k');
+  if(!p) return;
+  if(k === 'use'){ p.use = el.checked; g('sc-' + i).className = 'sc-card' + (p.unsure ? ' unsure' : '') + (p.use ? '' : ' off'); }
+  else if(k === 'order') p.order = Number(el.value) || 0;
+  else p[k] = el.value;
+});
+g('sbox').addEventListener('change', function(ev){
+  var el = ev.target;
+  if(el.tagName === 'SELECT' || el.type === 'checkbox') el.dispatchEvent(new Event('input', {bubbles:true}));
+});
+function scanOk(){
+  var useOrder = g('sc-useorder') ? g('sc-useorder').checked : false;
+  var replace = g('sc-replace').checked;
+  var list = SCAN.filter(function(p){ return p.use && (p.sei || p.mei || p.num); });
+  if(!list.length){ toast('登録する選手がいません'); return; }
+  // 打順を取り込むときは、今の打順をいったん空けてから入れる（打順がぶつからないように）
+  if(useOrder) T.players.forEach(function(o){ o.order = 0; });
+  var added = 0, updated = 0;
+  list.forEach(function(p){
+    var name = tidy([p.sei, p.mei].filter(Boolean).join(' ')), num = String(p.num || '').replace(/[^0-9]/g, '');
+    var same = replace && num ? T.players.filter(function(o){ return o.num === num; })[0] : null;
+    var o = same || {id:newId(), num:num, name:'', yomi:'', pos:'', order:0};
+    o.num = num; o.name = name; o.yomi = tidy(p.yomi);
+    if(useOrder){ o.order = p.order || 0; o.pos = p.pos || ''; }
+    else if(!same && p.pos) o.pos = p.pos;
+    if(same) updated++; else { T.players.push(o); added++; }
+  });
+  // 同じ打順が2人いたら、あとの人は控えへ
+  var seen = {};
+  T.players.forEach(function(o){ if(o.order){ if(seen[o.order]) o.order = 0; else seen[o.order] = 1; } });
+  closeSheet(); changed();
+  toast(added + '人を追加' + (updated ? '、' + updated + '人を上書き' : '') + 'しました');
+}
+
+// ── オーバーレイに出す ─────────────────────────────────────────────────
+var SEC = 8;           // 選手の名前を出しておく秒数（0 = 消すまで出す）
+try{ var _s = Number(localStorage.getItem('athlee-team-sec')); if(_s >= 0 && _s <= 60 && localStorage.getItem('athlee-team-sec') !== null) SEC = _s; }catch(e){}
+var LT_ON = '', LT_TIMER = null, LU_ON = false, LU_TIMER = null;
+// 試合に出ていないときは、画面に出さない（ほかの試合の邪魔をしない）
+function notPlaying(){
+  if(SIDE) return false;
+  toast('今の試合に出ていないので、画面には出せません');
+  return true;
+}
+function showPlayer(id){
+  if(LT_ON === id){ hidePlayer(); return; }
+  if(notPlaying()) return;
+  var p = byId(id);
+  if(!p) return;
+  if(noSpace(p)){ toast('配信には苗字だけを出します。「' + (p.name || '') + '」の苗字と名前の間にスペースを入れてください（名前を押すと直せます）'); return; }
+  sendRaw({_lt:true, team:SIDE, on:true, sec:SEC, tn:teamName(),
+    p:{num:p.num, name:airName(p), yomi:airYomi(p), pos:p.pos, order:p.order || 0}});
+  LT_ON = id;
+  clearTimeout(LT_TIMER);
+  if(SEC > 0) LT_TIMER = setTimeout(function(){ LT_ON = ''; paint(); }, SEC * 1000 + 300);
+  paint();
+}
+function hidePlayer(){
+  sendRaw({_lt:true, team:SIDE, on:false});
+  LT_ON = ''; clearTimeout(LT_TIMER); paint();
+}
+var LU_SEC = 15;
+function toggleLineup(){
+  if(LU_ON){
+    sendRaw({_lineup:true, team:SIDE, on:false});
+    LU_ON = false; clearTimeout(LU_TIMER); paint(); return;
+  }
+  if(notPlaying()) return;
+  var list = [];
+  for(var n = 1; n <= 9; n++){
+    var p = atOrder(n);
+    if(p) list.push({order:n, num:p.num, name:airName(p), pos:p.pos, ns:noSpace(p)});
+  }
+  if(list.some(function(x){ return x.ns; })){ toast('苗字と名前の間にスペースがない選手がいます（⚠の選手）。直してから出してください'); return; }
+  list.forEach(function(x){ delete x.ns; });
+  if(!list.length){ toast('先にスタメン（打順）を入れてください'); return; }
+  sendRaw({_lineup:true, team:SIDE, on:true, sec:LU_SEC, tn:teamName(), list:list});
+  LU_ON = true;
+  clearTimeout(LU_TIMER);
+  LU_TIMER = setTimeout(function(){ LU_ON = false; paint(); }, LU_SEC * 1000 + 300);
+  paint();
+}
+
+// ── サーバーとのやりとり ───────────────────────────────────────────────
+var ws = null;
+function sendRaw(o){
+  if(!ws || ws.readyState !== 1){ toast('つながっていません。少し待ってからもう一度'); return false; }
+  try{ ws.send(JSON.stringify(o)); return true; }catch(e){ return false; }
+}
+function send(){
+  if(!ID || !ws || ws.readyState !== 1) return;
+  try{ ws.send(JSON.stringify({_teamapp:true, id:ID, at:T.at, players:T.players})); }catch(e){}
+}
+function connect(){
+  var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/?team=1&id=' + ID;
+  try{ ws = new WebSocket(url); }catch(e){ setTimeout(connect, 2000); return; }
+  ws.onopen = function(){
+    g('dot').className = 'dot on';
+    g('wsmsg').textContent = 'つながっています';
+    // この端末の登録を送る（サーバーがもっと新しいものを持っていれば、そちらが返ってくる）
+    if(T.at) send();
+    try{
+      if(ID) ws.send(JSON.stringify({_req:'teamapp', id:ID}));
+      ws.send(JSON.stringify({_req:'teams'}));
+      ws.send(JSON.stringify({_req:'state'}));
+      ws.send(JSON.stringify({_req:'teamcfg'}));
+    }catch(e){}
+  };
+  ws.onclose = function(){
+    g('dot').className = 'dot off';
+    g('wsmsg').textContent = '切れました（つなぎ直します）';
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = function(){};
+  ws.onmessage = function(e){
+    var d;
+    try{ d = JSON.parse(e.data); }catch(err){ return; }
+    if(!d) return;
+    if(d._ctl === true){
+      INFO.aab = d.aab || '先攻'; INFO.hnm = d.hnm || '後攻';
+      INFO.mySide = typeof d.mySide === 'string' ? d.mySide : null;
+      INFO.nameMode = d.nameMode === 'full' ? 'full' : 'sei';
+      var side = findSide();
+      if(side !== SIDE){
+        // 試合から外れたら、出しているものは消しておく
+        if(!side){ LT_ON = ''; LU_ON = false; }
+        SIDE = side;
+      }
+      paint();
+      return;
+    }
+    // 大会の参加チーム一覧から、自分のチーム名を取る
+    if(d._teams && Array.isArray(d.list)){
+      // 大会の一覧から消された（大会が終わった）チーム：この端末の登録も消す
+      if(d.known === false){ gone(); return; }
+      d.list.forEach(function(t){ if(t && t.id === ID && t.name){ MYNAME = t.name; } });
+      try{ localStorage.setItem('athlee-team-name-' + ID, MYNAME); }catch(e){}
+      document.title = (MYNAME || 'チーム') + '｜AthleeLive';
+      SIDE = findSide();
+      paint();
+      return;
+    }
+    if(d._teamcfg){ INFO.logo = {away:d.away || '', home:d.home || ''}; paint(); return; }
+    // 同じチームの別の端末で直したもの（新しいときだけ取り込む）
+    if(d._teamapp && d.id === ID && Array.isArray(d.players) && (Number(d.at) || 0) > T.at){
+      T = {at:Number(d.at) || 0, players:d.players};
+      save(); paint();
+    }
+  };
+}
+
+// ── 操作 ───────────────────────────────────────────────────────────────
+function toast(msg){
+  var t = g('toast');
+  t.textContent = msg; t.className = 'toast on';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ t.className = 'toast'; }, 1800);
+}
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest ? ev.target.closest('button') : null;
+  if(!b) return;
+  var a;
+  if((a = b.getAttribute('data-ord')) !== null) return pickOrder(Number(a));
+  if((a = b.getAttribute('data-pickord')) !== null) return setOrder(a);
+  if((a = b.getAttribute('data-pos')) !== null) return pickPos(a);
+  if((a = b.getAttribute('data-setpos')) !== null) return setPos(a);
+  if((a = b.getAttribute('data-edit')) !== null) return editPlayer(a);
+  if((a = b.getAttribute('data-esave')) !== null) return savePlayer(a);
+  if((a = b.getAttribute('data-edel')) !== null) return delPlayer(a);
+  if((a = b.getAttribute('data-show')) !== null) return showPlayer(a);
+  if(b.hasAttribute('data-bulkok')) return bulkOk();
+  if(b.hasAttribute('data-scanok')) return scanOk();
+  if(b.hasAttribute('data-close')) return closeSheet();
+});
+g('b-add').onclick = function(){ editPlayer(''); };
+g('b-bulk').onclick = bulk;
+g('b-scan').onclick = function(){ g('scan-file').value = ''; g('scan-file').click(); };
+g('scan-file').onchange = function(){ scanFile(this.files && this.files[0]); };
+g('b-lineup').onclick = toggleLineup;
+g('b-clear').onclick = function(){
+  if(!confirm('登録した選手を全部消します。よろしいですか？')) return;
+  T.players = [];
+  changed();
+  toast('消しました');
+};
+// 表示しておく秒数：8秒 → 15秒 → 消すまで → 5秒 → 8秒…
+g('b-sec').onclick = function(){
+  SEC = SEC === 8 ? 15 : SEC === 15 ? 0 : SEC === 0 ? 5 : 8;
+  try{ localStorage.setItem('athlee-team-sec', String(SEC)); }catch(e){}
+  paint();
+};
+
+// この端末に残っている登録が古ければ（最後の変更から60日）消す。サーバーと同じ決まり
+var KEEP_MS = 60 * 24 * 60 * 60 * 1000;
+function gone(){
+  try{
+    localStorage.removeItem(KEY());
+    localStorage.removeItem('athlee-team-name-' + ID);
+  }catch(e){}
+  ID = ''; T = {at:0, players:[]}; SIDE = ''; MYNAME = '';
+  g('noid-t').textContent = 'このURLは使えなくなりました。';
+  g('noid-s').textContent = '大会が終わったか、運営が一覧からチームを消したためです。この端末に残っていた選手の登録も消しました。';
+  closeSheet(); paint();
+}
+if(ID){
+  load();
+  if(T.at && Date.now() - T.at > KEEP_MS){
+    try{ localStorage.removeItem(KEY()); }catch(e){}
+    T = {at:0, players:[]};
+  }
+}
+paint();
+connect();
+</script>
+</body>
+</html>
