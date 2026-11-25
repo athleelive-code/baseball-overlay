@@ -6,7 +6,9 @@
 <title>AthleeLive チーム用</title>
 <meta name="theme-color" content="#0d1117">
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  /* ダブルタップで画面が拡大しないようにする（2本指での拡大はできる）*/
+  touch-action:manipulation}
 /* ── 押すところの決まり（かんたんスコアと同じ。README「押すところの決まり」）──
    --tap : 押すところの最小の大きさ（縦・横とも 48px）
    --gap : となり合う押すところの最小のすき間

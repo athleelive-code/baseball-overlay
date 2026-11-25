@@ -12,7 +12,10 @@
 <meta name="apple-mobile-web-app-title" content="AthleeSimple">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  /* ボタンを続けて押したとき、ダブルタップと見なされて画面が拡大しないようにする
+     （押したらすぐ反応するようにもなる）*/
+  touch-action:manipulation}
 /* ── 押すところの決まり（今後もこの値を守る）──────────────────────────
    --tap : 押すところの最小の大きさ（縦・横とも）。指先でも押し間違えにくい 48px
    --gap : となり合う押すところどうしの、最小のすき間
