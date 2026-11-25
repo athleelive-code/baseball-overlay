@@ -403,9 +403,14 @@ body.has-ticker .ov-ltw{bottom:calc(128px*var(--tk,1) + 12px + var(--lt-lift,0px
 .lt-emb img{max-width:100%;max-height:96px;object-fit:contain}
 .ov-lt.nologo .lt-emb{display:none}
 .lt-body{flex:1;min-width:0;padding:10px 22px 12px 18px}
-.lt-top{display:flex;align-items:baseline;gap:18px;font-size:22px;font-weight:800;color:rgba(255,255,255,.75);white-space:nowrap}
-.lt-role{color:#f5c518}
-.lt-main{display:flex;align-items:flex-end;gap:20px;margin-top:2px}
+.lt-top{display:flex;align-items:center;gap:16px;white-space:nowrap}
+/* チーム名は、配信をスマホで見ても読めるように、チームの色の帯に白い太字でのせる */
+.lt-team{font-size:30px;font-weight:900;color:#fff;line-height:1.15;letter-spacing:1px;
+  background:var(--lt-col,#c8102e);border-radius:5px;padding:3px 14px 4px;
+  text-shadow:0 1px 2px rgba(0,0,0,.35);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lt-role{font-size:28px;font-weight:900;color:#f5c518;line-height:1.15}
+.lt-role:empty{display:none}
+.lt-main{display:flex;align-items:flex-end;gap:20px;margin-top:6px}
 .lt-num{font-size:54px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
 .lt-num:empty{display:none}
 .lt-nmw{min-width:0;display:flex;flex-direction:column}
@@ -625,7 +630,7 @@ if(/[?&]simple=1/.test(location.search)) document.body.classList.add('simple');
   <span class="lt-bar"></span>
   <div class="lt-emb" id="lt-emb"><img id="lt-logo" alt=""></div>
   <div class="lt-body">
-    <div class="lt-top"><span id="lt-team"></span><span class="lt-role" id="lt-role"></span></div>
+    <div class="lt-top"><span class="lt-team" id="lt-team"></span><span class="lt-role" id="lt-role"></span></div>
     <div class="lt-main"><span class="lt-num" id="lt-num"></span>
       <span class="lt-nmw"><span class="lt-ym" id="lt-ym"></span><span class="lt-nm" id="lt-nm"></span></span></div>
   </div>
