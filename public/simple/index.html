@@ -753,6 +753,7 @@ tap(g('b-ist'), function(){
 // 本体のコントローラーへ戻る。同時に開くと状態を取り合うので、この画面は閉じる
 tap(g('b-full'), function(){
   if(!confirm('本体のコントローラーに切り替えます。\nこの画面は閉じます。よろしいですか？')) return;
+  try{ localStorage.setItem('athlee-start', 'full'); }catch(e){}   // 次からは本体を開く（簡易版に戻ると元に戻る）
   location.href = '/ctrl/';
 });
 

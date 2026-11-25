@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>AthleeLive Controller</title>
+<script>
+// 最初はかんたんスコア（簡易版）を開く。ホーム画面のアイコンや古いブックマークでここに来ても切り替える。
+// かんたんスコアの「本体」で来たときは 'full' を覚えていて、次からもこの画面を開く（最後に使ったほうが開く）
+try{
+  if(localStorage.getItem('athlee-start') !== 'full' && !/[?&]full=1/.test(location.search)){
+    location.replace('/simple/');
+  }
+}catch(e){}
+</script>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c8102e">
@@ -6358,6 +6367,7 @@ function copyUrlList(){
 // 簡易版へ切り替える。同時に開くと状態を取り合うので、この画面は閉じる
 function openSimpleScore(){
   if(!confirm('かんたんスコア（簡易版）に切り替えます。\nこのコントローラーは閉じます。よろしいですか？')) return;
+  try{ localStorage.setItem('athlee-start','simple'); }catch(e){}   // 次からも、かんたんスコアを開く
   location.href='/simple/';
 }
 
