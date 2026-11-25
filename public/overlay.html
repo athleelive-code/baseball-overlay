@@ -365,14 +365,40 @@ body.cooling .ov-bat-wrap{ opacity:0; pointer-events:none; transition:opacity .4
   background:rgba(255,255,255,.14);color:rgba(255,255,255,.82);white-space:nowrap;flex-shrink:0}
 .ov-b-hist .h.reach{background:rgba(245,197,24,.92);color:#1a1400}
 
-/* ── 選手の名前（チーム用アプリから。左下）── */
-.ov-lt{position:fixed;left:20px;bottom:24px;z-index:45;display:flex;align-items:stretch;
-  min-width:560px;max-width:calc(62% - 30px);
-  background:rgba(8,12,24,.86);border:1px solid rgba(255,255,255,.15);border-left:8px solid var(--lt-col,#c8102e);
-  border-radius:8px;overflow:hidden;
-  transform:translateX(-110%);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s,bottom .35s}
-.ov-lt.on{transform:none;opacity:1}
-body.has-ticker .ov-lt{bottom:calc(128px*var(--tk,1) + 12px)}
+/* ── 選手の名前（チーム用アプリから）──────────────────────────────────
+   位置（右下・左下・まん中下）・大きさ・高さは、かんたんスコアの設定（_ctl の ltPos / ltSize / ltLift）で変わる。
+   外側（.ov-ltw）で位置と大きさを決め、内側（.ov-lt）で出入りのアニメーションをする。
+   出るとき：チームの色の帯が画面の端の側からさっと伸びて、帯が端に戻りながら中身が現れ、
+   チーム名 → 背番号・名前の順に少し遅れて浮き上がる。消えるときは端の側へすっと引っ込む */
+.ov-ltw{position:fixed;z-index:45;right:20px;bottom:calc(24px + var(--lt-lift,0px));
+  transform:scale(var(--lt-size,1));transform-origin:right bottom;transition:bottom .35s}
+.ov-ltw.pos-bl{right:auto;left:20px;transform-origin:left bottom}
+.ov-ltw.pos-bc{right:auto;left:50%;transform:translateX(-50%) scale(var(--lt-size,1));transform-origin:center bottom}
+body.has-ticker .ov-ltw{bottom:calc(128px*var(--tk,1) + 12px + var(--lt-lift,0px))}
+.ov-lt{position:relative;display:flex;align-items:stretch;
+  min-width:560px;max-width:calc((100vw - 40px) / var(--lt-size,1));
+  background:rgba(8,12,24,.88);border:1px solid rgba(255,255,255,.15);border-radius:8px;overflow:hidden;
+  padding-left:8px;visibility:hidden}
+.ov-ltw.pos-br .ov-lt{padding-left:0;padding-right:8px}
+/* チームの色の帯（ふだんは端の細い帯。出るときに横いっぱいに伸びてから戻る）*/
+.lt-bar{position:absolute;top:0;bottom:0;left:0;width:8px;background:var(--lt-col,#c8102e);z-index:2}
+.ov-ltw.pos-br .lt-bar{left:auto;right:0}
+.ov-lt.in,.ov-lt.out{visibility:visible}
+.ov-lt.in{animation:ltRevealL .5s cubic-bezier(.2,.8,.2,1) both}
+.ov-ltw.pos-br .ov-lt.in{animation-name:ltRevealR}
+.ov-lt.in .lt-bar{animation:ltBar .62s cubic-bezier(.2,.8,.2,1) both}
+.ov-lt.in .lt-emb,.ov-lt.in .lt-top,.ov-lt.in .lt-main{animation:ltUp .45s cubic-bezier(.2,.8,.2,1) both}
+.ov-lt.in .lt-emb{animation-delay:.3s}
+.ov-lt.in .lt-top{animation-delay:.34s}
+.ov-lt.in .lt-main{animation-delay:.42s}
+.ov-lt.out{animation:ltHideL .28s cubic-bezier(.6,0,.8,.2) both}
+.ov-ltw.pos-br .ov-lt.out{animation-name:ltHideR}
+@keyframes ltRevealL{0%{clip-path:inset(0 100% 0 0)}100%{clip-path:inset(0 0 0 0)}}
+@keyframes ltRevealR{0%{clip-path:inset(0 0 0 100%)}100%{clip-path:inset(0 0 0 0)}}
+@keyframes ltBar{0%{width:100%}45%{width:100%}100%{width:8px}}
+@keyframes ltUp{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:none}}
+@keyframes ltHideL{0%{clip-path:inset(0 0 0 0);opacity:1}100%{clip-path:inset(0 100% 0 0);opacity:.6}}
+@keyframes ltHideR{0%{clip-path:inset(0 0 0 0);opacity:1}100%{clip-path:inset(0 0 0 100%);opacity:.6}}
 .lt-emb{flex:none;width:112px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);padding:8px}
 .lt-emb img{max-width:100%;max-height:96px;object-fit:contain}
 .ov-lt.nologo .lt-emb{display:none}
@@ -595,14 +621,15 @@ if(/[?&]simple=1/.test(location.search)) document.body.classList.add('simple');
 </div>
 
 <!-- チーム用アプリ（/team/）から出す選手の名前（左下）-->
-<div class="ov-lt" id="ov-lt">
+<div class="ov-ltw" id="ov-ltw"><div class="ov-lt" id="ov-lt">
+  <span class="lt-bar"></span>
   <div class="lt-emb" id="lt-emb"><img id="lt-logo" alt=""></div>
   <div class="lt-body">
     <div class="lt-top"><span id="lt-team"></span><span class="lt-role" id="lt-role"></span></div>
     <div class="lt-main"><span class="lt-num" id="lt-num"></span>
       <span class="lt-nmw"><span class="lt-ym" id="lt-ym"></span><span class="lt-nm" id="lt-nm"></span></span></div>
   </div>
-</div>
+</div></div>
 
 <!-- チーム用アプリから出すスタメン（画面のまん中）-->
 <div class="ov-lu" id="ov-lu">
@@ -800,6 +827,7 @@ function applyState(s){
   // 全状態（コントローラー）以外は表示に触れない（部分メッセージでカウントを消さない）
   if(s._ctl!==true) return;
   _ltState=s;   // 選手の名前・スタメンを出すときのチーム名・色に使う
+  _applyLtLayout(s);
   applyCooling(s.cooling);
   applyTicker(s.ticker && s.ticker.on);
   // チームカラー適用
@@ -1149,26 +1177,50 @@ function _teamLook(team, tn){
   var logo = team==='home' ? _teamLogos.home : _teamLogos.away;
   return {name:name, col:col, logo:logo||''};
 }
+// 出す・消す。表示中に別の選手が来たら、いったん引っ込めてから出し直す
+var _ltSeq=0;
+function _ltOut(el, then){
+  var seq=++_ltSeq;
+  if(!el.classList.contains('in')){ el.classList.remove('out'); if(then) then(); return; }
+  el.classList.remove('in'); void el.offsetWidth; el.classList.add('out');
+  setTimeout(function(){ if(seq!==_ltSeq) return; el.classList.remove('out'); if(then) then(); }, 290);
+}
 function applyLowerThird(d){
   var el=g('ov-lt'); if(!el) return;
   if(_ltTimer){ clearTimeout(_ltTimer); _ltTimer=null; }
-  if(!d.on || !d.p){ el.classList.remove('on'); return; }
-  var t=_teamLook(d.team, d.tn), p=d.p;
-  el.style.setProperty('--lt-col', t.col);
-  set('lt-team', t.name);
-  var role=[]; if(p.order) role.push(p.order+'番'); if(p.pos && _POS_L[p.pos]) role.push(_POS_L[p.pos]);
-  set('lt-role', role.join('　'));
-  set('lt-num', p.num ? '#'+p.num : '');
-  set('lt-ym', p.yomi||'');
-  set('lt-nm', p.name||'');
-  var img=g('lt-logo');
-  if(t.logo){ img.src=t.logo; el.classList.remove('nologo'); } else { img.removeAttribute('src'); el.classList.add('nologo'); }
-  // 長い名前は文字を小さくして収める
-  var nm=g('lt-nm'); nm.style.fontSize='';
-  el.classList.add('on');
-  for(var px=52; px>=30 && nm.scrollWidth>nm.clientWidth+1; px-=2){ nm.style.fontSize=px+'px'; }
-  var sec=Number(d.sec)||0;
-  if(sec>0) _ltTimer=setTimeout(function(){ el.classList.remove('on'); }, sec*1000);
+  if(!d.on || !d.p){ _ltOut(el); return; }
+  _ltOut(el, function(){
+    var t=_teamLook(d.team, d.tn), p=d.p;
+    el.style.setProperty('--lt-col', t.col);
+    set('lt-team', t.name);
+    var role=[]; if(p.order) role.push(p.order+'番'); if(p.pos && _POS_L[p.pos]) role.push(_POS_L[p.pos]);
+    set('lt-role', role.join('　'));
+    set('lt-num', p.num ? '#'+p.num : '');
+    set('lt-ym', p.yomi||'');
+    set('lt-nm', p.name||'');
+    var img=g('lt-logo');
+    if(t.logo){ img.src=t.logo; el.classList.remove('nologo'); } else { img.removeAttribute('src'); el.classList.add('nologo'); }
+    // 長い名前は文字を小さくして収める（見えていなくても大きさは測れる）
+    var nm=g('lt-nm'); nm.style.fontSize='';
+    for(var px=52; px>=30 && nm.scrollWidth>nm.clientWidth+1; px-=2){ nm.style.fontSize=px+'px'; }
+    void el.offsetWidth;          // アニメーションを最初からやり直す
+    el.classList.add('in');
+    var sec=Number(d.sec)||0;
+    if(sec>0) _ltTimer=setTimeout(function(){ _ltOut(el); }, sec*1000);
+  });
+}
+// 選手名の位置・大きさ・高さ（かんたんスコアの設定。届かないときは、簡易版は右下・通常版は左下）。
+// 通常版は右下に打者の表示があるので、重ならないように左下のまま
+function _applyLtLayout(s){
+  var w=g('ov-ltw'); if(!w) return;
+  var sim=document.body.classList.contains('simple');
+  var pos=(s.ltPos==='bl'||s.ltPos==='bc'||s.ltPos==='br') ? s.ltPos : (sim ? 'br' : 'bl');
+  var cls='ov-ltw pos-'+pos;
+  if(w.className!==cls) w.className=cls;
+  var size=Math.max(.6, Math.min(2, Number(s.ltSize)||1));
+  var lift=Math.max(0, Math.min(600, Number(s.ltLift)||0));
+  w.style.setProperty('--lt-size', size);
+  w.style.setProperty('--lt-lift', lift+'px');
 }
 function applyLineup(d){
   var el=g('ov-lu'); if(!el) return;

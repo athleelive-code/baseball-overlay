@@ -182,6 +182,11 @@ button:active{background:#30363d}
 #reg-copyall{font-size:.8em}
 .wipe{font-size:.8em;color:#f85149;margin-top:var(--sep)}
 .nmode{display:flex;gap:var(--gap)}
+.ltset{display:flex;align-items:center;gap:var(--gap)}
+.ltset span{flex:none;width:3.2em;font-size:.75em;font-weight:800;color:#8b949e}
+.ltset button{flex:1;min-width:0;font-size:.8em;font-weight:700;padding:.3em .2em}
+.ltset button.on{background:#f5c518;border-color:#f5c518;color:#111}
+#lt-try{font-size:.85em;background:#16263f;border-color:#2d4a7a;color:#9ec5ff}
 .nmode button{flex:1;font-size:.85em;font-weight:700}
 .nmode button.on{background:#f5c518;border-color:#f5c518;color:#111}
 .share .close{font-size:.95em;font-weight:700;margin-top:.3em}
@@ -303,6 +308,16 @@ button:active{background:#30363d}
       <button id="nm-full" data-nm="full">フルネーム</button>
     </div>
 
+    <div class="sh">選手名の表示（配信画面）</div>
+    <div class="note">チームのアプリで「出す」を押したときに出る、選手名の位置と大きさです。</div>
+    <div class="ltset"><span>位置</span>
+      <button data-lt="ltPos" data-v="bl">左下</button><button data-lt="ltPos" data-v="bc">まん中下</button><button data-lt="ltPos" data-v="br">右下</button></div>
+    <div class="ltset"><span>大きさ</span>
+      <button data-lt="ltSize" data-v="0.8">小</button><button data-lt="ltSize" data-v="1">中</button><button data-lt="ltSize" data-v="1.25">大</button><button data-lt="ltSize" data-v="1.5">特大</button></div>
+    <div class="ltset"><span>高さ</span>
+      <button data-lt="ltLift" data-v="0">下の端</button><button data-lt="ltLift" data-v="110">少し上</button><button data-lt="ltLift" data-v="240">もっと上</button></div>
+    <button id="lt-try">試しに出す（5秒）</button>
+
     <div class="sh">大会の参加チーム</div>
     <div class="note">大会の前にチームを登録し、チームごとのURLを各チームのスタッフに送っておきます（LINEなど）。
       スタッフはそのURLで、選手・背番号を前もって入れておけます。登録は大会中ずっと残ります。</div>
@@ -342,7 +357,9 @@ function newGame(keep){
     xOn:{},                     // サヨナラの回に x を付ける（'home-回-1' : true）
     tieAsk:false,               // 最終回が同点で終わり、延長か引き分けかを選んでいるところ
     aid:(keep && keep.aid) || '', hid:(keep && keep.hid) || '',
-    nameMode:(keep && keep.nameMode) || 'sei',   // 配信に出す選手名：'sei'＝苗字だけ / 'full'＝フルネーム   // この試合の先攻・後攻（大会の参加チームの印）
+    nameMode:(keep && keep.nameMode) || 'sei',
+    // 選手名の表示：位置（br 右下 / bl 左下 / bc まん中下）・大きさ（倍率）・高さ（下の端から上げる量）
+    ltPos:(keep && keep.ltPos) || 'br', ltSize:(keep && keep.ltSize) || 1, ltLift:(keep && keep.ltLift) || 0,   // 配信に出す選手名：'sei'＝苗字だけ / 'full'＝フルネーム   // この試合の先攻・後攻（大会の参加チームの印）
     gameId: Date.now()
   };
 }
@@ -651,6 +668,7 @@ function broadcast(){
       b:S.b, s:S.s, o:S.o,
       r:{1:S.r[1], 2:S.r[2], 3:S.r[3]},
       aab:S.aab, hnm:S.hnm, aid:S.aid || '', hid:S.hid || '', nameMode:S.nameMode === 'full' ? 'full' : 'sei',
+      ltPos:S.ltPos || 'br', ltSize:Number(S.ltSize) || 1, ltLift:Number(S.ltLift) || 0,
       asc:S.asc.slice(), hsc:S.hsc.slice(),
       gameId:S.gameId,
       // 簡易版で使わないものは、はっきり切っておく
@@ -776,7 +794,8 @@ tap(g('a-reset'),  function(){
   if(!confirm('試合をリセットします。スコア・カウント・走者を消してよいですか？')) return;
   push();
   EDIT = null;
-  S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm, aid:S.aid, hid:S.hid, nameMode:S.nameMode});
+  S = newGame({maxInn:S.maxInn, aab:S.aab, hnm:S.hnm, aid:S.aid, hid:S.hid, nameMode:S.nameMode,
+    ltPos:S.ltPos, ltSize:S.ltSize, ltLift:S.ltLift});
   commit();
   toast('リセットしました');
 });
@@ -843,6 +862,11 @@ function paintShare(){
   g('reg-wipe').hidden = !REG.list.length;
   g('nm-sei').className = S.nameMode === 'full' ? '' : 'on';
   g('nm-full').className = S.nameMode === 'full' ? 'on' : '';
+  Array.prototype.forEach.call(document.querySelectorAll('[data-lt]'), function(b){
+    var k = b.getAttribute('data-lt'), v = b.getAttribute('data-v');
+    var cur = k === 'ltPos' ? (S.ltPos || 'br') : String(Number(S[k]) || (k === 'ltSize' ? 1 : 0));
+    b.className = String(cur) === String(k === 'ltPos' ? v : Number(v)) ? 'on' : '';
+  });
   ['away','home'].forEach(function(side){
     var sel = g('sel-' + side), cur = side === 'away' ? S.aid : S.hid;
     var h = '<option value="">（一覧から選ぶ）</option>';
@@ -896,6 +920,23 @@ tap(g('reg-wipe'), function(){
 tap(g('reg-copyall'), function(){
   copyText(REG.list.map(function(t){ return t.name + '\n' + teamUrl(t.id); }).join('\n\n'));
 });
+// 選手名の表示の位置・大きさ・高さ。変えたら、見え方が分かるように試しに出す
+function ltTry(){
+  if(!ws || ws.readyState !== 1){ toast('オーバーレイにつながっていません'); return; }
+  try{
+    ws.send(JSON.stringify({_lt:true, team:'away', on:true, sec:5, tn:S.aab,
+      p:{num:'10', name:S.nameMode === 'full' ? '山田 太郎' : '山田', yomi:S.nameMode === 'full' ? 'やまだ たろう' : 'やまだ', pos:'6', order:1}}));
+  }catch(e){}
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-lt]'), function(b){
+  tap(b, function(){
+    var k = b.getAttribute('data-lt'), v = b.getAttribute('data-v');
+    S[k] = k === 'ltPos' ? v : Number(v);
+    commit(); paintShare();
+    setTimeout(ltTry, 150);
+  });
+});
+tap(g('lt-try'), ltTry);
 // 配信に出す選手名（苗字だけ／フルネーム）
 Array.prototype.forEach.call(document.querySelectorAll('[data-nm]'), function(b){
   tap(b, function(){

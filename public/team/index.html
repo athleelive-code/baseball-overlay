@@ -12,17 +12,20 @@
 /* ── 押すところの決まり（かんたんスコアと同じ。README「押すところの決まり」）──
    --tap : 押すところの最小の大きさ（縦・横とも 48px）
    --gap : となり合う押すところの最小のすき間
-   --sep : 役割のちがうかたまりの間 */
-:root{--tap:48px;--gap:8px;--sep:16px}
-body{margin:0 auto;max-width:34em;background:#0d1117;color:#e6edf3;
+   --sep : 役割のちがうかたまりの間
+   文字が大きい画面（「PC版サイト」で開かれたときなど）では、文字に合わせて大きくする */
+:root{--tap:max(48px,2.6em);--gap:max(8px,.45em);--sep:max(16px,.9em)}
+body{margin:0 auto;max-width:min(100%,34em);background:#0d1117;color:#e6edf3;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-  font-size:clamp(15px,4.3vw,20px);
+  /* 幅と高さの小さいほうに合わせる。ブラウザが「PC版サイト」として広い幅で開いても、
+     文字ごと大きくなって左右が余らない（パソコンの横長の画面では大きくなりすぎない）*/
+  font-size:clamp(15px,min(4.3vw,2.6vh),44px);
   padding:calc(.4em + env(safe-area-inset-top)) .5em calc(2em + env(safe-area-inset-bottom));
   -webkit-text-size-adjust:100%}
 button{font-family:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:.5em;
   font-size:1em;padding:.4em .6em;cursor:pointer;min-height:var(--tap);min-width:var(--tap)}
 button:active{background:#30363d}
-input,textarea{font-family:inherit;font-size:16px;color:#e6edf3;background:#0d1117;border:1px solid #30363d;
+input,textarea{font-family:inherit;font-size:max(16px,.95em);color:#e6edf3;background:#0d1117;border:1px solid #30363d;
   border-radius:.5em;padding:.6em;min-height:var(--tap);width:100%}
 input:focus,textarea:focus{outline:none;border-color:#58a6ff}
 .hd{font-size:.8em;font-weight:800;color:#8b949e;margin:var(--sep) .2em var(--gap)}
@@ -80,7 +83,7 @@ input:focus,textarea:focus{outline:none;border-color:#58a6ff}
 .sc-card.unsure{border-color:#f5c518;background:#221d0b}
 .sc-card.off{opacity:.45}
 .sc-row{display:flex;gap:var(--gap);align-items:center}
-.sc-row input,.sc-row select{min-width:0;font-family:inherit;font-size:16px;color:#e6edf3;background:#0d1117;
+.sc-row input,.sc-row select{min-width:0;font-family:inherit;font-size:max(16px,.95em);color:#e6edf3;background:#0d1117;
   border:1px solid #30363d;border-radius:.5em;padding:0 .5em;min-height:var(--tap)}
 .sc-row .num{width:4.2em;flex:none}
 .sc-row .nm{flex:1}
