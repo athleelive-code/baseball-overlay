@@ -894,6 +894,10 @@ function applyState(s){
     for(var i=0;i<n;i++){
       var td=cells[i]; if(!td) continue;
       var val=sc[i];
+      // 攻撃中の回は、点が入るまで空欄（球場のスコアボードと同じ）。その回が終わったら 0 が出る。
+      // 試合が終わったあとは、最後の回の 0 もそのまま出す
+      var playing=(i+1===inn) && (withNum===isTop) && !(s.gameEnd && s.gameEnd.on);
+      if(playing && val===0) val=null;
       var disp=(val===null||val===undefined)?'':val==='x'?'×':String(val)+((s.xOn||{})[(pair[2]?'away':'home')+'-'+i]?'x':'');   // サヨナラは 1x
       var cls=(i+1===inn?'cur':'')+(((i+1)%3===0&&i+1<n)?' sep3':'');
       if(td.textContent!==disp) td.textContent=disp;
